@@ -1,0 +1,27 @@
+{
+"manifest_version": 2,
+    "name": "Music",
+    "description": "Does stuff",
+    "version": "0.1",
+    "content_scripts": [
+        {
+            "matches": [
+                "http://*/*",
+                "https://*/*"
+            ],
+            "js": [
+                "Scripts/content.js"
+            ],
+            "run_at": "document_idle"
+        }
+    ],
+    "browser_action": 
+    {
+        "default_icon": "Images/icon.png",
+        "default_popup": "popup.html"
+    },
+    "permissions": 
+    [
+        "storage"
+    ]
+}
