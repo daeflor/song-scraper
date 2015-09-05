@@ -19,6 +19,9 @@ chrome.runtime.onMessage.addListener(
         {            
             GetTracks(function()
             {
+                console.log(TrackList);
+                sendResponse(TrackList);
+                /*
                 chrome.storage.local.set
                 (
                     {'MusicList': TrackList}, 
@@ -33,6 +36,7 @@ chrome.runtime.onMessage.addListener(
                         sendResponse({farewell: request.greeting + ": Success"})
                     }
                 );
+                */
             }); 
         }
         else if (request.greeting == "GetPlaylistName")
@@ -42,23 +46,6 @@ chrome.runtime.onMessage.addListener(
         else if (request.greeting == "GetTrackCount")
         {   
             sendResponse(GetLatestTrackCount());
-            /*         
-            var latestTrackCount = GetLatestTrackCount();
-            console.log("Number of songs in playlist: " + latestTrackCount);
-            chrome.storage.local.set
-            (
-                {'LatestTrackCount': latestTrackCount}, 
-                function()
-                {
-                    if(chrome.runtime.lastError)
-                    {
-                        console.log("ERROR: " + chrome.runtime.lastError.message);
-                        return;
-                    }
-                    sendResponse({farewell: request.greeting + ": Success"})
-                }
-            );
-            */
         }
 
         return true;
@@ -161,7 +148,6 @@ function GetPlaylistName()
                 if (node.nodeValue == "My playlist")
                 {
                     var playlistName = elements[i-3].childNodes[0].nodeValue;
-                    //console.log("Playlist Name: " + playlistName);
                     return playlistName;
                 }
             }

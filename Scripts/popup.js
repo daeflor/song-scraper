@@ -1,21 +1,36 @@
-var LatestTrackCountKey = 'LatestTrackCount'; //TODO: use keys for all get/set methods
+var TrackCountKey = 'TrackCount'; //TODO: use keys for all get/set methods
+var PlaylistNameKey = 'PlaylistName'; 
 
+//TODO: playlist array key has to be different for each playlist? key should probably be equal to the playlist name
 //TODO: prefix storage data with appropriate playlist names, etc. 
 
 document.addEventListener('DOMContentLoaded', Start);
 
-//TODO: Get this into source control
+chrome.storage.onChanged.addListener
+(
+	function(changes, namespace) 
+	{
+		for (TrackCountKey in changes) 
+		{
+			var storageChange = changes[TrackCountKey];
+			console.log('Storage key "%s" in namespace "%s" changed. ' +
+						'Old value was "%s", new value is "%s".',
+						TrackCountKey,
+						namespace,
+						storageChange.oldValue,
+						storageChange.newValue);
+		}
+	}
+);
+
 //TODO: Differentiate content script methods from similarly named Popup methods
 
 function Start()
 {
-	console.log("Website loaded");
 	document.getElementById('button').onclick = GetSongList;
 	
 	PrintCurrentPlaylistName();
 	GetTrackCount();
-	//console.log("The track count is " + trackCount);
-	//document.getElementById('trackCount').textContent = document.getElementById('trackCount').textContent + trackCount;
 	
 	//CompareTrackCount(trackCount);
 	
@@ -36,6 +51,10 @@ function GetSongList()
 				{greeting: "GetSongList"}, 
 				function(response) 
 				{
+					RenderStatus("ITS HAPPENING");
+					PrintTrackList(response);
+					document.getElementById('button').disabled = false;
+					/*
 					chrome.storage.local.get
 					(
 						'MusicList', 
@@ -52,6 +71,8 @@ function GetSongList()
 							document.getElementById('button').disabled = false;
 						}
 					);
+					*/
+					
 					/*
 					console.log(response.farewell);
 					if (response.farewell == "Success")
@@ -86,15 +107,6 @@ function RenderStatus(statusText)
 	console.log(statusText);
 }
 
-/*
-function PrintPlaylistInfo()
-{
-	var playlistName = PrintCurrentPlaylistName();
-	var trackCount = PrintTrackCount();
-
-}
-*/
-
 function GetTrackCount()
 {
 	chrome.tabs.query
@@ -110,7 +122,26 @@ function GetTrackCount()
 				{
 					document.getElementById('trackCount').textContent = document.getElementById('trackCount').textContent + response;
 					
-					CompareTrackCount(response);
+					chrome.storage.local.set
+					(
+						{TrackCountKey: response}, 
+						function()
+						{
+							if(chrome.runtime.lastError)
+							{
+								console.log("ERROR: " + chrome.runtime.lastError.message);
+								return;
+							}
+							
+							console.log("Just Saved the trackcount: " + response);
+						}
+					);
+					
+					
+					
+					//CompareTrackCount(response);
+
+
 
 					//document.getElementById('trackCount').textContent = document.getElementById('trackCount').textContent + response;
 					/*
@@ -149,6 +180,21 @@ function PrintCurrentPlaylistName()
 				function(response) 
 				{
 					document.getElementById('playlistName').textContent = document.getElementById('playlistName').textContent + response;
+					
+					chrome.storage.local.set
+					(
+						{PlaylistNameKey: response}, 
+						function()
+						{
+							if(chrome.runtime.lastError)
+							{
+								console.log("ERROR: " + chrome.runtime.lastError.message);
+								return;
+							}
+							
+							console.log("Just saved the playlist name: " + response);
+						}
+					);
 				}
 			);
 		}
