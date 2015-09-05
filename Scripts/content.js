@@ -1,4 +1,4 @@
-var LatestTrackCountKey = 'LatestTrackCount';
+var TrackCountKey = null;
 var TrackList = [];
 
 /*
@@ -45,66 +45,60 @@ chrome.runtime.onMessage.addListener(
         }
         else if (request.greeting == "GetTrackCount")
         {   
-            sendResponse(GetLatestTrackCount());
+            var trackCount = GetTrackCount();
+            chrome.storage.local.set
+            (
+                {TrackCountKey: trackCount}, 
+                    function()
+                {
+                    if(chrome.runtime.lastError)
+                    {
+                        console.log("ERROR: " + chrome.runtime.lastError.message);
+                        return;
+                        //TODO: If it fails, could send a different response
+                    }
+                    
+                    console.log("Saved under: " + TrackCountKey);
+                    sendResponse(trackCount);
+                }
+            );
         }
 
         return true;
-  });
+    }
+);
   
-function GetLatestTrackCount()
+function GetPlaylistName()
+{
+    var elements = document.getElementsByTagName('*');
+    
+    for (var i = 0; i < elements.length; i++) 
+    {
+        var element = elements[i];
+    
+        for (var j = 0; j < element.childNodes.length; j++) 
+        {
+            var node = element.childNodes[j];
+    
+            if (node.nodeType === 3) 
+            {                
+                if (node.nodeValue == "My playlist")
+                {
+                    var playlistName = elements[i-3].childNodes[0].nodeValue;
+                    TrackCountKey = playlistName + '_TrackCount';
+                    //console.log(TrackCountKey);
+                    return playlistName;
+                }
+            }
+        }
+    }
+}
+  
+function GetTrackCount()
 {
     var trackCountElement = GetTrackCountElement();    
     var trackCount = parseInt(trackCountElement.childNodes[0].nodeValue.split(" ")[0]);
     return trackCount;
-}
-  
-function GetTracks(callback)
-{
-    var trackCountElement = GetTrackCountElement();
-    trackCountElement.scrollIntoView(true);
-    
-    var trackCount = parseInt(trackCountElement.childNodes[0].nodeValue.split(" ")[0]);
-    
-	setTimeout(ListSongs(trackCount, callback), 1000);
-}
-
-/*
-function GetSongs()
-{
-    var songs = document.querySelectorAll("table.song-table tbody tr.song-row");
-    console.log(songs);   
-}
-*/
-
-function ListSongs(trackCount, callback)
-{    
-    TrackList.length = 0; //TODO: need to actually clear the array in storage. 
-    
-    var scrollInterval = setInterval(
-        function()
-        { 
-            var songs = document.querySelectorAll("table.song-table tbody tr.song-row");
-
-            for (var i = 0; i < songs.length; i++)
-            {
-                var track = songs[i];
-                var trackTitle = track.querySelector('td[data-col="title"] .content').textContent;
-                
-                if (TrackList.indexOf(trackTitle) < 0)
-                {
-                   TrackList.push(trackTitle); 
-                }
-            }
-            
-            songs[songs.length-1].scrollIntoView(true); 
-            
-            if (TrackList.length >= trackCount)
-            {
-                clearInterval(scrollInterval);
-                callback();
-            }
-        }, 
-        500);
 }
 
 function GetTrackCountElement()
@@ -129,80 +123,46 @@ function GetTrackCountElement()
         }
     }
 }
-
-function GetPlaylistName()
+  
+function GetTracks(callback)
 {
-    var elements = document.getElementsByTagName('*');
+    var trackCountElement = GetTrackCountElement();
+    trackCountElement.scrollIntoView(true);
     
-    for (var i = 0; i < elements.length; i++) 
-    {
-        var element = elements[i];
+    var trackCount = parseInt(trackCountElement.childNodes[0].nodeValue.split(" ")[0]);
     
-        for (var j = 0; j < element.childNodes.length; j++) 
-        {
-            var node = element.childNodes[j];
-    
-            if (node.nodeType === 3) 
-            {                
-                //console.log("i : " + i + ".   j : " + j + ".   Text: " + node.nodeValue);  
-                if (node.nodeValue == "My playlist")
-                {
-                    var playlistName = elements[i-3].childNodes[0].nodeValue;
-                    return playlistName;
-                }
-            }
-        }
-    }
+	setTimeout(ListSongs(trackCount, callback), 1000);
 }
 
-
-
-
-///////
-
-function SaveList()
-{
-    var record = false;
-    var songList = [];
+function ListSongs(trackCount, callback)
+{    
+    TrackList.length = 0; //TODO: need to actually clear the array in storage. 
     
-    var elements = document.getElementsByTagName('*');
-    
-    for (var i = 0; i < elements.length; i++) 
-    {
-        var element = elements[i];
-    
-        for (var j = 0; j < element.childNodes.length; j++) 
-        {
-            var node = element.childNodes[j];
-    
-            if (node.nodeType === 3) 
+    var scrollInterval = setInterval
+    (
+        function()
+        { 
+            var songs = document.querySelectorAll("table.song-table tbody tr.song-row");
+
+            for (var i = 0; i < songs.length; i++)
             {
-                var text = node.nodeValue;
+                var track = songs[i];
+                var trackTitle = track.querySelector('td[data-col="title"] .content').textContent;
                 
-                var startIndex = null;
-                
-                //console.log("i : " + i + ".   j : " + j + ".   Text: " + text);
-                
-                if (text == "Album")
+                if (TrackList.indexOf(trackTitle) < 0)
                 {
-                    record = true;
-                    startIndex = i + 3;
-                    //console.log("Start Recording");
-                }
-                else if (text == "This playlist is empty")
-                {
-                    record = false;
-                    //console.log("Stop Recording");
-                }
-                
-                if (record && j == 1)
-                {
-                    //console.log(node.nodeValue);
-                    songList.push(node.nodeValue);
+                   TrackList.push(trackTitle); 
                 }
             }
-        }
-    }
-       
-    return songList;
+            
+            songs[songs.length-1].scrollIntoView(true); 
+            
+            if (TrackList.length >= trackCount)
+            {
+                clearInterval(scrollInterval);
+                callback();
+            }
+        }, 
+        500
+    );
 }
