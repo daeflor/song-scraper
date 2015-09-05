@@ -46,10 +46,13 @@ chrome.runtime.onMessage.addListener(
         else if (request.greeting == "GetTrackCount")
         {   
             var trackCount = GetTrackCount();
+            var trackCountStorageObject= {};
+            trackCountStorageObject[TrackCountKey] = trackCount;
+            
             chrome.storage.local.set
             (
-                {TrackCountKey: trackCount}, 
-                    function()
+                trackCountStorageObject, 
+                function()
                 {
                     if(chrome.runtime.lastError)
                     {
