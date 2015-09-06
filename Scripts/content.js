@@ -49,6 +49,9 @@ chrome.runtime.onMessage.addListener(
             var trackCountStorageObject= {};
             trackCountStorageObject[TrackCountKey] = trackCount;
             
+            //TODO: It may make more sense to only store the trackcount when the track list gets updated. 
+                //Otherwise, the track count and number of songs in the track list could get out of sync, which could be confusing.
+                //Could also compare current track count to the length of the stored track list, and not store the trackcount at all. 
             chrome.storage.local.set
             (
                 trackCountStorageObject, 
@@ -89,7 +92,6 @@ function GetPlaylistName()
                 {
                     var playlistName = elements[i-3].childNodes[0].nodeValue;
                     TrackCountKey = playlistName + '_TrackCount';
-                    //console.log(TrackCountKey);
                     return playlistName;
                 }
             }
@@ -139,7 +141,7 @@ function GetTracks(callback)
 
 function ListSongs(trackCount, callback)
 {    
-    TrackList.length = 0; //TODO: need to actually clear the array in storage. 
+    TrackList.length = 0;
     
     var scrollInterval = setInterval
     (

@@ -112,7 +112,7 @@ function GetSongList()
 				{greeting: "GetSongList"}, 
 				function(response) 
 				{
-					RenderStatus("ITS HAPPENING");
+					RenderStatus("Acquired Song List");
 					PrintTrackList(response);
 					document.getElementById('button').disabled = false;
 					/*
@@ -187,36 +187,37 @@ function CompareTrackCount(trackCount)
 	);
 }
 
-/*
-function PrintPreviousTrackCount()
+function CompareTrackLists(latest, previous)
 {
-	chrome.tabs.query
-	(
-		{active: true, currentWindow: true}, 
-		function(tabs) 
+	for (var i = latest.length-1; i >= 0; i--)
+	{
+		for (var j = previous.length-1; j >= 0; j--)
 		{
-			chrome.tabs.sendMessage(
-				tabs[0].id, 
-				{greeting: "GetPlaylistName"}, 
-				function(response) 
-				{
-					chrome.storage.local.get
-					(
-						'CurrentPlaylistName', 
-						function(result)
-						{							
-							if(chrome.runtime.lastError)
-							{
-								console.log("ERROR: " + chrome.runtime.lastError);
-								return;
-							}
-
-							document.getElementById('playlistName').textContent = document.getElementById('playlistName').textContent + result.CurrentPlaylistName;
-						}
-					);
-				}
-			);
+			if (latest[i] != null && previous[j] != null && latest[i] === previous[j])
+			{
+				latest[i] = null;
+				previous[j] = null;
+			}
 		}
-	);
+	}
+	
+	console.log("New Tracks Added:");
+	
+	for (var i = 0; i < latest.length; i++)
+	{
+		if (latest[i] != null)
+			{
+				console.log(latest[i]);
+			}
+	}
+	
+	console.log("Tracks Removed: ");
+	
+	for (var j = 0; j < previous.length; j++)
+	{
+		if (previous[j] != null)
+			{
+				console.log(previous[j]);
+			}
+	}
 }
-*/
