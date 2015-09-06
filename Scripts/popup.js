@@ -15,12 +15,22 @@ chrome.storage.onChanged.addListener
 		for (key in changes) 
 		{
 			var storageChange = changes[key];
-			console.log('Storage key "%s" in namespace "%s" changed. ' +
-						'Old value was "%s", new value is "%s".',
-						key,
-						namespace,
-						storageChange.oldValue,
-						storageChange.newValue);
+			console.log
+			(
+				'Storage key "%s" in namespace "%s" changed. ' +
+				'Old value was "%s", new value is "%s".',
+				key,
+				namespace,
+				storageChange.oldValue,
+				storageChange.newValue
+			);
+			
+			if (key == "Hot Jams_TrackList") //TODO: hacked in. fix.
+			{
+				console.log("The Hot Jams playlist has changed");
+				PrintTrackList(storageChange.newValue);
+				//TODO: Finish implementing this.		
+			}
 			//TODO: When the popup opens it should check and report if the track count has changed
 		}
 	}
@@ -32,12 +42,25 @@ function Start()
 {
 	document.getElementById('button').onclick = GetSongList;
 	
-	GetCurrentPlaylistName(GetCurrentTrackCount);
-	//GetTrackCount();
+	chrome.tabs.query
+	(
+		{active: true, currentWindow: true}, 
+		function (tabs) 
+		{
+			var playlistName = tabs[0].title.split(" - Google Play Music")[0];
+			console.log("Playlist Name: " + playlistName);
+			document.getElementById('playlistName').textContent = document.getElementById('playlistName').textContent + playlistName; 
+			//TODO: Eventually we'll split this into tables or headers or something pretty, and it won't all be one string.	
+			
+			TrackCountKey = playlistName + '_TrackCount';	
+			
+			GetCurrentTrackCount();
+		}
+	);
 
-	
+	//GetCurrentPlaylistName(GetCurrentTrackCount);	
 }
-
+/*
 function GetCurrentPlaylistName(callback)
 {
 	chrome.tabs.query
@@ -51,17 +74,16 @@ function GetCurrentPlaylistName(callback)
 				{greeting: "GetPlaylistName"}, 
 				function(response) 
 				{
-					document.getElementById('playlistName').textContent = document.getElementById('playlistName').textContent + response;
-					
-					TrackCountKey = response + '_TrackCount';
-					//console.log(TrackCountKey);						
+					//TODO: I don't like that this function does these actions, rather than just returning the playlist name.
+					document.getElementById('playlistName').textContent = document.getElementById('playlistName').textContent + response;	
+					TrackCountKey = response + '_TrackCount';					
 					callback();
 				}
 			);
 		}
 	);
 }
-
+*/
 function GetCurrentTrackCount()
 {	
 	chrome.tabs.query
@@ -75,6 +97,7 @@ function GetCurrentTrackCount()
 				{greeting: "GetTrackCount"}, 
 				function(response) 
 				{
+					console.log("Acquired Track Count: " + response);
 					document.getElementById('trackCount').textContent = document.getElementById('trackCount').textContent + response;
 
 					//document.getElementById('trackCount').textContent = document.getElementById('trackCount').textContent + response;
@@ -113,7 +136,8 @@ function GetSongList()
 				function(response) 
 				{
 					RenderStatus("Acquired Song List");
-					PrintTrackList(response);
+					console.log(response);
+					//PrintTrackList(response);
 					document.getElementById('button').disabled = false;
 					/*
 					chrome.storage.local.get

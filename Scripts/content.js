@@ -1,4 +1,5 @@
-var TrackCountKey = null;
+//var TrackCountKey = null;
+var TrackListKey = null;
 var TrackList = [];
 
 /*
@@ -10,44 +11,45 @@ document.onreadystatechange = function()
     }
 }
 */
-chrome.runtime.onMessage.addListener(
+chrome.runtime.onMessage.addListener
+(
     function(request, sender, sendResponse) 
     {
         //console.log(sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
               
         if (request.greeting == "GetSongList")
-        {            
-            GetTracks(function()
-            {
-                console.log(TrackList);
-                sendResponse(TrackList);
-                /*
-                chrome.storage.local.set
-                (
-                    {'MusicList': TrackList}, 
-                     function()
-                    {
-                        if(chrome.runtime.lastError)
+        {   
+            GetTracks
+            (
+                function()
+                {
+                    var trackListStorageObject= {};
+                    trackListStorageObject[TrackListKey] = TrackList;
+                    
+                    chrome.storage.local.set
+                    (
+                        trackListStorageObject, 
+                        function()
                         {
-                            console.log("ERROR: " + chrome.runtime.lastError.message);
-                            return;
-                            //TODO: If it fails, could send a different response
+                            if(chrome.runtime.lastError)
+                            {
+                                console.log("ERROR: " + chrome.runtime.lastError.message);
+                                return;
+                            }
+                            
+                            //console.log("Saved tracklist under: " + TrackListKey);
+                            sendResponse({farewell: request.greeting + "- Result: Saved tracklist under: " + TrackListKey});
                         }
-                        sendResponse({farewell: request.greeting + ": Success"})
-                    }
-                );
-                */
-            }); 
-        }
-        else if (request.greeting == "GetPlaylistName")
-        {            
-            sendResponse(GetPlaylistName());
+                    );
+                }
+            );
         }
         else if (request.greeting == "GetTrackCount")
         {   
+            var key = GetPlaylistName() + '_TrackCount';
             var trackCount = GetTrackCount();
             var trackCountStorageObject= {};
-            trackCountStorageObject[TrackCountKey] = trackCount;
+            trackCountStorageObject[key] = trackCount;
             
             //TODO: It may make more sense to only store the trackcount when the track list gets updated. 
                 //Otherwise, the track count and number of songs in the track list could get out of sync, which could be confusing.
@@ -61,42 +63,21 @@ chrome.runtime.onMessage.addListener(
                     {
                         console.log("ERROR: " + chrome.runtime.lastError.message);
                         return;
-                        //TODO: If it fails, could send a different response
                     }
                     
-                    console.log("Saved under: " + TrackCountKey);
+                    console.log('Saved track count "%s" under key "%s"', trackCount, key);
                     sendResponse(trackCount);
                 }
             );
         }
-
+        
         return true;
     }
 );
   
 function GetPlaylistName()
 {
-    var elements = document.getElementsByTagName('*');
-    
-    for (var i = 0; i < elements.length; i++) 
-    {
-        var element = elements[i];
-    
-        for (var j = 0; j < element.childNodes.length; j++) 
-        {
-            var node = element.childNodes[j];
-    
-            if (node.nodeType === 3) 
-            {                
-                if (node.nodeValue == "My playlist")
-                {
-                    var playlistName = elements[i-3].childNodes[0].nodeValue;
-                    TrackCountKey = playlistName + '_TrackCount';
-                    return playlistName;
-                }
-            }
-        }
-    }
+    return document.title.split(" - Google Play Music")[0];
 }
   
 function GetTrackCount()
@@ -165,6 +146,7 @@ function ListSongs(trackCount, callback)
             if (TrackList.length >= trackCount)
             {
                 clearInterval(scrollInterval);
+                TrackListKey = GetPlaylistName() + '_TrackList'; 
                 callback();
             }
         }, 

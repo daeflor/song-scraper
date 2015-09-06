@@ -1,7 +1,7 @@
 {
 "manifest_version": 2,
     "name": "MusicExtension",
-    "description": "Does stuff",
+    "description": "This extension tells you which tracks have been added or removed from the current Google Music playlist.",
     "version": "0.1",
     "content_scripts": [
         {
@@ -22,6 +22,7 @@
     },
     "permissions": 
     [
-        "storage"
+        "storage",
+        "tabs"
     ]
 }
