@@ -1,4 +1,3 @@
-//var TrackCountKey = null;
 var TrackListKey = null;
 var TrackList = [];
 
@@ -17,7 +16,7 @@ chrome.runtime.onMessage.addListener
     {
         //console.log(sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
               
-        if (request.greeting == "GetSongList")
+        if (request.greeting == 'GetSongList')
         {   
             GetTracks
             (
@@ -33,18 +32,18 @@ chrome.runtime.onMessage.addListener
                         {
                             if(chrome.runtime.lastError)
                             {
-                                console.log("ERROR: " + chrome.runtime.lastError.message);
+                                console.log('ERROR: ' + chrome.runtime.lastError.message);
                                 return;
                             }
                             
                             //console.log("Saved tracklist under: " + TrackListKey);
-                            sendResponse({farewell: request.greeting + "- Result: Saved tracklist under: " + TrackListKey});
+                            sendResponse({farewell: request.greeting + '- Result: Saved tracklist under: ' + TrackListKey});
                         }
                     );
                 }
             );
         }
-        else if (request.greeting == "GetTrackCount")
+        else if (request.greeting == 'GetTrackCount')
         {   
             var key = GetPlaylistName() + '_TrackCount';
             var trackCount = GetTrackCount();
@@ -61,7 +60,7 @@ chrome.runtime.onMessage.addListener
                 {
                     if(chrome.runtime.lastError)
                     {
-                        console.log("ERROR: " + chrome.runtime.lastError.message);
+                        console.log('ERROR: ' + chrome.runtime.lastError.message);
                         return;
                     }
                     
@@ -77,7 +76,7 @@ chrome.runtime.onMessage.addListener
   
 function GetPlaylistName()
 {
-    return document.title.split(" - Google Play Music")[0];
+    return document.title.split(' - Google Play Music')[0];
 }
   
 function GetTrackCount()
@@ -101,7 +100,7 @@ function GetTrackCountElement()
     
             if (node.nodeType === 3) 
             {                
-                if (node.nodeValue == "My playlist")
+                if (node.nodeValue == 'My playlist')
                 {
                     return elements[i+2];
                 }
@@ -117,6 +116,7 @@ function GetTracks(callback)
     
     var trackCount = parseInt(trackCountElement.childNodes[0].nodeValue.split(" ")[0]);
     
+    console.log('Scrolling through %s tracks.', trackCount);
 	setTimeout(ListSongs(trackCount, callback), 1000);
 }
 
@@ -127,14 +127,17 @@ function ListSongs(trackCount, callback)
     var scrollInterval = setInterval
     (
         function()
-        { 
-            var songs = document.querySelectorAll("table.song-table tbody tr.song-row");
+        {             
+            var songs = document.querySelectorAll('table.song-table tbody tr.song-row');
 
             for (var i = 0; i < songs.length; i++)
             {
                 var track = songs[i];
                 var trackTitle = track.querySelector('td[data-col="title"] .content').textContent;
                 
+                //TODO: If a playlist has duplicate tracks, this extension will not work properly. Need to have some kind of check/warning for duplicates.
+                    //Could possibly bypass this if we have a different way of seeing if we're at the bottom of the window
+                    //Also, may be able to leverage the track number to work around this (those can't be duplicate). Instead of an array, maybe we have a kvp list.
                 if (TrackList.indexOf(trackTitle) < 0)
                 {
                    TrackList.push(trackTitle); 
@@ -147,6 +150,7 @@ function ListSongs(trackCount, callback)
             {
                 clearInterval(scrollInterval);
                 TrackListKey = GetPlaylistName() + '_TrackList'; 
+                console.log('Finished collecting track list.');
                 callback();
             }
         }, 
