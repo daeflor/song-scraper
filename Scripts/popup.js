@@ -33,7 +33,7 @@ chrome.storage.onChanged.addListener
 				}
 				
 				console.log('The track list of playlist "%s" has changed.', playlistName);
-				PrintList(storageChange.newValue);
+				//PrintList(storageChange.newValue);
 				CompareTrackLists(storageChange.newValue, storageChange.oldValue);
 			}
 		
@@ -112,17 +112,6 @@ function GetSongList()
 	);
 }
 
-/*
-function PrintTrackList(list)
-{
-    for (var i = 0; i < list.length; i++)
-    {
-		list[i] = i+1 + " " + list[i]; //TODO: this will mess up the list if we do this before comparing them.
-        console.log(list[i]);
-    }
-	document.getElementById('trackList').textContent = list.join('\n');
-}*/
-
 function PrintList(list)
 {
     for (var i = 0; i < list.length; i++)
@@ -167,16 +156,12 @@ function CompareTrackLists(latest, previous) //TODO: Need to compare more than j
 	{
 		for (var j = previous.length-1; j >= 0; j--)
 		{
-			if (latest[i] != null && previous[j] != null && latest[i].title === previous[j].title && latest[i].album === previous[j].album)
+			if (latest[i] != null && previous[j] != null && 
+				latest[i].title === previous[j].title && latest[i].album === previous[j].album && latest[i].duration === previous[j].duration)
 			{
 				latest[i] = null; //TODO: this will mess up the list if we do this before printing it.
 				previous[j] = null;
-				
-				//TODO: Still have a duplicate problem. If the playlist intentionally has an actual duplicate track, this comparison might not work.
-					//Might get around this by breaking after setting to null here. Each track can only match up with one other track.
-					//This way the duplicates might not be matched with their exact correct pair (if for some reason the playlist was re-arranged) but that shouldn't really matter. 
-					//Actually should break anyway cause once latest[i] is null it's just gonna spin through the rest of the loop and do nothing. 
-					//And because of the null set or break, this shouldn't be an issue after all. 
+				break;
 			}
 		}
 	}

@@ -81,51 +81,28 @@ function GetPlaylistName()
 {
     return document.title.split(' - Google Play Music')[0]; //TODO: We should first verify that the current tab is a google music playlist tab. We already sort of have code for this in another extension. 
 }
-  
+
 function GetTrackCount()
 {
-    var trackCountElement = GetTrackCountElement();    
-    var trackCount = parseInt(trackCountElement.childNodes[0].nodeValue.split(" ")[0]);
-    return trackCount;
+    return parseInt(document.querySelector('.song-count').textContent.split(" ")[0]);
 }
 
-function GetTrackCountElement()
+function ScrollToTrackCount()
 {
-    var elements = document.getElementsByTagName('*');
-    
-    for (var i = 0; i < elements.length; i++) 
-    {
-        var element = elements[i];
-    
-        for (var j = 0; j < element.childNodes.length; j++) 
-        {
-            var node = element.childNodes[j];
-    
-            if (node.nodeType === 3) 
-            {                
-                if (node.nodeValue == 'My playlist')
-                {
-                    return elements[i+2];
-                }
-            }
-        }
-    }
+    document.querySelector('.song-count').scrollIntoView(true);
 }
   
 function GetTracks(callback)
 {
-    var trackCountElement = GetTrackCountElement();
-    trackCountElement.scrollIntoView(true);
-    
-    var trackCount = parseInt(trackCountElement.childNodes[0].nodeValue.split(" ")[0]);
-    
-    console.log('Scrolling through %s tracks.', trackCount);
-	setTimeout(ListSongs(trackCount, callback), 1000);
+    ScrollToTrackCount();  
+	setTimeout(ListSongs(callback), 750);
 }
 
-function ListSongs(trackCount, callback)
+function ListSongs(callback)
 {    
     TrackList.length = 0;
+    var trackCount = GetTrackCount();
+    console.log('Scrolling through %s tracks.', trackCount);
     
     var scrollInterval = setInterval
     (
@@ -166,6 +143,7 @@ function AddSongToTrackList(list, trackObject)
 {
     var duplicate = false;
     var i = list.length;
+    
     while (i--) 
     {
        if (list[i].index === trackObject.index) //TODO: should have error checking
