@@ -1,5 +1,5 @@
 var TrackListKey = null;
-var TrackList = [];
+var TrackList = []; //TODO: there has to be a clean way to avoid needing this but still look prettty.
 
 /*
 document.onreadystatechange = function()
@@ -8,6 +8,8 @@ document.onreadystatechange = function()
     {
         console.log("2 second countdown starting.");
     }
+    
+    //chrome.storage.local.get(null, function (e) { console.log(e); });
 }
 */
 chrome.runtime.onMessage.addListener
@@ -128,23 +130,22 @@ function ListSongs(trackCount, callback)
     var scrollInterval = setInterval
     (
         function()
-        {             
-            var songs = document.querySelectorAll('table.song-table tbody tr.song-row');
-
+        {            
+            //console.log("TrackList count: " + TrackList.length); 
+            var songs = document.querySelectorAll('table.song-table tbody tr.song-row'); //TODO is this part even necessary. I think soooo
+            
             for (var i = 0; i < songs.length; i++)
             {
                 var track = songs[i];
-                var trackTitle = track.querySelector('td[data-col="title"] .content').textContent;
+                var index = track.querySelector('td[data-col="index"] .content').textContent;
+                var title = track.querySelector('td[data-col="title"] .content').textContent;
+                var duration= track.querySelector('td[data-col="duration"]').textContent;
+                var artist = track.querySelector('td[data-col="artist"] .content').textContent;
+                var album = track.querySelector('td[data-col="album"] .content').textContent;
                 
-                //TODO: Definitely needs to be addressed. 
-                    //If a playlist has duplicate tracks, this extension will not work properly. Need to have some kind of check/warning for duplicates.
-                    //Could possibly bypass this if we have a different way of seeing if we're at the bottom of the window
-                    //Also, may be able to leverage the track number to work around this (those can't be duplicate). Instead of an array, maybe we have a kvp list.
-                    //Also, this will be especially problematic for when there are different songs with the same name. 
-                if (TrackList.indexOf(trackTitle) < 0)
-                {
-                   TrackList.push(trackTitle); 
-                }
+                var trackObject = { index, title, duration, artist, album };
+                
+                AddSongToTrackList(TrackList, trackObject);
             }
             
             songs[songs.length-1].scrollIntoView(true); 
@@ -159,4 +160,23 @@ function ListSongs(trackCount, callback)
         }, 
         500
     );
+}
+
+function AddSongToTrackList(list, trackObject) 
+{
+    var duplicate = false;
+    var i = list.length;
+    while (i--) 
+    {
+       if (list[i].index === trackObject.index) //TODO: should have error checking
+       {
+           duplicate = true;
+           break;
+       }
+    }
+    
+    if (!duplicate)
+    {
+        TrackList.push(trackObject);
+    }
 }

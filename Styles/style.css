@@ -15,7 +15,8 @@ body {
 	text-align: center;
 	overflow: hidden;
 	min-width: 100px;
-	margin: 20px;	
+	margin: 20px;
+	background-color: powderblue;	
 }
 
 #playlistName {
@@ -37,6 +38,8 @@ body {
 
 #trackLists {
 	text-align: left;
+	background-color: #484848;
+	padding: 20px;
 }
 
 .trackList {
@@ -45,9 +48,19 @@ body {
 	min-width: 250px;
 	max-width: 450px;
 	overflow-y: scroll;
-	min-height: 50px;
+	min-height: 100px;
 	max-height: 600px;
 	text-align: left;
+	
+	font-family: 'Gill Sans', Optima, "Segoe UI";
+	font-size: 20px;
+	color: green;
+	background-color: #484848;
+	border: 0px Scrollbar black;
+}
+
+#tracksRemovedList {
+	color: red;
 }
 
 #buttonComparePlaylist {

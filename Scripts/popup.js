@@ -33,8 +33,8 @@ chrome.storage.onChanged.addListener
 				}
 				
 				console.log('The track list of playlist "%s" has changed.', playlistName);
+				PrintList(storageChange.newValue);
 				CompareTrackLists(storageChange.newValue, storageChange.oldValue);
-				//PrintTrackList(storageChange.newValue); //TODO: Do we want to print the list even if it hasn't changed? Do we even want to print the list?
 			}
 		
 
@@ -45,7 +45,7 @@ chrome.storage.onChanged.addListener
 
 //TODO: Differentiate content script methods from similarly named Popup methods
 
-function Start()
+function Start() //TODO: What happens when the user changes the page without reloading the popup. is that possible?
 {
 	document.getElementById('buttonComparePlaylist').onclick = GetSongList;
 	
@@ -127,7 +127,7 @@ function PrintList(list)
 {
     for (var i = 0; i < list.length; i++)
     {
-        console.log(list[i]);
+        console.log(list[i].index + " " + list[i].title);
     }
 }
 
@@ -159,16 +159,24 @@ function CompareTrackCount(trackCount)
 }
 */
 
-function CompareTrackLists(latest, previous)
-{
+function CompareTrackLists(latest, previous) //TODO: Need to compare more than just the song titles now
+{	
+	//TODO: should have error checking
+	
 	for (var i = latest.length-1; i >= 0; i--)
 	{
 		for (var j = previous.length-1; j >= 0; j--)
 		{
-			if (latest[i] != null && previous[j] != null && latest[i] === previous[j])
+			if (latest[i] != null && previous[j] != null && latest[i].title === previous[j].title && latest[i].album === previous[j].album)
 			{
 				latest[i] = null; //TODO: this will mess up the list if we do this before printing it.
 				previous[j] = null;
+				
+				//TODO: Still have a duplicate problem. If the playlist intentionally has an actual duplicate track, this comparison might not work.
+					//Might get around this by breaking after setting to null here. Each track can only match up with one other track.
+					//This way the duplicates might not be matched with their exact correct pair (if for some reason the playlist was re-arranged) but that shouldn't really matter. 
+					//Actually should break anyway cause once latest[i] is null it's just gonna spin through the rest of the loop and do nothing. 
+					//And because of the null set or break, this shouldn't be an issue after all. 
 			}
 		}
 	}
@@ -179,8 +187,8 @@ function CompareTrackLists(latest, previous)
 	{
 		if (latest[i] != null)
 		{
-			tracksAdded.push(i+1 + " " + latest[i]);
-			console.log("Track Added: " + latest[i]);
+			tracksAdded.push(i+1 + " " + latest[i].title);
+			console.log("Track Added: %s %s", i+1, latest[i].title);
 		}
 	}
 	
@@ -193,8 +201,8 @@ function CompareTrackLists(latest, previous)
 	{
 		if (previous[j] != null)
 		{
-			tracksRemoved.push(j+1 + " " + previous[j]);
-			console.log("Track Removed: " + previous[j]);
+			tracksRemoved.push(j+1 + " " + previous[j].title);
+			console.log("Track Removed: %s %s", j+1, previous[j].title);
 		}
 	}
 	
