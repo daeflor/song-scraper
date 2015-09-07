@@ -27,13 +27,14 @@ chrome.storage.onChanged.addListener
 				
 				if (storageChange.oldValue == undefined)
 				{
-					console.log('First time saving data for playlist "%s".', playlistName);
+					RenderStatus('First time saving data for playlist ' + playlistName + '.');
+					//TODO: Will want to print this and NOT show the empty tracklists
 					return;
 				}
 				
 				console.log('The track list of playlist "%s" has changed.', playlistName);
-				//CompareTrackLists(storageChange.newValue, storageChange.oldValue);
-				PrintTrackList(storageChange.newValue); //TODO: Do we want to print the list even if it hasn't changed? Do we even want to print the list?
+				CompareTrackLists(storageChange.newValue, storageChange.oldValue);
+				//PrintTrackList(storageChange.newValue); //TODO: Do we want to print the list even if it hasn't changed? Do we even want to print the list?
 			}
 		
 
@@ -46,7 +47,7 @@ chrome.storage.onChanged.addListener
 
 function Start()
 {
-	document.getElementById('button').onclick = GetSongList;
+	document.getElementById('buttonComparePlaylist').onclick = GetSongList;
 	
 	chrome.tabs.query
 	(
@@ -54,9 +55,9 @@ function Start()
 		function (tabs) 
 		{
 			var playlistName = tabs[0].title.split(' - Google Play Music')[0];
-			console.log('Playlist Name: ' + playlistName);
-			document.getElementById('playlistName').textContent = document.getElementById('playlistName').textContent + playlistName; 
-			//TODO: Eventually we'll split this into tables or headers or something pretty, and it won't all be one string.	
+			//console.log('Playlist Name: ' + playlistName);
+			document.getElementById('playlistName').textContent = playlistName; 
+			document.getElementById('status').hidden = true; 
 			
 			TrackCountKey = playlistName + '_TrackCount';	
 			
@@ -88,7 +89,7 @@ function GetCurrentTrackCount()
 
 function GetSongList()
 {
-	document.getElementById('button').disabled = true;
+	document.getElementById('buttonComparePlaylist').disabled = true;
 	chrome.tabs.query(
 		{active: true, currentWindow: true}, 
 		function(tabs) 
@@ -101,13 +102,17 @@ function GetSongList()
 				{
 					RenderStatus('Acquired Song List');
 					console.log(response);
-					//PrintTrackList(response);
-					document.getElementById('button').disabled = false;
+					document.getElementById('buttonComparePlaylist').disabled = false;
+					document.getElementById('tracksAdded').hidden = false;
+					document.getElementById('tracksRemoved').hidden = false;
+					//TODO: May look better to just print a 'no tracks added or removed message'.
 				}
 			);
-		});
+		}
+	);
 }
 
+/*
 function PrintTrackList(list)
 {
     for (var i = 0; i < list.length; i++)
@@ -116,7 +121,7 @@ function PrintTrackList(list)
         console.log(list[i]);
     }
 	document.getElementById('trackList').textContent = list.join('\n');
-}
+}*/
 
 function PrintList(list)
 {
@@ -130,6 +135,8 @@ function RenderStatus(statusText)
 {
 	document.getElementById('status').textContent = statusText;
 	console.log(statusText);
+	document.getElementById('status').hidden = false;
+	//TODO: probably don't really want to be using this anymore
 }
 /*
 function CompareTrackCount(trackCount)
@@ -166,23 +173,36 @@ function CompareTrackLists(latest, previous)
 		}
 	}
 	
-	console.log('New Tracks Added:');
+	var tracksAdded = [];
 	
 	for (var i = 0; i < latest.length; i++)
 	{
 		if (latest[i] != null)
-			{
-				console.log(latest[i]);
-			}
+		{
+			tracksAdded.push(i+1 + " " + latest[i]);
+			console.log("Track Added: " + latest[i]);
+		}
 	}
 	
-	console.log('Tracks Removed: ');
+	//document.getElementById('tracksAddedList').textContent = tracksAdded.join('\n');	
+	PrintListToTextArea(document.getElementById('tracksAddedList'), tracksAdded);
+	
+	var tracksRemoved = [];
 	
 	for (var j = 0; j < previous.length; j++)
 	{
 		if (previous[j] != null)
-			{
-				console.log(previous[j]);
-			}
+		{
+			tracksRemoved.push(j+1 + " " + previous[j]);
+			console.log("Track Removed: " + previous[j]);
+		}
 	}
+	
+	//document.getElementById('tracksRemovedList').textContent = tracksRemoved.join('\n');	
+	PrintListToTextArea(document.getElementById('tracksRemovedList'), tracksRemoved);
+}
+
+function PrintListToTextArea(textArea, list)
+{
+   	textArea.textContent = list.join('\n');
 }

@@ -17,11 +17,23 @@
     <script src="Scripts/popup.js"></script>
   </head>
   <body> 
-    <div id="status"></div>
-    <div id="playlistName">Playlist Name: </div>
-    <div id="trackCount">Track Count: </div>
-    <button id="button" type="button">Save List</button>
-    <textarea id="trackList">Track List: </textarea>
+    <div id="playlistName"></div>
+    <div id="playlistInfo">
+      <div id="trackCount">Track Count: </div>
+      <button id="buttonComparePlaylist" type="button">Compare Playlist</button>
+    </div>
+    <div id="status">Loading...</div>
+    <div id="trackLists">
+      <div id="tracksAdded" hidden=true>
+        <p>Tracks Added</p>
+        <textarea id="tracksAddedList" class="trackList">No new tracks added.</textarea>
+      </div> 
+      <div id="tracksRemoved" hidden=true>
+        <p>Tracks Removed</p>
+        <textarea id="tracksRemovedList" class="trackList">No tracks removed.</textarea>
+      </div> 
+    </div>   
+    <!--<textarea id="trackList">Track List: </textarea>-->
   </body>
 </html>
 
@@ -37,3 +49,4 @@
   - Area to show removed tracks
   - (Optional) Could consider showing artist and album info for removed/songs, and making it copy/paste-able
   --->
+ 

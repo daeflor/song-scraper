@@ -66,6 +66,7 @@ chrome.runtime.onMessage.addListener
                     
                     console.log('Saved track count "%s" under key "%s"', trackCount, key);
                     sendResponse(trackCount);
+                    //TODO: Have better error messaging for if/when this is returning undefined. 
                 }
             );
         }
@@ -76,7 +77,7 @@ chrome.runtime.onMessage.addListener
   
 function GetPlaylistName()
 {
-    return document.title.split(' - Google Play Music')[0];
+    return document.title.split(' - Google Play Music')[0]; //TODO: We should first verify that the current tab is a google music playlist tab. We already sort of have code for this in another extension. 
 }
   
 function GetTrackCount()
@@ -135,9 +136,11 @@ function ListSongs(trackCount, callback)
                 var track = songs[i];
                 var trackTitle = track.querySelector('td[data-col="title"] .content').textContent;
                 
-                //TODO: If a playlist has duplicate tracks, this extension will not work properly. Need to have some kind of check/warning for duplicates.
+                //TODO: Definitely needs to be addressed. 
+                    //If a playlist has duplicate tracks, this extension will not work properly. Need to have some kind of check/warning for duplicates.
                     //Could possibly bypass this if we have a different way of seeing if we're at the bottom of the window
                     //Also, may be able to leverage the track number to work around this (those can't be duplicate). Instead of an array, maybe we have a kvp list.
+                    //Also, this will be especially problematic for when there are different songs with the same name. 
                 if (TrackList.indexOf(trackTitle) < 0)
                 {
                    TrackList.push(trackTitle); 
