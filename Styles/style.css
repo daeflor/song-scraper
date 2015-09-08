@@ -3,14 +3,14 @@ body {
     font-size: 100%;
 	font-style: normal;
 	font-size: 16px;
-	min-width: 300px;
+	min-width: 330px;
 	max-width: 600px;
 	background-color: #383838;
 	color: #FFCC66;
+	/*max-height: 800px; //TODO: Figure out how to make the window not scroll and just get bigger*/
 }
 
 #status {
-	/* avoid an excessively wide status text */
 	font-size: 24px;
 	text-align: center;
 	overflow: hidden;
@@ -37,6 +37,14 @@ body {
 	text-align: center;
 }
 
+#trackCountSubtext{
+	color: #333029;
+	padding: 10px;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	background-color: #FFCC66;
+}
+
 #trackLists {
 	text-align: left;
 	background-color: #484848;
@@ -56,8 +64,10 @@ body {
 	font-family: 'Gill Sans', Optima, "Segoe UI";
 	font-size: 20px;
 	color: green;
-	background-color: #484848;
-	border: 0px Scrollbar black;
+	background-color: #505050;
+	/*border: 0px Scrollbar black;*/
+	border: none;
+	resize: none;
 }
 
 #tracksRemovedList {

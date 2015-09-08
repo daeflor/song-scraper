@@ -19,11 +19,13 @@
   <body> 
     <div id="playlistName"></div>
     <div id="playlistInfo">
-      <div id="trackCount">Track Count: </div> <!--Have a sub section (for description) and a separate trackCount difference section-->
-      <button id="buttonComparePlaylist" type="button">Compare Playlist</button> <!--TODO Maybe call it Compare and Save (as an example)-->
+      <div id="trackCount">Track Count: </div> <!--TODO: Have a separate trackCount difference section-->
+      <div id="trackCountDifference"></div>
+      <div id="trackCountSubtext" hidden=true></div>
+      <button id="buttonComparePlaylist" type="button">Compare & Save Playlist</button> 
     </div>
     <div id="status">Loading...</div>
-    <div id="trackLists">
+    <div id="trackLists" hidden=true>
       <div id="tracksAdded" hidden=true>
         <p>Tracks Added</p>
         <textarea id="tracksAddedList" class="trackList">No new tracks added.</textarea>
@@ -33,7 +35,6 @@
         <textarea id="tracksRemovedList" class="trackList">No tracks removed.</textarea>
       </div> 
     </div>   
-    <!--<textarea id="trackList">Track List: </textarea>-->
   </body>
 </html>
 

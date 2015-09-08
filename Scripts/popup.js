@@ -84,7 +84,7 @@ function GetCurrentTrackCount(callback)
 	);
 }
 
-function GetPreviousTrackCount(key, callback) //TODO: cannot get this length if the key does not exist. Error checking. 
+function GetPreviousTrackCount(key, callback)
 {
 	chrome.storage.local.get
 	(
@@ -128,8 +128,12 @@ function GetSongList()
 					document.getElementById('buttonComparePlaylist').disabled = false;
 					document.getElementById('tracksAdded').hidden = false;
 					document.getElementById('tracksRemoved').hidden = false;
+					document.getElementById('trackLists').hidden = false;
+					document.getElementById('trackCountSubtext').hidden = true;
 					//TODO: May look better to just print a 'no tracks added or removed message'.
 						//Often there may be some added but none removed, or vice versa. Bear that in mind
+						//I think make the text areas not areas, just print all the tracks added or removed under their respective section. There shouldnt be sooo many that the lists are very long.. 
+						//although sometimes albums will be added at a time. Maybe we just need to make the text areas prettier, if that's an option. 
 				}
 			);
 		}
@@ -153,10 +157,12 @@ function CompareTrackCounts(playlistName)
 					
 					if (previousTrackCount == null)
 					{
+						console.log('nasty skanks');
 						document.getElementById('trackCount').textContent = trackCountText;
+						document.getElementById('trackCountSubtext').hidden = false;
+						document.getElementById('trackCountSubtext').textContent = 'This playlist does not seem to be stored yet. It is recommended to save it now.';
 						return;
-						//TODO may want to just return here and skip everything else, depending how we want to present this in the UI
-						//TODO add sub text (decription) about this likely being the first time the current playlist is being inspected (and that is hasn't been saved yet).
+						//TODO finish implementig how the track count difference should be displayed
 					}
 					
 					console.log('Playlist "%s" previously had %s tracks, and now has %s tracks.', playlistName, previousTrackCount, trackCount);
@@ -166,10 +172,17 @@ function CompareTrackCounts(playlistName)
 					if (difference < 0)
 					{
 						trackCountText = 'Track Count: ' + trackCount + ' (' + difference + ')';
+						document.getElementById('trackCountSubtext').hidden = false;
+						document.getElementById('trackCountSubtext').style.backgroundColor = '#ff0000';
+						document.getElementById('trackCountSubtext').textContent = 'This playlist\'s track count has decreased. It is recommended to compare and save it now.';
 					}
 					else if (difference > 0)
 					{
 						trackCountText = 'Track Count: ' + trackCount + ' (+ ' + difference + ')';
+						document.getElementById('trackCountSubtext').hidden = false;
+						//document.getElementById('trackCountSubtext').style.color = '#00ff00';
+						//document.getElementById('trackCountSubtext').style.backgroundColor = '#FFFFCC';
+						document.getElementById('trackCountSubtext').textContent = 'This playlist\'s track count has increased. It is recommended to save it now.';
 					}
 					
 					//TODO should inform the user if the track count has changed at all (even if it increased), to recommend they save/compare the differences. 
@@ -181,7 +194,7 @@ function CompareTrackCounts(playlistName)
 	);
 }
 
-function CompareTrackLists(latest, previous) //TODO: Need to compare more than just the song titles now
+function CompareTrackLists(latest, previous) 
 {	
 	//TODO: should have error checking
 	
@@ -246,3 +259,5 @@ function RenderStatus(statusText)
 	document.getElementById('status').hidden = false;
 	//TODO: probably don't really want to be using this anymore
 }
+
+//TODO: Future: Consider feature which suggests listening to one of the albums/tracks in the 'test' playlists. 
