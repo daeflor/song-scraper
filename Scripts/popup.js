@@ -1,6 +1,6 @@
 /* global key */
 /* global chrome */
-var TrackCountKey = null; //TODO: use keys for all get/set methods
+//TODO: use keys for all get/set methods
 
 document.addEventListener('DOMContentLoaded', Start);
 
@@ -11,15 +11,6 @@ chrome.storage.onChanged.addListener
 		for (key in changes) 
 		{
 			var storageChange = changes[key];
-			console.log
-			(
-				'Storage key "%s" in namespace "%s" changed. ' +
-				'Old value was "%s", new value is "%s".',
-				key,
-				namespace,
-				storageChange.oldValue,
-				storageChange.newValue
-			);
 
 			if (key.indexOf('_TrackList') > -1) 
 			{
@@ -32,9 +23,18 @@ chrome.storage.onChanged.addListener
 					return;
 				}
 				
-				console.log('The track list of playlist "%s" has changed.', playlistName);
+				console.log('Playlist "%s" has changed. It previously had %s tracks, and now has %s tracks.', playlistName, storageChange.oldValue.length, storageChange.newValue.length);
+				//console.log('The track list of playlist "%s" has changed.', playlistName);
 				//PrintList(storageChange.newValue);
 				CompareTrackLists(storageChange.newValue, storageChange.oldValue);
+			}
+			else
+			{
+				console.log
+				(
+					'Storage key "%s" in namespace "%s" changed. Old value was "%s", new value is "%s".',
+					key, namespace, storageChange.oldValue, storageChange.newValue
+				);
 			}
 		
 
@@ -52,21 +52,19 @@ function Start() //TODO: What happens when the user changes the page without rel
 	chrome.tabs.query
 	(
 		{active: true, currentWindow: true}, 
-		function (tabs) 
+		function(tabs) 
 		{
 			var playlistName = tabs[0].title.split(' - Google Play Music')[0];
 			//console.log('Playlist Name: ' + playlistName);
 			document.getElementById('playlistName').textContent = playlistName; 
 			document.getElementById('status').hidden = true; 
 			
-			TrackCountKey = playlistName + '_TrackCount';	
-			
-			GetCurrentTrackCount();
+			CompareTrackCounts(playlistName);
 		}
 	);
 }
 
-function GetCurrentTrackCount()
+function GetCurrentTrackCount(callback)
 {	
 	chrome.tabs.query
 	(
@@ -79,10 +77,35 @@ function GetCurrentTrackCount()
 				{greeting: 'GetTrackCount'}, 
 				function(response) 
 				{
-					console.log('Acquired Track Count: ' + response);
-					document.getElementById('trackCount').textContent = document.getElementById('trackCount').textContent + response;
+					callback(response);
 				}
 			);
+		}
+	);
+}
+
+function GetPreviousTrackCount(key, callback) //TODO: cannot get this length if the key does not exist. Error checking. 
+{
+	chrome.storage.local.get
+	(
+		key, //TODO: could use error checking
+		function(result)
+		{
+			if(chrome.runtime.lastError)
+			{
+				console.log('ERROR: ' + chrome.runtime.lastError.message);
+				return;
+			}
+			
+			if (result[key] == undefined)
+			{
+				console.log('There is currently no track list saved under key "%s"', key);
+				callback(null);
+			}
+			else
+			{
+				callback(result[key].length); 
+			}
 		}
 	);
 }
@@ -106,47 +129,57 @@ function GetSongList()
 					document.getElementById('tracksAdded').hidden = false;
 					document.getElementById('tracksRemoved').hidden = false;
 					//TODO: May look better to just print a 'no tracks added or removed message'.
+						//Often there may be some added but none removed, or vice versa. Bear that in mind
 				}
 			);
 		}
 	);
 }
 
-function PrintList(list)
+function CompareTrackCounts(playlistName)
 {
-    for (var i = 0; i < list.length; i++)
-    {
-        console.log(list[i].index + " " + list[i].title);
-    }
-}
-
-function RenderStatus(statusText) 
-{
-	document.getElementById('status').textContent = statusText;
-	console.log(statusText);
-	document.getElementById('status').hidden = false;
-	//TODO: probably don't really want to be using this anymore
-}
-/*
-function CompareTrackCount(trackCount)
-{
-	chrome.storage.local.get
+	GetCurrentTrackCount
 	(
-		LatestTrackCountKey, //TODO: obviously this needs to change, because right now it's comparing LATEST to LATEST. We're not properly saving the previous count anymore/currently
-		function(result)
-		{
-			if(chrome.runtime.lastError)
-			{
-				console.log('ERROR: ' + chrome.runtime.lastError.message);
-				return;
-			}
-			//String renderText = ("The LATEST track count (storage) is {0}, and the LATEST track count (actual) is {1}. Duh.", result[LatestTrackCountKey], trackCount);
-			//RenderStatus(renderText);
-			console.log('The LATEST track count (storage) is {0}, and the LATEST track count (actual) is {1}. Duh.', result[LatestTrackCountKey], trackCount);
-		}
+		function(trackCount)
+		{			
+			var trackListKey = playlistName + '_TrackList';	
+					
+			GetPreviousTrackCount
+			(
+				trackListKey,
+				function(previousTrackCount)
+				{
+					var trackCountText = 'Track Count: ' + trackCount;
+					
+					if (previousTrackCount == null)
+					{
+						document.getElementById('trackCount').textContent = trackCountText;
+						return;
+						//TODO may want to just return here and skip everything else, depending how we want to present this in the UI
+						//TODO add sub text (decription) about this likely being the first time the current playlist is being inspected (and that is hasn't been saved yet).
+					}
+					
+					console.log('Playlist "%s" previously had %s tracks, and now has %s tracks.', playlistName, previousTrackCount, trackCount);
+		
+					var difference = trackCount - previousTrackCount;
+			
+					if (difference < 0)
+					{
+						trackCountText = 'Track Count: ' + trackCount + ' (' + difference + ')';
+					}
+					else if (difference > 0)
+					{
+						trackCountText = 'Track Count: ' + trackCount + ' (+ ' + difference + ')';
+					}
+					
+					//TODO should inform the user if the track count has changed at all (even if it increased), to recommend they save/compare the differences. 
+					
+					document.getElementById('trackCount').textContent = trackCountText;
+				}	
+			);
+		}			
 	);
 }
-*/
 
 function CompareTrackLists(latest, previous) //TODO: Need to compare more than just the song titles now
 {	
@@ -177,7 +210,6 @@ function CompareTrackLists(latest, previous) //TODO: Need to compare more than j
 		}
 	}
 	
-	//document.getElementById('tracksAddedList').textContent = tracksAdded.join('\n');	
 	PrintListToTextArea(document.getElementById('tracksAddedList'), tracksAdded);
 	
 	var tracksRemoved = [];
@@ -191,11 +223,26 @@ function CompareTrackLists(latest, previous) //TODO: Need to compare more than j
 		}
 	}
 	
-	//document.getElementById('tracksRemovedList').textContent = tracksRemoved.join('\n');	
 	PrintListToTextArea(document.getElementById('tracksRemovedList'), tracksRemoved);
 }
 
 function PrintListToTextArea(textArea, list)
 {
    	textArea.textContent = list.join('\n');
+}
+
+function PrintList(list)
+{
+    for (var i = 0; i < list.length; i++)
+    {
+        console.log(list[i].index + " " + list[i].title);
+    }
+}
+
+function RenderStatus(statusText) 
+{
+	document.getElementById('status').textContent = statusText;
+	console.log(statusText);
+	document.getElementById('status').hidden = false;
+	//TODO: probably don't really want to be using this anymore
 }

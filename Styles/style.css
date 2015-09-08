@@ -4,7 +4,7 @@ body {
 	font-style: normal;
 	font-size: 16px;
 	min-width: 300px;
-	max-width: 500px;
+	max-width: 600px;
 	background-color: #383838;
 	color: #FFCC66;
 }
@@ -25,6 +25,7 @@ body {
 	background-color: #303030;
 	color: #FFCC66;
 	padding: 20px;
+	white-space: nowrap;
 }
 
 #trackCount {

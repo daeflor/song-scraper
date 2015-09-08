@@ -47,30 +47,7 @@ chrome.runtime.onMessage.addListener
         }
         else if (request.greeting == 'GetTrackCount')
         {   
-            var key = GetPlaylistName() + '_TrackCount';
-            var trackCount = GetTrackCount();
-            var trackCountStorageObject= {};
-            trackCountStorageObject[key] = trackCount;
-            
-            //TODO: It may make more sense to only store the trackcount when the track list gets updated. 
-                //Otherwise, the track count and number of songs in the track list could get out of sync, which could be confusing.
-                //Could also compare current track count to the length of the stored track list, and not store the trackcount at all. 
-            chrome.storage.local.set
-            (
-                trackCountStorageObject, 
-                function()
-                {
-                    if(chrome.runtime.lastError)
-                    {
-                        console.log('ERROR: ' + chrome.runtime.lastError.message);
-                        return;
-                    }
-                    
-                    console.log('Saved track count "%s" under key "%s"', trackCount, key);
-                    sendResponse(trackCount);
-                    //TODO: Have better error messaging for if/when this is returning undefined. 
-                }
-            );
+            sendResponse(GetTrackCount());
         }
         
         return true;
