@@ -71,7 +71,7 @@ function ScrollToTrackCount()
 function GetTracks(callback)
 {
     ScrollToTrackCount();  
-	setTimeout(ListSongs(callback), 600);
+	setTimeout(ListSongs(callback), 500);
 }
 
 function ListSongs(callback)
@@ -111,7 +111,7 @@ function ListSongs(callback)
                 callback();
             }
         }, 
-        500
+        300
     );
 }
 

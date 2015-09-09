@@ -17,25 +17,29 @@
     <script src="Scripts/popup.js"></script>
   </head>
   <body> 
-    <div id="playlistName"></div>
-    <div id="playlistInfo">
-      <div id="trackCountInfo">
-            <p id="trackCountValue"></p>
-      </div> <!--TODO: Could have a separate trackCount difference section-->
-      <div id="trackCountSubtext" hidden=true></div>
-      <button id="buttonComparePlaylist" type="button">Compare & Save Playlist</button> 
-    </div>
-    <div id="status">Loading...</div>
-    <div id="trackLists" hidden=true>
-      <div id="tracksAdded" hidden=true>
-        <p>Tracks Added</p>
-        <textarea id="tracksAddedList" class="trackList">No new tracks added.</textarea>
-      </div> 
-      <div id="tracksRemoved" hidden=true>
-        <p>Tracks Removed</p>
-        <textarea id="tracksRemovedList" class="trackList">No tracks removed.</textarea>
-      </div> 
-    </div>   
+    <div id='popup'> <!--TODO should have consistent quotes usage-->
+      <div id="playlistName"></div>
+      <div id="playlistInfo">
+        <div id="trackCountInfo">
+              <p id="trackCountValue"></p>
+        </div> <!--TODO: Could have a separate trackCount difference section-->
+        <div id="trackCountSubtext" hidden=true></div>
+        <button id="buttonComparePlaylist" type="button">Compare & Save Playlist</button> 
+      </div>
+      <div id="status">Loading...</div>
+      <div id="trackLists" hidden=true>
+        <div id="tracksAdded">
+          <p>Tracks Added</p>
+          <p id='tracksAddedEmpty' class="indent">- No new tracks added.</p>
+          <textarea id="tracksAddedList" class="trackList" hidden=true></textarea>
+        </div> 
+        <div id="tracksRemoved">
+          <p style="color:#ff0000">Tracks Removed</p>
+          <p id='tracksRemovedEmpty' class="indent">- No tracks removed.</p>
+          <textarea id="tracksRemovedList" class="trackList" hidden=true></textarea>
+        </div> 
+      </div>  <!--TODO: Need wayy better naming of divs-->
+    </div> 
   </body>
 </html>
 

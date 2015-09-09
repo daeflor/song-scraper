@@ -60,31 +60,44 @@ body {
 
 #trackLists {
 	text-align: left;
-	background-color: #484848;
+	/*background-color: #484848;*/
 	padding: 20px;
+	font-size: 20px;
+	color: #339933;
 }
 
 .trackList {
 	text-overflow: ellipsis;
 	overflow: hidden;
-	min-width: 250px;
-	max-width: 450px;
+	min-width: 100%;
+	/*max-width: 500px;*/
 	overflow-y: scroll;
-	min-height: 100px;
-	max-height: 600px;
-	text-align: left;
-	
-	font-family: 'Gill Sans', Optima, "Segoe UI";
-	font-size: 20px;
-	color: green;
-	background-color: #505050;
-	/*border: 0px Scrollbar black;*/
+	min-height: 50px;
+	max-height: 300px;
+	text-align: left;	
+	font-family: Optima, "Segoe UI";
+	font-size: 16px;
+	/*color: green;*/
+	color: antiquewhite;
+	background-color: #404040;
 	border: none;
 	resize: none;
 }
 
-#tracksRemovedList {
+#tracksAdded {
+	margin-bottom: 40px;
+}
+
+/*
+#tracksAddedList {
 	color: red;
+}
+*/
+
+.indent {
+	padding-left: 20px;
+	color: antiquewhite;
+	font-size: 16px;
 }
 
 #buttonComparePlaylist {

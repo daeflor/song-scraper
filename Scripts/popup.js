@@ -107,7 +107,7 @@ function GetPreviousTrackCount(key, callback)
 	);
 }
 
-function GetSongList()
+function GetSongList() //TODO: Are we handling properly if the button is pressed a second time? Elements hiding and displaying, for example. 
 {
 	document.getElementById('buttonComparePlaylist').disabled = true;
 	chrome.tabs.query(
@@ -120,17 +120,19 @@ function GetSongList()
 				{greeting: 'GetSongList'}, 
 				function(response) 
 				{
-					RenderStatus('Acquired Song List');
 					console.log(response);
-					document.getElementById('buttonComparePlaylist').disabled = false;
-					document.getElementById('tracksAdded').hidden = false;
-					document.getElementById('tracksRemoved').hidden = false;
-					document.getElementById('trackLists').hidden = false;
-					document.getElementById('trackCountSubtext').hidden = true;
-					//TODO: May look better to just print a 'no tracks added or removed message'.
-						//Often there may be some added but none removed, or vice versa. Bear that in mind
-						//I think make the text areas not areas, just print all the tracks added or removed under their respective section. There shouldnt be sooo many that the lists are very long.. 
-						//although sometimes albums will be added at a time. Maybe we just need to make the text areas prettier, if that's an option. 
+					
+					FadeTransition
+					(
+						function()
+						{
+							document.getElementById('buttonComparePlaylist').disabled = false;
+							document.getElementById('trackLists').hidden = false;
+							document.getElementById('trackCountSubtext').hidden = true;
+							//TODO: I think make the text areas not areas, just print all the tracks added or removed under their respective section. There shouldnt be sooo many that the lists are very long.. 
+								//although sometimes albums will be added at a time. Maybe we just need to make the text areas prettier, if that's an option. 
+						}
+					);	
 				}
 			);
 		}
@@ -161,7 +163,7 @@ function CompareTrackCounts(playlistName)
 						trackCountSubtext.textContent = 'This playlist does not seem to be stored yet. It is recommended to save it now.';
 
 						//trackCountSubtext.className = 'withfadeout';
-						trackCountSubtext.className = 'skank';
+						//trackCountSubtext.style.opacity = 0.2;
 						return;
 					}
 					
@@ -191,8 +193,10 @@ function CompareTrackCounts(playlistName)
 	);
 }
 
-function CompareTrackLists(latest, previous) 
+function CompareTrackLists(latest, previous)  //TODO what happens if you remove and add the same tracks? It should just work, but test it.
 {	
+	//TODO: The displayed track count should be updated
+	
 	//TODO: Error checking needed
 	
 	for (var i = latest.length-1; i >= 0; i--)
@@ -220,8 +224,13 @@ function CompareTrackLists(latest, previous)
 		}
 	}
 	
-	PrintListToTextArea(document.getElementById('tracksAddedList'), tracksAdded);
-	
+	if (tracksAdded.length > 0)
+	{
+		PrintListToTextArea(document.getElementById('tracksAddedList'), tracksAdded);
+		document.getElementById('tracksAddedList').hidden = false;
+		document.getElementById('tracksAddedEmpty').hidden = true;
+	}
+
 	var tracksRemoved = [];
 	
 	for (var j = 0; j < previous.length; j++)
@@ -233,7 +242,12 @@ function CompareTrackLists(latest, previous)
 		}
 	}
 	
-	PrintListToTextArea(document.getElementById('tracksRemovedList'), tracksRemoved);
+	if (tracksRemoved.length > 0)
+	{
+		document.getElementById('tracksRemovedList').hidden = false;
+		PrintListToTextArea(document.getElementById('tracksRemovedList'), tracksRemoved);
+		document.getElementById('tracksRemovedEmpty').hidden = true;
+	}
 }
 
 function PrintListToTextArea(textArea, list)
@@ -249,6 +263,85 @@ function PrintList(list)
     }
 }
 
+function FadeTransition(callback) 
+{
+	FadeOut
+	(	
+		document.getElementById('popup'),
+		function()
+		{
+			callback();
+			FadeIn
+			(
+				document.getElementById('popup'), 
+				function()
+				{
+					console.log("Fade transition complete."); //TODO maybe make this an optional parameter since we don't really need it. 
+				}
+			);
+
+		}
+	);	
+}
+
+function FadeOut(element, callback) //TODO: Error checking needed
+{
+	var targetOpacity = 1;
+	var fadeInterval = setInterval
+	(
+		function()
+		{
+			element.style.opacity = targetOpacity;
+			//console.log("target opacity " + targetOpacity);
+			
+			if (targetOpacity == 0)
+            {
+                clearInterval(fadeInterval);
+                //console.log('Finished fading out.');
+                callback();
+            }	
+			else if (targetOpacity < 0)
+			{
+				targetOpacity = 0;
+			}
+			else
+			{
+				targetOpacity -= 0.1;
+			}
+		},
+		60
+	);
+}
+
+function FadeIn(element, callback)
+{
+	var targetOpacity = 0;
+	var fadeInterval = setInterval
+	(
+		function()
+		{
+			element.style.opacity = targetOpacity;
+			//console.log("target opacity " + targetOpacity);
+			
+			if (targetOpacity == 1)
+            {
+                clearInterval(fadeInterval);
+                //console.log('Finished fading in.');
+                callback();
+            }	
+			else if (targetOpacity > 1)
+			{
+				targetOpacity = 1;
+			}
+			else
+			{
+				targetOpacity += 0.1;
+			}
+		},
+		60
+	);
+}
+
 function RenderStatus(statusText) 
 {
 	document.getElementById('status').textContent = statusText;
@@ -257,5 +350,6 @@ function RenderStatus(statusText)
 	//TODO: probably don't really want to be using this anymore
 }
 
+//TODO: Future: Progress bar
 //TODO: Future: Consider feature which suggests listening to one of the albums/tracks in the 'test' playlists. 
 //TODO: Unit tests?
