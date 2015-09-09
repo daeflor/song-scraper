@@ -38,7 +38,6 @@ chrome.runtime.onMessage.addListener
                                 return;
                             }
                             
-                            //console.log("Saved tracklist under: " + TrackListKey);
                             sendResponse({farewell: request.greeting + '- Result: Saved tracklist under: ' + TrackListKey});
                         }
                     );
@@ -72,7 +71,7 @@ function ScrollToTrackCount()
 function GetTracks(callback)
 {
     ScrollToTrackCount();  
-	setTimeout(ListSongs(callback), 750);
+	setTimeout(ListSongs(callback), 600);
 }
 
 function ListSongs(callback)
@@ -86,7 +85,7 @@ function ListSongs(callback)
         function()
         {            
             //console.log("TrackList count: " + TrackList.length); 
-            var songs = document.querySelectorAll('table.song-table tbody tr.song-row'); //TODO is this part even necessary. I think soooo
+            var songs = document.querySelectorAll('table.song-table tbody tr.song-row');
             
             for (var i = 0; i < songs.length; i++)
             {
@@ -123,7 +122,7 @@ function AddSongToTrackList(list, trackObject)
     
     while (i--) 
     {
-       if (list[i].index === trackObject.index) //TODO: should have error checking
+       if (list[i].index === trackObject.index) //TODO: Error checking needed
        {
            duplicate = true;
            break;

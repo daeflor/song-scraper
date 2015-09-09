@@ -9,6 +9,20 @@ body {
 	color: #FFCC66;
 	/*max-height: 800px; //TODO: Figure out how to make the window not scroll and just get bigger*/
 }
+/*
+.withfadeout {
+  -webkit-transition: all 1s ease-in-out;
+  -moz-transition: all 1s ease-in-out;
+  -ms-transition: all 1s ease-in-out;
+  -o-transition: all 1s ease-in-out;
+  transition: all 1s ease-in-out;
+}
+
+.withfadeout:hover {
+  -webkit-opacity: 0;
+  -moz-opacity: 0;
+  opacity: 0;
+}*/
 
 #status {
 	font-size: 24px;
@@ -27,11 +41,10 @@ body {
 	padding: 20px;
 	white-space: nowrap;
 }
-
-#trackCount {
+/*
+#playlistInfo {
 	text-align: center;
-	padding: 20px;
-}
+}*/
 
 #playlistInfo {
 	text-align: center;
@@ -40,7 +53,7 @@ body {
 #trackCountSubtext{
 	color: #333029;
 	padding: 10px;
-	margin-top: 10px;
+	margin-top: 5px;
 	margin-bottom: 10px;
 	background-color: #FFCC66;
 }

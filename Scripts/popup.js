@@ -36,9 +36,7 @@ chrome.storage.onChanged.addListener
 					key, namespace, storageChange.oldValue, storageChange.newValue
 				);
 			}
-		
-
-			//TODO: When the popup opens it should check and report if the track count has changed
+			//TODO Fade in??
 		}
 	}
 );
@@ -55,7 +53,6 @@ function Start() //TODO: What happens when the user changes the page without rel
 		function(tabs) 
 		{
 			var playlistName = tabs[0].title.split(' - Google Play Music')[0];
-			//console.log('Playlist Name: ' + playlistName);
 			document.getElementById('playlistName').textContent = playlistName; 
 			document.getElementById('status').hidden = true; 
 			
@@ -88,7 +85,7 @@ function GetPreviousTrackCount(key, callback)
 {
 	chrome.storage.local.get
 	(
-		key, //TODO: could use error checking
+		key, //TODO: Error checking needed
 		function(result)
 		{
 			if(chrome.runtime.lastError)
@@ -153,41 +150,41 @@ function CompareTrackCounts(playlistName)
 				trackListKey,
 				function(previousTrackCount)
 				{
-					var trackCountText = 'Track Count: ' + trackCount;
+					var trackCountValue = document.getElementById('trackCountValue');
+					var trackCountSubtext = document.getElementById('trackCountSubtext');
+					
+					trackCountValue.textContent = 'Track Count: ' + trackCount;
+					trackCountSubtext.hidden = false;
 					
 					if (previousTrackCount == null)
 					{
-						console.log('nasty skanks');
-						document.getElementById('trackCount').textContent = trackCountText;
-						document.getElementById('trackCountSubtext').hidden = false;
-						document.getElementById('trackCountSubtext').textContent = 'This playlist does not seem to be stored yet. It is recommended to save it now.';
+						trackCountSubtext.textContent = 'This playlist does not seem to be stored yet. It is recommended to save it now.';
+
+						//trackCountSubtext.className = 'withfadeout';
+						trackCountSubtext.className = 'skank';
 						return;
-						//TODO finish implementig how the track count difference should be displayed
 					}
 					
 					console.log('Playlist "%s" previously had %s tracks, and now has %s tracks.', playlistName, previousTrackCount, trackCount);
 		
 					var difference = trackCount - previousTrackCount;
 			
-					if (difference < 0)
+					if (difference < 0) //if the track count has decreased
 					{
-						trackCountText = 'Track Count: ' + trackCount + ' (' + difference + ')';
-						document.getElementById('trackCountSubtext').hidden = false;
-						document.getElementById('trackCountSubtext').style.backgroundColor = '#ff0000';
-						document.getElementById('trackCountSubtext').textContent = 'This playlist\'s track count has decreased. It is recommended to compare and save it now.';
+						trackCountValue.textContent = 'Track Count: ' + trackCount + ' ( ' + difference + ' )';
+						trackCountSubtext.style.backgroundColor = '#ff0000';
+						trackCountSubtext.textContent = 'This playlist\'s track count has decreased. It is recommended to compare and save it now.';
 					}
-					else if (difference > 0)
+					else if (difference > 0) //if the track count has increased
 					{
-						trackCountText = 'Track Count: ' + trackCount + ' (+ ' + difference + ')';
-						document.getElementById('trackCountSubtext').hidden = false;
-						//document.getElementById('trackCountSubtext').style.color = '#00ff00';
-						//document.getElementById('trackCountSubtext').style.backgroundColor = '#FFFFCC';
-						document.getElementById('trackCountSubtext').textContent = 'This playlist\'s track count has increased. It is recommended to save it now.';
+						trackCountValue.textContent = 'Track Count: ' + trackCount + ' ( + ' + difference + ' )';
+						trackCountSubtext.textContent = 'This playlist\'s track count has increased. It is recommended to save it now.';
 					}
-					
-					//TODO should inform the user if the track count has changed at all (even if it increased), to recommend they save/compare the differences. 
-					
-					document.getElementById('trackCount').textContent = trackCountText;
+					else //if the track count has not changed
+					{
+						trackCountSubtext.style.backgroundColor = '#339933';
+						trackCountSubtext.textContent = 'This playlist\'s track count has not changed. It\'s still possible that the track list has changed.';
+					}
 				}	
 			);
 		}			
@@ -196,7 +193,7 @@ function CompareTrackCounts(playlistName)
 
 function CompareTrackLists(latest, previous) 
 {	
-	//TODO: should have error checking
+	//TODO: Error checking needed
 	
 	for (var i = latest.length-1; i >= 0; i--)
 	{
@@ -205,7 +202,7 @@ function CompareTrackLists(latest, previous)
 			if (latest[i] != null && previous[j] != null && 
 				latest[i].title === previous[j].title && latest[i].album === previous[j].album && latest[i].duration === previous[j].duration)
 			{
-				latest[i] = null; //TODO: this will mess up the list if we do this before printing it.
+				latest[i] = null;
 				previous[j] = null;
 				break;
 			}
@@ -261,3 +258,4 @@ function RenderStatus(statusText)
 }
 
 //TODO: Future: Consider feature which suggests listening to one of the albums/tracks in the 'test' playlists. 
+//TODO: Unit tests?
