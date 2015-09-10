@@ -25,12 +25,8 @@ body {
 }*/
 
 #status {
-	font-size: 24px;
 	text-align: center;
-	overflow: hidden;
-	min-width: 100px;
 	margin: 20px;
-	background-color: powderblue;	
 }
 
 #playlistName {
@@ -60,7 +56,6 @@ body {
 
 #trackLists {
 	text-align: left;
-	/*background-color: #484848;*/
 	padding: 20px;
 	font-size: 20px;
 	color: #339933;
@@ -68,16 +63,13 @@ body {
 
 .trackList {
 	text-overflow: ellipsis;
-	overflow: hidden;
 	min-width: 100%;
-	/*max-width: 500px;*/
 	overflow-y: scroll;
 	min-height: 50px;
-	max-height: 300px;
+	max-height: 175px;
 	text-align: left;	
 	font-family: Optima, "Segoe UI";
 	font-size: 16px;
-	/*color: green;*/
 	color: antiquewhite;
 	background-color: #404040;
 	border: none;
@@ -87,12 +79,6 @@ body {
 #tracksAdded {
 	margin-bottom: 40px;
 }
-
-/*
-#tracksAddedList {
-	color: red;
-}
-*/
 
 .indent {
 	padding-left: 20px;

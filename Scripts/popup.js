@@ -1,8 +1,7 @@
 /* global key */
 /* global chrome */
-//TODO: use keys for all get/set methods
 
-document.addEventListener('DOMContentLoaded', Start);
+document.addEventListener('DOMContentLoaded', Start);					
 
 chrome.storage.onChanged.addListener
 (
@@ -18,13 +17,13 @@ chrome.storage.onChanged.addListener
 				
 				if (storageChange.oldValue == undefined)
 				{
-					RenderStatus('First time saving data for playlist ' + playlistName + '.');
-					//TODO: Will want to print this and NOT show the empty tracklists
+					document.getElementById('status').textContent = 'First time saving data for this playlist.';
+					document.getElementById('status').hidden = false;					
+					document.getElementById('trackLists').hidden = true;
 					return;
 				}
 				
 				console.log('Playlist "%s" has changed. It previously had %s tracks, and now has %s tracks.', playlistName, storageChange.oldValue.length, storageChange.newValue.length);
-				//console.log('The track list of playlist "%s" has changed.', playlistName);
 				//PrintList(storageChange.newValue);
 				CompareTrackLists(storageChange.newValue, storageChange.oldValue);
 			}
@@ -36,7 +35,6 @@ chrome.storage.onChanged.addListener
 					key, namespace, storageChange.oldValue, storageChange.newValue
 				);
 			}
-			//TODO Fade in??
 		}
 	}
 );
@@ -107,7 +105,9 @@ function GetPreviousTrackCount(key, callback)
 	);
 }
 
-function GetSongList() //TODO: Are we handling properly if the button is pressed a second time? Elements hiding and displaying, for example. 
+//TODO: Are we handling properly if the button is pressed a second time? Elements hiding and displaying, for example. 
+	//For now, we're hiding the button, which is probably best. Add a back button. 
+function GetSongList() 
 {
 	document.getElementById('buttonComparePlaylist').disabled = true;
 	chrome.tabs.query(
@@ -118,21 +118,35 @@ function GetSongList() //TODO: Are we handling properly if the button is pressed
 			(
 				tabs[0].id, 
 				{greeting: 'GetSongList'}, 
-				function(response) 
+				function(trackListObject)
 				{
-					console.log(response);
-					
-					FadeTransition
+					FadeTransition //when the tracklist has been collected, begin the fade transition
 					(
-						function()
+						function() //when the fade transition has completed...
 						{
-							document.getElementById('buttonComparePlaylist').disabled = false;
 							document.getElementById('trackLists').hidden = false;
-							document.getElementById('trackCountSubtext').hidden = true;
-							//TODO: I think make the text areas not areas, just print all the tracks added or removed under their respective section. There shouldnt be sooo many that the lists are very long.. 
-								//although sometimes albums will be added at a time. Maybe we just need to make the text areas prettier, if that's an option. 
+							document.getElementById('playlistInfo').hidden = true;
+							
+							var key = trackListObject.name + '_TrackList'; 
+							var trackListStorageObject= {};
+							trackListStorageObject[key] = trackListObject.list;
+							
+							chrome.storage.local.set
+							(
+								trackListStorageObject, 
+								function()
+								{
+									if(chrome.runtime.lastError)
+									{
+										console.log('ERROR: ' + chrome.runtime.lastError.message);
+										return;
+									}
+									
+									//TODO: do something
+								}
+							);
 						}
-					);	
+					);
 				}
 			);
 		}
@@ -193,9 +207,13 @@ function CompareTrackCounts(playlistName)
 	);
 }
 
-function CompareTrackLists(latest, previous)  //TODO what happens if you remove and add the same tracks? It should just work, but test it.
+///TODO what happens if you remove and add the same tracks? It should just work, but test it.
+	//It seems like it's not recognizing whcih exact track was removed/added. Minimal effect, but could probably be fixed. 
+	//It's because we're starting at the end of the list and going backwards. Since nothing is being removed/popped, this shouldn't be neccesary anymore. TODO: Fix this. 
+function CompareTrackLists(latest, previous)  
 {	
-	//TODO: The displayed track count should be updated
+	//TODO: The displayed track count should be updated. 
+		//Actually for now it's just hidden and that might be better
 	
 	//TODO: Error checking needed
 	
@@ -227,8 +245,9 @@ function CompareTrackLists(latest, previous)  //TODO what happens if you remove 
 	if (tracksAdded.length > 0)
 	{
 		PrintListToTextArea(document.getElementById('tracksAddedList'), tracksAdded);
-		document.getElementById('tracksAddedList').hidden = false;
 		document.getElementById('tracksAddedEmpty').hidden = true;
+		document.getElementById('tracksAddedList').hidden = false;
+		document.getElementById('tracksAddedList').style.height = tracksAdded.length * 20 + 'px';
 	}
 
 	var tracksRemoved = [];
@@ -244,9 +263,10 @@ function CompareTrackLists(latest, previous)  //TODO what happens if you remove 
 	
 	if (tracksRemoved.length > 0)
 	{
-		document.getElementById('tracksRemovedList').hidden = false;
 		PrintListToTextArea(document.getElementById('tracksRemovedList'), tracksRemoved);
 		document.getElementById('tracksRemovedEmpty').hidden = true;
+		document.getElementById('tracksRemovedList').hidden = false;
+		document.getElementById('tracksRemovedList').style.height = tracksRemoved.length * 20 + 'px';
 	}
 }
 
@@ -292,12 +312,10 @@ function FadeOut(element, callback) //TODO: Error checking needed
 		function()
 		{
 			element.style.opacity = targetOpacity;
-			//console.log("target opacity " + targetOpacity);
 			
 			if (targetOpacity == 0)
             {
                 clearInterval(fadeInterval);
-                //console.log('Finished fading out.');
                 callback();
             }	
 			else if (targetOpacity < 0)
@@ -321,12 +339,10 @@ function FadeIn(element, callback)
 		function()
 		{
 			element.style.opacity = targetOpacity;
-			//console.log("target opacity " + targetOpacity);
 			
 			if (targetOpacity == 1)
             {
                 clearInterval(fadeInterval);
-                //console.log('Finished fading in.');
                 callback();
             }	
 			else if (targetOpacity > 1)
@@ -349,6 +365,8 @@ function RenderStatus(statusText)
 	document.getElementById('status').hidden = false;
 	//TODO: probably don't really want to be using this anymore
 }
+
+//TODO: Need a back button that reloads the popup, for after the playlist has been saved/compared
 
 //TODO: Future: Progress bar
 //TODO: Future: Consider feature which suggests listening to one of the albums/tracks in the 'test' playlists. 

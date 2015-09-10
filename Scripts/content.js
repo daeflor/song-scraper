@@ -1,6 +1,3 @@
-var TrackListKey = null;
-var TrackList = []; //TODO: there has to be a clean way to avoid needing this but still look prettty.
-
 /*
 document.onreadystatechange = function()
 {
@@ -22,24 +19,11 @@ chrome.runtime.onMessage.addListener
         {   
             GetTracks
             (
-                function()
+                function(playlistName, trackList)
                 {
-                    var trackListStorageObject= {};
-                    trackListStorageObject[TrackListKey] = TrackList;
-                    
-                    chrome.storage.local.set
+                    sendResponse
                     (
-                        trackListStorageObject, 
-                        function()
-                        {
-                            if(chrome.runtime.lastError)
-                            {
-                                console.log('ERROR: ' + chrome.runtime.lastError.message);
-                                return;
-                            }
-                            
-                            sendResponse({farewell: request.greeting + '- Result: Saved tracklist under: ' + TrackListKey});
-                        }
+                        {name: playlistName, list: trackList}
                     );
                 }
             );
@@ -58,7 +42,7 @@ function GetPlaylistName()
     return document.title.split(' - Google Play Music')[0]; //TODO: We should first verify that the current tab is a google music playlist tab. We already sort of have code for this in another extension. 
 }
 
-function GetTrackCount()
+function GetTrackCount() //TODO: There is about a 5 second delay for the song-count element to get updated after adding a song to the playlist. (I don't see how you'd hit this unless you're adding a song that is already in that playlist).
 {
     return parseInt(document.querySelector('.song-count').textContent.split(" ")[0]);
 }
@@ -76,7 +60,7 @@ function GetTracks(callback)
 
 function ListSongs(callback)
 {    
-    TrackList.length = 0;
+    var list = [];
     var trackCount = GetTrackCount();
     console.log('Scrolling through %s tracks.', trackCount);
     
@@ -84,7 +68,6 @@ function ListSongs(callback)
     (
         function()
         {            
-            //console.log("TrackList count: " + TrackList.length); 
             var songs = document.querySelectorAll('table.song-table tbody tr.song-row');
             
             for (var i = 0; i < songs.length; i++)
@@ -98,17 +81,16 @@ function ListSongs(callback)
                 
                 var trackObject = { index, title, duration, artist, album };
                 
-                AddSongToTrackList(TrackList, trackObject);
+                AddSongToTrackList(list, trackObject);
             }
             
             songs[songs.length-1].scrollIntoView(true); 
             
-            if (TrackList.length >= trackCount)
+            if (list.length >= trackCount)
             {
                 clearInterval(scrollInterval);
-                TrackListKey = GetPlaylistName() + '_TrackList'; 
                 console.log('Finished collecting track list.');
-                callback();
+                callback(GetPlaylistName(), list);
             }
         }, 
         300
@@ -131,6 +113,6 @@ function AddSongToTrackList(list, trackObject)
     
     if (!duplicate)
     {
-        TrackList.push(trackObject);
+        list.push(trackObject);
     }
 }
