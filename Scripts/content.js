@@ -1,20 +1,8 @@
-/*
-document.onreadystatechange = function()
-{
-    if (document.readyState === "complete")
-    {
-        console.log("2 second countdown starting.");
-    }
-    
-    //chrome.storage.local.get(null, function (e) { console.log(e); });
-}
-*/
 chrome.runtime.onMessage.addListener
 (
     function(request, sender, sendResponse) 
     {
-        //console.log(sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
-              
+        //console.log(sender.tab ? "from a content script:" + sender.tab.url : "from the extension");            
         if (request.greeting == 'GetSongList')
         {   
             GetTracks
@@ -55,7 +43,7 @@ function ScrollToTrackCount()
 function GetTracks(callback)
 {
     ScrollToTrackCount();  
-	setTimeout(ListSongs(callback), 500);
+	setTimeout(ListSongs(callback), 250);
 }
 
 function ListSongs(callback)
@@ -63,6 +51,8 @@ function ListSongs(callback)
     var list = [];
     var trackCount = GetTrackCount();
     console.log('Scrolling through %s tracks.', trackCount);
+    
+    document.body.style.zoom= '.1';
     
     var scrollInterval = setInterval
     (
@@ -89,11 +79,12 @@ function ListSongs(callback)
             if (list.length >= trackCount)
             {
                 clearInterval(scrollInterval);
+                document.body.style.zoom= '1';
                 console.log('Finished collecting track list.');
                 callback(GetPlaylistName(), list);
             }
         }, 
-        300
+        250
     );
 }
 

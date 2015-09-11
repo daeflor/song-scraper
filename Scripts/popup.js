@@ -24,7 +24,6 @@ chrome.storage.onChanged.addListener
 				}
 				
 				console.log('Playlist "%s" has changed. It previously had %s tracks, and now has %s tracks.', playlistName, storageChange.oldValue.length, storageChange.newValue.length);
-				//PrintList(storageChange.newValue);
 				CompareTrackLists(storageChange.newValue, storageChange.oldValue);
 			}
 			else
@@ -39,9 +38,7 @@ chrome.storage.onChanged.addListener
 	}
 );
 
-//TODO: Differentiate content script methods from similarly named Popup methods
-
-function Start() //TODO: What happens when the user changes the page without reloading the popup. is that possible?
+function Start()
 {
 	document.getElementById('buttonComparePlaylist').onclick = GetSongList;
 	
@@ -105,8 +102,6 @@ function GetPreviousTrackCount(key, callback)
 	);
 }
 
-//TODO: Are we handling properly if the button is pressed a second time? Elements hiding and displaying, for example. 
-	//For now, we're hiding the button, which is probably best. Add a back button. 
 function GetSongList() 
 {
 	document.getElementById('buttonComparePlaylist').disabled = true;
@@ -131,6 +126,9 @@ function GetSongList()
 							var trackListStorageObject= {};
 							trackListStorageObject[key] = trackListObject.list;
 							
+							document.getElementById('buttonBack').hidden = false;
+							document.getElementById('buttonBack').onclick = function() { location.reload(true) };
+							
 							chrome.storage.local.set
 							(
 								trackListStorageObject, 
@@ -141,8 +139,6 @@ function GetSongList()
 										console.log('ERROR: ' + chrome.runtime.lastError.message);
 										return;
 									}
-									
-									//TODO: do something
 								}
 							);
 						}
@@ -175,9 +171,6 @@ function CompareTrackCounts(playlistName)
 					if (previousTrackCount == null)
 					{
 						trackCountSubtext.textContent = 'This playlist does not seem to be stored yet. It is recommended to save it now.';
-
-						//trackCountSubtext.className = 'withfadeout';
-						//trackCountSubtext.style.opacity = 0.2;
 						return;
 					}
 					
@@ -207,19 +200,20 @@ function CompareTrackCounts(playlistName)
 	);
 }
 
+//TODO: what happens if the order of tracks is changed?
+	//It seems like it recognizes nothing has been added or removed, which is good
+
 ///TODO what happens if you remove and add the same tracks? It should just work, but test it.
-	//It seems like it's not recognizing whcih exact track was removed/added. Minimal effect, but could probably be fixed. 
-	//It's because we're starting at the end of the list and going backwards. Since nothing is being removed/popped, this shouldn't be neccesary anymore. TODO: Fix this. 
+	//In this case, it will usually think that nothing has changed. This could be fixed by comparing indexes, but that would then if the user simply re-ordered the tracks it would think something was added/removed.
+	//Also, it just doesn't seem necessary to address this. If the same track was added and removed, that's basically a re-ordering, which is not really a change. 
+	 
 function CompareTrackLists(latest, previous)  
 {	
-	//TODO: The displayed track count should be updated. 
-		//Actually for now it's just hidden and that might be better
-	
 	//TODO: Error checking needed
 	
-	for (var i = latest.length-1; i >= 0; i--)
+	for (var i = 0; i < latest.length; i++)
 	{
-		for (var j = previous.length-1; j >= 0; j--)
+		for (var j = 0; j < previous.length; j++)
 		{
 			if (latest[i] != null && previous[j] != null && 
 				latest[i].title === previous[j].title && latest[i].album === previous[j].album && latest[i].duration === previous[j].duration)
@@ -291,19 +285,13 @@ function FadeTransition(callback)
 		function()
 		{
 			callback();
-			FadeIn
-			(
-				document.getElementById('popup'), 
-				function()
-				{
-					console.log("Fade transition complete."); //TODO maybe make this an optional parameter since we don't really need it. 
-				}
-			);
-
+			FadeIn(document.getElementById('popup'));
 		}
 	);	
 }
 
+//TODO: Fade out and in when pressing back button and also just when loading popup the first time. 
+	//At a minimum, the popup initialization shouldn't be as aggressive and janky as it is now. Should be possible to make it smoother
 function FadeOut(element, callback) //TODO: Error checking needed
 {
 	var targetOpacity = 1;
@@ -358,16 +346,12 @@ function FadeIn(element, callback)
 	);
 }
 
-function RenderStatus(statusText) 
-{
-	document.getElementById('status').textContent = statusText;
-	console.log(statusText);
-	document.getElementById('status').hidden = false;
-	//TODO: probably don't really want to be using this anymore
-}
+//TODO: Check that the list of playlists is up to date
 
-//TODO: Need a back button that reloads the popup, for after the playlist has been saved/compared
-
+//TODO: Style: Differentiate content script methods from similarly named Popup methods
 //TODO: Future: Progress bar
+//TODO: Future: Support comparison between Spotify playlists and google music
 //TODO: Future: Consider feature which suggests listening to one of the albums/tracks in the 'test' playlists. 
 //TODO: Unit tests?
+
+//chrome.storage.local.get(null, function (e) { console.log(e); });
