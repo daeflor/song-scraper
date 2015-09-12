@@ -2,19 +2,12 @@ chrome.runtime.onMessage.addListener
 (
     function(request, sender, sendResponse) 
     {
-        //console.log(sender.tab ? "from a content script:" + sender.tab.url : "from the extension");            
+        console.log(sender.tab ? 'Message received from a content script:' + sender.tab.url : 'Message ' + request.greeting + ' received from the extension.'); 
+
         if (request.greeting == 'GetSongList')
         {   
-            GetTracks
-            (
-                function(playlistName, trackList)
-                {
-                    sendResponse
-                    (
-                        {name: playlistName, list: trackList}
-                    );
-                }
-            );
+            ScrollToTrackCount();  
+            setTimeout(ListSongs(sendResponse), 250);
         }
         else if (request.greeting == 'GetTrackCount')
         {   
@@ -24,18 +17,14 @@ chrome.runtime.onMessage.addListener
         return true;
     }
 );
-  
-function GetPlaylistName()
-{
-    return document.title.split(' - Google Play Music')[0]; 
-}
 
 function GetTrackCountElement()
 {
     return document.querySelector('.song-count');
 }
 
-function GetTrackCount() //TODO: There is about a 5 second delay for the song-count element to get updated after adding a song to the playlist. (I don't see how you'd hit this unless you're adding a song that is already in that playlist).
+//TODO: There is about a 5 second delay for the song-count element to get updated after adding a song to the playlist. (I don't see how you'd hit this unless you're adding a song that is already in that playlist).
+function GetTrackCount() 
 {
     var element = GetTrackCountElement();
     
@@ -52,12 +41,6 @@ function GetTrackCount() //TODO: There is about a 5 second delay for the song-co
 function ScrollToTrackCount()
 {
     GetTrackCountElement().scrollIntoView(true);
-}
-  
-function GetTracks(callback)
-{
-    ScrollToTrackCount();  
-	setTimeout(ListSongs(callback), 250);
 }
 
 function ListSongs(callback)
@@ -95,7 +78,7 @@ function ListSongs(callback)
                 clearInterval(scrollInterval);
                 document.body.style.zoom= '1';
                 console.log('Finished collecting track list.');
-                callback(GetPlaylistName(), list);
+                callback(list);
             }
         }, 
         250

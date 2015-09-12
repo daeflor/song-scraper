@@ -40,18 +40,38 @@ chrome.storage.onChanged.addListener
 
 function Start()
 {	
-	VeryTabIsGoogleMusic
+	VeryTabIsGoogleMusicPlaylist
 	(
 		function(tab) 
 		{
-			var playlistName = tab.title.split(' - Google Play Music')[0];
+			var playlistName = GetPlaylistName(tab);
+			if (playlistName == null)
+			{
+				DisplayErrorMessage('Please open a valid Google Music playlist page and try again.');
+				return;
+			}
+			
 			document.getElementById('playlistName').textContent = playlistName; 
 			document.getElementById('status').hidden = true; 
 			document.getElementById('buttonComparePlaylist').hidden = false; 
 			document.getElementById('buttonComparePlaylist').onclick = GetSongList;
+			document.getElementById('playlistInfo').hidden = false;
+			document.getElementById('playlistName').hidden = false;
 			CompareTrackCounts(playlistName);
 		}
 	);
+}
+
+function GetPlaylistName(tab) 
+{
+	if (tab.title.indexOf(' - Google Play Music') == -1)
+	{
+		return null;
+	}
+	else
+	{
+		return tab.title.split(' - Google Play Music')[0]; 
+	}
 }
 
 function GetCurrentTrackCount(callback)
@@ -112,7 +132,7 @@ function GetSongList()
 			(
 				tabs[0].id, 
 				{greeting: 'GetSongList'}, 
-				function(trackListObject)
+				function(trackList)
 				{
 					FadeTransition //when the tracklist has been collected, begin the fade transition
 					(
@@ -121,9 +141,9 @@ function GetSongList()
 							document.getElementById('trackLists').hidden = false;
 							document.getElementById('playlistInfo').hidden = true;
 							
-							var key = trackListObject.name + '_TrackList'; 
+							var key = GetPlaylistName(tabs[0]) + '_TrackList'; 
 							var trackListStorageObject= {};
-							trackListStorageObject[key] = trackListObject.list;
+							trackListStorageObject[key] = trackList;
 							
 							document.getElementById('buttonBack').hidden = false;
 							document.getElementById('buttonBack').onclick = ReloadPopup;
@@ -304,7 +324,11 @@ function FadeOut(element, callback) //TODO: Error checking needed
 			if (targetOpacity == 0)
             {
                 clearInterval(fadeInterval);
-                callback();
+				
+				if(typeof callback !== "undefined")
+				{
+					callback();
+				}
             }	
 			else if (targetOpacity < 0)
 			{
@@ -331,7 +355,11 @@ function FadeIn(element, callback)
 			if (targetOpacity == 1)
             {
                 clearInterval(fadeInterval);
-                callback();
+				
+				if(typeof callback !== "undefined")
+				{
+					callback();
+				}
             }	
 			else if (targetOpacity > 1)
 			{
@@ -346,7 +374,7 @@ function FadeIn(element, callback)
 	);
 }
 
-function VeryTabIsGoogleMusic(callback)
+function VeryTabIsGoogleMusicPlaylist(callback)
 {
 	chrome.tabs.query
 	(
@@ -358,8 +386,8 @@ function VeryTabIsGoogleMusic(callback)
 
 			if (url.indexOf('https://play.google.com/music/listen?u=0#/pl/') == -1)
 			{
-				document.getElementById('playlistInfo').hidden = true;//TODO
-				document.getElementById('playlistName').hidden = true;
+				//document.getElementById('playlistInfo').hidden = true;
+				//document.getElementById('playlistName').hidden = true;
 				DisplayErrorMessage('Please open a valid Google Music playlist page and try again.');
 			}
 			else
