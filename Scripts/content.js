@@ -27,17 +27,31 @@ chrome.runtime.onMessage.addListener
   
 function GetPlaylistName()
 {
-    return document.title.split(' - Google Play Music')[0]; //TODO: We should first verify that the current tab is a google music playlist tab. We already sort of have code for this in another extension. 
+    return document.title.split(' - Google Play Music')[0]; 
+}
+
+function GetTrackCountElement()
+{
+    return document.querySelector('.song-count');
 }
 
 function GetTrackCount() //TODO: There is about a 5 second delay for the song-count element to get updated after adding a song to the playlist. (I don't see how you'd hit this unless you're adding a song that is already in that playlist).
 {
-    return parseInt(document.querySelector('.song-count').textContent.split(" ")[0]);
+    var element = GetTrackCountElement();
+    
+    if (element == null)
+    {
+        return null;
+    }
+    else
+    {
+        return parseInt(GetTrackCountElement().textContent.split(" ")[0]);
+    }
 }
 
 function ScrollToTrackCount()
 {
-    document.querySelector('.song-count').scrollIntoView(true);
+    GetTrackCountElement().scrollIntoView(true);
 }
   
 function GetTracks(callback)

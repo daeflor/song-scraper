@@ -4,7 +4,7 @@ body {
 	font-style: normal;
 	font-size: 16px;
 	min-width: 330px;
-	max-width: 600px;
+	max-width: 500px;
 	background-color: #383838;
 	color: #FFCC66;
 	/*max-height: 800px; //TODO: Figure out how to make the window not scroll and just get bigger*/
@@ -25,7 +25,7 @@ body {
 	background-color: #303030;
 	color: #FFCC66;
 	padding: 20px;
-	white-space: nowrap;
+	min-height: 30px;
 }
 
 #trackCountSubtext{

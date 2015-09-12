@@ -1,7 +1,8 @@
 /* global key */
 /* global chrome */
 
-document.addEventListener('DOMContentLoaded', Start);					
+document.addEventListener('DOMContentLoaded', Start);
+//document.addEventListener('DOMContentLoaded', function() { FadeIn(document.getElementById('popup'), Start) } );					
 
 chrome.storage.onChanged.addListener
 (
@@ -16,9 +17,8 @@ chrome.storage.onChanged.addListener
 				var playlistName = key.split('_TrackList')[0];
 				
 				if (storageChange.oldValue == undefined)
-				{
-					document.getElementById('status').textContent = 'First time saving data for this playlist.';
-					document.getElementById('status').hidden = false;					
+				{	
+					DisplayErrorMessage('First time saving data for this playlist.');			
 					document.getElementById('trackLists').hidden = true;
 					return;
 				}
@@ -39,18 +39,16 @@ chrome.storage.onChanged.addListener
 );
 
 function Start()
-{
-	document.getElementById('buttonComparePlaylist').onclick = GetSongList;
-	
-	chrome.tabs.query
+{	
+	VeryTabIsGoogleMusic
 	(
-		{active: true, currentWindow: true}, 
-		function(tabs) 
+		function(tab) 
 		{
-			var playlistName = tabs[0].title.split(' - Google Play Music')[0];
+			var playlistName = tab.title.split(' - Google Play Music')[0];
 			document.getElementById('playlistName').textContent = playlistName; 
 			document.getElementById('status').hidden = true; 
-			
+			document.getElementById('buttonComparePlaylist').hidden = false; 
+			document.getElementById('buttonComparePlaylist').onclick = GetSongList;
 			CompareTrackCounts(playlistName);
 		}
 	);
@@ -105,7 +103,8 @@ function GetPreviousTrackCount(key, callback)
 function GetSongList() 
 {
 	document.getElementById('buttonComparePlaylist').disabled = true;
-	chrome.tabs.query(
+	chrome.tabs.query
+	(
 		{active: true, currentWindow: true}, 
 		function(tabs) 
 		{
@@ -127,7 +126,7 @@ function GetSongList()
 							trackListStorageObject[key] = trackListObject.list;
 							
 							document.getElementById('buttonBack').hidden = false;
-							document.getElementById('buttonBack').onclick = function() { location.reload(true) };
+							document.getElementById('buttonBack').onclick = ReloadPopup;
 							
 							chrome.storage.local.set
 							(
@@ -154,7 +153,14 @@ function CompareTrackCounts(playlistName)
 	GetCurrentTrackCount
 	(
 		function(trackCount)
-		{			
+		{		
+			if (trackCount == null)
+			{
+				DisplayErrorMessage('Track count could not be determined. Please open a valid playlist page and try again.');
+				document.getElementById('playlistInfo').hidden = true;
+				return;
+			}
+				
 			var trackListKey = playlistName + '_TrackList';	
 					
 			GetPreviousTrackCount
@@ -199,13 +205,6 @@ function CompareTrackCounts(playlistName)
 		}			
 	);
 }
-
-//TODO: what happens if the order of tracks is changed?
-	//It seems like it recognizes nothing has been added or removed, which is good
-
-///TODO what happens if you remove and add the same tracks? It should just work, but test it.
-	//In this case, it will usually think that nothing has changed. This could be fixed by comparing indexes, but that would then if the user simply re-ordered the tracks it would think something was added/removed.
-	//Also, it just doesn't seem necessary to address this. If the same track was added and removed, that's basically a re-ordering, which is not really a change. 
 	 
 function CompareTrackLists(latest, previous)  
 {	
@@ -277,6 +276,7 @@ function PrintList(list)
     }
 }
 
+//TODO: The whole fade thing could be cleaner / more user friendly. Turning it into one function didn't really help but there might be other ways.
 function FadeTransition(callback) 
 {
 	FadeOut
@@ -346,7 +346,44 @@ function FadeIn(element, callback)
 	);
 }
 
+function VeryTabIsGoogleMusic(callback)
+{
+	chrome.tabs.query
+	(
+		{active: true, currentWindow: true}, 
+		function(tabs) 
+		{
+			var url = tabs[0].url;
+			console.assert(typeof url == 'string', 'tab.url should be a string');
+
+			if (url.indexOf('https://play.google.com/music/listen?u=0#/pl/') == -1)
+			{
+				document.getElementById('playlistInfo').hidden = true;//TODO
+				document.getElementById('playlistName').hidden = true;
+				DisplayErrorMessage('Please open a valid Google Music playlist page and try again.');
+			}
+			else
+			{
+				callback(tabs[0]);
+			}
+		}
+	);
+}
+
+function DisplayErrorMessage(text)
+{
+	document.getElementById('status').textContent = text;
+	document.getElementById('status').hidden = false;
+}
+
+function ReloadPopup()
+{
+	FadeOut(document.getElementById('popup'), function() { location.reload(true); });
+}
+
+//TODO: Somehow standardize all UI error/notification messaging and layout. Plan out the order of events and make appropriate hide/show functions
 //TODO: Check that the list of playlists is up to date
+//TODO: Save all playlists
 
 //TODO: Style: Differentiate content script methods from similarly named Popup methods
 //TODO: Future: Progress bar
