@@ -1,45 +1,43 @@
 <!doctype html>
-<!--
- This page is shown when the extension button is clicked, because the
- "browser_action" field in manifest.json contains the "default_popup" key with
- value "popup.html".
- -->
 <html>
   <head>
-  	<link rel="stylesheet" type="text/css" href="Styles/style.css">
+  	<link rel='stylesheet'' type='text/css' href='Styles/style.css'>
     <title>Music Extension</title>
-    <!--
-      - JavaScript and HTML must be in separate files: see our Content Security
-      - Policy documentation[1] for details and explanation.
-      -
-      - [1]: https://developer.chrome.com/extensions/contentSecurityPolicy
-     -->
-    <script src="Scripts/popup.js"></script>
+    <script src='Scripts/popup.js'></script>
   </head>
   <body> 
-    <div id='popup'> <!--TODO should have consistent quotes usage-->
-      <div id="playlistName" hidden=true></div>
-      <div id="playlistInfo" hidden=true>
-        <div id="trackCountInfo">
-              <p id="trackCountValue"></p>
-        </div> <!--TODO: Could have a separate trackCount difference section-->
-        <div id="trackCountSubtext" hidden=true></div>
-        <button id="buttonComparePlaylist" class="popupButton" type="button" hidden=true>Compare & Save Playlist</button> 
+    <div id='popup'>
+      
+      <div id='title' hidden=true></div>
+      <div id='error' hidden=true>Loading...</div>
+      
+      <div id='landingPage' hidden=true>
+        <p id='trackCountValue'></p>
+        <div id='trackCountSubtext'></div>
+        <button id='buttonComparePlaylist' class='popupButton' type='button'>Compare & Save Playlist</button> 
       </div>
-      <div id="status">Loading...</div>
-      <div id="trackLists" hidden=true>
-        <div id="tracksAdded">
-          <p>Tracks Added</p>
-          <p id='tracksAddedEmpty' class="indent">- No new tracks added.</p>
-          <textarea id="tracksAddedList" class="trackList" hidden=true></textarea>
-        </div> 
-        <div id="tracksRemoved">
-          <p style="color:#ff0000">Tracks Removed</p>
-          <p id='tracksRemovedEmpty' class="indent">- No tracks removed.</p>
-          <textarea id="tracksRemovedList" class="trackList" hidden=true></textarea>
-        </div> 
-      </div>  <!--TODO: Need wayy better naming of divs-->
-      <button id="buttonBack" class="popupButton" type="button" hidden=true>Back</button>
+      
+      <div id='comparisonPage'>
+        
+        <div id='trackLists' hidden=true>
+          
+          <div id='tracksAdded'>
+            <p>Tracks Added</p>
+            <p id='tracksAddedEmpty' class='indent'>- No new tracks added.</p>
+            <textarea id='tracksAddedList' class='trackList' hidden=true></textarea>
+          </div> 
+          
+          <div id='tracksRemoved'>
+            <p style='color:#ff0000'>Tracks Removed</p>
+            <p id='tracksRemovedEmpty' class='indent'>- No tracks removed.</p>
+            <textarea id='tracksRemovedList' class='trackList' hidden=true></textarea>
+          </div> 
+          
+        </div>  <!--TODO: Need wayy better naming of divs-->
+        <button id='buttonBack' class='popupButton' type='button' hidden=true>Back</button>
+        
+      </div>
+      
     </div> 
   </body>
 </html>

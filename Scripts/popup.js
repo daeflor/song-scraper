@@ -47,16 +47,17 @@ function Start()
 			var playlistName = GetPlaylistName(tab);
 			if (playlistName == null)
 			{
-				DisplayErrorMessage('Please open a valid Google Music playlist page and try again.');
+				console.log('Playlist name not found. Page has likely not finished loading yet.');
+				ShowErrorMessage('Please open a valid Google Music playlist page and try again!');
 				return;
 			}
-			
-			document.getElementById('playlistName').textContent = playlistName; 
-			document.getElementById('status').hidden = true; 
-			document.getElementById('buttonComparePlaylist').hidden = false; 
-			document.getElementById('buttonComparePlaylist').onclick = GetSongList;
-			document.getElementById('playlistInfo').hidden = false;
-			document.getElementById('playlistName').hidden = false;
+
+			HideErrorMessage();
+			ShowTitle(playlistName);
+			//document.getElementById('buttonComparePlaylist').onclick = GetSongList;
+			//ShowLandingPage();
+			//document.getElementById('buttonComparePlaylist').hidden = false; 
+
 			CompareTrackCounts(playlistName);
 		}
 	);
@@ -139,7 +140,7 @@ function GetSongList()
 						function() //when the fade transition has completed...
 						{
 							document.getElementById('trackLists').hidden = false;
-							document.getElementById('playlistInfo').hidden = true;
+							HideLandingPage();
 							
 							var key = GetPlaylistName(tabs[0]) + '_TrackList'; 
 							var trackListStorageObject= {};
@@ -176,8 +177,8 @@ function CompareTrackCounts(playlistName)
 		{		
 			if (trackCount == null)
 			{
-				DisplayErrorMessage('Track count could not be determined. Please open a valid playlist page and try again.');
-				document.getElementById('playlistInfo').hidden = true;
+				ShowErrorMessage('Track count could not be determined. Please open a valid playlist page and try again.');
+				//document.getElementById('playlistInfo').hidden = true;
 				return;
 			}
 				
@@ -188,38 +189,16 @@ function CompareTrackCounts(playlistName)
 				trackListKey,
 				function(previousTrackCount)
 				{
-					var trackCountValue = document.getElementById('trackCountValue');
-					var trackCountSubtext = document.getElementById('trackCountSubtext');
-					
-					trackCountValue.textContent = 'Track Count: ' + trackCount;
-					trackCountSubtext.hidden = false;
-					
-					if (previousTrackCount == null)
-					{
-						trackCountSubtext.textContent = 'This playlist does not seem to be stored yet. It is recommended to save it now.';
-						return;
-					}
+					//var trackCountValue = document.getElementById('trackCountValue');
+					//var trackCountSubtext = document.getElementById('trackCountSubtext');	
+					//trackCountValue.textContent = 'Track Count: ' + trackCount;
+					//trackCountSubtext.hidden = false;
 					
 					console.log('Playlist "%s" previously had %s tracks, and now has %s tracks.', playlistName, previousTrackCount, trackCount);
 		
-					var difference = trackCount - previousTrackCount;
-			
-					if (difference < 0) //if the track count has decreased
-					{
-						trackCountValue.textContent = 'Track Count: ' + trackCount + ' ( ' + difference + ' )';
-						trackCountSubtext.style.backgroundColor = '#ff0000';
-						trackCountSubtext.textContent = 'This playlist\'s track count has decreased. It is recommended to compare and save it now.';
-					}
-					else if (difference > 0) //if the track count has increased
-					{
-						trackCountValue.textContent = 'Track Count: ' + trackCount + ' ( + ' + difference + ' )';
-						trackCountSubtext.textContent = 'This playlist\'s track count has increased. It is recommended to save it now.';
-					}
-					else //if the track count has not changed
-					{
-						trackCountSubtext.style.backgroundColor = '#339933';
-						trackCountSubtext.textContent = 'This playlist\'s track count has not changed. It\'s still possible that the track list has changed.';
-					}
+					SetTrackCountValue(trackCount, previousTrackCount);
+					document.getElementById('buttonComparePlaylist').onclick = GetSongList;
+					ShowLandingPage();
 				}	
 			);
 		}			
@@ -310,7 +289,7 @@ function FadeTransition(callback)
 	);	
 }
 
-//TODO: Fade out and in when pressing back button and also just when loading popup the first time. 
+//TODO: Fade out and in when loading popup the first time. 
 	//At a minimum, the popup initialization shouldn't be as aggressive and janky as it is now. Should be possible to make it smoother
 function FadeOut(element, callback) //TODO: Error checking needed
 {
@@ -386,9 +365,8 @@ function VeryTabIsGoogleMusicPlaylist(callback)
 
 			if (url.indexOf('https://play.google.com/music/listen?u=0#/pl/') == -1)
 			{
-				//document.getElementById('playlistInfo').hidden = true;
-				//document.getElementById('playlistName').hidden = true;
-				DisplayErrorMessage('Please open a valid Google Music playlist page and try again.');
+				console.log('Page is not a valid Google Music playlist url.');
+				ShowErrorMessage('Please open a valid Google Music playlist page and try again.');
 			}
 			else
 			{
@@ -398,10 +376,70 @@ function VeryTabIsGoogleMusicPlaylist(callback)
 	);
 }
 
-function DisplayErrorMessage(text)
+function ShowErrorMessage(text)
 {
-	document.getElementById('status').textContent = text;
-	document.getElementById('status').hidden = false;
+	document.getElementById('error').textContent = text;
+	document.getElementById('error').hidden = false;
+}
+
+function HideErrorMessage()
+{
+	document.getElementById('error').hidden = true;
+}
+
+function ShowTitle(title)
+{
+	document.getElementById('title').textContent = title;
+	document.getElementById('title').hidden = false;
+}
+
+function ShowLandingPage()
+{
+	//document.getElementById('landingPage').textContent = text;
+	document.getElementById('landingPage').hidden = false;
+}
+
+function HideLandingPage()
+{
+	document.getElementById('landingPage').hidden = true;
+}
+
+function SetTrackCountValue(currentCount, previousCount)
+{
+	var countText = 'Track Count: ' + currentCount;
+	SetTrackCountText('This playlist\'s track count has not changed. It\'s still possible that the track list has changed.');
+	
+	if (previousCount == null)
+	{
+		SetTrackCountText('This playlist does not seem to be stored yet. It is recommended to save it now.', '#FFCC66');
+	}
+	else
+	{
+		var difference = currentCount - previousCount;
+	
+		if (difference < 0) //if the track count has decreased
+		{
+			countText = 'Track Count: ' + currentCount + ' ( ' + difference + ' )';
+			SetTrackCountText('This playlist\'s track count has decreased. It is recommended to compare and save it now.', '#ff0000');
+		}
+		else if (difference > 0) //if the track count has increased
+		{
+			countText = 'Track Count: ' + currentCount + ' ( + ' + difference + ' )';
+			SetTrackCountText('This playlist\'s track count has increased. It is recommended to save it now.', '#FFCC66');
+		}
+	}
+		
+	document.getElementById('trackCountValue').textContent = countText;
+}
+
+function SetTrackCountText(text, backgroundcolor)
+{
+	document.getElementById('trackCountSubtext').textContent = text;
+	
+	if(typeof backgroundcolor !== "undefined")
+	{
+		document.getElementById('trackCountSubtext').style.backgroundColor = backgroundcolor;
+	}
 }
 
 function ReloadPopup()
@@ -413,10 +451,19 @@ function ReloadPopup()
 //TODO: Check that the list of playlists is up to date
 //TODO: Save all playlists
 
+//TODO: Switch to using sync storage. May have to prefix every object more uniquely. 
+	//Or.. only store ONE object for the extension. And that object contains all the others... scary. 
+
 //TODO: Style: Differentiate content script methods from similarly named Popup methods
 //TODO: Future: Progress bar
 //TODO: Future: Support comparison between Spotify playlists and google music
 //TODO: Future: Consider feature which suggests listening to one of the albums/tracks in the 'test' playlists. 
 //TODO: Unit tests?
+//TODO: Future: MVC
 
 //chrome.storage.local.get(null, function (e) { console.log(e); });
+
+
+//TODO confrim:
+	//the track count unavailable edge case
+	//the track count changed/unchanged behavior
