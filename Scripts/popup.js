@@ -18,8 +18,8 @@ chrome.storage.onChanged.addListener
 				
 				if (storageChange.oldValue == undefined)
 				{	
-					DisplayErrorMessage('First time saving data for this playlist.');			
-					document.getElementById('trackLists').hidden = true;
+					ShowStorageResultText('First time saving data for this playlist.');	
+					HideTrackLists();		
 					return;
 				}
 				
@@ -54,10 +54,6 @@ function Start()
 
 			HideErrorMessage();
 			ShowTitle(playlistName);
-			//document.getElementById('buttonComparePlaylist').onclick = GetSongList;
-			//ShowLandingPage();
-			//document.getElementById('buttonComparePlaylist').hidden = false; 
-
 			CompareTrackCounts(playlistName);
 		}
 	);
@@ -121,6 +117,36 @@ function GetPreviousTrackCount(key, callback)
 	);
 }
 
+function CompareTrackCounts(playlistName)
+{
+	GetCurrentTrackCount
+	(
+		function(trackCount)
+		{		
+			if (trackCount == null)
+			{
+				ShowErrorMessage('Track count could not be determined. Please open a valid playlist page and try again.');
+				return;
+			}
+				
+			var trackListKey = playlistName + '_TrackList';	
+					
+			GetPreviousTrackCount
+			(
+				trackListKey,
+				function(previousTrackCount)
+				{
+					console.log('Playlist "%s" previously had %s tracks, and now has %s tracks.', playlistName, previousTrackCount, trackCount);
+		
+					SetTrackCountValue(trackCount, previousTrackCount);
+					document.getElementById('buttonComparePlaylist').onclick = GetSongList;
+					ShowLandingPage();
+				}	
+			);
+		}			
+	);
+}
+
 function GetSongList() 
 {
 	document.getElementById('buttonComparePlaylist').disabled = true;
@@ -139,15 +165,14 @@ function GetSongList()
 					(
 						function() //when the fade transition has completed...
 						{
-							document.getElementById('trackLists').hidden = false;
 							HideLandingPage();
+							ShowComparisonPage();
+							ShowTrackLists();
+							ShowBackButton();
 							
 							var key = GetPlaylistName(tabs[0]) + '_TrackList'; 
 							var trackListStorageObject= {};
 							trackListStorageObject[key] = trackList;
-							
-							document.getElementById('buttonBack').hidden = false;
-							document.getElementById('buttonBack').onclick = ReloadPopup;
 							
 							chrome.storage.local.set
 							(
@@ -157,6 +182,7 @@ function GetSongList()
 									if(chrome.runtime.lastError)
 									{
 										console.log('ERROR: ' + chrome.runtime.lastError.message);
+										//TODO: Error checking needed. Should report to user somehow that playlists didn't get stored properly. 
 										return;
 									}
 								}
@@ -166,42 +192,6 @@ function GetSongList()
 				}
 			);
 		}
-	);
-}
-
-function CompareTrackCounts(playlistName)
-{
-	GetCurrentTrackCount
-	(
-		function(trackCount)
-		{		
-			if (trackCount == null)
-			{
-				ShowErrorMessage('Track count could not be determined. Please open a valid playlist page and try again.');
-				//document.getElementById('playlistInfo').hidden = true;
-				return;
-			}
-				
-			var trackListKey = playlistName + '_TrackList';	
-					
-			GetPreviousTrackCount
-			(
-				trackListKey,
-				function(previousTrackCount)
-				{
-					//var trackCountValue = document.getElementById('trackCountValue');
-					//var trackCountSubtext = document.getElementById('trackCountSubtext');	
-					//trackCountValue.textContent = 'Track Count: ' + trackCount;
-					//trackCountSubtext.hidden = false;
-					
-					console.log('Playlist "%s" previously had %s tracks, and now has %s tracks.', playlistName, previousTrackCount, trackCount);
-		
-					SetTrackCountValue(trackCount, previousTrackCount);
-					document.getElementById('buttonComparePlaylist').onclick = GetSongList;
-					ShowLandingPage();
-				}	
-			);
-		}			
 	);
 }
 	 
@@ -236,10 +226,7 @@ function CompareTrackLists(latest, previous)
 	
 	if (tracksAdded.length > 0)
 	{
-		PrintListToTextArea(document.getElementById('tracksAddedList'), tracksAdded);
-		document.getElementById('tracksAddedEmpty').hidden = true;
-		document.getElementById('tracksAddedList').hidden = false;
-		document.getElementById('tracksAddedList').style.height = tracksAdded.length * 20 + 'px';
+		DisplayTracksAdded(tracksAdded);
 	}
 
 	var tracksRemoved = [];
@@ -255,10 +242,7 @@ function CompareTrackLists(latest, previous)
 	
 	if (tracksRemoved.length > 0)
 	{
-		PrintListToTextArea(document.getElementById('tracksRemovedList'), tracksRemoved);
-		document.getElementById('tracksRemovedEmpty').hidden = true;
-		document.getElementById('tracksRemovedList').hidden = false;
-		document.getElementById('tracksRemovedList').style.height = tracksRemoved.length * 20 + 'px';
+		DisplayTracksRemoved(tracksRemoved);
 	}
 }
 
@@ -376,6 +360,8 @@ function VeryTabIsGoogleMusicPlaylist(callback)
 	);
 }
 
+/***** User Interface *****/
+
 function ShowErrorMessage(text)
 {
 	document.getElementById('error').textContent = text;
@@ -442,28 +428,67 @@ function SetTrackCountText(text, backgroundcolor)
 	}
 }
 
+function ShowComparisonPage()
+{
+	document.getElementById('comparisonPage').hidden = false;
+}
+
+function ShowStorageResultText(text)
+{
+	document.getElementById('storageResultText').textContent = text;
+	document.getElementById('storageResultText').hidden = false;
+}
+
+function ShowTrackLists()
+{
+	document.getElementById('trackLists').hidden = false;
+}
+
+function HideTrackLists()
+{
+	document.getElementById('trackLists').hidden = true;
+}
+
+function ShowBackButton()
+{
+	document.getElementById('buttonBack').hidden = false;
+	document.getElementById('buttonBack').onclick = ReloadPopup; //TODO: maybe could assign all buttons in one function
+}
+
+function DisplayTracksAdded(list)
+{
+	PrintListToTextArea(document.getElementById('tracksAddedList'), list);
+	document.getElementById('tracksAddedEmpty').hidden = true;
+	document.getElementById('tracksAddedList').style.height = list.length * 20 + 'px';
+	document.getElementById('tracksAddedList').hidden = false;
+}
+
+function DisplayTracksRemoved(list)
+{
+	PrintListToTextArea(document.getElementById('tracksRemovedList'), list);
+	document.getElementById('tracksRemovedEmpty').hidden = true;
+	document.getElementById('tracksRemovedList').style.height = list.length * 20 + 'px';
+	document.getElementById('tracksRemovedList').hidden = false;
+}
+							
 function ReloadPopup()
 {
 	FadeOut(document.getElementById('popup'), function() { location.reload(true); });
 }
 
-//TODO: Somehow standardize all UI error/notification messaging and layout. Plan out the order of events and make appropriate hide/show functions
+/***** Notes *****/
+
 //TODO: Check that the list of playlists is up to date
 //TODO: Save all playlists
-
 //TODO: Switch to using sync storage. May have to prefix every object more uniquely. 
 	//Or.. only store ONE object for the extension. And that object contains all the others... scary. 
 
 //TODO: Style: Differentiate content script methods from similarly named Popup methods
+//TODO: Future: MVC
 //TODO: Future: Progress bar
 //TODO: Future: Support comparison between Spotify playlists and google music
 //TODO: Future: Consider feature which suggests listening to one of the albums/tracks in the 'test' playlists. 
 //TODO: Unit tests?
-//TODO: Future: MVC
+
 
 //chrome.storage.local.get(null, function (e) { console.log(e); });
-
-
-//TODO confrim:
-	//the track count unavailable edge case
-	//the track count changed/unchanged behavior

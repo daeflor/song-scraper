@@ -9,7 +9,7 @@
     <div id='popup'>
       
       <div id='title' hidden=true></div>
-      <div id='error' hidden=true>Loading...</div>
+      <div id='error' class='statusText'>Loading...</div>
       
       <div id='landingPage' hidden=true>
         <p id='trackCountValue'></p>
@@ -17,8 +17,8 @@
         <button id='buttonComparePlaylist' class='popupButton' type='button'>Compare & Save Playlist</button> 
       </div>
       
-      <div id='comparisonPage'>
-        
+      <div id='comparisonPage' hidden=true>
+       
         <div id='trackLists' hidden=true>
           
           <div id='tracksAdded'>
@@ -33,8 +33,10 @@
             <textarea id='tracksRemovedList' class='trackList' hidden=true></textarea>
           </div> 
           
-        </div>  <!--TODO: Need wayy better naming of divs-->
-        <button id='buttonBack' class='popupButton' type='button' hidden=true>Back</button>
+        </div>
+        
+        <div id='storageResultText'  class='statusText' hidden=true></div>
+        <button id='buttonBack' class='popupButton' type='button'>Back</button> 
         
       </div>
       

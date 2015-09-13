@@ -15,12 +15,6 @@ body {
 	text-align: center;
 }
 
-#error {
-	text-align: center;
-	/*margin: 20px;*/
-	padding: 20px;
-}
-
 #title {
 	font-size: 24px;
 	text-align: center;
@@ -28,6 +22,12 @@ body {
 	color: #FFCC66;
 	padding: 20px;
 	min-height: 30px;
+}
+
+.statusText {
+	text-align: center;
+	/*margin: 20px;*/
+	padding: 20px;
 }
 
 #trackCountSubtext {
@@ -45,6 +45,16 @@ body {
 	color: #339933;
 }
 
+#tracksAdded {
+	margin-bottom: 40px;
+}
+
+.indent {
+	padding-left: 20px;
+	color: antiquewhite;
+	font-size: 16px;
+}
+
 .trackList {
 	text-overflow: ellipsis;
 	min-width: 100%;
@@ -58,16 +68,6 @@ body {
 	background-color: #404040;
 	border: none;
 	resize: none;
-}
-
-#tracksAdded {
-	margin-bottom: 40px;
-}
-
-.indent {
-	padding-left: 20px;
-	color: antiquewhite;
-	font-size: 16px;
 }
 
 .popupButton {
