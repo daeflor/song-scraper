@@ -1,3 +1,5 @@
+/*There are probably a lot of redundant properites here that could be trimmed down*/
+
 body {
 	font-family: 'Gill Sans', Optima, "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
     font-size: 100%;
@@ -7,7 +9,7 @@ body {
 	max-width: 500px;
 	background-color: #383838;
 	color: #FFCC66;
-	min-height: 80px; /*We might have a depper error that is hidden by setting this - sometimes the error pupup is cut off*/
+	min-height: 80px; /*We might have a depper error that is somewhat hidden by setting this - sometimes the error pupup is cut off. This is still happening. Fix it. */
 	/*max-height: 800px; //TODO: Figure out how to make the window not scroll and just get bigger*/
 }
 
@@ -28,6 +30,10 @@ body {
 	text-align: center;
 	/*margin: 20px;*/
 	padding: 20px;
+}
+
+#landingPage {
+	min-height: 150px;
 }
 
 #trackCountSubtext {

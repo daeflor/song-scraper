@@ -12,18 +12,19 @@ chrome.storage.onChanged.addListener
 		{
 			var storageChange = changes[key];
 
-			if (key.indexOf('_TrackList') > -1) 
+			if (key.indexOf(chrome.runtime.id + '_Playlist') > -1) 
 			{
-				var playlistName = key.split('_TrackList')[0];
+				
+				var playlistName = key.split('_')[2];
 				
 				if (storageChange.oldValue == undefined)
 				{	
-					ShowStorageResultText('First time saving data for this playlist.');	
+					ShowStorageResultText('First time saving data for Playlist ' + playlistName + '.');	
 					HideTrackLists();		
 					return;
 				}
 				
-				console.log('Playlist "%s" has changed. It previously had %s tracks, and now has %s tracks.', playlistName, storageChange.oldValue.length, storageChange.newValue.length);
+				console.log('Playlist %s has changed. It previously had %s tracks, and now has %s tracks.', playlistName, storageChange.oldValue.length, storageChange.newValue.length);
 				CompareTrackLists(storageChange.newValue, storageChange.oldValue);
 			}
 			else
@@ -84,6 +85,7 @@ function GetCurrentTrackCount(callback)
 				{greeting: 'GetTrackCount'}, 
 				function(response) 
 				{
+					console.log('Current playlist\'s track count is %s.', response);
 					callback(response);
 				}
 			);
@@ -129,14 +131,14 @@ function CompareTrackCounts(playlistName)
 				return;
 			}
 				
-			var trackListKey = playlistName + '_TrackList';	
+			var trackListKey = chrome.runtime.id + '_Playlist_\'' + playlistName + '\'';	
 					
 			GetPreviousTrackCount
 			(
 				trackListKey,
 				function(previousTrackCount)
 				{
-					console.log('Playlist "%s" previously had %s tracks, and now has %s tracks.', playlistName, previousTrackCount, trackCount);
+					console.log('Playlist \'%s\' previously had %s tracks, and now has %s tracks.', playlistName, previousTrackCount, trackCount);
 		
 					SetTrackCountValue(trackCount, previousTrackCount);
 					document.getElementById('buttonComparePlaylist').onclick = GetSongList;
@@ -170,7 +172,7 @@ function GetSongList()
 							ShowTrackLists();
 							ShowBackButton();
 							
-							var key = GetPlaylistName(tabs[0]) + '_TrackList'; 
+							var key = chrome.runtime.id + '_Playlist_\'' + GetPlaylistName(tabs[0]) + '\'';
 							var trackListStorageObject= {};
 							trackListStorageObject[key] = trackList;
 							
@@ -381,7 +383,7 @@ function ShowTitle(title)
 
 function ShowLandingPage()
 {
-	//document.getElementById('landingPage').textContent = text;
+	//document.getElementById('popup').style.minHeight = '250px';
 	document.getElementById('landingPage').hidden = false;
 }
 
@@ -476,19 +478,48 @@ function ReloadPopup()
 	FadeOut(document.getElementById('popup'), function() { location.reload(true); });
 }
 
-/***** Notes *****/
+/*
+***** Notes *****
 
-//TODO: Check that the list of playlists is up to date
-//TODO: Save all playlists
-//TODO: Switch to using sync storage. May have to prefix every object more uniquely. 
-	//Or.. only store ONE object for the extension. And that object contains all the others... scary. 
+** Bugs **
 
-//TODO: Style: Differentiate content script methods from similarly named Popup methods
-//TODO: Future: MVC
-//TODO: Future: Progress bar
-//TODO: Future: Support comparison between Spotify playlists and google music
-//TODO: Future: Consider feature which suggests listening to one of the albums/tracks in the 'test' playlists. 
-//TODO: Unit tests?
+	- Hit an issue where the same song showed up under Removed and Added, for unknown reasons. May be resolved by showing all info for the songs that have been removed/added. 
+	- First time saving playlist very briefly shows the added/removed section before hiding it.
+	- The popup is sometimes cutoff. 
 
 
-//chrome.storage.local.get(null, function (e) { console.log(e); });
+** Features **
+
+V1:
+	- Allow user to save "all songs" / songs added to library, etc, not just Playlists. 
+	- Prefix storage object's with unique extension ID.
+	- Start using Sync storage
+		- This may not work because of the QUOTA_BYTES_PER_ITEM limit. 
+	- Store a list of all Playlists and check that the list of playlists is up to date. Let the user know if it's not. 
+	- Allow user to view more than just the title of the tracks removed 
+
+V2:
+	- Only store ONE object for the extension. And that object contains all the others... scary. 
+		- This probably won't work because of the QUOTA_BYTES_PER_ITEM limit. 
+	- Progress bar
+	- Support comparison between Spotify playlists and google music
+	- Consider feature which suggests listening to one of the albums/tracks in the 'test' playlists. 
+	- Unit tests?	
+	- Store an "all tracks removed" list and allow the user to select if they want to add them to that list or not after it lists which have been removed
+
+
+** Tasks **
+
+	- Check that the list of playlists is up to date
+	- Save all playlists
+
+
+** Style **
+
+	- Differentiate content script methods from similarly named Popup methods
+	- MVC
+
+
+chrome.storage.local.get(null, function (e) { console.log(e); });
+location.reload(true);
+*/
