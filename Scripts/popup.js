@@ -19,7 +19,7 @@ chrome.storage.onChanged.addListener
 				
 				if (storageChange.oldValue == undefined)
 				{	
-					ShowStorageResultText('First time saving data for Playlist ' + playlistName + '.');	
+					ShowStorageResultText();	
 					HideTrackLists();		
 					return;
 				}
@@ -435,9 +435,8 @@ function ShowComparisonPage()
 	document.getElementById('comparisonPage').hidden = false;
 }
 
-function ShowStorageResultText(text)
+function ShowStorageResultText()
 {
-	document.getElementById('storageResultText').textContent = text;
 	document.getElementById('storageResultText').hidden = false;
 }
 
@@ -492,11 +491,14 @@ function ReloadPopup()
 
 V1:
 	- Allow user to save "all songs" / songs added to library, etc, not just Playlists. 
-	- Prefix storage object's with unique extension ID.
+		- Allow "uplaoded/purchased" and "subscription" songs to be saved separately. (except these don't have track counts)
+			- Could use url + divs to determine this (https://play.google.com/music/listen?u=0#/all)
 	- Start using Sync storage
 		- This may not work because of the QUOTA_BYTES_PER_ITEM limit. 
 	- Store a list of all Playlists and check that the list of playlists is up to date. Let the user know if it's not. 
 	- Allow user to view more than just the title of the tracks removed 
+	- What if multiple playlists have the same name, or one of them is called "Songs"?
+	- What if the song list has more then 999 songs and has a comma in the number. 
 
 V2:
 	- Only store ONE object for the extension. And that object contains all the others... scary. 
@@ -506,11 +508,11 @@ V2:
 	- Consider feature which suggests listening to one of the albums/tracks in the 'test' playlists. 
 	- Unit tests?	
 	- Store an "all tracks removed" list and allow the user to select if they want to add them to that list or not after it lists which have been removed
+	- Consider app vs extension possibilities
 
 
 ** Tasks **
 
-	- Check that the list of playlists is up to date
 	- Save all playlists
 
 

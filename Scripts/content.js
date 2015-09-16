@@ -34,7 +34,8 @@ function GetTrackCount()
     }
     else
     {
-        return parseInt(GetTrackCountElement().textContent.split(" ")[0]);
+        var trackCountString = element.textContent.split(" ")[0];
+        return parseInt(trackCountString.replace(/,/g, ""));
     }
 }
 
@@ -55,6 +56,7 @@ function ListSongs(callback)
     (
         function()
         {            
+            //TODO: this won't work for the All Songs list because it doesn't have indexes... 
             var songs = document.querySelectorAll('table.song-table tbody tr.song-row');
             
             for (var i = 0; i < songs.length; i++)
@@ -76,7 +78,7 @@ function ListSongs(callback)
             if (list.length >= trackCount)
             {
                 clearInterval(scrollInterval);
-                document.body.style.zoom= '1';
+                document.body.style.zoom= '1'; //TODO why arent we zoooooming sooner? 
                 console.log('Finished collecting track list.');
                 callback(list);
             }
