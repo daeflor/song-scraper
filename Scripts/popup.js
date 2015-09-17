@@ -484,32 +484,34 @@ function ReloadPopup()
 
 	- Hit an issue where the same song showed up under Removed and Added, for unknown reasons. May be resolved by showing all info for the songs that have been removed/added. 
 	- First time saving playlist very briefly shows the added/removed section before hiding it.
-	- The popup is sometimes cutoff. 
+	- The popup is sometimes cut off. 
+	- If multiple playlists have the same name, their info will likely just get overridden. 
 
 
 ** Features **
 
-V1:
-	- Allow user to save "all songs" / songs added to library, etc, not just Playlists. 
-		- Allow "uplaoded/purchased" and "subscription" songs to be saved separately. (except these don't have track counts)
-			- Could use url + divs to determine this (https://play.google.com/music/listen?u=0#/all)
-	- Start using Sync storage
-		- This may not work because of the QUOTA_BYTES_PER_ITEM limit. 
+V1:	
 	- Store a list of all Playlists and check that the list of playlists is up to date. Let the user know if it's not. 
 	- Allow user to view more than just the title of the tracks removed 
-	- What if multiple playlists have the same name, or one of them is called "Songs"?
-	- What if the song list has more then 999 songs and has a comma in the number. 
 
 V2:
+	- Have the user's track list info be accessible across devices so they can use the extension from anywhere
+		- Extension Sync storage may not work because of the quota limits. 
+		- Could consider Google Drive integration, or switching to a Packaged App
+	- Allow user to save more than just playlists (e.g. All songs added to library, Uploaded & Purchased songs, and Subscription songs).
+		- These all use this url: https://play.google.com/music/listen?u=0#/all
+		- Made complicated because none of these lists have song index numbers, and the latter two don't have track counts
+		- Would have to make sure to be able to distinguish these from playlists (e.g. what if a playlist is also called "Songs"?)
+		- Consider using a different method to determine when you're at the bottom of the page/window, and maybe just use all track info to compare and find duplicates
 	- Only store ONE object for the extension. And that object contains all the others... scary. 
 		- This probably won't work because of the QUOTA_BYTES_PER_ITEM limit. 
 	- Progress bar
-	- Support comparison between Spotify playlists and google music
+	- Support comparison between Spotify playlists and google music (allowing the user to choose tracklist x and y to compare)
 	- Consider feature which suggests listening to one of the albums/tracks in the 'test' playlists. 
 	- Unit tests?	
 	- Store an "all tracks removed" list and allow the user to select if they want to add them to that list or not after it lists which have been removed
 	- Consider app vs extension possibilities
-
+	
 
 ** Tasks **
 
@@ -522,6 +524,9 @@ V2:
 	- MVC
 
 
-chrome.storage.local.get(null, function (e) { console.log(e); });
-location.reload(true);
+** TEMP **
+
+	document.querySelectorAll('div.tooltip.fade-out'); 3 -> length-1
+	chrome.storage.local.get(null, function (e) { console.log(e); });
+	location.reload(true);
 */
