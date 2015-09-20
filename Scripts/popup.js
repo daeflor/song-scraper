@@ -41,35 +41,103 @@ chrome.storage.onChanged.addListener
 
 function Start()
 {	
-	VeryTabIsGoogleMusicPlaylist
+	VerifyTab
 	(
 		function(tab) 
 		{
-			var playlistName = GetPlaylistName(tab);
-			if (playlistName == null)
-			{
-				console.log('Playlist name not found. Page has likely not finished loading yet.');
-				ShowErrorMessage('Please open a valid Google Music playlist page and try again!');
-				return;
-			}
-
 			HideErrorMessage();
-			ShowTitle(playlistName);
-			CompareTrackCounts(playlistName);
+			ShowTitle(GetPlaylistName(tab));
+			CompareTrackCounts(GetPlaylistName(tab));
 		}
 	);
 }
 
-function GetPlaylistName(tab) 
+function GetPlaylistName(tab)
 {
-	if (tab.title.indexOf(' - Google Play Music') == -1)
+	return tab.title.split(' - Google Play Music')[0]; 
+}
+
+function VerifyTab(callback)
+{
+	chrome.tabs.query
+	(
+		{active: true, currentWindow: true}, 
+		function(tabs) 
+		{
+			VerifyTabUrl
+			(
+				tabs[0],
+				function(tab)
+				{
+					VerifyTabTitle(tab, callback);
+				}
+			);
+		}
+	);
+
+}
+
+function VerifyTabUrl(tab, callback)
+{
+	var url = tab.url;
+	console.assert(typeof url == 'string', 'tab.url should be a string');
+
+	if (url.indexOf('https://play.google.com/music/listen?u=0#/pl/') == -1
+		&& url.indexOf('https://play.google.com/music/listen#/pl/') == -1)
 	{
-		return null;
+		console.log('Page is not a valid Google Music playlist url.');
+		ShowErrorMessage('URL Invalid. Please open a valid Google Music playlist page and try again.');
 	}
 	else
 	{
-		return tab.title.split(' - Google Play Music')[0]; 
+		callback(tab);
 	}
+}
+
+function VerifyTabTitle(tab, callback) 
+{
+	if (tab.title.indexOf(' - Google Play Music') == -1)
+	{
+		ShowErrorMessage('Please open a valid Google Music playlist page and try again.');
+	}
+	else if ((tab.title.match(/-/g)).length >= 2)
+	{
+		ShowErrorMessage('Please pause music playback and try again.');
+	}
+	else
+	{
+		callback(tab); 
+	}
+}
+
+function CompareTrackCounts(playlistName)
+{
+	GetCurrentTrackCount
+	(
+		function(trackCount)
+		{		
+			if (trackCount == null)
+			{
+				ShowErrorMessage('Track count could not be determined. Please open a valid playlist page and try again.');
+				return;
+			}
+				
+			var trackListKey = chrome.runtime.id + '_Playlist_\'' + playlistName + '\'';	
+					
+			GetPreviousTrackCount
+			(
+				trackListKey,
+				function(previousTrackCount)
+				{
+					console.log('Playlist \'%s\' previously had %s tracks, and now has %s tracks.', playlistName, previousTrackCount, trackCount);
+		
+					SetTrackCountValue(trackCount, previousTrackCount);
+					document.getElementById('buttonComparePlaylist').onclick = GetSongList;
+					ShowLandingPage();
+				}	
+			);
+		}			
+	);
 }
 
 function GetCurrentTrackCount(callback)
@@ -116,36 +184,6 @@ function GetPreviousTrackCount(key, callback)
 				callback(result[key].length); 
 			}
 		}
-	);
-}
-
-function CompareTrackCounts(playlistName)
-{
-	GetCurrentTrackCount
-	(
-		function(trackCount)
-		{		
-			if (trackCount == null)
-			{
-				ShowErrorMessage('Track count could not be determined. Please open a valid playlist page and try again.');
-				return;
-			}
-				
-			var trackListKey = chrome.runtime.id + '_Playlist_\'' + playlistName + '\'';	
-					
-			GetPreviousTrackCount
-			(
-				trackListKey,
-				function(previousTrackCount)
-				{
-					console.log('Playlist \'%s\' previously had %s tracks, and now has %s tracks.', playlistName, previousTrackCount, trackCount);
-		
-					SetTrackCountValue(trackCount, previousTrackCount);
-					document.getElementById('buttonComparePlaylist').onclick = GetSongList;
-					ShowLandingPage();
-				}	
-			);
-		}			
 	);
 }
 
@@ -339,29 +377,6 @@ function FadeIn(element, callback)
 	);
 }
 
-function VeryTabIsGoogleMusicPlaylist(callback)
-{
-	chrome.tabs.query
-	(
-		{active: true, currentWindow: true}, 
-		function(tabs) 
-		{
-			var url = tabs[0].url;
-			console.assert(typeof url == 'string', 'tab.url should be a string');
-
-			if (url.indexOf('https://play.google.com/music/listen?u=0#/pl/') == -1)
-			{
-				console.log('Page is not a valid Google Music playlist url.');
-				ShowErrorMessage('Please open a valid Google Music playlist page and try again.');
-			}
-			else
-			{
-				callback(tabs[0]);
-			}
-		}
-	);
-}
-
 /***** User Interface *****/
 
 function ShowErrorMessage(text)
@@ -486,6 +501,7 @@ function ReloadPopup()
 	- First time saving playlist very briefly shows the added/removed section before hiding it.
 	- The popup is sometimes cut off. 
 	- If multiple playlists have the same name, their info will likely just get overridden. 
+	- Does not get proper playlist name if a track is playing
 
 
 ** Features **
@@ -493,6 +509,8 @@ function ReloadPopup()
 V1:	
 	- Store a list of all Playlists and check that the list of playlists is up to date. Let the user know if it's not. 
 	- Allow user to view more than just the title of the tracks removed 
+	- Make a song object and use that instead obj= {} 
+	- May want to allow user to be playing audio when they use the extension (need different way of getting playlist name)
 
 V2:
 	- Have the user's track list info be accessible across devices so they can use the extension from anywhere
@@ -516,6 +534,7 @@ V2:
 ** Tasks **
 
 	- Save all playlists
+	- Consider having all projects in one repo, under different branches
 
 
 ** Style **
