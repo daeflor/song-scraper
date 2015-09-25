@@ -18,6 +18,27 @@ chrome.runtime.onMessage.addListener
     }
 );
 
+function ToggleScrolling(enabled)
+{
+    var container = document.querySelectorAll('html /deep/ #mainContainer');
+    if (enabled)
+    {
+        container[1].style.overflowY = 'auto';
+    }
+    else
+    {
+        container[1].style.overflowY = 'hidden';
+    }
+}
+
+function SongMetaData(title, duration, artist, album)
+{
+    this.title = title;
+    this.duration = duration;
+    this.artist = artist;
+    this.album = album;
+}
+
 function GetTrackCountElement()
 {
     return document.querySelector('.song-count');
@@ -47,62 +68,47 @@ function ScrollToTrackCount()
 function ListSongs(callback)
 {    
     var list = [];
-    var trackCount = GetTrackCount();
-    console.log('Scrolling through %s tracks.', trackCount);
+    var lastTrack;
     
     document.body.style.zoom= '.1';
+    ToggleScrolling(false);
     
     var scrollInterval = setInterval
     (
         function()
         {            
-            //TODO: this won't work for the All Songs list because it doesn't have indexes... 
             var songs = document.querySelectorAll('table.song-table tbody tr.song-row');
             
-            for (var i = 0; i < songs.length; i++)
+            if (lastTrack === songs[songs.length-1])
             {
-                var track = songs[i];
-                var index = track.querySelector('td[data-col="index"] .content').textContent;
-                var title = track.querySelector('td[data-col="title"] .content').textContent;
-                var duration= track.querySelector('td[data-col="duration"]').textContent;
-                var artist = track.querySelector('td[data-col="artist"] .content').textContent;
-                var album = track.querySelector('td[data-col="album"] .content').textContent;
-                
-                var trackObject = { index, title, duration, artist, album };
-                
-                AddSongToTrackList(list, trackObject);
-            }
-            
-            songs[songs.length-1].scrollIntoView(true); 
-            
-            if (list.length >= trackCount)
-            {
-                clearInterval(scrollInterval);
-                document.body.style.zoom= '1'; //TODO why arent we zoooooming sooner? 
                 console.log('Finished collecting track list.');
-                callback(list);
+                clearInterval(scrollInterval);
+                ToggleScrolling(true);
+                document.body.style.zoom= '1';
+                return callback(list);
             }
+            
+            for (var i = 0; i <= songs.length-1; i++)
+            {                
+                if (lastTrack == null || parseInt(songs[i].getAttribute('data-index')) > parseInt(lastTrack.getAttribute('data-index')))
+                {
+                    console.log('Adding song %s - "%s" to track list.', songs[i].getAttribute('data-index'), songs[i].querySelector('td[data-col="title"] .content').textContent);
+                    list.push
+                    (
+                        new SongMetaData
+                        (
+                            songs[i].querySelector('td[data-col="title"] .content').textContent,
+                            songs[i].querySelector('td[data-col="duration"]').textContent,
+                            songs[i].querySelector('td[data-col="artist"] .content').textContent,
+                            songs[i].querySelector('td[data-col="album"] .content').textContent
+                        ) 
+                    );                    
+                }
+            }
+            
+            lastTrack = songs[songs.length-1];
+            lastTrack.scrollIntoView(true); 
         }, 
         250
     );
-}
-
-function AddSongToTrackList(list, trackObject) 
-{
-    var duplicate = false;
-    var i = list.length;
-    
-    while (i--) 
-    {
-       if (list[i].index === trackObject.index) //TODO: Error checking needed
-       {
-           duplicate = true;
-           break;
-       }
-    }
-    
-    if (!duplicate)
-    {
-        list.push(trackObject);
-    }
 }

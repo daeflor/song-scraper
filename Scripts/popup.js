@@ -237,6 +237,8 @@ function GetSongList()
 	 
 function CompareTrackLists(latest, previous)  
 {	
+	//TODO: filter
+	
 	//TODO: Error checking needed
 	
 	for (var i = 0; i < latest.length; i++)
@@ -501,9 +503,9 @@ function ReloadPopup()
 	- First time saving playlist very briefly shows the added/removed section before hiding it.
 	- The popup is sometimes cut off. 
 	- If multiple playlists have the same name, their info will likely just get overridden. 
-	- Does not get proper playlist name if a track is playing
+	- The comparison can be wrong about which specific track was removed from a playlist. This happens when there were duplicates and only the earlier (lower index) of the two tracks was removed. 
 
-
+	
 ** Features **
 
 V1:	
@@ -511,6 +513,7 @@ V1:
 	- Allow user to view more than just the title of the tracks removed 
 	- Make a song object and use that instead obj= {} 
 	- May want to allow user to be playing audio when they use the extension (need different way of getting playlist name)
+	- Have a better indicator that the compare button is disabled while the comparison is running. 
 
 V2:
 	- Have the user's track list info be accessible across devices so they can use the extension from anywhere
@@ -529,7 +532,9 @@ V2:
 	- Unit tests?	
 	- Store an "all tracks removed" list and allow the user to select if they want to add them to that list or not after it lists which have been removed
 	- Consider app vs extension possibilities
-	
+	- If scrolling is allowed while comparing a playlist, and the user scrolls, it's possible that the track list returned will be incorrect. 
+		- deep query selector is going away soon; will need new a way of preventing user from scrolling while comparing playlist. 
+
 
 ** Tasks **
 
@@ -548,4 +553,5 @@ V2:
 	document.querySelectorAll('div.tooltip.fade-out'); 3 -> length-1
 	chrome.storage.local.get(null, function (e) { console.log(e); });
 	location.reload(true);
+	var index = songs[0].getAttribute('data-index');
 */
