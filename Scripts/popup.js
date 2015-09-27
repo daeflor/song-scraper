@@ -19,6 +19,7 @@ chrome.storage.onChanged.addListener
 				
 				if (storageChange.oldValue == undefined)
 				{	
+					console.log('New playlist stored: %s.', playlistName);
 					ShowStorageResultText();	
 					HideTrackLists();		
 					return;
@@ -234,12 +235,92 @@ function GetSongList()
 		}
 	);
 }
+/*
+function IsNotNull(value)
+{
+	return value != null;
+}
+*/
+function DisplayTrackTable(tableID, list, description)
+{
+	var table = document.getElementById(tableID);
+	var tr;
+	var td;	
+		
+	for (var i = 0; i < list.length; i++)
+	{
+		if (list[i] == null)
+		{
+			continue;
+		}
+		
+		console.log(list[i].title);
+		tr = document.createElement('TR');
+		
+		td = document.createElement('TD');
+		td.textContent = i+1; 
+		tr.appendChild(td);
+		
+		td = document.createElement('TD');
+		td.textContent = list[i].title;
+		tr.appendChild(td);
+		
+		td = document.createElement('TD');
+		td.textContent = list[i].artist;
+		tr.appendChild(td);
+		
+		td = document.createElement('TD');
+		td.textContent = list[i].album;
+		tr.appendChild(td);
+		
+		table.appendChild(tr);
+	}
+	
+	//table.style.height = table.childElementCount * 20 + 'px';
+	//console.log("Table hidden status B4: " + table.hidden);
+	if (document.getElementById(tableID).childElementCount > 1)
+	{
+		table.hidden = false;
+		description.hidden = true;
+	}
+	/*
+	table.hidden = document.getElementById(tableID).childElementCount-1;
+	//console.log("Table hidden status: " + table.hidden);
+	//table.hidden = table.childElementCount-1;
+	document.getElementById('tracksAddedEmpty').hidden = !table.hidden;
+	*/
+}
+//TODO make each td scrollable, instead of the whole table, maybe. (That way outliers dont skew the whole table.)
+	//Doesnt really work, cause what we want is every column to be x-scrollable, not every td.
+/*function DisplayTrackTables(added, removed)
+{
+	var table;
+	
+	if (added.length > 0)
+	{
+		//document.getElementById('tracksAddedEmpty').hidden = true;
+		table = document.getElementById('tracksAddedTable');
+		//table.style.height = added.length * 20 + 'px';
+		//table.hidden = false;
+		console.log('Tracks added: ');
+		PrintTrackTable(document.getElementById('tracksAddedTable'), added);
+	}
+	
+	if (removed.length > 0)
+	{
+		document.getElementById('tracksRemovedEmpty').hidden = true;
+		table = document.getElementById('tracksRemovedTable');
+		table.style.height = removed.length * 20 + 'px';
+		table.hidden = false;
+		console.log('Tracks removed: ');
+		PrintTrackTable(table, removed);
+	}
+}*/
 	 
 function CompareTrackLists(latest, previous)  
-{	
-	//TODO: filter
-	
+{		
 	//TODO: Error checking needed
+	//TODO filter?
 	
 	for (var i = 0; i < latest.length; i++)
 	{
@@ -253,9 +334,59 @@ function CompareTrackLists(latest, previous)
 				break;
 			}
 		}
+	} //TODO removed track index wrong if there were duplicates
+	
+		//TODO should this be a callback?
+	console.log('Tracks added: ----');
+	DisplayTrackTable('tracksAddedTable', latest, document.getElementById('tracksAddedEmpty'));
+	
+	console.log('Tracks removed: ----');
+	DisplayTrackTable('tracksRemovedTable', previous, document.getElementById('tracksRemovedEmpty'));
+	
+
+	//DisplayTrackTables(latest, previous);
+	//DisplayTrackTables(latest.filter(IsNotNull), previous.filter(IsNotNull));
+	
+	/*
+	console.log('doing what i think');
+	var tracksAdded = latest.filter(IsNotNull);
+	// var tracksAdded = latest.filter
+	// (
+	// 	function(value)
+	// 	{
+	// 		return value != null;
+	// 	}
+	// );
+	//console.log('TTTracks added: ');
+	//console.log(tracksAdded);
+	
+	var tracksRemoved = previous.filter
+	(
+		function(value)
+		{
+			return value != null;
+		}
+	);
+	
+	if (tracksAdded.length > 0)
+	{
+		console.log('Tracks added: ');
+		console.log(tracksAdded);
+		DisplayTracksAdded(tracksAdded);
+	}
+
+	if (tracksRemoved.length > 0)
+	{
+		console.log('Tracks removed:');
+		console.log(tracksRemoved);
+		DisplayTracksRemoved(tracksRemoved);
 	}
 	
-	var tracksAdded = [];
+	//DisplayTrackTables();
+	
+	//TODO finish implementing this
+	
+	/*var tracksAdded = [];
 	
 	for (var i = 0; i < latest.length; i++)
 	{
@@ -264,33 +395,27 @@ function CompareTrackLists(latest, previous)
 			tracksAdded.push(i+1 + " " + latest[i].title);
 			console.log("Track Added: %s %s", i+1, latest[i].title);
 		}
-	}
+	}*/
 	
-	if (tracksAdded.length > 0)
-	{
-		DisplayTracksAdded(tracksAdded);
-	}
 
-	var tracksRemoved = [];
-	
-	for (var j = 0; j < previous.length; j++)
-	{
-		if (previous[j] != null)
-		{
-			tracksRemoved.push(j+1 + " " + previous[j].title);
-			console.log("Track Removed: %s %s", j+1, previous[j].title);
-		}
-	}
-	
-	if (tracksRemoved.length > 0)
-	{
-		DisplayTracksRemoved(tracksRemoved);
-	}
+
+	// var tracksRemoved = [];
+	// 
+	// for (var j = 0; j < previous.length; j++)
+	// {
+	// 	if (previous[j] != null)
+	// 	{
+	// 		tracksRemoved.push(j+1 + " " + previous[j].title);
+	// 		console.log("Track Removed: %s %s", j+1, previous[j].title);
+	// 	}
+	// }
 }
 
 function PrintListToTextArea(textArea, list)
 {
-   	textArea.textContent = list.join('\n');
+	//document.getElementById('tracksAddedTable').
+	textArea.textContent = list[0].title; //TODO: Error checking needed
+   	//textArea.textContent = list.join('\n');
 }
 
 function PrintList(list)
@@ -454,6 +579,7 @@ function ShowComparisonPage()
 
 function ShowStorageResultText()
 {
+	//document.getElementById('popup').style.minHeight = '250px';
 	document.getElementById('storageResultText').hidden = false;
 }
 
@@ -473,9 +599,10 @@ function ShowBackButton()
 	document.getElementById('buttonBack').onclick = ReloadPopup; //TODO: maybe could assign all buttons in one function
 }
 
+/*
 function DisplayTracksAdded(list)
 {
-	PrintListToTextArea(document.getElementById('tracksAddedList'), list);
+	PrintListToTextArea(document.getElementById('tracksAddedTable'), list);
 	document.getElementById('tracksAddedEmpty').hidden = true;
 	document.getElementById('tracksAddedList').style.height = list.length * 20 + 'px';
 	document.getElementById('tracksAddedList').hidden = false;
@@ -483,11 +610,12 @@ function DisplayTracksAdded(list)
 
 function DisplayTracksRemoved(list)
 {
-	PrintListToTextArea(document.getElementById('tracksRemovedList'), list);
+	PrintListToTextArea(document.getElementById('tracksRemovedTable'), list);
 	document.getElementById('tracksRemovedEmpty').hidden = true;
 	document.getElementById('tracksRemovedList').style.height = list.length * 20 + 'px';
 	document.getElementById('tracksRemovedList').hidden = false;
 }
+*/
 							
 function ReloadPopup()
 {
@@ -504,7 +632,8 @@ function ReloadPopup()
 	- The popup is sometimes cut off. 
 	- If multiple playlists have the same name, their info will likely just get overridden. 
 	- The comparison can be wrong about which specific track was removed from a playlist. This happens when there were duplicates and only the earlier (lower index) of the two tracks was removed. 
-
+	- Getting playlist name currently doesn't work if there's a hyphen in the name 
+	
 	
 ** Features **
 
@@ -534,7 +663,8 @@ V2:
 	- Consider app vs extension possibilities
 	- If scrolling is allowed while comparing a playlist, and the user scrolls, it's possible that the track list returned will be incorrect. 
 		- deep query selector is going away soon; will need new a way of preventing user from scrolling while comparing playlist. 
-
+	- Feature that checks for duplicates
+	
 
 ** Tasks **
 

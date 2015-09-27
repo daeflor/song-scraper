@@ -21,16 +21,37 @@
        
         <div id='trackLists' hidden=true>
           
+          <!--TODO restructure all this-->
           <div id='tracksAdded'>
             <p>Tracks Added</p>
             <p id='tracksAddedEmpty' class='indent'>- No new tracks added.</p>
-            <textarea id='tracksAddedList' class='trackList' hidden=true></textarea>
+            <!--<textarea id='tracksAddedList' class='trackList' hidden=true></textarea>-->
+            <div class="trackTableWrapper">
+              <table id='tracksAddedTable' class="trackTable" hidden=true>
+                <tr>
+                  <th>Index</th>
+                  <th>Title</th>
+                  <th>Artist</th>
+                  <th>Album</th>
+                </tr>
+              </table>
+            </div>
           </div> 
           
-          <div id='tracksRemoved'>
+          <div>
             <p style='color:#ff0000'>Tracks Removed</p>
             <p id='tracksRemovedEmpty' class='indent'>- No tracks removed.</p>
-            <textarea id='tracksRemovedList' class='trackList' hidden=true></textarea>
+            <!--<textarea id='tracksRemovedList' class='trackList' hidden=true></textarea>-->
+            <div class="trackTableWrapper">
+              <table id='tracksRemovedTable' class="trackTable" hidden=true>
+                <tr>
+                  <th>Index</th>
+                  <th>Title</th>
+                  <th>Artist</th>
+                  <th>Album</th>
+                </tr>
+              </table>
+            </div>
           </div> 
           
         </div>

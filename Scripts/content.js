@@ -89,8 +89,9 @@ function ListSongs(callback)
             }
             
             for (var i = 0; i <= songs.length-1; i++)
-            {                
-                if (lastTrack == null || parseInt(songs[i].getAttribute('data-index')) > parseInt(lastTrack.getAttribute('data-index')))
+            {      
+                //TODO could use list.length here or something like that, instead of lasttrack          
+                if (lastTrack == null || parseInt(songs[i].getAttribute('data-index')) > parseInt(lastTrack.getAttribute('data-index'))) 
                 {
                     console.log('Adding song %s - "%s" to track list.', songs[i].getAttribute('data-index'), songs[i].querySelector('td[data-col="title"] .content').textContent);
                     list.push

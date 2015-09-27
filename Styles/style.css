@@ -1,4 +1,4 @@
-/*There are probably a lot of redundant properites here that could be trimmed down*/
+/*TODO: There are probably a lot of redundant properites here that could be trimmed down*/
 
 body {
 	font-family: 'Gill Sans', Optima, "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
@@ -6,7 +6,7 @@ body {
 	font-style: normal;
 	font-size: 16px;
 	min-width: 330px;
-	max-width: 500px;
+	max-width: 1000px;
 	background-color: #383838;
 	color: #FFCC66;
 	min-height: 80px; /*We might have a depper error that is somewhat hidden by setting this - sometimes the error pupup is cut off. This is still happening. Fix it. */
@@ -60,7 +60,7 @@ body {
 	color: antiquewhite;
 	font-size: 16px;
 }
-
+/*
 .trackList {
 	text-overflow: ellipsis;
 	min-width: 100%;
@@ -75,7 +75,48 @@ body {
 	border: none;
 	resize: none;
 }
+*/
 
+.trackTableWrapper {
+	max-height: 200px;
+	overflow-y: scroll;
+}
+
+.trackTable {
+	/*text-overflow: ellipsis;*/
+	width: 700px;
+	
+	/*overflow-y: scroll;
+	min-height: 50px;
+	max-height: 175px;*/
+	text-align: left;	
+	font-family: Optima, "Segoe UI";
+	font-size: 14px;
+	color: antiquewhite;
+	background-color: #404040;
+	resize: none;
+	
+	white-space: nowrap;
+	/*overflow-x: scroll;*/
+	border: 1px solid black;
+}
+
+td {
+	max-width: 225px;
+	/*overflow-x: auto;*/
+	min-width: 100%;
+	
+	/*text-overflow: ellipsis; */	
+	
+	text-overflow: ellipsis; 
+	overflow-x: hidden;
+	padding-right: 5px;
+}
+/*
+tr {
+	outline: 1px solid black;	
+}
+*/
 .popupButton {
 	-moz-box-shadow: 1px 1px 10px 2px #1c1b18;
 	-webkit-box-shadow: 1px 1px 10px 2px #1c1b18;
