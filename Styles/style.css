@@ -83,12 +83,7 @@ body {
 }
 
 .trackTable {
-	/*text-overflow: ellipsis;*/
 	width: 700px;
-	
-	/*overflow-y: scroll;
-	min-height: 50px;
-	max-height: 175px;*/
 	text-align: left;	
 	font-family: Optima, "Segoe UI";
 	font-size: 14px;
@@ -97,26 +92,17 @@ body {
 	resize: none;
 	
 	white-space: nowrap;
-	/*overflow-x: scroll;*/
 	border: 1px solid black;
 }
 
 td {
 	max-width: 225px;
-	/*overflow-x: auto;*/
 	min-width: 100%;
-	
-	/*text-overflow: ellipsis; */	
-	
 	text-overflow: ellipsis; 
 	overflow-x: hidden;
 	padding-right: 5px;
 }
-/*
-tr {
-	outline: 1px solid black;	
-}
-*/
+
 .popupButton {
 	-moz-box-shadow: 1px 1px 10px 2px #1c1b18;
 	-webkit-box-shadow: 1px 1px 10px 2px #1c1b18;

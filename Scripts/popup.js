@@ -235,12 +235,7 @@ function GetSongList()
 		}
 	);
 }
-/*
-function IsNotNull(value)
-{
-	return value != null;
-}
-*/
+
 function DisplayTrackTable(tableID, list, description)
 {
 	var table = document.getElementById(tableID);
@@ -276,50 +271,18 @@ function DisplayTrackTable(tableID, list, description)
 		table.appendChild(tr);
 	}
 	
-	//table.style.height = table.childElementCount * 20 + 'px';
-	//console.log("Table hidden status B4: " + table.hidden);
 	if (document.getElementById(tableID).childElementCount > 1)
 	{
 		table.hidden = false;
 		description.hidden = true;
 	}
-	/*
-	table.hidden = document.getElementById(tableID).childElementCount-1;
-	//console.log("Table hidden status: " + table.hidden);
-	//table.hidden = table.childElementCount-1;
-	document.getElementById('tracksAddedEmpty').hidden = !table.hidden;
-	*/
 }
 //TODO make each td scrollable, instead of the whole table, maybe. (That way outliers dont skew the whole table.)
 	//Doesnt really work, cause what we want is every column to be x-scrollable, not every td.
-/*function DisplayTrackTables(added, removed)
-{
-	var table;
-	
-	if (added.length > 0)
-	{
-		//document.getElementById('tracksAddedEmpty').hidden = true;
-		table = document.getElementById('tracksAddedTable');
-		//table.style.height = added.length * 20 + 'px';
-		//table.hidden = false;
-		console.log('Tracks added: ');
-		PrintTrackTable(document.getElementById('tracksAddedTable'), added);
-	}
-	
-	if (removed.length > 0)
-	{
-		document.getElementById('tracksRemovedEmpty').hidden = true;
-		table = document.getElementById('tracksRemovedTable');
-		table.style.height = removed.length * 20 + 'px';
-		table.hidden = false;
-		console.log('Tracks removed: ');
-		PrintTrackTable(table, removed);
-	}
-}*/
 	 
 function CompareTrackLists(latest, previous)  
 {		
-	//TODO: Error checking needed
+	//TODO: Error checking needed?
 	//TODO filter?
 	
 	for (var i = 0; i < latest.length; i++)
@@ -336,86 +299,22 @@ function CompareTrackLists(latest, previous)
 		}
 	} //TODO removed track index wrong if there were duplicates
 	
-		//TODO should this be a callback?
+	//TODO should these be a callback?
 	console.log('Tracks added: ----');
 	DisplayTrackTable('tracksAddedTable', latest, document.getElementById('tracksAddedEmpty'));
 	
 	console.log('Tracks removed: ----');
 	DisplayTrackTable('tracksRemovedTable', previous, document.getElementById('tracksRemovedEmpty'));
-	
+}
 
-	//DisplayTrackTables(latest, previous);
-	//DisplayTrackTables(latest.filter(IsNotNull), previous.filter(IsNotNull));
-	
-	/*
-	console.log('doing what i think');
-	var tracksAdded = latest.filter(IsNotNull);
-	// var tracksAdded = latest.filter
-	// (
-	// 	function(value)
-	// 	{
-	// 		return value != null;
-	// 	}
-	// );
-	//console.log('TTTracks added: ');
-	//console.log(tracksAdded);
-	
-	var tracksRemoved = previous.filter
-	(
-		function(value)
-		{
-			return value != null;
-		}
-	);
-	
-	if (tracksAdded.length > 0)
-	{
-		console.log('Tracks added: ');
-		console.log(tracksAdded);
-		DisplayTracksAdded(tracksAdded);
-	}
-
-	if (tracksRemoved.length > 0)
-	{
-		console.log('Tracks removed:');
-		console.log(tracksRemoved);
-		DisplayTracksRemoved(tracksRemoved);
-	}
-	
-	//DisplayTrackTables();
-	
-	//TODO finish implementing this
-	
-	/*var tracksAdded = [];
-	
-	for (var i = 0; i < latest.length; i++)
-	{
-		if (latest[i] != null)
-		{
-			tracksAdded.push(i+1 + " " + latest[i].title);
-			console.log("Track Added: %s %s", i+1, latest[i].title);
-		}
-	}*/
-	
-
-
-	// var tracksRemoved = [];
-	// 
-	// for (var j = 0; j < previous.length; j++)
-	// {
-	// 	if (previous[j] != null)
-	// 	{
-	// 		tracksRemoved.push(j+1 + " " + previous[j].title);
-	// 		console.log("Track Removed: %s %s", j+1, previous[j].title);
-	// 	}
-	// }
+function ReloadPopup()
+{
+	FadeOut(document.getElementById('popup'), function() { location.reload(true); });
 }
 
 function PrintListToTextArea(textArea, list)
 {
-	//document.getElementById('tracksAddedTable').
-	textArea.textContent = list[0].title; //TODO: Error checking needed
-   	//textArea.textContent = list.join('\n');
+   	textArea.textContent = list.join('\n');
 }
 
 function PrintList(list)
@@ -597,29 +496,6 @@ function ShowBackButton()
 {
 	document.getElementById('buttonBack').hidden = false;
 	document.getElementById('buttonBack').onclick = ReloadPopup; //TODO: maybe could assign all buttons in one function
-}
-
-/*
-function DisplayTracksAdded(list)
-{
-	PrintListToTextArea(document.getElementById('tracksAddedTable'), list);
-	document.getElementById('tracksAddedEmpty').hidden = true;
-	document.getElementById('tracksAddedList').style.height = list.length * 20 + 'px';
-	document.getElementById('tracksAddedList').hidden = false;
-}
-
-function DisplayTracksRemoved(list)
-{
-	PrintListToTextArea(document.getElementById('tracksRemovedTable'), list);
-	document.getElementById('tracksRemovedEmpty').hidden = true;
-	document.getElementById('tracksRemovedList').style.height = list.length * 20 + 'px';
-	document.getElementById('tracksRemovedList').hidden = false;
-}
-*/
-							
-function ReloadPopup()
-{
-	FadeOut(document.getElementById('popup'), function() { location.reload(true); });
 }
 
 /*
