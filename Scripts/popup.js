@@ -56,6 +56,8 @@ function Start()
 function GetPlaylistName(tab)
 {
 	return tab.title.split(' - Google Play Music')[0]; 
+	//TODO finish updating this. Also need to update getting the track count for "All Songs, etc"
+        //Finish using GetTrackListTitle
 }
 
 function VerifyTab(callback)
@@ -75,7 +77,6 @@ function VerifyTab(callback)
 			);
 		}
 	);
-
 }
 
 function VerifyTabUrl(tab, callback)
@@ -84,7 +85,8 @@ function VerifyTabUrl(tab, callback)
 	console.assert(typeof url == 'string', 'tab.url should be a string');
 
 	if (url.indexOf('https://play.google.com/music/listen?u=0#/pl/') == -1
-		&& url.indexOf('https://play.google.com/music/listen#/pl/') == -1)
+		&& url.indexOf('https://play.google.com/music/listen#/pl/') == -1
+		&& url.indexOf('https://play.google.com/music/listen#/all') == -1)
 	{
 		console.log('Page is not a valid Google Music playlist url.');
 		ShowErrorMessage('URL Invalid. Please open a valid Google Music playlist page and try again.');
@@ -499,60 +501,6 @@ function ShowBackButton()
 }
 
 /*
-***** Notes *****
-
-** Bugs **
-
-	- Hit an issue where the same song showed up under Removed and Added, for unknown reasons. May be resolved by showing all info for the songs that have been removed/added. 
-	- First time saving playlist very briefly shows the added/removed section before hiding it.
-	- The popup is sometimes cut off. 
-	- If multiple playlists have the same name, their info will likely just get overridden. 
-	- The comparison can be wrong about which specific track was removed from a playlist. This happens when there were duplicates and only the earlier (lower index) of the two tracks was removed. 
-	- Getting playlist name currently doesn't work if there's a hyphen in the name 
-	
-	
-** Features **
-
-V1:	
-	- Store a list of all Playlists and check that the list of playlists is up to date. Let the user know if it's not. 
-	- Allow user to view more than just the title of the tracks removed 
-	- Make a song object and use that instead obj= {} 
-	- May want to allow user to be playing audio when they use the extension (need different way of getting playlist name)
-	- Have a better indicator that the compare button is disabled while the comparison is running. 
-
-V2:
-	- Have the user's track list info be accessible across devices so they can use the extension from anywhere
-		- Extension Sync storage may not work because of the quota limits. 
-		- Could consider Google Drive integration, or switching to a Packaged App
-	- Allow user to save more than just playlists (e.g. All songs added to library, Uploaded & Purchased songs, and Subscription songs).
-		- These all use this url: https://play.google.com/music/listen?u=0#/all
-		- Made complicated because none of these lists have song index numbers, and the latter two don't have track counts
-		- Would have to make sure to be able to distinguish these from playlists (e.g. what if a playlist is also called "Songs"?)
-		- Consider using a different method to determine when you're at the bottom of the page/window, and maybe just use all track info to compare and find duplicates
-	- Only store ONE object for the extension. And that object contains all the others... scary. 
-		- This probably won't work because of the QUOTA_BYTES_PER_ITEM limit. 
-	- Progress bar
-	- Support comparison between Spotify playlists and google music (allowing the user to choose tracklist x and y to compare)
-	- Consider feature which suggests listening to one of the albums/tracks in the 'test' playlists. 
-	- Unit tests?	
-	- Store an "all tracks removed" list and allow the user to select if they want to add them to that list or not after it lists which have been removed
-	- Consider app vs extension possibilities
-	- If scrolling is allowed while comparing a playlist, and the user scrolls, it's possible that the track list returned will be incorrect. 
-		- deep query selector is going away soon; will need new a way of preventing user from scrolling while comparing playlist. 
-	- Feature that checks for duplicates
-	
-
-** Tasks **
-
-	- Save all playlists
-	- Consider having all projects in one repo, under different branches
-
-
-** Style **
-
-	- Differentiate content script methods from similarly named Popup methods
-	- MVC
-
 
 ** TEMP **
 

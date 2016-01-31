@@ -28,7 +28,6 @@ body {
 
 .statusText {
 	text-align: center;
-	/*margin: 20px;*/
 	padding: 20px;
 }
 
@@ -46,36 +45,16 @@ body {
 
 #trackLists {
 	text-align: left;
-	padding: 20px;
+	padding-left: 20px;
+	padding-right: 20px;
 	font-size: 20px;
 	color: #339933;
 }
-
-#tracksAdded {
-	margin-bottom: 40px;
-}
-
 .indent {
 	padding-left: 20px;
 	color: antiquewhite;
 	font-size: 16px;
 }
-/*
-.trackList {
-	text-overflow: ellipsis;
-	min-width: 100%;
-	overflow-y: scroll;
-	min-height: 50px;
-	max-height: 175px;
-	text-align: left;	
-	font-family: Optima, "Segoe UI";
-	font-size: 16px;
-	color: antiquewhite;
-	background-color: #404040;
-	border: none;
-	resize: none;
-}
-*/
 
 .trackTableWrapper {
 	max-height: 200px;
