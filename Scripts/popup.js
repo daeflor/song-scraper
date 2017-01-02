@@ -4,6 +4,19 @@
 document.addEventListener('DOMContentLoaded', Start);
 //document.addEventListener('DOMContentLoaded', function() { FadeIn(document.getElementById('popup'), Start) } );					
 
+//TODO do this or dont do this, but finish it.
+/*
+function CurrentTab()
+{
+    this.tab;
+    this.id;
+    this.tracklistName;
+    this.key;
+}
+
+var currentTab = new CurrentTab();
+*/
+
 chrome.storage.onChanged.addListener
 (
 	function(changes, namespace) 
@@ -26,7 +39,8 @@ chrome.storage.onChanged.addListener
 				}
 				
 				console.log('Playlist %s has changed. It previously had %s tracks, and now has %s tracks.', playlistName, storageChange.oldValue.length, storageChange.newValue.length);
-				CompareTrackLists(storageChange.newValue, storageChange.oldValue);
+				SaveTrackList(storageChange.oldValue);
+				CompareTrackLists(storageChange.newValue, storageChange.oldValue);	
 			}
 			else
 			{
@@ -48,7 +62,7 @@ function Start()
 		{
 			HideErrorMessage();
 			ShowTitle(GetPlaylistName(tab));
-			CompareTrackCounts(GetPlaylistName(tab));
+			CompareTrackCounts(tab);
 		}
 	);
 }
@@ -86,7 +100,8 @@ function VerifyTabUrl(tab, callback)
 
 	if (url.indexOf('https://play.google.com/music/listen?u=0#/pl/') == -1
 		&& url.indexOf('https://play.google.com/music/listen#/pl/') == -1
-		&& url.indexOf('https://play.google.com/music/listen#/all') == -1)
+		&& url.indexOf('https://play.google.com/music/listen#/all') == -1
+		&& url.indexOf('https://play.google.com/music/listen#/ap/auto-playlist') == -1)
 	{
 		console.log('Page is not a valid Google Music playlist url.');
 		ShowErrorMessage('URL Invalid. Please open a valid Google Music playlist page and try again.');
@@ -98,72 +113,123 @@ function VerifyTabUrl(tab, callback)
 }
 
 function VerifyTabTitle(tab, callback) 
-{
+{	
 	if (tab.title.indexOf(' - Google Play Music') == -1)
 	{
 		ShowErrorMessage('Please open a valid Google Music playlist page and try again.');
 	}
-	else if ((tab.title.match(/-/g)).length >= 2)
+	//TODO: Does not work if music is muted in the g music tab
+		//Maybe could use volume slider?
+	else if (tab.audible) 
 	{
 		ShowErrorMessage('Please pause music playback and try again.');
-	}
+	} 
 	else
 	{
 		callback(tab); 
 	}
 }
 
-function CompareTrackCounts(playlistName)
+function CompareTrackCounts(tab)
 {
-	GetCurrentTrackCount
-	(
-		function(trackCount)
-		{		
-			if (trackCount == null)
-			{
-				ShowErrorMessage('Track count could not be determined. Please open a valid playlist page and try again.');
-				return;
-			}
-				
-			var trackListKey = chrome.runtime.id + '_Playlist_\'' + playlistName + '\'';	
-					
-			GetPreviousTrackCount
-			(
-				trackListKey,
-				function(previousTrackCount)
-				{
-					console.log('Playlist \'%s\' previously had %s tracks, and now has %s tracks.', playlistName, previousTrackCount, trackCount);
-		
-					SetTrackCountValue(trackCount, previousTrackCount);
-					document.getElementById('buttonComparePlaylist').onclick = GetSongList;
-					ShowLandingPage();
-				}	
-			);
-		}			
-	);
+    PerformFunctionOnCurrentTab
+    (
+        function()
+        {
+            GetCurrentTrackCount
+            (
+                tab, 
+                function(trackCount)
+                {		
+                    if (trackCount == null)
+                    {
+                        ShowErrorMessage('Track count could not be determined. Please open a valid playlist page and try again.');
+                        return;
+                    }
+                        
+                    var key = GenerateTrackListKey(tab);	
+                            
+                    GetPreviousTrackCount
+                    (
+                        key,
+                        function(previousTrackCount)
+                        {
+                            console.log('Playlist \'%s\' previously had %s tracks, and now has %s tracks.', GetPlaylistName(tab), previousTrackCount, trackCount);
+                            SetTrackCountValue(trackCount, previousTrackCount);
+                            PrepareLandingPage();
+                        }	
+                    );
+                }			
+            )
+        }
+    );
 }
 
-function GetCurrentTrackCount(callback)
+function PrepareLandingPage()
+{
+    document.getElementById('buttonComparePlaylist').addEventListener('click', function() {PerformFunctionOnCurrentTab(GetSongList)});
+    document.getElementById('buttonPrintSavedList').addEventListener('click', function() {PerformFunctionOnCurrentTab(PrintSavedList)});
+    ShowLandingPage();
+}
+
+function GetCurrentTrackCount(tab, callback)
 {	
-	chrome.tabs.query
+    chrome.tabs.sendMessage
+    (
+        tab.id, 
+        {greeting: 'GetTrackCount'}, 
+        function(response) 
+        {
+            console.log('Current playlist\'s track count is %s.', response);
+            callback(response);
+            //TODO maybe get the element here and then calculate track count depending on type of track list
+        }
+    );
+}
+
+function PerformFunctionOnCurrentTab(callback)
+{
+    //console.log("About to perform a function on the current tab.");
+    chrome.tabs.query
 	(
 		{active: true, currentWindow: true}, 
 		function(tabs) 
 		{
-			chrome.tabs.sendMessage
-			(
-				tabs[0].id, 
-				{greeting: 'GetTrackCount'}, 
-				function(response) 
-				{
-					console.log('Current playlist\'s track count is %s.', response);
-					callback(response);
-				}
-			);
+            callback(tabs[0]);
 		}
-	);
+	); //TODO finishing transitioning to using this
 }
 
+function PrintSavedList(tab)
+{
+    var key = GenerateTrackListKey(tab);
+    console.log("Key is: " + key);
+    
+    chrome.storage.local.get
+    (
+        key, //TODO: Error checking needed
+        function(result)
+        {
+            if(chrome.runtime.lastError)
+            {
+                console.log('ERROR!: ' + chrome.runtime.lastError.message);
+                return;
+            }
+            
+            if (result[key] == undefined)
+            {
+                console.log('There is currently no track list saved under key "%s"', key);
+            }
+            else
+            {
+                var list = result[key];
+                DisplayTrackTable('tableSavedList', list, document.getElementById('tempDesc'));
+            }
+        }
+    );
+}
+
+//TODO I broke this
 function GetPreviousTrackCount(key, callback)
 {
 	chrome.storage.local.get
@@ -184,58 +250,58 @@ function GetPreviousTrackCount(key, callback)
 			}
 			else
 			{
+                console.log('Previous track count: "%s"', result[key].length);
 				callback(result[key].length); 
 			}
 		}
 	);
 }
 
-function GetSongList() 
+function GetSongList(tab) 
 {
 	document.getElementById('buttonComparePlaylist').disabled = true;
-	chrome.tabs.query
-	(
-		{active: true, currentWindow: true}, 
-		function(tabs) 
-		{
-			chrome.tabs.sendMessage
-			(
-				tabs[0].id, 
-				{greeting: 'GetSongList'}, 
-				function(trackList)
-				{
-					FadeTransition //when the tracklist has been collected, begin the fade transition
-					(
-						function() //when the fade transition has completed...
-						{
-							HideLandingPage();
-							ShowComparisonPage();
-							ShowTrackLists();
-							ShowBackButton();
-							
-							var key = chrome.runtime.id + '_Playlist_\'' + GetPlaylistName(tabs[0]) + '\'';
-							var trackListStorageObject= {};
-							trackListStorageObject[key] = trackList;
-							
-							chrome.storage.local.set
-							(
-								trackListStorageObject, 
-								function()
-								{
-									if(chrome.runtime.lastError)
-									{
-										console.log('ERROR: ' + chrome.runtime.lastError.message);
-										//TODO: Error checking needed. Should report to user somehow that playlists didn't get stored properly. 
-										return;
-									}
-								}
-							);
-						}
-					);
-				}
-			);
-		}
-	);
+
+    chrome.tabs.sendMessage
+    (
+        tab.id, 
+        {greeting: 'GetSongList'}, 
+        function(trackList)
+        {
+            FadeTransition //when the tracklist has been collected, begin the fade transition
+            (
+                function() //when the fade transition has completed...
+                {
+                    HideLandingPage();
+                    ShowComparisonPage();
+                    ShowTrackLists();
+                    ShowBackButton();
+                    
+                    var key = GenerateTrackListKey(tab);
+                    var trackListStorageObject = {};
+                    trackListStorageObject[key] = trackList;
+                    
+                    chrome.storage.local.set
+                    (
+                        trackListStorageObject, 
+                        function()
+                        {
+                            if(chrome.runtime.lastError)
+                            {
+                                console.log('ERROR: ' + chrome.runtime.lastError.message);
+                                //TODO: Error checking needed. Should report to user somehow that playlists didn't get stored properly. 
+                                return;
+                            }
+                        }
+                    );
+                }
+            );
+        }
+    );
+}
+
+function GenerateTrackListKey(tab)
+{
+    return chrome.runtime.id + '_Playlist_\'' + GetPlaylistName(tab) + '\'';
 }
 
 function DisplayTrackTable(tableID, list, description)
@@ -279,8 +345,6 @@ function DisplayTrackTable(tableID, list, description)
 		description.hidden = true;
 	}
 }
-//TODO make each td scrollable, instead of the whole table, maybe. (That way outliers dont skew the whole table.)
-	//Doesnt really work, cause what we want is every column to be x-scrollable, not every td.
 	 
 function CompareTrackLists(latest, previous)  
 {		
@@ -301,12 +365,33 @@ function CompareTrackLists(latest, previous)
 		}
 	} //TODO removed track index wrong if there were duplicates
 	
-	//TODO should these be a callback?
 	console.log('Tracks added: ----');
 	DisplayTrackTable('tracksAddedTable', latest, document.getElementById('tracksAddedEmpty'));
 	
 	console.log('Tracks removed: ----');
 	DisplayTrackTable('tracksRemovedTable', previous, document.getElementById('tracksRemovedEmpty'));
+}
+
+//TODO could make more use of this by generalizing it
+function SaveTrackList(list) 
+{
+	var key = chrome.runtime.id + '_Backup';;
+    var trackListStorageObject = {};
+    trackListStorageObject[key] = list;
+	
+	chrome.storage.local.set
+	(
+		trackListStorageObject, 
+		function()
+		{
+			if(chrome.runtime.lastError)
+			{
+				console.log('ERROR: ' + chrome.runtime.lastError.message);
+				//TODO: Error checking needed. Should report to user somehow that playlists didn't get stored properly. 
+				return;
+			}
+		}
+	);
 }
 
 function ReloadPopup()

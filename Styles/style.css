@@ -9,9 +9,12 @@ body {
 	max-width: 1000px;
 	background-color: #383838;
 	color: #FFCC66;
-	min-height: 80px; /*We might have a depper error that is somewhat hidden by setting this - sometimes the error pupup is cut off. This is still happening. Fix it. */
-	/*max-height: 800px; //TODO: Figure out how to make the window not scroll and just get bigger*/
+	min-height: 80px; /*TODO: We might have a depper error that is somewhat hidden by setting this - sometimes the error popup is cut off. This is still happening. Fix it. */
+	max-height: 750px; 
 }
+
+/*TODO WHY DID SCROLL BARS APPEAR AGAIN?*/
+/*AND NOW DISAPPEAR?*/
 
 #popup {
 	text-align: center;
