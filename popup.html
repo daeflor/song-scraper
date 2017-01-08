@@ -9,27 +9,29 @@
     <div id='popup'>
       
       <div id='title' hidden=true></div>
-      <div id='error' class='statusText'>Loading...</div>
+      <div id='status' class='statusText'>Loading...</div>
       
       <div id='landingPage' hidden=true>
         <p id='trackCountValue'></p>
         <div id='trackCountSubtext'></div>
         <button id='buttonComparePlaylist' class='popupButton' type='button'>Compare & Save Playlist</button> 
       
-      <!--
-      -->
-      <button id='buttonPrintSavedList' class='popupButton' type='button'>PRINT</button> 
-      <p id='tempDesc' class='indent'>TEMP</p>
-      <table id='tableSavedList' class="trackTable" hidden=true>
-        <tr>
-            <th>Index</th>
-            <th>Title</th>
-            <th>Artist</th>
-            <th>Album</th>
-        </tr>
+        <!--
+        -->
+        <button id='buttonPrint' class='popupButton' type='button'>Print Stored List</button> 
+        <table id='tableSavedList' class="trackTable" hidden=true>
+          <tr>
+              <th>Index</th>
+              <th>Title</th>
+              <th>Artist</th>
+              <th>Album</th>
+          </tr>
         </table>
-      <!---
-      -->
+               
+        <button id='buttonBackup' class='popupButton' type='button'>Revert to Backup</button> 
+
+        <!---
+        -->
       </div>
       
       <div id='comparisonPage' hidden=true>

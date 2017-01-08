@@ -38,9 +38,13 @@ chrome.storage.onChanged.addListener
 					return;
 				}
 				
-				console.log('Playlist %s has changed. It previously had %s tracks, and now has %s tracks.', playlistName, storageChange.oldValue.length, storageChange.newValue.length);
+				console.log('Stored song list for %s has changed. It previously had %s tracks, and now has %s tracks.', playlistName, storageChange.oldValue.length, storageChange.newValue.length);
 				SaveTrackList(storageChange.oldValue);
 				CompareTrackLists(storageChange.newValue, storageChange.oldValue);	
+			}
+			else if(key.indexOf(chrome.runtime.id + '_Backup') > -1)
+			{
+				console.log('The Backup song list has been modified. It previously had %s tracks, and now has %s tracks.', storageChange.oldValue.length, storageChange.newValue.length);
 			}
 			else
 			{
@@ -60,7 +64,7 @@ function Start()
 	(
 		function(tab) 
 		{
-			HideErrorMessage();
+			HideStatusMessage();
 			ShowTitle(GetPlaylistName(tab));
 			CompareTrackCounts(tab);
 		}
@@ -104,7 +108,7 @@ function VerifyTabUrl(tab, callback)
 		&& url.indexOf('https://play.google.com/music/listen#/ap/auto-playlist') == -1)
 	{
 		console.log('Page is not a valid Google Music playlist url.');
-		ShowErrorMessage('URL Invalid. Please open a valid Google Music playlist page and try again.');
+		ShowStatusMessage('URL Invalid. Please open a valid Google Music playlist page and try again.');
 	}
 	else
 	{
@@ -116,13 +120,13 @@ function VerifyTabTitle(tab, callback)
 {	
 	if (tab.title.indexOf(' - Google Play Music') == -1)
 	{
-		ShowErrorMessage('Please open a valid Google Music playlist page and try again.');
+		ShowStatusMessage('Please open a valid Google Music playlist page and try again.');
 	}
 	//TODO: Does not work if music is muted in the g music tab
 		//Maybe could use volume slider?
 	else if (tab.audible) 
 	{
-		ShowErrorMessage('Please pause music playback and try again.');
+		ShowStatusMessage('Please pause music playback and try again.');
 	} 
 	else
 	{
@@ -132,6 +136,7 @@ function VerifyTabTitle(tab, callback)
 
 function CompareTrackCounts(tab)
 {
+	//TODO is this necessary? We already have tab
     PerformFunctionOnCurrentTab
     (
         function()
@@ -143,7 +148,7 @@ function CompareTrackCounts(tab)
                 {		
                     if (trackCount == null)
                     {
-                        ShowErrorMessage('Track count could not be determined. Please open a valid playlist page and try again.');
+                        ShowStatusMessage('Track count could not be determined. Please open a valid playlist page and try again.');
                         return;
                     }
                         
@@ -154,7 +159,7 @@ function CompareTrackCounts(tab)
                         key,
                         function(previousTrackCount)
                         {
-                            console.log('Playlist \'%s\' previously had %s tracks, and now has %s tracks.', GetPlaylistName(tab), previousTrackCount, trackCount);
+                            console.log('Compared track count. Playlist \'%s\' previously had %s tracks, and now has %s tracks.', GetPlaylistName(tab), previousTrackCount, trackCount);
                             SetTrackCountValue(trackCount, previousTrackCount);
                             PrepareLandingPage();
                         }	
@@ -168,8 +173,51 @@ function CompareTrackCounts(tab)
 function PrepareLandingPage()
 {
     document.getElementById('buttonComparePlaylist').addEventListener('click', function() {PerformFunctionOnCurrentTab(GetSongList)});
-    document.getElementById('buttonPrintSavedList').addEventListener('click', function() {PerformFunctionOnCurrentTab(PrintSavedList)});
-    ShowLandingPage();
+    document.getElementById('buttonPrint').addEventListener('click', function() {PerformFunctionOnCurrentTab(PrintSavedList)});   
+	document.getElementById('buttonBackup').addEventListener('click', function() {RevertToBackup();});
+	
+	ShowLandingPage();
+}
+
+function RevertToBackup()
+{
+	var backupKey = chrome.runtime.id + '_Backup';
+	
+	PerformFunctionOnCurrentTab
+    (
+        function(tab)
+        {
+			var currentKey = GenerateTrackListKey(tab);
+
+			var storageObject = {};
+
+			chrome.storage.local.get
+			(
+				backupKey, 
+				function (result) 
+				{ 
+					storageObject[currentKey] = result[backupKey];
+
+					//TODO should make this a method to avoid repeated code
+					chrome.storage.local.set
+					(
+						storageObject, 
+						function()
+						{
+							if(chrome.runtime.lastError)
+							{
+								console.log('ERROR: ' + chrome.runtime.lastError.message);
+								//TODO: Error checking needed. Should report to user somehow that playlists didn't get stored properly. 
+								return;
+							}
+
+							ShowStatusMessage('Song list reverted to backup');
+						}
+					);
+				}
+			);
+        }
+    );
 }
 
 function GetCurrentTrackCount(tab, callback)
@@ -223,7 +271,8 @@ function PrintSavedList(tab)
             else
             {
                 var list = result[key];
-                DisplayTrackTable('tableSavedList', list, document.getElementById('tempDesc'));
+				HidePrintButton();
+                DisplayTrackTable('tableSavedList', list);
             }
         }
     );
@@ -260,6 +309,8 @@ function GetPreviousTrackCount(key, callback)
 function GetSongList(tab) 
 {
 	document.getElementById('buttonComparePlaylist').disabled = true;
+	HideLandingPage();
+	ShowStatusMessage('Song list comparison in progress.');
 
     chrome.tabs.sendMessage
     (
@@ -267,11 +318,16 @@ function GetSongList(tab)
         {greeting: 'GetSongList'}, 
         function(trackList)
         {
+			if (trackList == null)
+			{
+				ShowStatusMessage('Failed to retrieve track list.');
+				return;
+			}
+
             FadeTransition //when the tracklist has been collected, begin the fade transition
             (
                 function() //when the fade transition has completed...
                 {
-                    HideLandingPage();
                     ShowComparisonPage();
                     ShowTrackLists();
                     ShowBackButton();
@@ -339,10 +395,14 @@ function DisplayTrackTable(tableID, list, description)
 		table.appendChild(tr);
 	}
 	
-	if (document.getElementById(tableID).childElementCount > 1)
+	if (table.childElementCount > 1)
 	{
 		table.hidden = false;
-		description.hidden = true;
+
+		if (description != null)
+		{
+			description.hidden = true;
+		}
 	}
 }
 	 
@@ -492,15 +552,18 @@ function FadeIn(element, callback)
 
 /***** User Interface *****/
 
-function ShowErrorMessage(text)
+function ShowStatusMessage(text)
 {
-	document.getElementById('error').textContent = text;
-	document.getElementById('error').hidden = false;
+	document.getElementById('status').textContent = text;
+	document.getElementById('status').hidden = false;
+
+	HideLandingPage();
+	HideComparisonPage();
 }
 
-function HideErrorMessage()
+function HideStatusMessage()
 {
-	document.getElementById('error').hidden = true;
+	document.getElementById('status').hidden = true;
 }
 
 function ShowTitle(title)
@@ -518,6 +581,11 @@ function ShowLandingPage()
 function HideLandingPage()
 {
 	document.getElementById('landingPage').hidden = true;
+}
+
+function HidePrintButton()
+{
+	document.getElementById('buttonPrint').hidden = true;
 }
 
 function SetTrackCountValue(currentCount, previousCount)
@@ -561,6 +629,11 @@ function SetTrackCountText(text, backgroundcolor)
 function ShowComparisonPage()
 {
 	document.getElementById('comparisonPage').hidden = false;
+}
+
+function HideComparisonPage()
+{
+	document.getElementById('comparisonPage').hidden = true;
 }
 
 function ShowStorageResultText()

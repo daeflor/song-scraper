@@ -1,5 +1,10 @@
 ***** Notes *****
 
+** TODOs **
+
+	- content.js : 8
+	- popup.js 21
+
 ** Bugs **
 
 	- Hit an issue where the same song showed up under Removed and Added, for unknown reasons. May be resolved by showing all info for the songs that have been removed/added. 
@@ -10,8 +15,6 @@
 	- Getting playlist name currently doesn't work if there's a hyphen in the name 
 	- Border around track tables isn't perfect (when scrolling)
 	- No longer detects if a song is playing properly - re-consider design
-	- If the Google Music page reloads while the track list comparison is running, the results will be incorrect
-	   - Could check the track count difference and confirm that it is consistent with the initial difference
 	
 	
 ** Features **
@@ -36,6 +39,8 @@ V1:
 	   - Have an option to revert a list to the backup
 	- Make it work with the 'Thumbs Up' playlist
 	- Re-organize files into more logical order, and maybe break up into additional files
+	- Make a method that stores an object in storage, to avoid repeated code
+	- After running a backup, should have a 'back' button (or not hide the other buttons)
 
 V2:
 	- Have the user's track list info be accessible across devices so they can use the extension from anywhere
@@ -54,8 +59,6 @@ V2:
 	- Unit tests?	
 	- Store an "all tracks removed" list and allow the user to select if they want to add them to that list or not after it lists which have been removed
 	- Consider app vs extension possibilities
-	- If scrolling is allowed while comparing a playlist, and the user scrolls, it's possible that the track list returned will be incorrect. 
-		- deep query selector is going away soon; will need new a way of preventing user from scrolling while comparing playlist. 
 	- Feature that checks for duplicates
 	- Could add buttons to the Google Music site itself (e.g. to go directly to Genres)?
 	
