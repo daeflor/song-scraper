@@ -64,11 +64,16 @@ function GetTrackListTitle()
 
 function GetTrackCountElement()
 {
-    var element = document.querySelector('.song-count');
+    var element = document.querySelector('.song-count'); //TODO this may be obsolete
     
     if (element == null)
     {
-        element = document.getElementById('countSummary');
+        element = document.querySelector('div.detail-wrapper > div > span > span');
+    }   
+    
+    if (element == null)
+    {
+        element = document.getElementById('countSummary'); //TODO this may be obsolete
     }
     
     return element;

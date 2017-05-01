@@ -14,7 +14,8 @@
 	- The comparison can be wrong about which specific track was removed from a playlist. This happens when there were duplicates and only the earlier (lower index) of the two tracks was removed. 
 	- Getting playlist name currently doesn't work if there's a hyphen in the name 
 	- Border around track tables isn't perfect (when scrolling)
-	- No longer detects if a song is playing properly - re-consider design
+	- - No longer detects if a song is playing properly - re-consider design
+	- "Song list comparison in progress" text does not go away properly after comparison is complete
 	
 	
 ** Features **
@@ -24,20 +25,15 @@ V1:
 	- May want to allow user to be playing audio when they use the extension (need different way of getting playlist name)
 	- Have a better indicator that the compare button is disabled while the comparison is running. 
 	- Show the total number of tracks added/removed when it displays the track lists
-	- An option to just print the track list (of a playlist) to a nice, searchable list (since G Music is hard to search)
 	- Ask user if they want to overwrite existing saved track list data
-	- Google music css variable names mapping
+	- ! Google music css variable names mapping
 	- Error handling method for all the page css variable getters/queries
 	- ! Include the Song Duration/Length when saving tracklists !
 	- Option to backup all extisting track lists with current date
 	- Option to change a playlist's name
-    - Add an option to quickly print a saved track list in an easily readable format
     - Since a tab can't change while using the popup, can we have a global/const tab id and playlist key? 
        - Maybe have a global var (namespace?) that has various children? (e.g. tab, playlist name, key). 
     - Create a new chart (digital?) for the app layout
-	- Have a 'Backup' list that saves the previous version whenever saving a song list
-	   - Have an option to revert a list to the backup
-	- Make it work with the 'Thumbs Up' playlist
 	- Re-organize files into more logical order, and maybe break up into additional files
 	- Make a method that stores an object in storage, to avoid repeated code
 	- After running a backup, should have a 'back' button (or not hide the other buttons)

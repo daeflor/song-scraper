@@ -4,6 +4,8 @@
 document.addEventListener('DOMContentLoaded', Start);
 //document.addEventListener('DOMContentLoaded', function() { FadeIn(document.getElementById('popup'), Start) } );					
 
+var currentTab = null;
+
 //TODO do this or dont do this, but finish it.
 /*
 function CurrentTab()
@@ -16,6 +18,58 @@ function CurrentTab()
 
 var currentTab = new CurrentTab();
 */
+
+/* TODO OBSOLETE
+function CurrentTab(tab)
+{
+	if (currentTab == null)
+	{
+		currentTab = tab
+	}
+
+	console.log("returning current tab");
+	return currentTab;
+}
+
+function CurrentTabBroken()
+{
+	var tab; 
+	var id;
+	var trackListName;
+	var key; 
+
+	function SetTab(tab)
+	{
+		console.log("Tab set");
+		this.tab = tab;
+		//this.id = id;
+		//this.trackListName = trackListName;
+		//this.key = key;
+	}
+}
+*/
+
+var CT = 
+{
+	tab:"",
+	id:"",
+	tracklistName:"",
+	key:"",
+	setTab : function(tab)
+	{
+		this.tab = tab;
+		//this.id = id;
+		this.tracklistName = tab.title;
+		//this.key = key;
+		console.log("tab set");
+		console.log("tracklistname set to " + this.trackListName);
+	},
+	getTrackList : function()
+	{
+		return tracklistName;
+	}
+};
+
 
 chrome.storage.onChanged.addListener
 (
@@ -58,8 +112,41 @@ chrome.storage.onChanged.addListener
 	}
 );
 
+function Prepare(callback)
+{
+	chrome.tabs.query
+	(
+		{active: true, currentWindow: true}, 
+		function(tabs) 
+		{
+			CT.setTab(tabs[0]);
+			//CurrentTab().SetTab(tabs[0]);
+
+			callback();
+		}
+	);
+}
+
 function Start()
 {	
+	//TODO IN PROGRESS
+	// Prepare
+	// (
+	// 	function()
+	// 	{
+	// 		VerifyTab
+	// 		(
+	// 			function(tab) 
+	// 			{
+	// 				HideStatusMessage();
+	// 				ShowTitle(GetPlaylistName(tab));
+	// 				CompareTrackCounts(tab);
+	// 			}
+	// 		)
+
+	// 	}
+	// );
+
 	VerifyTab
 	(
 		function(tab) 
@@ -85,8 +172,13 @@ function VerifyTab(callback)
 		{active: true, currentWindow: true}, 
 		function(tabs) 
 		{
+			
+			////CurrentTab().SetTab(tabs[0]);
+
 			VerifyTabUrl
 			(
+				////CurrentTab().tab,
+				//CurrentTab(tabs[0]),
 				tabs[0],
 				function(tab)
 				{
@@ -118,6 +210,8 @@ function VerifyTabUrl(tab, callback)
 
 function VerifyTabTitle(tab, callback) 
 {	
+	//console.log("trackname: " + CT.tracklistName);
+	//if (CT.tracklistName.indexOf(' - Google Play Music') == -1)
 	if (tab.title.indexOf(' - Google Play Music') == -1)
 	{
 		ShowStatusMessage('Please open a valid Google Music playlist page and try again.');
@@ -128,6 +222,7 @@ function VerifyTabTitle(tab, callback)
 	{
 		ShowStatusMessage('Please pause music playback and try again.');
 	} 
+	//TODO IN PROGRESS
 	else
 	{
 		callback(tab); 
@@ -182,6 +277,8 @@ function PrepareLandingPage()
 function RevertToBackup()
 {
 	var backupKey = chrome.runtime.id + '_Backup';
+
+	HideLandingPage();
 	
 	PerformFunctionOnCurrentTab
     (
@@ -198,26 +295,41 @@ function RevertToBackup()
 				{ 
 					storageObject[currentKey] = result[backupKey];
 
-					//TODO should make this a method to avoid repeated code
-					chrome.storage.local.set
+					StoreObjectInLocalNamespace
 					(
-						storageObject, 
+						storageObject,
 						function()
 						{
-							if(chrome.runtime.lastError)
-							{
-								console.log('ERROR: ' + chrome.runtime.lastError.message);
-								//TODO: Error checking needed. Should report to user somehow that playlists didn't get stored properly. 
-								return;
-							}
-
 							ShowStatusMessage('Song list reverted to backup');
+							ShowBackButton();
 						}
 					);
 				}
 			);
         }
     );
+}
+
+function StoreObjectInLocalNamespace(storageObject, callback)
+{
+	chrome.storage.local.set
+	(
+		storageObject, 
+		function()
+		{
+			if(chrome.runtime.lastError)
+			{
+				console.log('ERROR: ' + chrome.runtime.lastError.message);
+				//TODO: Error checking needed. Should report to user somehow that playlists didn't get stored properly. 
+				return;
+			}
+
+			if (callback != null)
+			{
+				callback();
+			}
+		}
+	);
 }
 
 function GetCurrentTrackCount(tab, callback)
@@ -336,19 +448,7 @@ function GetSongList(tab)
                     var trackListStorageObject = {};
                     trackListStorageObject[key] = trackList;
                     
-                    chrome.storage.local.set
-                    (
-                        trackListStorageObject, 
-                        function()
-                        {
-                            if(chrome.runtime.lastError)
-                            {
-                                console.log('ERROR: ' + chrome.runtime.lastError.message);
-                                //TODO: Error checking needed. Should report to user somehow that playlists didn't get stored properly. 
-                                return;
-                            }
-                        }
-                    );
+					StoreObjectInLocalNamespace(trackListStorageObject);
                 }
             );
         }
@@ -439,19 +539,7 @@ function SaveTrackList(list)
     var trackListStorageObject = {};
     trackListStorageObject[key] = list;
 	
-	chrome.storage.local.set
-	(
-		trackListStorageObject, 
-		function()
-		{
-			if(chrome.runtime.lastError)
-			{
-				console.log('ERROR: ' + chrome.runtime.lastError.message);
-				//TODO: Error checking needed. Should report to user somehow that playlists didn't get stored properly. 
-				return;
-			}
-		}
-	);
+	StoreObjectInLocalNamespace(trackListStorageObject);
 }
 
 function ReloadPopup()
@@ -556,9 +644,6 @@ function ShowStatusMessage(text)
 {
 	document.getElementById('status').textContent = text;
 	document.getElementById('status').hidden = false;
-
-	HideLandingPage();
-	HideComparisonPage();
 }
 
 function HideStatusMessage()
@@ -654,7 +739,7 @@ function HideTrackLists()
 
 function ShowBackButton()
 {
-	document.getElementById('buttonBack').hidden = false;
+	document.getElementById('divBack').hidden = false;
 	document.getElementById('buttonBack').onclick = ReloadPopup; //TODO: maybe could assign all buttons in one function
 }
 
