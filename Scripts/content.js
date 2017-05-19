@@ -14,6 +14,10 @@ chrome.runtime.onMessage.addListener
         {   
             sendResponse(GetTrackCount());
         }
+        else if (request.greeting == 'GetPlaylistName')
+        {   
+            sendResponse(GetPlaylistNameText());
+        }
         
         return true;
     }
@@ -43,6 +47,31 @@ function ToggleScrolling(enable)
     }
 }
 
+//TODO finish this
+var PlaylistElements = 
+{
+	wrapper:'div.detail-wrapper',
+    name:'div'
+};
+
+function GetPlaylistDetailsWrapper()
+{
+    return document.querySelector(PlaylistElements.wrapper); 
+}
+
+function GetPlaylistNameElement()
+{
+    return GetPlaylistDetailsWrapper().querySelector(PlaylistElements.name); 
+}
+
+//TODO Currently not supporting 'All Music' list. See GetTrackListTitle below. Needs more work. (was supported before but not well)
+function GetPlaylistNameText()
+{
+    //console.log("The playlist name is: " + GetPlaylistNameElement().innerText);
+    return GetPlaylistNameElement().innerText.split("\n")[0];;
+}
+
+//TODO this has potential uses for getting the title of the 'All Songs' list
 function GetTrackListTitle()
 {
     var container = document.querySelector('div.title.tooltip');
@@ -73,7 +102,7 @@ function GetTrackCountElement()
     
     if (element == null)
     {
-        element = document.getElementById('countSummary'); //TODO this may be obsolete
+        element = document.getElementById('countSummary'); //TODO this may be obsolete - Actually it doesn't seem like it. Works for 'All Music' list
     }
     
     return element;

@@ -37,6 +37,7 @@ V1:
 	- Re-organize files into more logical order, and maybe break up into additional files
 	- Make a method that stores an object in storage, to avoid repeated code
 	- After running a backup, should have a 'back' button (or not hide the other buttons)
+	- Should Tab Management be moved to a separate file? Would that avoid global variable?
 
 V2:
 	- Have the user's track list info be accessible across devices so they can use the extension from anywhere

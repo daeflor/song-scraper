@@ -4,69 +4,37 @@
 document.addEventListener('DOMContentLoaded', Start);
 //document.addEventListener('DOMContentLoaded', function() { FadeIn(document.getElementById('popup'), Start) } );					
 
-var currentTab = null;
-
-//TODO do this or dont do this, but finish it.
-/*
-function CurrentTab()
-{
-    this.tab;
-    this.id;
-    this.tracklistName;
-    this.key;
-}
-
-var currentTab = new CurrentTab();
-*/
-
-/* TODO OBSOLETE
-function CurrentTab(tab)
-{
-	if (currentTab == null)
-	{
-		currentTab = tab
-	}
-
-	console.log("returning current tab");
-	return currentTab;
-}
-
-function CurrentTabBroken()
-{
-	var tab; 
-	var id;
-	var trackListName;
-	var key; 
-
-	function SetTab(tab)
-	{
-		console.log("Tab set");
-		this.tab = tab;
-		//this.id = id;
-		//this.trackListName = trackListName;
-		//this.key = key;
-	}
-}
-*/
-
+//TODO could this go in a separate file? 
 var CT = 
 {
 	tab:"",
-	id:"",
-	tracklistName:"",
+	playlistName:"",
 	key:"",
 	setTab : function(tab)
 	{
 		this.tab = tab;
 		//this.id = id;
-		this.tracklistName = tab.title;
 		//this.key = key;
-		console.log("tab set");
-		console.log("tracklistname set to " + this.trackListName);
+		console.log("tab set to " + this.tab);
+		console.log("tab title set to " + this.tab.title);
 	},
-	getTrackList : function()
+	setName : function(name)
 	{
-		return tracklistName;
+		this.playlistName = name;
+		this.key = chrome.runtime.id + '_Playlist_\'' + this.playlistName + '\'';
+		console.log("Playlist name set to: " + this.playlistName + ". Key set to: " + this.key);
+	},
+	getTab : function()
+	{
+		return this.tab;
+	},
+	getPlaylistName : function()
+	{
+		return this.playlistName;
+	},
+	getKey : function()
+	{
+		return this.key;
 	}
 };
 
@@ -112,7 +80,8 @@ chrome.storage.onChanged.addListener
 	}
 );
 
-function Prepare(callback)
+//TODO prepare what? Need more specific naming
+function PrepareTab(callback)
 {
 	chrome.tabs.query
 	(
@@ -120,8 +89,6 @@ function Prepare(callback)
 		function(tabs) 
 		{
 			CT.setTab(tabs[0]);
-			//CurrentTab().SetTab(tabs[0]);
-
 			callback();
 		}
 	);
@@ -129,69 +96,64 @@ function Prepare(callback)
 
 function Start()
 {	
-	//TODO IN PROGRESS
-	// Prepare
-	// (
-	// 	function()
-	// 	{
-	// 		VerifyTab
-	// 		(
-	// 			function(tab) 
-	// 			{
-	// 				HideStatusMessage();
-	// 				ShowTitle(GetPlaylistName(tab));
-	// 				CompareTrackCounts(tab);
-	// 			}
-	// 		)
-
-	// 	}
-	// );
-
-	VerifyTab
+	PrepareTab
 	(
-		function(tab) 
+		function()
 		{
-			HideStatusMessage();
-			ShowTitle(GetPlaylistName(tab));
-			CompareTrackCounts(tab);
+			VerifyTab
+			(
+				function() 
+				{
+					HideStatusMessage();
+					ShowTitle(GetPlaylistName());
+					CompareTrackCounts(CT.getTab());
+				}
+			)
+
 		}
 	);
 }
 
-function GetPlaylistName(tab)
+function GetPlaylistName()
 {
-	return tab.title.split(' - Google Play Music')[0]; 
+	return CT.getPlaylistName();
+	//return CT.getTab().title.split(' - Google Play Music')[0]; 
+	
 	//TODO finish updating this. Also need to update getting the track count for "All Songs, etc"
-        //Finish using GetTrackListTitle
+        //Finish using GetTrackListTitle (in content.js)
 }
 
+function SetPlaylistTitle(callback)
+{	
+    chrome.tabs.sendMessage
+    (
+        CT.getTab().id, 
+        {greeting: 'GetPlaylistName'}, 
+        function(response) 
+        {
+            console.log('Current playlist\'s name is %s.', response);
+            CT.setName(response);
+			callback();
+        }
+    );
+}
+
+//TODO can this be part of prepareTab? Could PlaylistTitle and Key be all set at the same time as the tab?
 function VerifyTab(callback)
 {
-	chrome.tabs.query
+	VerifyTabUrl
 	(
-		{active: true, currentWindow: true}, 
-		function(tabs) 
+		function()
 		{
-			
-			////CurrentTab().SetTab(tabs[0]);
-
-			VerifyTabUrl
-			(
-				////CurrentTab().tab,
-				//CurrentTab(tabs[0]),
-				tabs[0],
-				function(tab)
-				{
-					VerifyTabTitle(tab, callback);
-				}
-			);
+			//VerifyTabTitle(callback);
+			SetPlaylistTitle(callback);
 		}
 	);
 }
 
-function VerifyTabUrl(tab, callback)
+function VerifyTabUrl(callback)
 {
-	var url = tab.url;
+	var url = CT.getTab().url;
 	console.assert(typeof url == 'string', 'tab.url should be a string');
 
 	if (url.indexOf('https://play.google.com/music/listen?u=0#/pl/') == -1
@@ -204,72 +166,64 @@ function VerifyTabUrl(tab, callback)
 	}
 	else
 	{
-		callback(tab);
+		callback();
 	}
 }
 
-function VerifyTabTitle(tab, callback) 
+//TODO might be able to cut this out entirely
+/*
+function VerifyTabTitle(callback) 
 {	
-	//console.log("trackname: " + CT.tracklistName);
-	//if (CT.tracklistName.indexOf(' - Google Play Music') == -1)
-	if (tab.title.indexOf(' - Google Play Music') == -1)
+	if (CT.getTab().title.indexOf(' - Google Play Music') == -1)
 	{
 		ShowStatusMessage('Please open a valid Google Music playlist page and try again.');
 	}
 	//TODO: Does not work if music is muted in the g music tab
 		//Maybe could use volume slider?
-	else if (tab.audible) 
+	else if (CT.getTab().audible) 
 	{
 		ShowStatusMessage('Please pause music playback and try again.');
 	} 
 	//TODO IN PROGRESS
 	else
 	{
-		callback(tab); 
+		callback(); 
 	}
 }
+*/
 
-function CompareTrackCounts(tab)
+function CompareTrackCounts()
 {
-	//TODO is this necessary? We already have tab
-    PerformFunctionOnCurrentTab
-    (
-        function()
-        {
-            GetCurrentTrackCount
-            (
-                tab, 
-                function(trackCount)
-                {		
-                    if (trackCount == null)
-                    {
-                        ShowStatusMessage('Track count could not be determined. Please open a valid playlist page and try again.');
-                        return;
-                    }
-                        
-                    var key = GenerateTrackListKey(tab);	
-                            
-                    GetPreviousTrackCount
-                    (
-                        key,
-                        function(previousTrackCount)
-                        {
-                            console.log('Compared track count. Playlist \'%s\' previously had %s tracks, and now has %s tracks.', GetPlaylistName(tab), previousTrackCount, trackCount);
-                            SetTrackCountValue(trackCount, previousTrackCount);
-                            PrepareLandingPage();
-                        }	
-                    );
-                }			
-            )
-        }
-    );
+	GetCurrentTrackCount
+	(
+		function(trackCount)
+		{		
+			if (trackCount == null)
+			{
+				ShowStatusMessage('Track count could not be determined. Please open a valid playlist page and try again.');
+				return;
+			}
+				
+			//var key = GenerateTrackListKey(tab);	
+					
+			GetPreviousTrackCount
+			(
+				function(previousTrackCount)
+				{
+					console.log('Compared track count. Playlist \'%s\' previously had %s tracks, and now has %s tracks.', GetPlaylistName(), previousTrackCount, trackCount);
+					SetTrackCountValue(trackCount, previousTrackCount);
+					PrepareLandingPage();
+				}	
+			);
+		}			
+	);
 }
 
 function PrepareLandingPage()
 {
-    document.getElementById('buttonComparePlaylist').addEventListener('click', function() {PerformFunctionOnCurrentTab(GetSongList)});
-    document.getElementById('buttonPrint').addEventListener('click', function() {PerformFunctionOnCurrentTab(PrintSavedList)});   
-	document.getElementById('buttonBackup').addEventListener('click', function() {RevertToBackup();});
+    document.getElementById('buttonComparePlaylist').addEventListener('click', function() {GetSongList();});
+    document.getElementById('buttonPrint').addEventListener('click', function() {PrintSavedList();});   
+	document.getElementById('buttonBackup').addEventListener('click', function() {RevertToBackup();}); //TODO is a simpler syntax possible?
 	
 	ShowLandingPage();
 }
@@ -280,34 +234,28 @@ function RevertToBackup()
 
 	HideLandingPage();
 	
-	PerformFunctionOnCurrentTab
-    (
-        function(tab)
-        {
-			var currentKey = GenerateTrackListKey(tab);
+	//var currentKey = GenerateTrackListKey(tab);
 
-			var storageObject = {};
+	var storageObject = {};
 
-			chrome.storage.local.get
+	chrome.storage.local.get
+	(
+		backupKey, 
+		function (result) 
+		{ 
+			storageObject[CT.getKey()] = result[backupKey];
+
+			StoreObjectInLocalNamespace
 			(
-				backupKey, 
-				function (result) 
-				{ 
-					storageObject[currentKey] = result[backupKey];
-
-					StoreObjectInLocalNamespace
-					(
-						storageObject,
-						function()
-						{
-							ShowStatusMessage('Song list reverted to backup');
-							ShowBackButton();
-						}
-					);
+				storageObject,
+				function()
+				{
+					ShowStatusMessage('Song list reverted to backup');
+					ShowBackButton();
 				}
 			);
-        }
-    );
+		}
+	);
 }
 
 function StoreObjectInLocalNamespace(storageObject, callback)
@@ -332,11 +280,11 @@ function StoreObjectInLocalNamespace(storageObject, callback)
 	);
 }
 
-function GetCurrentTrackCount(tab, callback)
+function GetCurrentTrackCount(callback)
 {	
     chrome.tabs.sendMessage
     (
-        tab.id, 
+        CT.getTab().id, 
         {greeting: 'GetTrackCount'}, 
         function(response) 
         {
@@ -347,27 +295,14 @@ function GetCurrentTrackCount(tab, callback)
     );
 }
 
-function PerformFunctionOnCurrentTab(callback)
+function PrintSavedList()
 {
-    //console.log("About to perform a function on the current tab.");
-    chrome.tabs.query
-	(
-		{active: true, currentWindow: true}, 
-		function(tabs) 
-		{
-            callback(tabs[0]);
-		}
-	); //TODO finishing transitioning to using this
-}
-
-function PrintSavedList(tab)
-{
-    var key = GenerateTrackListKey(tab);
-    console.log("Key is: " + key);
+    //var key = GenerateTrackListKey(tab);
+    console.log("Key is: " + CT.getKey());
     
     chrome.storage.local.get
     (
-        key, //TODO: Error checking needed
+        CT.getKey(), //TODO: Error checking needed
         function(result)
         {
             if(chrome.runtime.lastError)
@@ -376,13 +311,13 @@ function PrintSavedList(tab)
                 return;
             }
             
-            if (result[key] == undefined)
+            if (result[CT.getKey()] == undefined)
             {
-                console.log('There is currently no track list saved under key "%s"', key);
+                console.log('There is currently no track list saved under key "%s"', CT.getKey());
             }
             else
             {
-                var list = result[key];
+                var list = result[CT.getKey()];
 				HidePrintButton();
                 DisplayTrackTable('tableSavedList', list);
             }
@@ -390,12 +325,11 @@ function PrintSavedList(tab)
     );
 }
 
-//TODO I broke this
-function GetPreviousTrackCount(key, callback)
+function GetPreviousTrackCount(callback)
 {
 	chrome.storage.local.get
 	(
-		key, //TODO: Error checking needed
+		CT.getKey(), //TODO: Error checking needed
 		function(result)
 		{
 			if(chrome.runtime.lastError)
@@ -404,21 +338,21 @@ function GetPreviousTrackCount(key, callback)
 				return;
 			}
 			
-			if (result[key] == undefined)
+			if (result[CT.getKey()] == undefined)
 			{
-				console.log('There is currently no track list saved under key "%s"', key);
+				console.log('There is currently no track list saved under key "%s"', CT.getKey());
 				callback(null);
 			}
 			else
 			{
-                console.log('Previous track count: "%s"', result[key].length);
-				callback(result[key].length); 
+                console.log('Previous track count: "%s"', result[CT.getKey()].length);
+				callback(result[CT.getKey()].length); 
 			}
 		}
 	);
 }
 
-function GetSongList(tab) 
+function GetSongList() 
 {
 	document.getElementById('buttonComparePlaylist').disabled = true;
 	HideLandingPage();
@@ -426,7 +360,7 @@ function GetSongList(tab)
 
     chrome.tabs.sendMessage
     (
-        tab.id, 
+        CT.getTab().id, 
         {greeting: 'GetSongList'}, 
         function(trackList)
         {
@@ -444,20 +378,15 @@ function GetSongList(tab)
                     ShowTrackLists();
                     ShowBackButton();
                     
-                    var key = GenerateTrackListKey(tab);
+                    //var key = GenerateTrackListKey(tab);
                     var trackListStorageObject = {};
-                    trackListStorageObject[key] = trackList;
+                    trackListStorageObject[CT.getKey()] = trackList;
                     
 					StoreObjectInLocalNamespace(trackListStorageObject);
                 }
             );
         }
     );
-}
-
-function GenerateTrackListKey(tab)
-{
-    return chrome.runtime.id + '_Playlist_\'' + GetPlaylistName(tab) + '\'';
 }
 
 function DisplayTrackTable(tableID, list, description)
@@ -638,6 +567,7 @@ function FadeIn(element, callback)
 	);
 }
 
+//TODO Should probably move this to a separate file
 /***** User Interface *****/
 
 function ShowStatusMessage(text)
