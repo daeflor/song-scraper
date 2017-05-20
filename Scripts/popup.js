@@ -45,6 +45,7 @@ chrome.storage.onChanged.addListener
 	{
 		for (key in changes) 
 		{
+			var backupKey = chrome.runtime.id + '_Backup';
 			var storageChange = changes[key];
 
 			if (key.indexOf(chrome.runtime.id + '_Playlist') > -1) 
@@ -61,10 +62,10 @@ chrome.storage.onChanged.addListener
 				}
 				
 				console.log('Stored song list for %s has changed. It previously had %s tracks, and now has %s tracks.', playlistName, storageChange.oldValue.length, storageChange.newValue.length);
-				SaveTrackList(storageChange.oldValue);
+				StoreObjectInLocalNamespace(backupKey, storageChange.oldValue);
 				CompareTrackLists(storageChange.newValue, storageChange.oldValue);	
 			}
-			else if(key.indexOf(chrome.runtime.id + '_Backup') > -1)
+			else if(key.indexOf(backupKey) > -1)
 			{
 				console.log('The Backup song list has been modified. It previously had %s tracks, and now has %s tracks.', storageChange.oldValue.length, storageChange.newValue.length);
 			}
@@ -80,8 +81,27 @@ chrome.storage.onChanged.addListener
 	}
 );
 
-//TODO prepare what? Need more specific naming
-function PrepareTab(callback)
+function Start()
+{	
+	SaveTabDetails
+	(
+		function()
+		{
+			VerifyTab
+			(
+				function() 
+				{
+					HideStatusMessage();
+					ShowTitle(CT.getPlaylistName());
+					CompareTrackCounts(CT.getTab());
+				}
+			)
+
+		}
+	);
+}
+
+function SaveTabDetails(callback)
 {
 	chrome.tabs.query
 	(
@@ -94,50 +114,6 @@ function PrepareTab(callback)
 	);
 }
 
-function Start()
-{	
-	PrepareTab
-	(
-		function()
-		{
-			VerifyTab
-			(
-				function() 
-				{
-					HideStatusMessage();
-					ShowTitle(GetPlaylistName());
-					CompareTrackCounts(CT.getTab());
-				}
-			)
-
-		}
-	);
-}
-
-function GetPlaylistName()
-{
-	return CT.getPlaylistName();
-	//return CT.getTab().title.split(' - Google Play Music')[0]; 
-	
-	//TODO finish updating this. Also need to update getting the track count for "All Songs, etc"
-        //Finish using GetTrackListTitle (in content.js)
-}
-
-function SetPlaylistTitle(callback)
-{	
-    chrome.tabs.sendMessage
-    (
-        CT.getTab().id, 
-        {greeting: 'GetPlaylistName'}, 
-        function(response) 
-        {
-            console.log('Current playlist\'s name is %s.', response);
-            CT.setName(response);
-			callback();
-        }
-    );
-}
-
 //TODO can this be part of prepareTab? Could PlaylistTitle and Key be all set at the same time as the tab?
 function VerifyTab(callback)
 {
@@ -145,8 +121,7 @@ function VerifyTab(callback)
 	(
 		function()
 		{
-			//VerifyTabTitle(callback);
-			SetPlaylistTitle(callback);
+			ScrapeAndSavePlaylistName(callback);
 		}
 	);
 }
@@ -170,27 +145,29 @@ function VerifyTabUrl(callback)
 	}
 }
 
-//TODO might be able to cut this out entirely
-/*
-function VerifyTabTitle(callback) 
-{	
-	if (CT.getTab().title.indexOf(' - Google Play Music') == -1)
-	{
-		ShowStatusMessage('Please open a valid Google Music playlist page and try again.');
-	}
-	//TODO: Does not work if music is muted in the g music tab
-		//Maybe could use volume slider?
-	else if (CT.getTab().audible) 
-	{
-		ShowStatusMessage('Please pause music playback and try again.');
-	} 
-	//TODO IN PROGRESS
-	else
-	{
-		callback(); 
-	}
+function GetPlaylistName()
+{
+	return CT.getPlaylistName();
+	//return CT.getTab().title.split(' - Google Play Music')[0]; 
+	
+	//TODO finish updating this. Also need to update getting the track count for "All Songs, etc"
+        //Finish using GetTrackListTitle (in content.js)
 }
-*/
+
+function ScrapeAndSavePlaylistName(callback)
+{	
+    chrome.tabs.sendMessage
+    (
+        CT.getTab().id, 
+        {greeting: 'GetPlaylistName'}, 
+        function(response) 
+        {
+            console.log('Current playlist\'s name is %s.', response);
+            CT.setName(response);
+			callback();
+        }
+    );
+}
 
 function CompareTrackCounts()
 {
@@ -203,9 +180,7 @@ function CompareTrackCounts()
 				ShowStatusMessage('Track count could not be determined. Please open a valid playlist page and try again.');
 				return;
 			}
-				
-			//var key = GenerateTrackListKey(tab);	
-					
+									
 			GetPreviousTrackCount
 			(
 				function(previousTrackCount)
@@ -230,24 +205,19 @@ function PrepareLandingPage()
 
 function RevertToBackup()
 {
-	var backupKey = chrome.runtime.id + '_Backup';
-
 	HideLandingPage();
 	
-	//var currentKey = GenerateTrackListKey(tab);
-
-	var storageObject = {};
-
 	chrome.storage.local.get
 	(
 		backupKey, 
 		function (result) 
 		{ 
-			storageObject[CT.getKey()] = result[backupKey];
-
+			var backupKey = chrome.runtime.id + '_Backup';
+			
 			StoreObjectInLocalNamespace
 			(
-				storageObject,
+				CT.getKey(),
+				result[backupKey],
 				function()
 				{
 					ShowStatusMessage('Song list reverted to backup');
@@ -258,8 +228,11 @@ function RevertToBackup()
 	);
 }
 
-function StoreObjectInLocalNamespace(storageObject, callback)
+function StoreObjectInLocalNamespace(key, value, callback)
 {
+	var storageObject = {};
+	storageObject[key] = value;
+
 	chrome.storage.local.set
 	(
 		storageObject, 
@@ -297,7 +270,6 @@ function GetCurrentTrackCount(callback)
 
 function PrintSavedList()
 {
-    //var key = GenerateTrackListKey(tab);
     console.log("Key is: " + CT.getKey());
     
     chrome.storage.local.get
@@ -374,15 +346,12 @@ function GetSongList()
             (
                 function() //when the fade transition has completed...
                 {
-                    ShowComparisonPage();
+                    HideStatusMessage();
+					ShowComparisonPage();
                     ShowTrackLists();
                     ShowBackButton();
                     
-                    //var key = GenerateTrackListKey(tab);
-                    var trackListStorageObject = {};
-                    trackListStorageObject[CT.getKey()] = trackList;
-                    
-					StoreObjectInLocalNamespace(trackListStorageObject);
+					StoreObjectInLocalNamespace(CT.getKey(), trackList);
                 }
             );
         }
@@ -461,15 +430,16 @@ function CompareTrackLists(latest, previous)
 	DisplayTrackTable('tracksRemovedTable', previous, document.getElementById('tracksRemovedEmpty'));
 }
 
-//TODO could make more use of this by generalizing it
+/*
 function SaveTrackList(list) 
 {
-	var key = chrome.runtime.id + '_Backup';;
+	var key = chrome.runtime.id + '_Backup';
     var trackListStorageObject = {};
     trackListStorageObject[key] = list;
 	
 	StoreObjectInLocalNamespace(trackListStorageObject);
 }
+*/
 
 function ReloadPopup()
 {
