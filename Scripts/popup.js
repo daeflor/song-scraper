@@ -1,42 +1,39 @@
-/* global key */
-/* global chrome */
-
 document.addEventListener('DOMContentLoaded', Start);
 //document.addEventListener('DOMContentLoaded', function() { FadeIn(document.getElementById('popup'), Start) } );					
 
 //TODO could this go in a separate file? 
-var CT = 
-{
-	tab:"",
-	playlistName:"",
-	key:"",
-	setTab : function(tab)
-	{
-		this.tab = tab;
-		//this.id = id;
-		//this.key = key;
-		console.log("tab set to " + this.tab);
-		console.log("tab title set to " + this.tab.title);
-	},
-	setName : function(name)
-	{
-		this.playlistName = name;
-		this.key = chrome.runtime.id + '_Playlist_\'' + this.playlistName + '\'';
-		console.log("Playlist name set to: " + this.playlistName + ". Key set to: " + this.key);
-	},
-	getTab : function()
-	{
-		return this.tab;
-	},
-	getPlaylistName : function()
-	{
-		return this.playlistName;
-	},
-	getKey : function()
-	{
-		return this.key;
-	}
-};
+// var CT = 
+// {
+// 	tab:"",
+// 	playlistName:"",
+// 	key:"",
+// 	setTab : function(tab)
+// 	{
+// 		this.tab = tab;
+// 		//this.id = id;
+// 		//this.key = key;
+// 		console.log("tab set to " + this.tab);
+// 		console.log("tab title set to " + this.tab.title);
+// 	},
+// 	setName : function(name)
+// 	{
+// 		this.playlistName = name;
+// 		this.key = chrome.runtime.id + '_Playlist_\'' + this.playlistName + '\'';
+// 		console.log("Playlist name set to: " + this.playlistName + ". Key set to: " + this.key);
+// 	},
+// 	getTab : function()
+// 	{
+// 		return this.tab;
+// 	},
+// 	getPlaylistName : function()
+// 	{
+// 		return this.playlistName;
+// 	},
+// 	getKey : function()
+// 	{
+// 		return this.key;
+// 	}
+// };
 
 
 chrome.storage.onChanged.addListener
@@ -45,7 +42,6 @@ chrome.storage.onChanged.addListener
 	{
 		for (key in changes) 
 		{
-			var backupKey = chrome.runtime.id + '_Backup';
 			var storageChange = changes[key];
 
 			if (key.indexOf(chrome.runtime.id + '_Playlist') > -1) 
@@ -62,10 +58,10 @@ chrome.storage.onChanged.addListener
 				}
 				
 				console.log('Stored song list for %s has changed. It previously had %s tracks, and now has %s tracks.', playlistName, storageChange.oldValue.length, storageChange.newValue.length);
-				StoreObjectInLocalNamespace(backupKey, storageChange.oldValue);
+				StoreObjectInLocalNamespace(TabManager.GetBackupKey(), storageChange.oldValue);
 				CompareTrackLists(storageChange.newValue, storageChange.oldValue);	
 			}
-			else if(key.indexOf(backupKey) > -1)
+			else if(key.indexOf(TabManager.GetBackupKey()) > -1)
 			{
 				console.log('The Backup song list has been modified. It previously had %s tracks, and now has %s tracks.', storageChange.oldValue.length, storageChange.newValue.length);
 			}
@@ -83,6 +79,13 @@ chrome.storage.onChanged.addListener
 
 function Start()
 {	
+	// console.log("The TabManager key says: " + TabManager.key);
+	// console.log("The TabManager PL Name FUNCTION says: " + TabManager.GetPlaylistName());
+	// console.log("The skank says: " + skank);
+	// console.log("The Tab Manager PL Name VARIABLE says: " + TabManager.playlistName);
+	// console.log("The Tab Manager TAB FUNCTION with undef var says: " + TabManager.GetTab());
+	// console.log("The PL Name says: " + playlistName);
+	
 	SaveTabDetails
 	(
 		function()
@@ -92,8 +95,8 @@ function Start()
 				function() 
 				{
 					HideStatusMessage();
-					ShowTitle(CT.getPlaylistName());
-					CompareTrackCounts(CT.getTab());
+					ShowTitle(TabManager.GetPlaylistName());
+					CompareTrackCounts(TabManager.GetTab());
 				}
 			)
 
@@ -108,7 +111,7 @@ function SaveTabDetails(callback)
 		{active: true, currentWindow: true}, 
 		function(tabs) 
 		{
-			CT.setTab(tabs[0]);
+			TabManager.SetTab(tabs[0]);
 			callback();
 		}
 	);
@@ -128,7 +131,7 @@ function VerifyTab(callback)
 
 function VerifyTabUrl(callback)
 {
-	var url = CT.getTab().url;
+	var url = TabManager.GetTab().url;
 	console.assert(typeof url == 'string', 'tab.url should be a string');
 
 	if (url.indexOf('https://play.google.com/music/listen?u=0#/pl/') == -1
@@ -145,25 +148,25 @@ function VerifyTabUrl(callback)
 	}
 }
 
-function GetPlaylistName()
-{
-	return CT.getPlaylistName();
-	//return CT.getTab().title.split(' - Google Play Music')[0]; 
+// function GetPlaylistName()
+// {
+// 	return TabManager.GetPlaylistName();
 	
-	//TODO finish updating this. Also need to update getting the track count for "All Songs, etc"
-        //Finish using GetTrackListTitle (in content.js)
-}
+// 	//TODO finish updating this. Also need to update getting the track count for "All Songs, etc"
+//         //Finish using GetTrackListTitle (in content.js)
+// }
 
+//TODO rename and group these to make it clearer we're sending a message request
 function ScrapeAndSavePlaylistName(callback)
 {	
     chrome.tabs.sendMessage
     (
-        CT.getTab().id, 
+        TabManager.GetTab().id, 
         {greeting: 'GetPlaylistName'}, 
         function(response) 
         {
             console.log('Current playlist\'s name is %s.', response);
-            CT.setName(response);
+            TabManager.SetPlaylistName(response);
 			callback();
         }
     );
@@ -185,7 +188,7 @@ function CompareTrackCounts()
 			(
 				function(previousTrackCount)
 				{
-					console.log('Compared track count. Playlist \'%s\' previously had %s tracks, and now has %s tracks.', GetPlaylistName(), previousTrackCount, trackCount);
+					console.log('Compared track count. Playlist \'%s\' previously had %s tracks, and now has %s tracks.', TabManager.GetPlaylistName(), previousTrackCount, trackCount);
 					SetTrackCountValue(trackCount, previousTrackCount);
 					PrepareLandingPage();
 				}	
@@ -209,15 +212,13 @@ function RevertToBackup()
 	
 	chrome.storage.local.get
 	(
-		backupKey, 
+		TabManager.GetBackupKey(), 
 		function (result) 
-		{ 
-			var backupKey = chrome.runtime.id + '_Backup';
-			
+		{ 			
 			StoreObjectInLocalNamespace
 			(
-				CT.getKey(),
-				result[backupKey],
+				TabManager.GetKey(),
+				result[TabManager.GetBackupKey()],
 				function()
 				{
 					ShowStatusMessage('Song list reverted to backup');
@@ -228,36 +229,12 @@ function RevertToBackup()
 	);
 }
 
-function StoreObjectInLocalNamespace(key, value, callback)
-{
-	var storageObject = {};
-	storageObject[key] = value;
-
-	chrome.storage.local.set
-	(
-		storageObject, 
-		function()
-		{
-			if(chrome.runtime.lastError)
-			{
-				console.log('ERROR: ' + chrome.runtime.lastError.message);
-				//TODO: Error checking needed. Should report to user somehow that playlists didn't get stored properly. 
-				return;
-			}
-
-			if (callback != null)
-			{
-				callback();
-			}
-		}
-	);
-}
-
+//TODO rename these to make it clearer we're sending a message request
 function GetCurrentTrackCount(callback)
 {	
     chrome.tabs.sendMessage
     (
-        CT.getTab().id, 
+        TabManager.GetTab().id, 
         {greeting: 'GetTrackCount'}, 
         function(response) 
         {
@@ -270,11 +247,10 @@ function GetCurrentTrackCount(callback)
 
 function PrintSavedList()
 {
-    console.log("Key is: " + CT.getKey());
-    
+    //console.log("Key is: " + TabManager.GetKey());
     chrome.storage.local.get
     (
-        CT.getKey(), //TODO: Error checking needed
+        TabManager.GetKey(), //TODO: Error checking needed
         function(result)
         {
             if(chrome.runtime.lastError)
@@ -283,13 +259,13 @@ function PrintSavedList()
                 return;
             }
             
-            if (result[CT.getKey()] == undefined)
+            if (result[TabManager.GetKey()] == undefined)
             {
-                console.log('There is currently no track list saved under key "%s"', CT.getKey());
+                console.log('There is currently no track list saved under key "%s"', TabManager.GetKey());
             }
             else
             {
-                var list = result[CT.getKey()];
+                var list = result[TabManager.GetKey()];
 				HidePrintButton();
                 DisplayTrackTable('tableSavedList', list);
             }
@@ -297,11 +273,12 @@ function PrintSavedList()
     );
 }
 
+//TODO rename these to make it clearer we're sending a message request
 function GetPreviousTrackCount(callback)
 {
 	chrome.storage.local.get
 	(
-		CT.getKey(), //TODO: Error checking needed
+		TabManager.GetKey(), //TODO: Error checking needed
 		function(result)
 		{
 			if(chrome.runtime.lastError)
@@ -310,20 +287,21 @@ function GetPreviousTrackCount(callback)
 				return;
 			}
 			
-			if (result[CT.getKey()] == undefined)
+			if (result[TabManager.GetKey()] == undefined)
 			{
-				console.log('There is currently no track list saved under key "%s"', CT.getKey());
+				console.log('There is currently no track list saved under key "%s"', TabManager.GetKey());
 				callback(null);
 			}
 			else
 			{
-                console.log('Previous track count: "%s"', result[CT.getKey()].length);
-				callback(result[CT.getKey()].length); 
+                console.log('Previous track count: "%s"', result[TabManager.GetKey()].length);
+				callback(result[TabManager.GetKey()].length); 
 			}
 		}
 	);
 }
 
+//TODO rename these to make it clearer we're sending a message request
 function GetSongList() 
 {
 	document.getElementById('buttonComparePlaylist').disabled = true;
@@ -332,7 +310,7 @@ function GetSongList()
 
     chrome.tabs.sendMessage
     (
-        CT.getTab().id, 
+        TabManager.GetTab().id, 
         {greeting: 'GetSongList'}, 
         function(trackList)
         {
@@ -351,7 +329,7 @@ function GetSongList()
                     ShowTrackLists();
                     ShowBackButton();
                     
-					StoreObjectInLocalNamespace(CT.getKey(), trackList);
+					StoreObjectInLocalNamespace(TabManager.GetKey(), trackList);
                 }
             );
         }
@@ -430,17 +408,6 @@ function CompareTrackLists(latest, previous)
 	DisplayTrackTable('tracksRemovedTable', previous, document.getElementById('tracksRemovedEmpty'));
 }
 
-/*
-function SaveTrackList(list) 
-{
-	var key = chrome.runtime.id + '_Backup';
-    var trackListStorageObject = {};
-    trackListStorageObject[key] = list;
-	
-	StoreObjectInLocalNamespace(trackListStorageObject);
-}
-*/
-
 function ReloadPopup()
 {
 	FadeOut(document.getElementById('popup'), function() { location.reload(true); });
@@ -451,6 +418,33 @@ function PrintListToTextArea(textArea, list)
    	textArea.textContent = list.join('\n');
 }
 
+/***** Helper Functions *****/
+
+function StoreObjectInLocalNamespace(key, value, callback)
+{
+	var storageObject = {};
+	storageObject[key] = value;
+
+	chrome.storage.local.set
+	(
+		storageObject, 
+		function()
+		{
+			if(chrome.runtime.lastError)
+			{
+				console.log('ERROR: ' + chrome.runtime.lastError.message);
+				//TODO: Error checking needed. Should report to user somehow that playlists didn't get stored properly. 
+				return;
+			}
+
+			if (callback != null)
+			{
+				callback();
+			}
+		}
+	);
+}
+
 function PrintList(list)
 {
     for (var i = 0; i < list.length; i++)
@@ -458,6 +452,8 @@ function PrintList(list)
         console.log(list[i].index + " " + list[i].title);
     }
 }
+
+/***** Fade Functions *****/
 
 //TODO: The whole fade thing could be cleaner / more user friendly. Turning it into one function didn't really help but there might be other ways.
 function FadeTransition(callback) 
