@@ -2,41 +2,57 @@
 
 ** TODOs **
 
-	- content.js : 13
-	- popup.js : 20
+	- content.js : 15
+	- popup.js : 23
 	- popup.html : 1
-	- TabManager.js : 1
+	- TabManager.js : 2
 
 ** Bugs **
 
 	- Hit an issue where the same song showed up under Removed and Added, for unknown reasons. May be resolved by showing all info for the songs that have been removed/added. 
 	- First time saving playlist very briefly shows the added/removed section before hiding it.
-	- The popup is sometimes cut off. 
+	- The popup is sometimes cut off. (Should be bypassed now).
 	- If multiple playlists have the same name, their info will likely just get overridden. 
 	- The comparison can be wrong about which specific track was removed from a playlist. This happens when there were duplicates and only the earlier (lower index) of the two tracks was removed. 
 	- Getting playlist name currently doesn't work if there's a hyphen in the name 
 	- Border around track tables isn't perfect (when scrolling)
-	- - No longer detects if a song is playing properly - re-consider design
-	- "Song list comparison in progress" text does not go away properly after comparison is complete
-	
-	
+	- Open the queue, change the playlist, run the comparison -> it gets stuck in an infinite loop (thinks there are more songs than there are)
+	- When you press 'Back' it shows the 'Loading...' text flickering. (Might not need to show it at all).
+
+
+** Upcoming To-Do List **
+
+	- Finalize / clean-up support for 'All Songs'
+	- Commit changes
+	- Scrub Hot Jams
+	- Add total count of songs added/removed after comparison
+	- Add song duration to info saved in storage
+
+
+** Style & Organization **
+
+	- Differentiate content script methods from similarly named Popup methods
+	- MVC and other organization possibilities
+	- Create a new chart (digital?) for the app layout	
+	- Look into 'use strict mode', and consider using a Linter (https://www.sitepoint.com/comparison-javascript-linting-tools/)
+	- Consider Grunt or something similar to merge all files into one
+
+
 ** Features **
 
 V1:	
 	- Store a list of all Playlists and check that the list of playlists is up to date. Let the user know if it's not. 
-	- Have a better indicator that the compare button is disabled while the comparison is running. 
 	- Show the total number of tracks added/removed when it displays the track lists
-	- Ask user if they want to overwrite existing saved track list data
+	- Ask user if they want to overwrite existing saved track list data (may not be needed now that backups exist)
 	- ! Google music css variable names mapping
-	- Error handling method for all the page css variable getters/queries
+	- ! Error handling method for all the page css variable getters/queries
 	- ! Include the Song Duration/Length when saving tracklists !
-	- Option to backup all extisting track lists with current date
+	- Option to backup all extisting track lists with current date (similar to JSON idea)
 	- Option to change a playlist's name
-    - Create a new chart (digital?) for the app layout
-	- Re-organize files into more logical order, and maybe break up into additional files
-	- Look into 'use strict mode', and consider using a Linter
-	- Consider Grunt or something similar to merge all files into one
-	- Could filter the "matches" field in manifest
+	- ! Re-organize files into more logical order, and maybe break up into additional files
+	- When storing a list, could store the timestamp so you can see the lastUsed date and then auto-delete anything no longer in use
+	- If all the playlists in Storage are children of a parent object, do they all need the id in their name? Is that even how it works right now?
+	- Could check count of songs in list before saving to storage, to verify it matches the playlist track count (to avoid edge case infinite loop)
 
 V2:
 	- Have the user's track list info be accessible across devices so they can use the extension from anywhere
@@ -57,15 +73,4 @@ V2:
 	- Consider app vs extension possibilities
 	- Feature that checks for duplicates
 	- Could add buttons to the Google Music site itself (e.g. to go directly to Genres)?
-	
 
-** Tasks **
-
-	- Save all playlists
-	- Consider having all projects in one repo, under different branches
-
-
-** Style **
-
-	- Differentiate content script methods from similarly named Popup methods
-	- MVC

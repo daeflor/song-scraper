@@ -1,40 +1,7 @@
-document.addEventListener('DOMContentLoaded', Start);
-//document.addEventListener('DOMContentLoaded', function() { FadeIn(document.getElementById('popup'), Start) } );					
+/*** Listeners ***/
 
-//TODO could this go in a separate file? 
-// var CT = 
-// {
-// 	tab:"",
-// 	playlistName:"",
-// 	key:"",
-// 	setTab : function(tab)
-// 	{
-// 		this.tab = tab;
-// 		//this.id = id;
-// 		//this.key = key;
-// 		console.log("tab set to " + this.tab);
-// 		console.log("tab title set to " + this.tab.title);
-// 	},
-// 	setName : function(name)
-// 	{
-// 		this.playlistName = name;
-// 		this.key = chrome.runtime.id + '_Playlist_\'' + this.playlistName + '\'';
-// 		console.log("Playlist name set to: " + this.playlistName + ". Key set to: " + this.key);
-// 	},
-// 	getTab : function()
-// 	{
-// 		return this.tab;
-// 	},
-// 	getPlaylistName : function()
-// 	{
-// 		return this.playlistName;
-// 	},
-// 	getKey : function()
-// 	{
-// 		return this.key;
-// 	}
-// };
-
+//document.addEventListener('DOMContentLoaded', Start);
+document.addEventListener('DOMContentLoaded', function() { FadeIn(document.getElementById('popup'), Start, 0.2) } );					
 
 chrome.storage.onChanged.addListener
 (
@@ -77,15 +44,91 @@ chrome.storage.onChanged.addListener
 	}
 );
 
-function Start()
+/*** Message Passing ***/
+
+//TODO rename and group these to make it clearer we're sending a message request
+//TODO could we get the playlist name and track count in one go, and save them together? 
+	//Then we could also store the trackcount in the TabManager and make the comparison code simpler
+function ScrapeAndSavePlaylistName(callback)
 {	
-	// console.log("The TabManager key says: " + TabManager.key);
-	// console.log("The TabManager PL Name FUNCTION says: " + TabManager.GetPlaylistName());
-	// console.log("The skank says: " + skank);
-	// console.log("The Tab Manager PL Name VARIABLE says: " + TabManager.playlistName);
-	// console.log("The Tab Manager TAB FUNCTION with undef var says: " + TabManager.GetTab());
-	// console.log("The PL Name says: " + playlistName);
-	
+	var messageGreeting;
+
+	if (TabManager.GetTab().url.indexOf('https://play.google.com/music/listen#/all') > -1)
+	{
+		messageGreeting = 'greeting_GetNameOfAllSongsList';
+	}
+	else
+	{
+		messageGreeting = 'greeting_GetNameOfPlaylist';
+	}
+
+    chrome.tabs.sendMessage
+    (
+        TabManager.GetTab().id, 
+        {greeting: messageGreeting}, 
+        function(response) 
+        {
+            console.log('Current playlist\'s name is %s.', response);
+            TabManager.SetPlaylistName(response);
+			callback();
+        }
+    );
+}
+
+//TODO rename these to make it clearer we're sending a message request
+function GetCurrentTrackCount(callback)
+{	
+    chrome.tabs.sendMessage
+    (
+        TabManager.GetTab().id, 
+        {greeting: 'GetTrackCount'}, 
+        function(response) 
+        {
+            console.log('Current playlist\'s track count is %s.', response);
+            callback(response);
+            //TODO maybe get the element here and then calculate track count depending on type of track list
+        }
+    );
+}
+
+//TODO rename these to make it clearer we're sending a message request
+function GetSongList() 
+{
+	document.getElementById('buttonComparePlaylist').disabled = true;
+	HideLandingPage();
+	ShowStatusMessage('Song list comparison in progress.');
+
+    chrome.tabs.sendMessage
+    (
+        TabManager.GetTab().id, 
+        {greeting: 'greeting_GetSongList'}, 
+        function(trackList)
+        {
+			if (trackList == null)
+			{
+				ShowStatusMessage('Failed to retrieve track list.');
+				return;
+			}
+
+            FadeTransition //when the tracklist has been collected, begin the fade transition
+            (
+                function() //when the fade transition has completed...
+                {
+                    HideStatusMessage();
+					ShowComparisonPage();
+                    ShowTrackLists();
+                    ShowBackButton();
+					StoreObjectInLocalNamespace(TabManager.GetKey(), trackList);
+                }
+            );
+        }
+    );
+}
+
+/*** ***/
+
+function Start()
+{		
 	SaveTabDetails
 	(
 		function()
@@ -96,7 +139,7 @@ function Start()
 				{
 					HideStatusMessage();
 					ShowTitle(TabManager.GetPlaylistName());
-					CompareTrackCounts(TabManager.GetTab());
+					CompareTrackCounts(TabManager.GetTab()); //TODO why am I passing GetTab? Doesn't seem necessary
 				}
 			)
 
@@ -104,6 +147,7 @@ function Start()
 	);
 }
 
+//TODO change to verify and save tab details
 function SaveTabDetails(callback)
 {
 	chrome.tabs.query
@@ -156,22 +200,6 @@ function VerifyTabUrl(callback)
 //         //Finish using GetTrackListTitle (in content.js)
 // }
 
-//TODO rename and group these to make it clearer we're sending a message request
-function ScrapeAndSavePlaylistName(callback)
-{	
-    chrome.tabs.sendMessage
-    (
-        TabManager.GetTab().id, 
-        {greeting: 'GetPlaylistName'}, 
-        function(response) 
-        {
-            console.log('Current playlist\'s name is %s.', response);
-            TabManager.SetPlaylistName(response);
-			callback();
-        }
-    );
-}
-
 function CompareTrackCounts()
 {
 	GetCurrentTrackCount
@@ -202,7 +230,9 @@ function PrepareLandingPage()
     document.getElementById('buttonComparePlaylist').addEventListener('click', function() {GetSongList();});
     document.getElementById('buttonPrint').addEventListener('click', function() {PrintSavedList();});   
 	document.getElementById('buttonBackup').addEventListener('click', function() {RevertToBackup();}); //TODO is a simpler syntax possible?
-	
+	document.getElementById('buttonExport').addEventListener('click', function() {ExportLocalStorageToFile();});
+
+
 	ShowLandingPage();
 }
 
@@ -227,22 +257,6 @@ function RevertToBackup()
 			);
 		}
 	);
-}
-
-//TODO rename these to make it clearer we're sending a message request
-function GetCurrentTrackCount(callback)
-{	
-    chrome.tabs.sendMessage
-    (
-        TabManager.GetTab().id, 
-        {greeting: 'GetTrackCount'}, 
-        function(response) 
-        {
-            console.log('Current playlist\'s track count is %s.', response);
-            callback(response);
-            //TODO maybe get the element here and then calculate track count depending on type of track list
-        }
-    );
 }
 
 function PrintSavedList()
@@ -299,41 +313,6 @@ function GetPreviousTrackCount(callback)
 			}
 		}
 	);
-}
-
-//TODO rename these to make it clearer we're sending a message request
-function GetSongList() 
-{
-	document.getElementById('buttonComparePlaylist').disabled = true;
-	HideLandingPage();
-	ShowStatusMessage('Song list comparison in progress.');
-
-    chrome.tabs.sendMessage
-    (
-        TabManager.GetTab().id, 
-        {greeting: 'GetSongList'}, 
-        function(trackList)
-        {
-			if (trackList == null)
-			{
-				ShowStatusMessage('Failed to retrieve track list.');
-				return;
-			}
-
-            FadeTransition //when the tracklist has been collected, begin the fade transition
-            (
-                function() //when the fade transition has completed...
-                {
-                    HideStatusMessage();
-					ShowComparisonPage();
-                    ShowTrackLists();
-                    ShowBackButton();
-                    
-					StoreObjectInLocalNamespace(TabManager.GetKey(), trackList);
-                }
-            );
-        }
-    );
 }
 
 function DisplayTrackTable(tableID, list, description)
@@ -445,6 +424,34 @@ function StoreObjectInLocalNamespace(key, value, callback)
 	);
 }
 
+function ExportLocalStorageToFile()
+{
+	chrome.storage.local.get
+	(
+		null, 
+		function(result) 
+		{ 
+			//Generate the file name
+			var date = new Date();
+			var dateStamp = date.getFullYear() + '-' + (date.getMonth()+1) + '-' + date.getDate();
+			var fileName = 'LocalStorageExport' + '_' + dateStamp + '.json';
+
+			//Convert object to a string. (To do the opposite, use JSON.parse).
+			var resultString = JSON.stringify(result);
+
+			//Save as file
+			var url = 'data:application/json;base64,' + btoa(unescape(encodeURIComponent(resultString)));
+			chrome.downloads.download
+			(
+				{
+					url: url,
+					filename: fileName
+				}
+			);
+		}
+	);
+}
+
 function PrintList(list)
 {
     for (var i = 0; i < list.length; i++)
@@ -502,8 +509,12 @@ function FadeOut(element, callback) //TODO: Error checking needed
 	);
 }
 
-function FadeIn(element, callback)
+function FadeIn(element, callback, increment)
 {
+	if (increment == null)
+	{
+		increment = 0.1;
+	}
 	var targetOpacity = 0;
 	var fadeInterval = setInterval
 	(
@@ -515,7 +526,7 @@ function FadeIn(element, callback)
             {
                 clearInterval(fadeInterval);
 				
-				if(typeof callback !== "undefined")
+				if(typeof callback !== "undefined") //TODO can we abstract all the null checks for all the callbacks?
 				{
 					callback();
 				}
@@ -526,7 +537,7 @@ function FadeIn(element, callback)
 			}
 			else
 			{
-				targetOpacity += 0.1;
+				targetOpacity += increment;
 			}
 		},
 		60

@@ -4,9 +4,8 @@ chrome.runtime.onMessage.addListener
     {
         console.log(sender.tab ? 'Message received from a content script:' + sender.tab.url : 'Message ' + request.greeting + ' received from the extension.'); 
 
-        if (request.greeting == 'GetSongList')
+        if (request.greeting == 'greeting_GetSongList')
         {   
-            //ScrollToTrackCount();
             ScrollToElement(GetTrackCountElement());
             setTimeout(ListSongs(sendResponse), 250);
         }
@@ -14,9 +13,13 @@ chrome.runtime.onMessage.addListener
         {   
             sendResponse(GetTrackCount());
         }
-        else if (request.greeting == 'GetPlaylistName')
+        else if (request.greeting == 'greeting_GetNameOfPlaylist')
         {   
             sendResponse(GetPlaylistNameText());
+        }
+        else if (request.greeting == 'greeting_GetNameOfAllSongsList')
+        {   
+            sendResponse(GetTextAllSongsName());
         }
         
         return true;
@@ -51,17 +54,30 @@ function ToggleScrolling(enable)
 var PlaylistElements = 
 {
 	wrapper:'div.detail-wrapper',
-    name:'div'
+    name:'div',
+    allSongsList:'#action-bar-container > paper-button > span'
 };
 
+//TODO rename & organize these so they're more clearly about getting elements
 function GetPlaylistDetailsWrapper()
 {
+    //TODO need a null check here and error handling
     return document.querySelector(PlaylistElements.wrapper); 
 }
 
 function GetPlaylistNameElement()
 {
     return GetPlaylistDetailsWrapper().querySelector(PlaylistElements.name); 
+}
+
+function GetElementAllSongsListName()
+{
+    return document.querySelector(PlaylistElements.allSongsList); 
+}
+
+function GetTextAllSongsName()
+{
+    return GetElementAllSongsListName().innerText;
 }
 
 //TODO Currently not supporting 'All Music' list. See GetTrackListTitle below. Needs more work. (was supported before but not well)
@@ -71,15 +87,15 @@ function GetPlaylistNameText()
     return GetPlaylistNameElement().innerText.split("\n")[0];;
 }
 
-//TODO this has potential uses for getting the title of the 'All Songs' list
+/*
 function GetTrackListTitle()
 {
-    var container = document.querySelector('div.title.tooltip');
+    var container = document.querySelector('div.title.tooltip'); //I think this is obsolete
     
     if (container == null)
     {
         //TODO do we have to fix this?
-        container = document.querySelectorAll('.text')[1];
+        container = document.querySelectorAll('.text')[1]; //This can be used for getting the title of the 'All Songs' list, but probably not the best way
         
         if (container == undefined)
         {
@@ -89,7 +105,7 @@ function GetTrackListTitle()
     }
 
     return container.textContent;
-}
+}*/
 
 function GetTrackCountElement()
 {
@@ -104,6 +120,7 @@ function GetTrackCountElement()
     {
         element = document.getElementById('countSummary'); //TODO this may be obsolete - Actually it doesn't seem like it. Works for 'All Music' list
     }
+    //TODO instead of just trying one thing after another, where possible we should probably look for what we expect depending on the current page.
     
     return element;
 }
@@ -237,7 +254,7 @@ function ListSongs(callback)
 
                 ScrollToElement(elementToScrollTo);
 
-                //TODO It seems it may still possible to get in an infinite loop of scrolling. May need more investigation. 
+                //TODO It's still possible to get in an infinite loop of scrolling if the Queue has been opened. 
             }
             else
             {

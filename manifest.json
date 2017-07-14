@@ -6,8 +6,7 @@
     "content_scripts": [
         {
             "matches": [
-                "http://*/*",
-                "https://*/*"
+                "https://play.google.com/music/listen*"
             ],
             "js": [
                 "Scripts/content.js"
@@ -23,6 +22,7 @@
     "permissions": 
     [
         "storage",
-        "tabs"
+        "tabs",
+        "downloads"
     ]
 }
