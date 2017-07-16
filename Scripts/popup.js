@@ -1,7 +1,7 @@
 /*** Listeners ***/
 
 //document.addEventListener('DOMContentLoaded', Start);
-document.addEventListener('DOMContentLoaded', function() { FadeIn(document.getElementById('popup'), Start, 0.2) } );					
+document.addEventListener('DOMContentLoaded', function() { FadeIn(document.getElementById('popup'), PreparePopup, 0.2) } );					
 
 chrome.storage.onChanged.addListener
 (
@@ -46,10 +46,10 @@ chrome.storage.onChanged.addListener
 
 /*** Message Passing ***/
 
-//TODO rename and group these to make it clearer we're sending a message request
+//TODO abstract any message passing to only do the minimum necessary
 //TODO could we get the playlist name and track count in one go, and save them together? 
 	//Then we could also store the trackcount in the TabManager and make the comparison code simpler
-function ScrapeAndSavePlaylistName(callback)
+function RetrievePlaylistName(callback)
 {	
 	var messageGreeting;
 
@@ -68,15 +68,12 @@ function ScrapeAndSavePlaylistName(callback)
         {greeting: messageGreeting}, 
         function(response) 
         {
-            console.log('Current playlist\'s name is %s.', response);
-            TabManager.SetPlaylistName(response);
-			callback();
+			callback(response);
         }
     );
 }
 
-//TODO rename these to make it clearer we're sending a message request
-function GetCurrentTrackCount(callback)
+function RetrieveCurrentTrackCount(callback)
 {	
     chrome.tabs.sendMessage
     (
@@ -84,48 +81,103 @@ function GetCurrentTrackCount(callback)
         {greeting: 'GetTrackCount'}, 
         function(response) 
         {
-            console.log('Current playlist\'s track count is %s.', response);
-            callback(response);
-            //TODO maybe get the element here and then calculate track count depending on type of track list
+            callback(response); //TODO maybe get the element here and then calculate track count depending on type of track list
         }
     );
 }
 
-//TODO rename these to make it clearer we're sending a message request
-function GetSongList() 
+//TODO Merge these all into one generic method
+function RetrieveSongList(callback) 
 {
-	document.getElementById('buttonComparePlaylist').disabled = true;
-	HideLandingPage();
-	ShowStatusMessage('Song list comparison in progress.');
-
     chrome.tabs.sendMessage
     (
         TabManager.GetTab().id, 
-        {greeting: 'greeting_GetSongList'}, 
-        function(trackList)
-        {
-			if (trackList == null)
-			{
-				ShowStatusMessage('Failed to retrieve track list.');
-				return;
-			}
-
-            FadeTransition //when the tracklist has been collected, begin the fade transition
-            (
-                function() //when the fade transition has completed...
-                {
-                    HideStatusMessage();
-					ShowComparisonPage();
-                    ShowTrackLists();
-                    ShowBackButton();
-					StoreObjectInLocalNamespace(TabManager.GetKey(), trackList);
-                }
-            );
-        }
+        {greeting: 'greeting_GetSongList'},
+		function(response)
+		{
+			callback(response);
+		} 
     );
 }
 
-/*** ***/
+/*** Popup Setup ***/
+
+function PreparePopup()
+{
+	VerifyAndSetTab
+	(
+		function()
+		{
+			GetPlaylistNameAndTrackCount
+			(
+				function() 
+				{
+					HideStatusMessage();
+					ShowTitle(TabManager.GetPlaylistName());
+					CompareTrackCounts(); 
+				}
+			);
+		}
+	);
+}
+
+function VerifyAndSetTab(callback)
+{
+	chrome.tabs.query
+	(
+		{active: true, currentWindow: true}, 
+		function(tabs) 
+		{	
+			var url = tabs[0].url;
+			console.assert(typeof url == 'string', 'tab.url should be a string');
+
+			if (url.indexOf('https://play.google.com/music/listen?u=0#/pl/') == -1
+				&& url.indexOf('https://play.google.com/music/listen#/pl/') == -1
+				&& url.indexOf('https://play.google.com/music/listen#/all') == -1
+				&& url.indexOf('https://play.google.com/music/listen#/ap/auto-playlist') == -1)
+			{
+				console.log('Page is not a valid Google Music playlist url.');
+				ShowStatusMessage('URL Invalid. Please open a valid Google Music playlist page and try again.');
+			}
+			else
+			{
+				TabManager.SetTab(tabs[0]);
+				callback();
+			}
+		}
+	);
+}
+
+function GetPlaylistNameAndTrackCount(callback)
+{
+	RetrievePlaylistName
+	(
+		function(playlistName)
+		{
+			console.log('Current playlist\'s name is %s.', playlistName);
+            TabManager.SetPlaylistName(playlistName);
+
+			RetrieveCurrentTrackCount
+			(
+				function(trackCount)
+				{
+					console.log('Current playlist\'s track count is %s.', trackCount);
+					
+					if (trackCount == null)
+					{
+						ShowStatusMessage('Track count could not be determined. Please open a valid playlist page and try again.');
+						return;
+					}
+
+					TabManager.SetCurrentTrackCount(trackCount);
+					callback();
+				}
+			);
+		}
+	);
+}
+
+/////////////
 
 function Start()
 {		
@@ -139,7 +191,7 @@ function Start()
 				{
 					HideStatusMessage();
 					ShowTitle(TabManager.GetPlaylistName());
-					CompareTrackCounts(TabManager.GetTab()); //TODO why am I passing GetTab? Doesn't seem necessary
+					CompareTrackCounts(); 
 				}
 			)
 
@@ -168,7 +220,7 @@ function VerifyTab(callback)
 	(
 		function()
 		{
-			ScrapeAndSavePlaylistName(callback);
+			RetrievePlaylistName(callback);
 		}
 	);
 }
@@ -192,70 +244,61 @@ function VerifyTabUrl(callback)
 	}
 }
 
-// function GetPlaylistName()
-// {
-// 	return TabManager.GetPlaylistName();
-	
-// 	//TODO finish updating this. Also need to update getting the track count for "All Songs, etc"
-//         //Finish using GetTrackListTitle (in content.js)
-// }
-
 function CompareTrackCounts()
 {
-	GetCurrentTrackCount
+	GetPreviousTrackCount
 	(
-		function(trackCount)
-		{		
-			if (trackCount == null)
-			{
-				ShowStatusMessage('Track count could not be determined. Please open a valid playlist page and try again.');
-				return;
-			}
-									
-			GetPreviousTrackCount
-			(
-				function(previousTrackCount)
-				{
-					console.log('Compared track count. Playlist \'%s\' previously had %s tracks, and now has %s tracks.', TabManager.GetPlaylistName(), previousTrackCount, trackCount);
-					SetTrackCountValue(trackCount, previousTrackCount);
-					PrepareLandingPage();
-				}	
-			);
-		}			
+		function(previousTrackCount)
+		{
+			console.log('Compared track count. Playlist \'%s\' previously had %s tracks, and now has %s tracks.', TabManager.GetPlaylistName(), previousTrackCount, TabManager.GetCurrentTrackCount());
+			SetTrackCountValue(TabManager.GetCurrentTrackCount(), previousTrackCount);
+			PrepareLandingPage();
+		}	
 	);
 }
 
+/*** Buttons ***/
+
 function PrepareLandingPage()
 {
-    document.getElementById('buttonComparePlaylist').addEventListener('click', function() {GetSongList();});
+	//TODO is a simpler syntax possible?
+    document.getElementById('buttonComparePlaylist').addEventListener('click', function() {InitiateComparison();});
     document.getElementById('buttonPrint').addEventListener('click', function() {PrintSavedList();});   
-	document.getElementById('buttonBackup').addEventListener('click', function() {RevertToBackup();}); //TODO is a simpler syntax possible?
+	document.getElementById('buttonBackup').addEventListener('click', function() {RevertToBackup();}); 
 	document.getElementById('buttonExport').addEventListener('click', function() {ExportLocalStorageToFile();});
 
 
 	ShowLandingPage();
 }
 
-function RevertToBackup()
-{
+function InitiateComparison()
+{		
+	document.getElementById('buttonComparePlaylist').disabled = true;
 	HideLandingPage();
-	
-	chrome.storage.local.get
+	ShowStatusMessage('Song list comparison in progress.');
+
+	RetrieveSongList
 	(
-		TabManager.GetBackupKey(), 
-		function (result) 
-		{ 			
-			StoreObjectInLocalNamespace
-			(
-				TabManager.GetKey(),
-				result[TabManager.GetBackupKey()],
-				function()
-				{
-					ShowStatusMessage('Song list reverted to backup');
-					ShowBackButton();
-				}
-			);
-		}
+		function(trackList)
+        {
+			if (trackList == null)
+			{
+				ShowStatusMessage('Failed to retrieve track list.');
+				return;
+			}
+
+            FadeTransition //when the tracklist has been collected, begin the fade transition
+            (
+                function() //when the fade transition has completed...
+                {
+                    HideStatusMessage();
+					ShowComparisonPage();
+                    ShowTrackLists();
+                    ShowBackButton();
+					StoreObjectInLocalNamespace(TabManager.GetKey(), trackList);
+                }
+            );
+        }
 	);
 }
 
@@ -287,7 +330,60 @@ function PrintSavedList()
     );
 }
 
-//TODO rename these to make it clearer we're sending a message request
+function RevertToBackup()
+{
+	HideLandingPage();
+	
+	chrome.storage.local.get
+	(
+		TabManager.GetBackupKey(), 
+		function (result) 
+		{ 			
+			StoreObjectInLocalNamespace
+			(
+				TabManager.GetKey(),
+				result[TabManager.GetBackupKey()],
+				function()
+				{
+					ShowStatusMessage('Song list reverted to backup');
+					ShowBackButton();
+				}
+			);
+		}
+	);
+}
+
+function ExportLocalStorageToFile()
+{
+	chrome.storage.local.get
+	(
+		null, 
+		function(result) 
+		{ 
+			//Generate the file name
+			var date = new Date();
+			var dateStamp = date.getFullYear() + '-' + (date.getMonth()+1) + '-' + date.getDate();
+			var fileName = 'LocalStorageExport' + '_' + dateStamp + '.json';
+
+			//Convert object to a string. (To do the opposite, use JSON.parse).
+			var resultString = JSON.stringify(result);
+
+			//Save as file
+			var url = 'data:application/json;base64,' + btoa(unescape(encodeURIComponent(resultString)));
+			chrome.downloads.download
+			(
+				{
+					url: url,
+					filename: fileName
+				}
+			);
+		}
+	);
+}
+
+/***  ***/
+
+//TODO rename these to make it clearer we're getting something from Local Storage?
 function GetPreviousTrackCount(callback)
 {
 	chrome.storage.local.get
@@ -420,34 +516,6 @@ function StoreObjectInLocalNamespace(key, value, callback)
 			{
 				callback();
 			}
-		}
-	);
-}
-
-function ExportLocalStorageToFile()
-{
-	chrome.storage.local.get
-	(
-		null, 
-		function(result) 
-		{ 
-			//Generate the file name
-			var date = new Date();
-			var dateStamp = date.getFullYear() + '-' + (date.getMonth()+1) + '-' + date.getDate();
-			var fileName = 'LocalStorageExport' + '_' + dateStamp + '.json';
-
-			//Convert object to a string. (To do the opposite, use JSON.parse).
-			var resultString = JSON.stringify(result);
-
-			//Save as file
-			var url = 'data:application/json;base64,' + btoa(unescape(encodeURIComponent(resultString)));
-			chrome.downloads.download
-			(
-				{
-					url: url,
-					filename: fileName
-				}
-			);
 		}
 	);
 }

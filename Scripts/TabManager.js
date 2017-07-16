@@ -1,10 +1,11 @@
 //TODO could change var to window
-var TabManager = function() //TODO no longer sure this really needs to be in its own file
+var TabManager = function()
 {
     var currentTab;
     var playlistName;
     var key;
     var backupKey = chrome.runtime.id + '_Backup';
+    var currentTrackCount;
 
     return { 
         GetTab : function()
@@ -23,6 +24,10 @@ var TabManager = function() //TODO no longer sure this really needs to be in its
         {
             return backupKey; 
         },
+        GetCurrentTrackCount : function()
+        {
+            return currentTrackCount; 
+        },
         SetTab : function(tab)
         {
             currentTab = tab;
@@ -32,6 +37,10 @@ var TabManager = function() //TODO no longer sure this really needs to be in its
             playlistName = name;
             key = chrome.runtime.id + '_Playlist_\'' + playlistName + '\'';
             console.log("Playlist name set to: " + playlistName + ". Key set to: " + key);
+        },
+        SetCurrentTrackCount : function(count)
+        {
+            currentTrackCount = count;
         }
     };
 }();

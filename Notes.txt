@@ -2,10 +2,10 @@
 
 ** TODOs **
 
-	- content.js : 15
-	- popup.js : 23
 	- popup.html : 1
-	- TabManager.js : 2
+	- content.js : 14
+	- popup.js : 20
+	- TabManager.js : 1
 
 ** Bugs **
 
@@ -18,12 +18,12 @@
 	- Border around track tables isn't perfect (when scrolling)
 	- Open the queue, change the playlist, run the comparison -> it gets stuck in an infinite loop (thinks there are more songs than there are)
 	- When you press 'Back' it shows the 'Loading...' text flickering. (Might not need to show it at all).
+	- The music page does not always refresh after adding a song, so the displayed trackcount is less than the actual count. Popup returns an error so no user-facing harm.
 
 
 ** Upcoming To-Do List **
 
 	- Finalize / clean-up support for 'All Songs'
-	- Commit changes
 	- Scrub Hot Jams
 	- Add total count of songs added/removed after comparison
 	- Add song duration to info saved in storage
@@ -42,7 +42,8 @@
 
 V1:	
 	- Store a list of all Playlists and check that the list of playlists is up to date. Let the user know if it's not. 
-	- Show the total number of tracks added/removed when it displays the track lists
+	- - Would it be possible to use this in order to scrub out all the old unused lists saved in Local Storgae?
+	- ! Show the total number of tracks added/removed when it displays the track lists
 	- Ask user if they want to overwrite existing saved track list data (may not be needed now that backups exist)
 	- ! Google music css variable names mapping
 	- ! Error handling method for all the page css variable getters/queries

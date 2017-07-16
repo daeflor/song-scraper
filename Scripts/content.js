@@ -87,26 +87,6 @@ function GetPlaylistNameText()
     return GetPlaylistNameElement().innerText.split("\n")[0];;
 }
 
-/*
-function GetTrackListTitle()
-{
-    var container = document.querySelector('div.title.tooltip'); //I think this is obsolete
-    
-    if (container == null)
-    {
-        //TODO do we have to fix this?
-        container = document.querySelectorAll('.text')[1]; //This can be used for getting the title of the 'All Songs' list, but probably not the best way
-        
-        if (container == undefined)
-        {
-            console.log('Playlist name could not be determined');
-            return null;
-        }
-    }
-
-    return container.textContent;
-}*/
-
 function GetTrackCountElement()
 {
     var element = document.querySelector('.song-count'); //TODO this may be obsolete
