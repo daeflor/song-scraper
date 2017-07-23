@@ -5,7 +5,6 @@ var TabManager = function()
     var playlistName;
     var key;
     var backupKey = chrome.runtime.id + '_Backup';
-    var currentTrackCount;
 
     return { 
         GetTab : function()
@@ -24,10 +23,6 @@ var TabManager = function()
         {
             return backupKey; 
         },
-        GetCurrentTrackCount : function()
-        {
-            return currentTrackCount; 
-        },
         SetTab : function(tab)
         {
             currentTab = tab;
@@ -37,10 +32,6 @@ var TabManager = function()
             playlistName = name;
             key = chrome.runtime.id + '_Playlist_\'' + playlistName + '\'';
             console.log("Playlist name set to: " + playlistName + ". Key set to: " + key);
-        },
-        SetCurrentTrackCount : function(count)
-        {
-            currentTrackCount = count;
         }
     };
 }();

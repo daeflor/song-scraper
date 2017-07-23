@@ -2,10 +2,11 @@
 
 ** TODOs **
 
-	- popup.html : 1
-	- content.js : 14
-	- popup.js : 20
+	- popup.html    : 1
+	- content.js    : 14
+	- popup.js      : 15
 	- TabManager.js : 1
+	- Style.css     : 3
 
 ** Bugs **
 
@@ -54,6 +55,7 @@ V1:
 	- When storing a list, could store the timestamp so you can see the lastUsed date and then auto-delete anything no longer in use
 	- If all the playlists in Storage are children of a parent object, do they all need the id in their name? Is that even how it works right now?
 	- Could check count of songs in list before saving to storage, to verify it matches the playlist track count (to avoid edge case infinite loop)
+	- Would be nice to know if the position of a track in a playlist has changed
 
 V2:
 	- Have the user's track list info be accessible across devices so they can use the extension from anywhere

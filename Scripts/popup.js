@@ -1,6 +1,5 @@
 /*** Listeners ***/
 
-//document.addEventListener('DOMContentLoaded', Start);
 document.addEventListener('DOMContentLoaded', function() { FadeIn(document.getElementById('popup'), PreparePopup, 0.2) } );					
 
 chrome.storage.onChanged.addListener
@@ -46,57 +45,16 @@ chrome.storage.onChanged.addListener
 
 /*** Message Passing ***/
 
-//TODO abstract any message passing to only do the minimum necessary
-//TODO could we get the playlist name and track count in one go, and save them together? 
-	//Then we could also store the trackcount in the TabManager and make the comparison code simpler
-function RetrievePlaylistName(callback)
-{	
-	var messageGreeting;
-
-	if (TabManager.GetTab().url.indexOf('https://play.google.com/music/listen#/all') > -1)
-	{
-		messageGreeting = 'greeting_GetNameOfAllSongsList';
-	}
-	else
-	{
-		messageGreeting = 'greeting_GetNameOfPlaylist';
-	}
-
-    chrome.tabs.sendMessage
-    (
-        TabManager.GetTab().id, 
-        {greeting: messageGreeting}, 
-        function(response) 
-        {
-			callback(response);
-        }
-    );
-}
-
-function RetrieveCurrentTrackCount(callback)
+function SendMessage(greeting, callback)
 {	
     chrome.tabs.sendMessage
     (
         TabManager.GetTab().id, 
-        {greeting: 'GetTrackCount'}, 
+        {greeting: greeting}, 
         function(response) 
         {
-            callback(response); //TODO maybe get the element here and then calculate track count depending on type of track list
+            callback(response); 
         }
-    );
-}
-
-//TODO Merge these all into one generic method
-function RetrieveSongList(callback) 
-{
-    chrome.tabs.sendMessage
-    (
-        TabManager.GetTab().id, 
-        {greeting: 'greeting_GetSongList'},
-		function(response)
-		{
-			callback(response);
-		} 
     );
 }
 
@@ -104,24 +62,25 @@ function RetrieveSongList(callback)
 
 function PreparePopup()
 {
-	VerifyAndSetTab
+	GetAndVerifyTab
 	(
 		function()
 		{
-			GetPlaylistNameAndTrackCount
+			GetTracklistName
 			(
 				function() 
 				{
-					HideStatusMessage();
-					ShowTitle(TabManager.GetPlaylistName());
-					CompareTrackCounts(); 
+					GetAndCompareTrackCounts
+					(
+						PrepareLandingPage
+					);
 				}
 			);
 		}
 	);
 }
 
-function VerifyAndSetTab(callback)
+function GetAndVerifyTab(callback)
 {
 	chrome.tabs.query
 	(
@@ -148,128 +107,103 @@ function VerifyAndSetTab(callback)
 	);
 }
 
-function GetPlaylistNameAndTrackCount(callback)
+function GetTracklistName(callback)
 {
-	RetrievePlaylistName
+	var greeting;
+
+	if (TabManager.GetTab().url.indexOf('https://play.google.com/music/listen#/all') > -1)
+	{
+		greeting = 'greeting_GetNameOfAllSongsList';
+	}
+	else
+	{
+		greeting = 'greeting_GetNameOfPlaylist';
+	}
+
+	SendMessage
 	(
-		function(playlistName)
+		greeting,
+		function(listName)
 		{
-			console.log('Current playlist\'s name is %s.', playlistName);
-            TabManager.SetPlaylistName(playlistName);
-
-			RetrieveCurrentTrackCount
-			(
-				function(trackCount)
-				{
-					console.log('Current playlist\'s track count is %s.', trackCount);
-					
-					if (trackCount == null)
-					{
-						ShowStatusMessage('Track count could not be determined. Please open a valid playlist page and try again.');
-						return;
-					}
-
-					TabManager.SetCurrentTrackCount(trackCount);
-					callback();
-				}
-			);
-		}
-	);
-}
-
-/////////////
-
-function Start()
-{		
-	SaveTabDetails
-	(
-		function()
-		{
-			VerifyTab
-			(
-				function() 
-				{
-					HideStatusMessage();
-					ShowTitle(TabManager.GetPlaylistName());
-					CompareTrackCounts(); 
-				}
-			)
-
-		}
-	);
-}
-
-//TODO change to verify and save tab details
-function SaveTabDetails(callback)
-{
-	chrome.tabs.query
-	(
-		{active: true, currentWindow: true}, 
-		function(tabs) 
-		{
-			TabManager.SetTab(tabs[0]);
+			console.log('Current playlist\'s name is %s.', listName);
+            TabManager.SetPlaylistName(listName);
 			callback();
 		}
 	);
 }
 
-//TODO can this be part of prepareTab? Could PlaylistTitle and Key be all set at the same time as the tab?
-function VerifyTab(callback)
+function GetAndCompareTrackCounts(callback)
 {
-	VerifyTabUrl
+	//TODO maybe get the element here and then calculate track count depending on type of track list
+	SendMessage
 	(
-		function()
+		'GetTrackCount',
+		function(trackCount)
 		{
-			RetrievePlaylistName(callback);
+			console.log('Current playlist\'s track count is %s.', trackCount);
+			
+			if (trackCount == null)
+			{
+				ShowStatusMessage('Track count could not be determined. Please open a valid playlist page and try again.');
+				return;
+			}
+			
+			GetPreviousTrackCount
+			(
+				function(previousTrackCount)
+				{
+					console.log('Compared track count. Playlist \'%s\' previously had %s tracks, and now has %s tracks.', TabManager.GetPlaylistName(), previousTrackCount, trackCount);
+					SetTrackCountValue(trackCount, previousTrackCount);
+					callback();
+				}	
+			);
 		}
 	);
 }
 
-function VerifyTabUrl(callback)
+//TODO could rename this to make it clearer we're getting something from Local Storage?
+function GetPreviousTrackCount(callback)
 {
-	var url = TabManager.GetTab().url;
-	console.assert(typeof url == 'string', 'tab.url should be a string');
-
-	if (url.indexOf('https://play.google.com/music/listen?u=0#/pl/') == -1
-		&& url.indexOf('https://play.google.com/music/listen#/pl/') == -1
-		&& url.indexOf('https://play.google.com/music/listen#/all') == -1
-		&& url.indexOf('https://play.google.com/music/listen#/ap/auto-playlist') == -1)
-	{
-		console.log('Page is not a valid Google Music playlist url.');
-		ShowStatusMessage('URL Invalid. Please open a valid Google Music playlist page and try again.');
-	}
-	else
-	{
-		callback();
-	}
-}
-
-function CompareTrackCounts()
-{
-	GetPreviousTrackCount
+	chrome.storage.local.get
 	(
-		function(previousTrackCount)
+		TabManager.GetKey(), //TODO: Error checking needed
+		function(result)
 		{
-			console.log('Compared track count. Playlist \'%s\' previously had %s tracks, and now has %s tracks.', TabManager.GetPlaylistName(), previousTrackCount, TabManager.GetCurrentTrackCount());
-			SetTrackCountValue(TabManager.GetCurrentTrackCount(), previousTrackCount);
-			PrepareLandingPage();
-		}	
+			if(chrome.runtime.lastError)
+			{
+				console.log('ERROR: ' + chrome.runtime.lastError.message);
+				return;
+			}
+			
+			if (result[TabManager.GetKey()] == undefined)
+			{
+				console.log('There is currently no track list saved under key "%s"', TabManager.GetKey());
+				callback(null);
+			}
+			else
+			{
+                console.log('Previous track count: "%s"', result[TabManager.GetKey()].length);
+				callback(result[TabManager.GetKey()].length); 
+			}
+		}
 	);
 }
 
-/*** Buttons ***/
-
 function PrepareLandingPage()
 {
-	//TODO is a simpler syntax possible?
-    document.getElementById('buttonComparePlaylist').addEventListener('click', function() {InitiateComparison();});
-    document.getElementById('buttonPrint').addEventListener('click', function() {PrintSavedList();});   
-	document.getElementById('buttonBackup').addEventListener('click', function() {RevertToBackup();}); 
-	document.getElementById('buttonExport').addEventListener('click', function() {ExportLocalStorageToFile();});
+	HideStatusMessage();
+	ShowTitle(TabManager.GetPlaylistName());
 
+    document.getElementById('buttonComparePlaylist').onclick = InitiateComparison;
+    document.getElementById('buttonPrint').onclick = PrintSavedList;
+	document.getElementById('buttonBackup').onclick = RevertToBackup;
+	document.getElementById('buttonExport').onclick = ExportLocalStorageToFile;
+	document.getElementById('buttonBack').onclick = ReloadPopup; 
 
 	ShowLandingPage();
 }
+
+/*** User Options ***/
 
 function InitiateComparison()
 {		
@@ -277,8 +211,9 @@ function InitiateComparison()
 	HideLandingPage();
 	ShowStatusMessage('Song list comparison in progress.');
 
-	RetrieveSongList
+	SendMessage
 	(
+		'greeting_GetSongList',
 		function(trackList)
         {
 			if (trackList == null)
@@ -304,7 +239,6 @@ function InitiateComparison()
 
 function PrintSavedList()
 {
-    //console.log("Key is: " + TabManager.GetKey());
     chrome.storage.local.get
     (
         TabManager.GetKey(), //TODO: Error checking needed
@@ -324,7 +258,7 @@ function PrintSavedList()
             {
                 var list = result[TabManager.GetKey()];
 				HidePrintButton();
-                DisplayTrackTable('tableSavedList', list);
+                DisplayTrackTable(list, 'tableSavedList');
             }
         }
     );
@@ -383,39 +317,13 @@ function ExportLocalStorageToFile()
 
 /***  ***/
 
-//TODO rename these to make it clearer we're getting something from Local Storage?
-function GetPreviousTrackCount(callback)
+function DisplayTrackTable(list, tableId, headerId, descriptionId)
 {
-	chrome.storage.local.get
-	(
-		TabManager.GetKey(), //TODO: Error checking needed
-		function(result)
-		{
-			if(chrome.runtime.lastError)
-			{
-				console.log('ERROR: ' + chrome.runtime.lastError.message);
-				return;
-			}
-			
-			if (result[TabManager.GetKey()] == undefined)
-			{
-				console.log('There is currently no track list saved under key "%s"', TabManager.GetKey());
-				callback(null);
-			}
-			else
-			{
-                console.log('Previous track count: "%s"', result[TabManager.GetKey()].length);
-				callback(result[TabManager.GetKey()].length); 
-			}
-		}
-	);
-}
-
-function DisplayTrackTable(tableID, list, description)
-{
-	var table = document.getElementById(tableID);
+	var table = document.getElementById(tableId);
 	var tr;
 	var td;	
+
+	var count = 0;
 		
 	for (var i = 0; i < list.length; i++)
 	{
@@ -423,6 +331,8 @@ function DisplayTrackTable(tableID, list, description)
 		{
 			continue;
 		}
+
+		count++;
 		
 		console.log(list[i].title);
 		tr = document.createElement('TR');
@@ -450,9 +360,19 @@ function DisplayTrackTable(tableID, list, description)
 	{
 		table.hidden = false;
 
+		var header = document.getElementById(headerId);
+		var description = document.getElementById(descriptionId);
+		
+		//TODO need to figure out best way to do null checks
+		if(typeof header !== "undefined")
+		{
+			header.textContent = header.textContent.concat(" (" + count + ")");
+		}
+
 		if (description != null)
 		{
 			description.hidden = true;
+			//description.textContent = count + " Tracks";
 		}
 	}
 }
@@ -477,13 +397,13 @@ function CompareTrackLists(latest, previous)
 	} //TODO removed track index wrong if there were duplicates
 	
 	console.log('Tracks added: ----');
-	DisplayTrackTable('tracksAddedTable', latest, document.getElementById('tracksAddedEmpty'));
+	DisplayTrackTable(latest, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
 	
 	console.log('Tracks removed: ----');
-	DisplayTrackTable('tracksRemovedTable', previous, document.getElementById('tracksRemovedEmpty'));
+	DisplayTrackTable(previous, 'tableTracksRemoved', 'pTracksRemovedHeader', 'pTracksRemovedDescription');
 }
 
-function ReloadPopup()
+function ReloadPopup() //TODO is there a better way to do this? Maybe without having to reload anf Fade In?
 {
 	FadeOut(document.getElementById('popup'), function() { location.reload(true); });
 }
@@ -579,6 +499,8 @@ function FadeOut(element, callback) //TODO: Error checking needed
 
 function FadeIn(element, callback, increment)
 {
+	console.log("Element \'%s\' is beginning to Fade In.", element);
+
 	if (increment == null)
 	{
 		increment = 0.1;
@@ -612,7 +534,7 @@ function FadeIn(element, callback, increment)
 	);
 }
 
-//TODO Should probably move this to a separate file
+//TODO Could move this to a separate file
 /***** User Interface *****/
 
 function ShowStatusMessage(text)
@@ -715,7 +637,6 @@ function HideTrackLists()
 function ShowBackButton()
 {
 	document.getElementById('divBack').hidden = false;
-	document.getElementById('buttonBack').onclick = ReloadPopup; //TODO: maybe could assign all buttons in one function
 }
 
 /*
