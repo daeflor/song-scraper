@@ -1,4 +1,5 @@
 /*TODO: There are probably a lot of redundant properites here that could be trimmed down*/
+/*Apparently you can have multiple classes per element... Something to think about.*/
 
 body {
 	font-family: 'Gill Sans', Optima, "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
@@ -110,7 +111,7 @@ td {
 	text-shadow:1px 1px 5px #ffffff;
 	
 	margin: 10px;
-	min-width: 150px;
+	min-width: 200px;
 }
 .popupButton:hover {
 	background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #ccc2a6), color-stop(1, #eae0c2));

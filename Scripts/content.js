@@ -87,6 +87,7 @@ function GetPlaylistNameText()
     return GetPlaylistNameElement().innerText.split("\n")[0];;
 }
 
+//TODO could save the elements in the TabManager
 function GetTrackCountElement()
 {
     var element = document.querySelector('.song-count'); //TODO this may be obsolete
@@ -105,7 +106,7 @@ function GetTrackCountElement()
     return element;
 }
 
-//TODO: There is about a 5 second delay for the song-count element to get updated after adding a song to the playlist. (I don't see how you'd hit this unless you're adding a song that is already in that playlist).
+//TODO: There is about a 5 second delay for the song-count element to get updated after adding a song to the playlist. (I don't see how you'd hit this unless you're adding a song that is already in that playlist, or adding the currently playing song perhaps).
 function GetTrackCount() 
 {
     var element = GetTrackCountElement();

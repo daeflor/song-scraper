@@ -24,9 +24,9 @@
 
 ** Upcoming To-Do List **
 
+	- 'All Songs' page format has changed somehow
+	- 'Soundtracks' playlist includes 'added' songs that are not elsewhere accounted for
 	- Finalize / clean-up support for 'All Songs'
-	- Scrub Hot Jams
-	- Add total count of songs added/removed after comparison
 	- Add song duration to info saved in storage
 
 
@@ -44,8 +44,6 @@
 V1:	
 	- Store a list of all Playlists and check that the list of playlists is up to date. Let the user know if it's not. 
 	- - Would it be possible to use this in order to scrub out all the old unused lists saved in Local Storgae?
-	- ! Show the total number of tracks added/removed when it displays the track lists
-	- Ask user if they want to overwrite existing saved track list data (may not be needed now that backups exist)
 	- ! Google music css variable names mapping
 	- ! Error handling method for all the page css variable getters/queries
 	- ! Include the Song Duration/Length when saving tracklists !
@@ -56,6 +54,8 @@ V1:
 	- If all the playlists in Storage are children of a parent object, do they all need the id in their name? Is that even how it works right now?
 	- Could check count of songs in list before saving to storage, to verify it matches the playlist track count (to avoid edge case infinite loop)
 	- Would be nice to know if the position of a track in a playlist has changed
+	- Is it worth having a button that either copies comparison results to clipboard and/or outputs a csv/xsl file of the results
+		- I would probably copy/paste manually anyway, in case this functionality failed. And it also wouldn't save much time. 
 
 V2:
 	- Have the user's track list info be accessible across devices so they can use the extension from anywhere

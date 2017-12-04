@@ -10,7 +10,7 @@ chrome.storage.onChanged.addListener
 		{
 			var storageChange = changes[key];
 
-			if (key.indexOf(chrome.runtime.id + '_Playlist') > -1) 
+			if (key.indexOf(chrome.runtime.id + '_Playlist') > -1) //TODO should this only check for the current tab's playlist/key?
 			{
 				
 				var playlistName = key.split('_')[2];
@@ -91,9 +91,9 @@ function GetAndVerifyTab(callback)
 			console.assert(typeof url == 'string', 'tab.url should be a string');
 
 			if (url.indexOf('https://play.google.com/music/listen?u=0#/pl/') == -1
-				&& url.indexOf('https://play.google.com/music/listen#/pl/') == -1
-				&& url.indexOf('https://play.google.com/music/listen#/all') == -1
-				&& url.indexOf('https://play.google.com/music/listen#/ap/auto-playlist') == -1)
+				//&& url.indexOf('https://play.google.com/music/listen#/pl/') == -1
+				&& url.indexOf('https://play.google.com/music/listen?u=0#/all') == -1
+				&& url.indexOf('https://play.google.com/music/listen?u=0#/ap/auto-playlist') == -1)
 			{
 				console.log('Page is not a valid Google Music playlist url.');
 				ShowStatusMessage('URL Invalid. Please open a valid Google Music playlist page and try again.');
@@ -135,6 +135,7 @@ function GetTracklistName(callback)
 function GetAndCompareTrackCounts(callback)
 {
 	//TODO maybe get the element here and then calculate track count depending on type of track list
+		//or just determine here which greeting to send, like with the list name, above.
 	SendMessage
 	(
 		'GetTrackCount',
