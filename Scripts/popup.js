@@ -90,6 +90,7 @@ function GetAndVerifyTab(callback)
 			var url = tabs[0].url;
 			console.assert(typeof url == 'string', 'tab.url should be a string');
 
+			//TODO store these someone so I have one source of truth that can be updated when Play Music makes changes
 			if (url.indexOf('https://play.google.com/music/listen?u=0#/pl/') == -1
 				//&& url.indexOf('https://play.google.com/music/listen#/pl/') == -1
 				&& url.indexOf('https://play.google.com/music/listen?u=0#/all') == -1
@@ -111,7 +112,7 @@ function GetTracklistName(callback)
 {
 	var greeting;
 
-	if (TabManager.GetTab().url.indexOf('https://play.google.com/music/listen#/all') > -1)
+	if (TabManager.GetTab().url.indexOf('https://play.google.com/music/listen?u=0#/all') > -1)
 	{
 		greeting = 'greeting_GetNameOfAllSongsList';
 	}

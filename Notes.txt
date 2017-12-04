@@ -24,7 +24,8 @@
 
 ** Upcoming To-Do List **
 
-	- 'All Songs' page format has changed somehow
+	- Could add support for and save lists for individual genres, for easier viewing/fixing
+	- Save URLs in one place so that it's easy to update them if needed
 	- 'Soundtracks' playlist includes 'added' songs that are not elsewhere accounted for
 	- Finalize / clean-up support for 'All Songs'
 	- Add song duration to info saved in storage
