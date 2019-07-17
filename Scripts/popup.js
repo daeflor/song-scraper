@@ -95,7 +95,8 @@ function GetAndVerifyTab(callback)
 			if (url.indexOf('https://play.google.com/music/listen#/pl/') == -1
 				//&& url.indexOf('https://play.google.com/music/listen#/pl/') == -1
 				&& url.indexOf('https://play.google.com/music/listen#/all') == -1
-				&& url.indexOf('https://play.google.com/music/listen#/ap/auto-playlist') == -1)
+				&& url.indexOf('https://play.google.com/music/listen#/ap/auto-playlist') == -1
+				&& url.indexOf('https://play.google.com/music/listen?u=0#/pl') == -1)
 			{
 				console.log('Page is not a valid Google Music playlist url.');
 				ShowStatusMessage('URL Invalid. Please open a valid Google Music playlist page and try again.');
