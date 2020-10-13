@@ -94,7 +94,7 @@ function GetAndVerifyTab(callback)
 			//TODO this could be laid out more clearly. For example, the negative path (invalid url) would probably make more sense in the 'else' clause
 			if (url.indexOf('https://play.google.com/music/listen#/pl/') == -1
 				//&& url.indexOf('https://play.google.com/music/listen#/pl/') == -1
-				&& url.indexOf('https://play.google.com/music/listen#/all') == -1
+				&& url.indexOf('https://play.google.com/music/listen?u=0#/all') == -1
 				&& url.indexOf('https://play.google.com/music/listen#/ap/auto-playlist') == -1
 				&& url.indexOf('https://play.google.com/music/listen?u=0#/pl') == -1
 				&& url.indexOf('https://play.google.com/music/listen?u=0#/ap') == -1)
