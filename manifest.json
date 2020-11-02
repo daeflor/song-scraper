@@ -1,12 +1,13 @@
 {
 "manifest_version": 2,
-    "name": "MusicExtension",
-    "description": "This extension tells you which tracks have been added or removed from the current Google Music playlist.",
-    "version": "0.1",
+    "name": "Song Scraper",
+    "description": "This extension allows you to view which tracks have been added or removed from the current YouTube Music or Google Play Music playlist.",
+    "version": "0.2",
     "content_scripts": [
         {
             "matches": [
-                "https://play.google.com/music/listen*"
+                "https://play.google.com/music/listen*",
+                "https://music.youtube.com/*"
             ],
             "js": [
                 "Scripts/content.js"
