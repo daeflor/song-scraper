@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+  <head>
+  	<link rel='stylesheet' type='text/css' href='Styles/style.css'>
+    <title>Music Extension</title>
+    <script src='Scripts/popup.js'></script>
+    <script src='Scripts/TabManager.js'></script>
+  </head>
+  <body> 
+    <div id='popup'>
+      
+      <div id='title' hidden=true></div>
+      <div id='status' class='statusText'>Loading...</div>
+      
+      <div id='landingPage' hidden=true>
+        <p id='trackCountValue'></p>
+        <div id='trackCountSubtext'></div>
+        <button id='buttonComparePlaylist' class='popupButton' type='button'>Compare & Save Playlist</button> 
+      
+        <!-- TODO clean this up
+        -->
+        <button id='buttonPrint' class='popupButton' type='button'>Print Stored List</button> 
+        <table id='tableSavedList' class="trackTable" hidden=true>
+          <tr>
+              <th>Index</th>
+              <th>Title</th>
+              <th>Artist</th>
+              <th>Album</th>
+          </tr>
+        </table>
+               
+        <button id='buttonBackup' class='popupButton' type='button'>Revert to Backup</button> 
+        
+        <button id='buttonExport' class='popupButton' type='button'>Export Local Storage</button> 
+
+        <!---
+        -->
+      </div>
+      
+      <div id='comparisonPage' hidden=true>
+        <div id='trackLists' hidden=true>
+         
+            <p id='pTracksAddedHeader'>Tracks Added</p>
+            <p id='pTracksAddedDescription' class='indent'>- No new tracks added.</p>
+            <div class="trackTableWrapper">
+              <table id='tableTracksAdded' class="trackTable" hidden=true>
+                <tr>
+                  <th>Index</th>
+                  <th>Title</th>
+                  <th>Artist</th>
+                  <th>Album</th>
+                </tr>
+              </table>
+            </div>      
+      
+            <p id='pTracksRemovedHeader' style='color:#ff0000; padding-top:20px'>Tracks Removed</p>
+            <p id='pTracksRemovedDescription' class='indent'>- No tracks removed.</p>
+            <div class="trackTableWrapper">
+              <table id='tableTracksRemoved' class="trackTable" hidden=true>
+                <tr>
+                  <th>Index</th>
+                  <th>Title</th>
+                  <th>Artist</th>
+                  <th>Album</th>
+                </tr>
+              </table>
+            </div>
+          
+        </div>       
+        <div id='storageResultText'  class='statusText' hidden=true>
+          First time saving data for this playlist.
+        </div>                
+      </div>
+      
+      <div id='divBack' hidden=true>
+        <button id='buttonBack' class='popupButton' type='button'>Back</button>
+      </div>
+      
+    </div> 
+  </body>
+</html>
+ 
