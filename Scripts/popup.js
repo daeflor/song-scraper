@@ -408,7 +408,7 @@ function CompareTrackLists(latest, previous)
 	DisplayTrackTable(previous, 'tableTracksRemoved', 'pTracksRemovedHeader', 'pTracksRemovedDescription');
 }
 
-function ReloadPopup() //TODO is there a better way to do this? Maybe without having to reload anf Fade In?
+function ReloadPopup() //TODO is there a better way to do this? Maybe without having to reload and Fade In?
 {
 	FadeOut(document.getElementById('popup'), function() { location.reload(true); });
 }
