@@ -1,0 +1,134 @@
+/*TODO: There are probably a lot of redundant properites here that could be trimmed down*/
+/*Apparently you can have multiple classes per element... Something to think about.*/
+
+body {
+	font-family: 'Gill Sans', Optima, "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
+    font-size: 100%;
+	font-style: normal;
+	font-size: 16px;
+	min-width: 330px;
+	max-width: 1000px;
+	background-color: #383838;
+	color: #FFCC66;
+	min-height: 80px; /*TODO: We might have a depper error that is somewhat hidden by setting this - sometimes the error popup is cut off. This is still happening. Fix it. */
+	max-height: 750px; 
+}
+
+/*TODO WHY DID SCROLL BARS APPEAR AGAIN?*/
+/*AND NOW DISAPPEAR?*/
+
+#popup {
+	text-align: center;
+}
+
+#title {
+	font-size: 24px;
+	text-align: center;
+	background-color: #303030;
+	color: #FFCC66;
+	padding: 20px;
+	min-height: 30px;
+}
+
+.statusText {
+	text-align: center;
+	padding: 20px;
+}
+
+#landingPage {
+	min-height: 150px;
+}
+
+#trackCountSubtext {
+	color: #333029;
+	padding: 10px;
+	margin-top: 5px;
+	margin-bottom: 10px;
+	background-color: #339933;
+}
+
+#trackLists {
+	text-align: left;
+	padding-left: 20px;
+	padding-right: 20px;
+	font-size: 20px;
+	color: #339933;
+}
+.indent {
+	padding-left: 20px;
+	color: antiquewhite;
+	font-size: 16px;
+}
+
+.trackTableWrapper {
+	max-height: 200px;
+	overflow-y: scroll;
+}
+
+.trackTable {
+	width: 700px;
+	text-align: left;	
+	font-family: Optima, "Segoe UI";
+	font-size: 14px;
+	color: antiquewhite;
+	background-color: #404040;
+	resize: none;
+	
+	white-space: nowrap;
+	border: 1px solid black;
+}
+
+td {
+	max-width: 225px;
+	min-width: 100%;
+	text-overflow: ellipsis; 
+	overflow-x: hidden;
+	padding-right: 5px;
+}
+
+.popupButton {
+	-moz-box-shadow: 1px 1px 10px 2px #1c1b18;
+	-webkit-box-shadow: 1px 1px 10px 2px #1c1b18;
+	box-shadow: 1px 1px 10px 2px #1c1b18;
+	background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #eae0c2), color-stop(1, #ccc2a6));
+	background:-moz-linear-gradient(top, #eae0c2 5%, #ccc2a6 100%);
+	background:-webkit-linear-gradient(top, #eae0c2 5%, #ccc2a6 100%);
+	background:-o-linear-gradient(top, #eae0c2 5%, #ccc2a6 100%);
+	background:-ms-linear-gradient(top, #eae0c2 5%, #ccc2a6 100%);
+	background:linear-gradient(to bottom, #eae0c2 5%, #ccc2a6 100%);
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#eae0c2', endColorstr='#ccc2a6',GradientType=0);
+	background-color:#eae0c2;
+	-moz-border-radius:15px;
+	-webkit-border-radius:15px;
+	border-radius:15px;
+	border:3px solid #333029;
+	/*display: inline-block;*/
+	cursor:pointer;
+	color:#505739;
+	font-size:14px;
+	padding:12px 16px;
+	text-decoration:none;
+	text-shadow:1px 1px 5px #ffffff;
+	
+	margin: 10px;
+	min-width: 200px;
+}
+.popupButton:hover {
+	background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #ccc2a6), color-stop(1, #eae0c2));
+	background:-moz-linear-gradient(top, #ccc2a6 5%, #eae0c2 100%);
+	background:-webkit-linear-gradient(top, #ccc2a6 5%, #eae0c2 100%);
+	background:-o-linear-gradient(top, #ccc2a6 5%, #eae0c2 100%);
+	background:-ms-linear-gradient(top, #ccc2a6 5%, #eae0c2 100%);
+	background:linear-gradient(to bottom, #ccc2a6 5%, #eae0c2 100%);
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ccc2a6', endColorstr='#eae0c2',GradientType=0);
+	background-color:#ccc2a6;
+}
+
+.popupButton:active {
+	position: relative;
+	top:1px;
+}
+
+.popupButton:focus {
+  outline: none;
+}
