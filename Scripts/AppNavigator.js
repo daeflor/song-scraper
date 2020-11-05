@@ -30,34 +30,67 @@ function init() {
 
 window.YouTubeMusicFlowController = (function() {
 
+    const supportedApps = {
+        youtubeMusic: 'ytm'
+    };
+
     function initializeYouTubeMusicFlow(currentTab) {
         //Store the current tab for future reference
         TabManager.SetTab(currentTab);
 
-        //Once the tracklist name is acquired from a content script, prepare the popup's landing page
-        const _onTracklistNameAcquired = function() {
-            prepareLandingPageForYouTubeMusic();
-        };
+        //Send a message to the content script to make a record of the current app 
+        sendMessage_RecordCurrentApp();
 
-        //Get the tracklist name from a content script and then execute the passed callback function
-        getTracklistNameForYouTubeMusic(_onTracklistNameAcquired);
+        // //Once the tracklist name is acquired from a content script, prepare the popup's landing page
+        // const _onTracklistNameAcquired = function() {
+        //     prepareLandingPageForYouTubeMusic();
+        // };
+
+        // //Get the tracklist name from a content script and then execute the passed callback function
+        // getTracklistNameForYouTubeMusic(_onTracklistNameAcquired);
     }
 
-    function getTracklistNameForYouTubeMusic(callback) {
+    function sendMessage_RecordCurrentApp() {
+        //Send a message to the content script to make a record of the current app
+        const _message = {greeting:'RecordCurrentApp', app:supportedApps.youtubeMusic};
+        window.Utilities.SendMessageToContentScripts(_message, processResponse_RecordCurrentApp);
+    }
+
+    function processResponse_RecordCurrentApp() {
+        //Send a message to the content script to get the name of the current tracklist
+        sendMessage_GetTracklistName();
+    }
+
+    function sendMessage_GetTracklistName() {
+        //Send a message to the content script to get the tracklist name
+        let _message = {greeting:'GetTracklistName'};
+        window.Utilities.SendMessageToContentScripts(_message, processResponse_GetTracklistName);
+    }
+
+    function processResponse_GetTracklistName(response) {
+        //Store the tracklist's name
+        console.log('Current playlist\'s name is %s.', response.tracklistName);
+        TabManager.SetPlaylistName(response.tracklistName);
+
+        //Prepare the YouTube Music extension popup landing page
+        prepareLandingPageForYouTubeMusic();
+    }
+
+    // function getTracklistNameForYouTubeMusic(callback) {
     
-        //Assign the greeting that will be sent to the content script
-        let _greeting = 'greeting_ytm_GetTracklistName_Playlist';
+    //     //Assign the greeting that will be sent to the content script
+    //     let _greeting = 'greeting_ytm_GetTracklistName_Playlist';
 
-        //When a response is received from the content script, store the tracklist's name and execute the callback function
-        const _onMessageResponseReceived = function(tracklistName) {
-            console.log('Current playlist\'s name is %s.', tracklistName);
-            TabManager.SetPlaylistName(tracklistName);
-            callback();
-        };
+    //     //When a response is received from the content script, store the tracklist's name and execute the callback function
+    //     const _onMessageResponseReceived = function(tracklistName) {
+    //         console.log('Current playlist\'s name is %s.', tracklistName);
+    //         TabManager.SetPlaylistName(tracklistName);
+    //         callback();
+    //     };
 
-        //Send the message to the content script, passing along the greeting and callback
-        window.Utilities.SendMessageToContentScripts(_greeting, _onMessageResponseReceived);
-    }
+    //     //Send the message to the content script, passing along the greeting and callback
+    //     window.Utilities.SendMessageToContentScripts(_greeting, _onMessageResponseReceived);
+    // }
 
     function prepareLandingPageForYouTubeMusic()
     {
@@ -77,10 +110,10 @@ window.YouTubeMusicFlowController = (function() {
 		window.ViewRenderer.ShowStatusMessage('Song list comparison in progress.');
 
 		window.Utilities.SendMessageToContentScripts(
-			'greeting_ytm_GetTrackList',
-			function(trackList)
+			{greeting:'GetTrackList'},
+			function(response)
 			{
-				if (trackList == null)
+				if (response.tracklist == null)
 				{
 					window.ViewRenderer.ShowStatusMessage('Failed to retrieve track list.');
 					return;
@@ -88,7 +121,7 @@ window.YouTubeMusicFlowController = (function() {
                 else {
                     window.ViewRenderer.ShowStatusMessage('Tracklist retrieved. Wouldnt you like to see it?');
                     console.log("Here's the tracklist, maybe:");
-                    console.log(trackList);
+                    console.log(response.tracklist);
 					return;
                 }
 
@@ -166,12 +199,25 @@ window.Utilities = (function() {
 		);
 	}
     
-    function sendMessageToContentScripts(greeting, callback) {	
+    /**
+     * Sends a message to content scripts and then handles the provided callback response
+     * @param {object} message  A JSON-ifiable object to send as a message
+     * @param {function} callback The function to call when a response has been received
+     */
+    function sendMessageToContentScripts(message, callback) {	
 		chrome.tabs.sendMessage(
 			TabManager.GetTab().id, 
-			{greeting: greeting}, 
+			message, 
 			function(response) {
-				callback(response); 
+                //If an error occurred during the message connection, print an error
+                if(chrome.runtime.lastError) {
+                    console.log('ERROR: An error occurred during the message connection: ' + chrome.runtime.lastError);
+                    return;
+                }
+                //Otherwise excute the provided callback function
+                else {
+                    callback(response); 
+                }
 			}
 		);
 	}
