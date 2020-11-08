@@ -28,6 +28,7 @@ function init() {
 	);
 }
 
+//TODO NEW - currently, if you switch to a different tracklist without refreshing the page, it won't recognize that the tracklist has changed
 window.YouTubeMusicFlowController = (function() {
 
     const supportedApps = {
@@ -40,6 +41,9 @@ window.YouTubeMusicFlowController = (function() {
 
         //Send a message to the content script to make a record of the current app 
         sendMessage_RecordCurrentApp();
+
+
+        //sendMessage_RecordCurrentApp(sendMessage_GetTracklistName.bind(null, prepareLandingPageForYouTubeMusic));
 
         // //Once the tracklist name is acquired from a content script, prepare the popup's landing page
         // const _onTracklistNameAcquired = function() {
@@ -59,6 +63,7 @@ window.YouTubeMusicFlowController = (function() {
     function processResponse_RecordCurrentApp() {
         //Send a message to the content script to get the name of the current tracklist
         sendMessage_GetTracklistName();
+        //TODO NEW - Does it make sense to call a sendMessage here?
     }
 
     function sendMessage_GetTracklistName() {
@@ -122,6 +127,10 @@ window.YouTubeMusicFlowController = (function() {
                     window.ViewRenderer.ShowStatusMessage('Tracklist retrieved. Wouldnt you like to see it?');
                     console.log("Here's the tracklist, maybe:");
                     console.log(response.tracklist);
+
+                    downloadGooglePlayMusicTracklistAsCSV();
+                    downloadCurrentTracklistAsCSV(response.tracklist);
+
 					return;
                 }
 
@@ -138,7 +147,148 @@ window.YouTubeMusicFlowController = (function() {
 				// );
 			}
 		);
-	}
+    }
+
+    function downloadCurrentTracklistAsCSV(tracklist) {
+        //The object keys to include when outputting the tracklist data to CSV
+        const _keysToIncludeInExport = [
+            'title',
+            'artist',
+            'album',
+            'duration',
+            'unplayable'
+        ];
+
+        convertArrayOfObjectsToCsv(tracklist, 'TracklistExport_After', _keysToIncludeInExport);
+    }
+
+    function downloadGooglePlayMusicTracklistAsCSV() {
+        //The object keys to include when outputting the GPM track data to CSV
+        const _keysToIncludeInExport = [
+            'title',
+            'artist',
+            'album',
+            'duration',
+        ];
+
+        //Once the exported Google Play Music tracklist data has been loaded from a local file, convert it to a CSV file
+        const _onGooglePlayMusicDataLoaded = function(tracklistsArray) {
+            const _gpmTracklistKey = getTracklistKeyFromTracklistName(tracklistsArray, TabManager.GetPlaylistName());
+            console.log('GPM Tracklist Key: ' + _gpmTracklistKey);
+            console.log(tracklistsArray[_gpmTracklistKey]);
+
+            convertArrayOfObjectsToCsv(tracklistsArray[_gpmTracklistKey], 'TracklistExport_Before', _keysToIncludeInExport);
+        };
+
+        //Send an XMLHttpRequest to load the exported GPM tracklist data from a local file, and then execute the callback
+        sendRequest_LoadGooglePlayMusicExportData(_onGooglePlayMusicDataLoaded);
+    }
+
+    function sendRequest_LoadGooglePlayMusicExportData(callback) {
+        const _filepath = "ExportedData/LocalStorageExport_2020-10-12-10-30PM.txt";
+        loadTextFileViaXMLHttpRequest(_filepath, callback, true)
+    }
+
+    //TODO NEW - this should take a tracklist key to be more general. Right now it only works for the current playlist which is unclear
+    // function downloadTracklistAsCsv(tracklistArray)
+    // {
+    //     const _gpmTracklistKey = getTracklistKeyFromTracklistName(tracklistArray, TabManager.GetPlaylistName());
+    //     console.log('GPM Tracklist Key: ' + _gpmTracklistKey);
+    //     console.log(tracklistArray[_gpmTracklistKey]);
+
+    //     convertArrayOfObjectsToCsv(tracklistArray[_gpmTracklistKey]);
+    // }
+
+    /**
+     * Loads text data from a file via XMLHttpRequest and then executes the provided callback function
+     * @param {string} filepath The path of the file to load
+     * @param {function} callback The function to execute once the data has been successfully loaded from the file
+     * @param {boolean} [parseJSON] Indicates whether or not the loaded text data should be parsed into JSON before being returned. Defaults to true.
+     */
+    function loadTextFileViaXMLHttpRequest(filepath, callback, parseJSON=true) {
+        const xmlhttp = new XMLHttpRequest();
+
+        //Once the data has been succssfully loaded from the file, either return the raw text data or the parsed JSON
+        xmlhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                const _result = (parseJSON == true) ? JSON.parse(this.responseText) : this.responseText;
+                callback(_result);
+            }
+        };
+        xmlhttp.open("GET", filepath, true);
+        xmlhttp.send();
+    }
+
+    //TODO this could go in a GPM Utilities file or something like that
+    /**
+     * Gets the tracklist key that corresponds to the given tracklist name within the provided array
+     * @param {array} tracklistArray The array within which to search
+     * @param {string} tracklistName The name of the tracklist to search for
+     */
+    function getTracklistKeyFromTracklistName(tracklistArray, tracklistName) {
+        for (let key in tracklistArray) {
+            //TODO NEW - This might not always work, or at least isn't reliable. For example Jams & Jams in Library
+            if (key.includes(tracklistName)) {
+                return key;
+            }
+        }
+    }
+    
+    /**
+     * Converts an array of objects to a CSV file and then downloads the file locally
+     * @param {array} array An array of object to convert to CSV
+     * @param {string} filename The name of the file to download
+     * @param {array} [objectKeysToInclude] An optional array to indicate the specific object keys which should be included in the CSV, and the order in which to output them. If none is provided, all keys for every object will be outputted.
+     */
+    function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=null) {
+        //Begin with a blank string for the CSV
+        let _csv = '';
+
+        //For each object in the array...
+        for (let i = 0; i < array.length; i++) {
+            const _currentObject = array[i];
+
+            //If a list of specific keys to use wasn't provided, use all of the object's keys
+            objectKeysToInclude = objectKeysToInclude || Object.keys(_currentObject);
+
+            //For each object key in the 'include' list...
+            for (let j = 0; j < objectKeysToInclude.length; j++) {
+                
+                //If this isn't the first key in the list
+                if (j > 0) {
+                    //If this isn't the the last key in the list, or if the value for the key exists...
+                    if (j < objectKeysToInclude.length-1 || (typeof(_currentObject[objectKeysToInclude[j]]) != 'undefined')) {
+                        //Append a comma to the CSV before adding the next value (i.e. don't append a comma if this is the last key AND the value is undefined)
+                        _csv += ',';
+                    }
+                }
+                    
+                //If the value type for this key is a string, include double-quotes around the output
+                if (typeof(_currentObject[objectKeysToInclude[j]]) == 'string') {
+                    _csv += '"' + _currentObject[objectKeysToInclude[j]] + '"';
+                }
+                //Otherwise, assuming he value type for this key is not undefined, output the value without quotes
+                else if (typeof(_currentObject[objectKeysToInclude[j]]) != 'undefined'){
+                    _csv += _currentObject[objectKeysToInclude[j]];
+                }
+            }
+
+            //Once all the values for the current object have been added to the CSV, append a newline character
+            _csv += '\r\n';
+
+            //TODO NEW - Could consider only outputting the 'duration' if the difference between the before and after is more than 1 second. 
+                //However, that would require us to do that comparison before hand, so would need quite a bit of extra logic. 
+        }
+
+        //Once the CSV is prepared, create a new link DOM element to use to trigger a download of the file locally
+        const _link = document.createElement('a');
+        _link.id = 'download-csv';
+        _link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(_csv));
+        _link.setAttribute('download', filename+'.csv');
+        document.body.appendChild(_link); //Add the link element to the DOM
+        _link.click(); //Trigger an automated click of the link to download the CSV file
+        _link.remove(); //Remove the temporary link element from the DOM
+    }
 
     return {
         InitializeYouTubeMusicFlow: initializeYouTubeMusicFlow
@@ -272,6 +422,3 @@ window.ViewRenderer = (function() {
         ShowTitle: showTitle
     };
 })();
-
-
-
