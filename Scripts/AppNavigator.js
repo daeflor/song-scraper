@@ -131,6 +131,8 @@ window.YouTubeMusicFlowController = (function() {
                     downloadGooglePlayMusicTracklistAsCSV();
                     downloadCurrentTracklistAsCSV(response.tracklist);
 
+                    //compareScrapedTracklistWithPreviousVersion(response.tracklist);
+
 					return;
                 }
 
@@ -147,6 +149,50 @@ window.YouTubeMusicFlowController = (function() {
 				// );
 			}
 		);
+    }
+
+    function compareScrapedTracklistWithPreviousVersion(tracklist) {
+
+        //Once the exported Google Play Music tracklist data has been loaded from a local file, convert it to a CSV file
+        const _onGooglePlayMusicDataLoaded = function(tracklistsArray) {
+            const _gpmTracklistKey = getTracklistKeyFromTracklistName(tracklistsArray, TabManager.GetPlaylistName());
+            console.log('GPM Tracklist Key: ' + _gpmTracklistKey);
+            console.log(tracklistsArray[_gpmTracklistKey]);
+
+            //COMPARE DURATION OF TRACKS BEFORE AND AFTER
+            //compareSecondsValuesBetweenTracklists(tracklistsArray[_gpmTracklistKey], tracklist);
+
+            /* This code will output the total seconds as an integer instead of a duration string
+            const _gpmTracklist = tracklistsArray[_gpmTracklistKey];
+            for (let i = 0; i < _gpmTracklist.length; i++) { 
+                _gpmTracklist[i].duration = convertDurationStringToSeconds(_gpmTracklist[i].duration);
+            }
+
+            for (let i = 0; i < tracklist.length; i++) { 
+                tracklist[i].duration = convertDurationStringToSeconds(tracklist[i].duration);
+            }
+
+            downloadCurrentTracklistAsCSV(tracklist);
+
+            const _keysToIncludeInExport = [
+                'title',
+                'artist',
+                'album',
+                'duration',
+            ];
+
+            convertArrayOfObjectsToCsv(_gpmTracklist, 'TracklistExport_Before', _keysToIncludeInExport);
+            */
+
+            //THEN, IF THE DIFFERENCE IS 0 or 1, don't include it in the 'keys to include? Hmm not sure how that would work
+                //would have to have a dedicated "keys to include" per object, which seems really messy
+
+
+            //convertArrayOfObjectsToCsv(tracklistsArray[_gpmTracklistKey], 'TracklistExport_Before', _keysToIncludeInExport);
+        };
+
+        //Send an XMLHttpRequest to load the exported GPM tracklist data from a local file, and then execute the callback
+        sendRequest_LoadGooglePlayMusicExportData(_onGooglePlayMusicDataLoaded);
     }
 
     function downloadCurrentTracklistAsCSV(tracklist) {
@@ -169,6 +215,7 @@ window.YouTubeMusicFlowController = (function() {
             'artist',
             'album',
             'duration',
+            'unplayable' //TODO This is currently hard-coded. We probably should only pass one copy of _keysToIncludeInExport per 'comparison' so that the two csv files match
         ];
 
         //Once the exported Google Play Music tracklist data has been loaded from a local file, convert it to a CSV file
@@ -233,6 +280,37 @@ window.YouTubeMusicFlowController = (function() {
             }
         }
     }
+
+     /**
+     * Creates a row of comma-separated strings from the provided array
+     * @param {array} columnValues An array of the column values to use to create a row for a CSV file
+     */
+    function createCsvRow(columnValues) {
+        if (columnValues != null) { 
+            let _row = ''; //Start with a blank string for the row
+
+            //For each column except for the last one...
+            for (let i = 0; i < columnValues.length-1; i++) {
+                //If the value type for this column is a string...
+                if (typeof(columnValues[i]) == 'string') {
+                    //Include double-quotes around the output string, followed by a comma to indicate the end of the column
+                    _row += '"' + columnValues[i] + '",';
+                }
+                //Otherwise, output the value without quotes, followed by a comma to indicate the end of the column
+                else {
+                    _row += columnValues[i] + ',';
+                }
+            }
+
+            //Add the last column value to the row, followed by a newline character to indicate the end of the row
+            _row += columnValues[columnValues.length-1] + '\r\n';
+
+            return _row;
+        }
+        else {
+            console.log("ERROR: Request received to create a CSV row but an array of column values was not provided.");
+        }
+    }
     
     /**
      * Converts an array of objects to a CSV file and then downloads the file locally
@@ -241,43 +319,31 @@ window.YouTubeMusicFlowController = (function() {
      * @param {array} [objectKeysToInclude] An optional array to indicate the specific object keys which should be included in the CSV, and the order in which to output them. If none is provided, all keys for every object will be outputted.
      */
     function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=null) {
-        //Begin with a blank string for the CSV
-        let _csv = '';
+        let _csv = ''; //Begin with a blank string for the CSV
+        
+        //If an list of object keys to include was provided, use that to set up a header row for the CSV file
+        if (objectKeysToInclude != null) {
+            _csv += createCsvRow(objectKeysToInclude);
+        }
 
         //For each object in the array...
         for (let i = 0; i < array.length; i++) {
-            const _currentObject = array[i];
+            const _currentObject = array[i]; //For better readability, track the current object in the objects array
+            let _valuesInCurrentObject = []; //Create an array to contain all the values for the current object that are going to be included in the CSV
 
             //If a list of specific keys to use wasn't provided, use all of the object's keys
             objectKeysToInclude = objectKeysToInclude || Object.keys(_currentObject);
 
-            //For each object key in the 'include' list...
-            for (let j = 0; j < objectKeysToInclude.length; j++) {
-                
-                //If this isn't the first key in the list
-                if (j > 0) {
-                    //If this isn't the the last key in the list, or if the value for the key exists...
-                    if (j < objectKeysToInclude.length-1 || (typeof(_currentObject[objectKeysToInclude[j]]) != 'undefined')) {
-                        //Append a comma to the CSV before adding the next value (i.e. don't append a comma if this is the last key AND the value is undefined)
-                        _csv += ',';
-                    }
-                }
-                    
-                //If the value type for this key is a string, include double-quotes around the output
-                if (typeof(_currentObject[objectKeysToInclude[j]]) == 'string') {
-                    _csv += '"' + _currentObject[objectKeysToInclude[j]] + '"';
-                }
-                //Otherwise, assuming he value type for this key is not undefined, output the value without quotes
-                else if (typeof(_currentObject[objectKeysToInclude[j]]) != 'undefined'){
-                    _csv += _currentObject[objectKeysToInclude[j]];
-                }
+            //For each key that should be included in the CSV output...
+            for (let j = 0; j < objectKeysToInclude.length; j++) { 
+                //If the value that matches the current key isn't falsy (e.g. undefined), use that value, otherwise set it to a blank string so that the column is still included in the CSV row later
+                const _currentValue = _currentObject[objectKeysToInclude[j]] || '';
+                //Add the key's value to the array of values to include in the CSV row later
+                _valuesInCurrentObject.push(_currentValue);      
             }
 
-            //Once all the values for the current object have been added to the CSV, append a newline character
-            _csv += '\r\n';
-
-            //TODO NEW - Could consider only outputting the 'duration' if the difference between the before and after is more than 1 second. 
-                //However, that would require us to do that comparison before hand, so would need quite a bit of extra logic. 
+            //Create a CSV row from the array of recorded values and append the resulting string to the CSV string
+            _csv += createCsvRow(_valuesInCurrentObject);
         }
 
         //Once the CSV is prepared, create a new link DOM element to use to trigger a download of the file locally
@@ -289,6 +355,27 @@ window.YouTubeMusicFlowController = (function() {
         _link.click(); //Trigger an automated click of the link to download the CSV file
         _link.remove(); //Remove the temporary link element from the DOM
     }
+
+    //TODO NEW - Could consider only outputting the 'duration' if the difference between the before and after is more than 1 second. 
+        //However, that would require us to do that comparison before hand, so would need quite a bit of extra logic. 
+    // function convertDurationStringToSeconds(duration) {
+    //     if (typeof(duration) == "string") {
+    //         const _splitDurationString = duration.split(':');
+
+    //         if (_splitDurationString.length == 1) {
+    //             return parseInt(_splitDurationString[0]);
+    //         }
+    //         else if (_splitDurationString.length == 2) {
+    //             return parseInt(_splitDurationString[0])*60+parseInt(_splitDurationString[1]);
+    //         }
+    //         else { //TODO Note that currently songs with a duration of an hour or longer may not be properly supported
+    //             console.log("ERROR: Tried to convert a duration string into a seconds integer value, but the duration string was not in the correct MM:SS format");
+    //         }
+    //     }
+    //     else {
+    //         console.log("ERROR: Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
+    //     }
+    // }
 
     return {
         InitializeYouTubeMusicFlow: initializeYouTubeMusicFlow
