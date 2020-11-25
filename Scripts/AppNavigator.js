@@ -205,7 +205,9 @@ window.YouTubeMusicFlowController = (function() {
             'unplayable'
         ];
 
-        convertArrayOfObjectsToCsv(tracklist, 'TracklistExport_After', _keysToIncludeInExport);
+        const _filename = 'TracklistExport_After_' + TabManager.GetPlaylistName();
+
+        convertArrayOfObjectsToCsv(tracklist, _filename, _keysToIncludeInExport);
     }
 
     function downloadGooglePlayMusicTracklistAsCSV() {
@@ -224,7 +226,9 @@ window.YouTubeMusicFlowController = (function() {
             console.log('GPM Tracklist Key: ' + _gpmTracklistKey);
             console.log(tracklistsArray[_gpmTracklistKey]);
 
-            convertArrayOfObjectsToCsv(tracklistsArray[_gpmTracklistKey], 'TracklistExport_Before', _keysToIncludeInExport);
+            const _filename = 'TracklistExport_Before_' + TabManager.GetPlaylistName();
+
+            convertArrayOfObjectsToCsv(tracklistsArray[_gpmTracklistKey], _filename, _keysToIncludeInExport);
         };
 
         //Send an XMLHttpRequest to load the exported GPM tracklist data from a local file, and then execute the callback
@@ -274,8 +278,7 @@ window.YouTubeMusicFlowController = (function() {
      */
     function getTracklistKeyFromTracklistName(tracklistArray, tracklistName) {
         for (let key in tracklistArray) {
-            //TODO NEW - This might not always work, or at least isn't reliable. For example Jams & Jams in Library
-            if (key.includes(tracklistName)) {
+            if (key.includes("'" + tracklistName + "'")) {
                 return key;
             }
         }
@@ -321,7 +324,7 @@ window.YouTubeMusicFlowController = (function() {
     function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=null) {
         let _csv = ''; //Begin with a blank string for the CSV
         
-        //If an list of object keys to include was provided, use that to set up a header row for the CSV file
+        //If a list of object keys to include was provided, use that to set up a header row for the CSV file
         if (objectKeysToInclude != null) {
             _csv += createCsvRow(objectKeysToInclude);
         }
