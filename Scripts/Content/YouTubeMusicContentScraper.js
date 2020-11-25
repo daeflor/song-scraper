@@ -4,18 +4,30 @@
 
     const elementsInDOM = {
         scrollContainer: {
-            ytm: document.body
+            ytm: function() {return document.body;}
         },
         playlistName: {
-            ytm: document.querySelector('#header .metadata yt-formatted-string.title')
+            ytm: function() {return document.querySelector('#header .metadata yt-formatted-string.title');}
         },
         playlistTrackCount: {
-            ytm: document.querySelector('#header .metadata .second-subtitle span')
+            ytm: function() {return document.querySelector('div#header div.metadata yt-formatted-string.second-subtitle span');}
+        },
+        yourLikesTrackCount: {
+            ytm: function() {return document.querySelector('div#header div.metadata yt-formatted-string.second-subtitle');}
         },
         trackRowContainer: {
-            ytm: document.querySelector("[main-page-type='MUSIC_PAGE_TYPE_PLAYLIST'] div#contents ytmusic-playlist-shelf-renderer div#contents")
+            ytm: function() {return document.querySelector("[main-page-type='MUSIC_PAGE_TYPE_PLAYLIST'] div#contents ytmusic-playlist-shelf-renderer div#contents");}
         }
     };
+
+    const urlParts = {
+        playlistUrlParameters: {
+            ytm: '?list=PL'
+        },
+        yourLikesUrlParameters: {
+            ytm: '?list=LM'
+        }
+    }
 
     function TrackMetadata(trackRowElement) {
         const _trackTitleElement = trackRowElement.querySelector('div.title-column yt-formatted-string.title');
@@ -96,7 +108,7 @@
      * @param {function} sendResponse The function to execute once the tracklist name has been retrieved
      */
     function processMessage_GetTracklistName(sendResponse) {
-        const _tracklistNameElement = elementsInDOM.playlistName[currentApp];
+        const _tracklistNameElement = elementsInDOM.playlistName[currentApp]();
         
         if (_tracklistNameElement != null) {
             console.log("Tracklist name is: " + _tracklistNameElement.textContent)
@@ -116,9 +128,9 @@
     function processMessage_GetTracklist(sendResponse)
     {
         //Scroll to the top of the tracklist, as an extra safety measure just to be certain that no tracks are missed in the scrape
-        scrollToElement(elementsInDOM.playlistName[currentApp]);
+        scrollToElement(elementsInDOM.playlistName[currentApp]());
         
-        const _trackRowContainer = elementsInDOM.trackRowContainer[currentApp];
+        const _trackRowContainer = elementsInDOM.trackRowContainer[currentApp]();
         const _trackCount = getPlaylistTrackCount();
         let _tracklist = [];
 
@@ -136,14 +148,30 @@
     }
 
     function getPlaylistTrackCount() {
-        //Get the track count string from the DOM element and split off the trailing text after the actual number
-        const _trackCountString = elementsInDOM.playlistTrackCount[currentApp].textContent.split(" ")[0];
+        let _trackCountElement = null;
 
-        //Remove any commas from the track count string (e.g. for counts > 999), and then get the count value as an integer
-        const _trackCount = parseInt(_trackCountString.replace(/,/g, ""));
-        
-        console.log('Current playlist\'s track count is %s.', _trackCount);
-        return _trackCount;
+        //If the url parameters exactly match those of the "Your Likes" list, use the corresponding track count element
+        if (window.location.search == urlParts.yourLikesUrlParameters[currentApp]) {
+            _trackCountElement = elementsInDOM.yourLikesTrackCount[currentApp]();
+        }
+        //Else, if the url parameters match those for standard playists, use the corresponding track count element
+        else if (window.location.search.includes(urlParts.playlistUrlParameters[currentApp])) {
+            _trackCountElement = elementsInDOM.playlistTrackCount[currentApp]();
+        }
+
+        if (_trackCountElement != null) {
+            //Get the track count string from the DOM element and split off the trailing text after the actual number
+            const _trackCountString = _trackCountElement.textContent.split(" ")[0];
+
+            //Remove any commas from the track count string (e.g. for counts > 999), and then get the count value as an integer
+            const _trackCountValue = parseInt(_trackCountString.replace(/,/g, ""));
+            
+            console.log('Current playlist\'s track count is %s.', _trackCountValue);
+            return _trackCountValue;
+        }
+        else {
+            console.log('ERROR: Could not find the Track Count DOM element.');
+        }
     }
 
     /**
@@ -179,7 +207,7 @@
      * @param {boolean} enabled Indicates whether or not manual scrolling should be allowed. Defaults to true, meaning the user can scroll manually.
      */
     function allowManualScrolling(enabled=true) {
-        const _container = elementsInDOM.scrollContainer[currentApp];
+        const _container = elementsInDOM.scrollContainer[currentApp]();
 
         //If a valid container element was found...
         if (_container != null) {
@@ -207,10 +235,15 @@
         //Temporarily disable manual scrolling to avoid any interference from the user during the scrape process
         allowManualScrolling(false);
 
+        //Create an array to track the increasing scroll height of the scrolling element, used to prevent any infinite scrolling in edge cases.
+        const _scrollHeightTrackerArray = [];
+
         const _scrollInterval = setInterval(
             function() {
                 //If the number of child elements in the track row container matches the track count of the list...
-                if (trackRowContainer.childElementCount == trackCount) {
+                if (trackRowContainer.childElementCount == trackCount || 
+                    //Or, if at least three iterations have occurred, and the scroll height hasn't changed for the past three iterations... 
+                    (_scrollHeightTrackerArray.length > 2 && _scrollHeightTrackerArray[_scrollHeightTrackerArray.length-1] == _scrollHeightTrackerArray[_scrollHeightTrackerArray.length-3]) ) {
                     console.log('Finished scrolling to the end of the track list');
                    
                     //Stop the scrolling process
@@ -224,11 +257,19 @@
                 }
                 //Otherwise, scroll to the last child element in the track row container
                 else {
-                    console.log("Still Srolling. Track Row Container Child Count: " + trackRowContainer.childElementCount);
+                    console.log("Still Scrolling. Track Row Container Child Count: " + trackRowContainer.childElementCount);
+
+                    //Scroll to the last available child element in the container element of track rows
                     scrollToElement(trackRowContainer.children[trackRowContainer.childElementCount-1]);
+
+                    //Add the current scroll height of the scrolling element to the tracker array
+                    _scrollHeightTrackerArray.push(document.body.scrollHeight);
                 }
             },
-            1500
+            2000
         );
     }
 })();
+
+//TODO could check if YouTube API reports correct track count value for "Your Likes"
+    //Could even consider ONLY using the API to get track counts, though it does seem like a lot of extra work that shouldn't be necessary

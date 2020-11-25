@@ -236,7 +236,7 @@ window.YouTubeMusicFlowController = (function() {
     }
 
     function sendRequest_LoadGooglePlayMusicExportData(callback) {
-        const _filepath = "ExportedData/LocalStorageExport_2020-10-12-10-30PM.txt";
+        const _filepath = "ExportedData/LocalStorageExport_2020-10-12-10-30PM_ThumbsUpDuplicatedAsYourLikes.txt";
         loadTextFileViaXMLHttpRequest(_filepath, callback, true)
     }
 
@@ -282,6 +282,7 @@ window.YouTubeMusicFlowController = (function() {
                 return key;
             }
         }
+        console.log("ERROR: Tried to get a tracklist key from its name, but no matching key could be found.");
     }
 
      /**
@@ -349,14 +350,17 @@ window.YouTubeMusicFlowController = (function() {
             _csv += createCsvRow(_valuesInCurrentObject);
         }
 
-        //Once the CSV is prepared, create a new link DOM element to use to trigger a download of the file locally
-        const _link = document.createElement('a');
-        _link.id = 'download-csv';
-        _link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(_csv));
-        _link.setAttribute('download', filename+'.csv');
-        document.body.appendChild(_link); //Add the link element to the DOM
-        _link.click(); //Trigger an automated click of the link to download the CSV file
-        _link.remove(); //Remove the temporary link element from the DOM
+        //If the CSV actually has some data in it after the array has been converted...
+        if (_csv.length > 0) {
+            //Create a new link DOM element to use to trigger a download of the file locally
+            const _link = document.createElement('a');
+            _link.id = 'download-csv';
+            _link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(_csv));
+            _link.setAttribute('download', filename+'.csv');
+            document.body.appendChild(_link); //Add the link element to the DOM
+            _link.click(); //Trigger an automated click of the link to download the CSV file
+            _link.remove(); //Remove the temporary link element from the DOM
+        }
     }
 
     //TODO NEW - Could consider only outputting the 'duration' if the difference between the before and after is more than 1 second. 
