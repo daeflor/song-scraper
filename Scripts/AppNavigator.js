@@ -1,85 +1,136 @@
 'use strict';
-document.addEventListener('DOMContentLoaded', function() { window.Utilities.FadeIn(document.getElementById('popup'), init, 500) } );					
-
-function init() {
-	//Query for the Active Tab...
-	chrome.tabs.query(
-		{ 
-			active: true, 
-			currentWindow: true
-		}, 
-		function(tabs) {	
-			//Get the URL from the active tab
-			const url = tabs[0].url;
-			console.assert(typeof url == 'string', 'tab.url should be a string');
-
-			//If the URL matches a YouTube Music playlist URL...
-			if (url.indexOf('https://music.youtube.com/playlist?list=') > -1) {
-                //Go through the YouTube Music flow    
-                console.log('Initiating YTM Flow');
-                YouTubeMusicFlowController.InitializeYouTubeMusicFlow(tabs[0]);
-			}
-			else {
-                //Go through the legacy Google Play Music flow
-                console.log('Initiating GPM Flow');
-				GooglePlayMusicFlowController.PreparePopup();
-			}
-		}
-	);
-}
-
-//TODO NEW - currently, if you switch to a different tracklist without refreshing the page, it won't recognize that the tracklist has changed
-window.YouTubeMusicFlowController = (function() {
-
+window.AppController = (function() {
     const supportedApps = {
-        youtubeMusic: 'ytm'
+        youTubeMusic: 'ytm',
+        googlePlayMusic: 'gpm'
     };
+    
+    document.addEventListener('DOMContentLoaded', function() { window.Utilities.FadeIn(document.getElementById('popup'), init, 500) } );					
 
-    function initializeYouTubeMusicFlow(currentTab) {
+    function init() {
+        //Query for the Active Tab...
+        chrome.tabs.query(
+            { 
+                active: true, 
+                currentWindow: true
+            }, 
+            function(tabs) {	
+                //Get the URL from the active tab
+                const url = tabs[0].url;
+                console.assert(typeof url == 'string', 'tab.url should be a string');
+
+                //If the URL matches a YouTube Music playlist URL...
+                if (url.indexOf('https://music.youtube.com/playlist?list=') > -1) {
+                    //Go through the YouTube Music flow    
+                    console.log('Initiating YTM Flow');
+                    
+                    initializeFlow(tabs[0], supportedApps.youTubeMusic);
+                    //window.FlowController.InitializeFlow();
+                    //YouTubeMusicFlowController.InitializeYouTubeMusicFlow(tabs[0]);
+                }
+                else {
+                    //Go through the legacy Google Play Music flow
+                    console.log('Initiating GPM Flow');
+                    initializeFlow(tabs[0], supportedApps.googlePlayMusic);
+                    //GooglePlayMusicFlowController.PreparePopup();
+                }
+            }
+        );
+    }
+
+    // function initializeYouTubeMusicFlow(currentTab) {
+    //     //Store the current tab for future reference
+    //     TabManager.SetTab(currentTab);
+
+    //     //Send a message to the content script to make a record of the current app 
+    //     sendMessage_RecordCurrentApp();
+
+
+    //     //sendMessage_RecordCurrentApp(sendMessage_GetTracklistName.bind(null, prepareLandingPageForYouTubeMusic));
+
+    //     // //Once the tracklist name is acquired from a content script, prepare the popup's landing page
+    //     // const _onTracklistNameAcquired = function() {
+    //     //     prepareLandingPageForYouTubeMusic();
+    //     // };
+
+    //     // //Get the tracklist name from a content script and then execute the passed callback function
+    //     // getTracklistNameForYouTubeMusic(_onTracklistNameAcquired);
+
+
+    // }
+
+    function initializeFlow(currentTab, currentApp) {
+        //TODO could use some error handling here to ensure the parameters are passed correclty, since the error is quite hard to track down if, for example, the tab isn't actually passed.
         //Store the current tab for future reference
         TabManager.SetTab(currentTab);
 
-        //Send a message to the content script to make a record of the current app 
-        sendMessage_RecordCurrentApp();
+        //Send a message to the content script to make a record of the current app for future reference
+        sendMessage_RecordCurrentApp(currentApp);
+        
+        //Set up a callback function so that when the tracklist name is fetched, the popup landing page gets prepared and displayed
+        const _onTracklistNameFetched = function(response) {
+            //Store the tracklist's name
+            TabManager.SetPlaylistName(response.tracklistName);
+            console.log('Current playlist\'s name is %s.', response.tracklistName);
 
-
-        //sendMessage_RecordCurrentApp(sendMessage_GetTracklistName.bind(null, prepareLandingPageForYouTubeMusic));
-
-        // //Once the tracklist name is acquired from a content script, prepare the popup's landing page
-        // const _onTracklistNameAcquired = function() {
-        //     prepareLandingPageForYouTubeMusic();
-        // };
-
-        // //Get the tracklist name from a content script and then execute the passed callback function
-        // getTracklistNameForYouTubeMusic(_onTracklistNameAcquired);
+            //Prepare the YouTube Music extension popup landing page
+            prepareLandingPage();
+        };
+        
+        //TODO need to account for situations in which there is no tracklist name and handle it correctly
+        //Send a message to the content script to fetch the name of the current tracklist
+        sendMessage_GetTracklistName(_onTracklistNameFetched);
     }
 
-    function sendMessage_RecordCurrentApp() {
+    function sendMessage_RecordCurrentApp(currentApp) {
         //Send a message to the content script to make a record of the current app
-        const _message = {greeting:'RecordCurrentApp', app:supportedApps.youtubeMusic};
-        window.Utilities.SendMessageToContentScripts(_message, processResponse_RecordCurrentApp);
+        const _message = {greeting:'RecordCurrentApp', app:currentApp};
+        window.Utilities.SendMessageToContentScripts(_message);
     }
 
-    function processResponse_RecordCurrentApp() {
-        //Send a message to the content script to get the name of the current tracklist
-        sendMessage_GetTracklistName();
-        //TODO NEW - Does it make sense to call a sendMessage here?
-    }
-
-    function sendMessage_GetTracklistName() {
+    function sendMessage_GetTracklistName(callback) {
         //Send a message to the content script to get the tracklist name
         let _message = {greeting:'GetTracklistName'};
-        window.Utilities.SendMessageToContentScripts(_message, processResponse_GetTracklistName);
+        window.Utilities.SendMessageToContentScripts(_message, callback);
     }
 
-    function processResponse_GetTracklistName(response) {
-        //Store the tracklist's name
-        console.log('Current playlist\'s name is %s.', response.tracklistName);
-        TabManager.SetPlaylistName(response.tracklistName);
+    function prepareLandingPage()
+    {
+        window.ViewRenderer.HideStatusMessage();
+        window.ViewRenderer.ShowTitle(TabManager.GetPlaylistName());
 
-        //Prepare the YouTube Music extension popup landing page
-        prepareLandingPageForYouTubeMusic();
+        document.getElementById('buttonComparePlaylist').textContent = "Scrub!";
+        document.getElementById('buttonComparePlaylist').onclick = initiateTrackScraper;
+
+        window.ViewRenderer.ShowLandingPage();
     }
+
+    // function sendMessage_RecordCurrentApp() {
+    //     //Send a message to the content script to make a record of the current app
+    //     const _message = {greeting:'RecordCurrentApp', app:supportedApps.youTubeMusic};
+    //     window.Utilities.SendMessageToContentScripts(_message, processResponse_RecordCurrentApp);
+    // }
+
+    // function processResponse_RecordCurrentApp() {
+    //     //Send a message to the content script to get the name of the current tracklist
+    //     sendMessage_GetTracklistName();
+    //     //TODO NEW - Does it make sense to call a sendMessage here?
+    // }
+
+    // function sendMessage_GetTracklistName() {
+    //     //Send a message to the content script to get the tracklist name
+    //     let _message = {greeting:'GetTracklistName'};
+    //     window.Utilities.SendMessageToContentScripts(_message, processResponse_GetTracklistName);
+    // }
+
+    // function processResponse_GetTracklistName(response) {
+    //     //Store the tracklist's name
+    //     console.log('Current playlist\'s name is %s.', response.tracklistName);
+    //     TabManager.SetPlaylistName(response.tracklistName);
+
+    //     //Prepare the YouTube Music extension popup landing page
+    //     prepareLandingPageForYouTubeMusic();
+    // }
 
     // function getTracklistNameForYouTubeMusic(callback) {
     
@@ -97,16 +148,16 @@ window.YouTubeMusicFlowController = (function() {
     //     window.Utilities.SendMessageToContentScripts(_greeting, _onMessageResponseReceived);
     // }
 
-    function prepareLandingPageForYouTubeMusic()
-    {
-        window.ViewRenderer.HideStatusMessage();
-        window.ViewRenderer.ShowTitle(TabManager.GetPlaylistName());
+    // function prepareLandingPageForYouTubeMusic()
+    // {
+    //     window.ViewRenderer.HideStatusMessage();
+    //     window.ViewRenderer.ShowTitle(TabManager.GetPlaylistName());
 
-        document.getElementById('buttonComparePlaylist').textContent = "Scrub!";
-        document.getElementById('buttonComparePlaylist').onclick = initiateTrackScraper;
+    //     document.getElementById('buttonComparePlaylist').textContent = "Scrub!";
+    //     document.getElementById('buttonComparePlaylist').onclick = initiateTrackScraper;
 
-        window.ViewRenderer.ShowLandingPage();
-    }
+    //     window.ViewRenderer.ShowLandingPage();
+    // }
 
     function initiateTrackScraper()
 	{		
@@ -115,7 +166,7 @@ window.YouTubeMusicFlowController = (function() {
 		window.ViewRenderer.ShowStatusMessage('Song list comparison in progress.');
 
 		window.Utilities.SendMessageToContentScripts(
-			{greeting:'GetTrackList'},
+			{greeting:'GetTracklistMetadata'},
 			function(response)
 			{
 				if (response.tracklist == null)
@@ -124,12 +175,19 @@ window.YouTubeMusicFlowController = (function() {
 					return;
                 }
                 else {
-                    window.ViewRenderer.ShowStatusMessage('Tracklist retrieved. Wouldnt you like to see it?');
-                    console.log("Here's the tracklist, maybe:");
-                    console.log(response.tracklist);
+                    //window.ViewRenderer.ShowStatusMessage('Tracklist retrieved. Wouldnt you like to see it?');
+                    //console.log("Here's the tracklist, maybe:");
+                    //console.log(response.tracklist);
 
-                    downloadGooglePlayMusicTracklistAsCSV();
-                    downloadCurrentTracklistAsCSV(response.tracklist);
+                    //
+
+                    window.ViewRenderer.HideStatusMessage();
+                    window.ViewRenderer.ShowScrapeCompletedPage();
+
+                    document.getElementById('buttonExportScrapedTracklist').onclick = function() {downloadCurrentTracklistAsCSV(response.tracklist);};
+                    document.getElementById('buttonExportStoredTracklistGPM').onclick = downloadGooglePlayMusicTracklistAsCSV;
+
+                    //
 
                     //compareScrapedTracklistWithPreviousVersion(response.tracklist);
 
@@ -207,7 +265,7 @@ window.YouTubeMusicFlowController = (function() {
 
         const _filename = 'TracklistExport_After_' + TabManager.GetPlaylistName();
 
-        convertArrayOfObjectsToCsv(tracklist, _filename, _keysToIncludeInExport);
+        window.Utilities.ConvertArrayOfObjectsToCsv(tracklist, _filename, _keysToIncludeInExport);
     }
 
     function downloadGooglePlayMusicTracklistAsCSV() {
@@ -228,7 +286,7 @@ window.YouTubeMusicFlowController = (function() {
 
             const _filename = 'TracklistExport_Before_' + TabManager.GetPlaylistName();
 
-            convertArrayOfObjectsToCsv(tracklistsArray[_gpmTracklistKey], _filename, _keysToIncludeInExport);
+            window.Utilities.ConvertArrayOfObjectsToCsv(tracklistsArray[_gpmTracklistKey], _filename, _keysToIncludeInExport);
         };
 
         //Send an XMLHttpRequest to load the exported GPM tracklist data from a local file, and then execute the callback
@@ -237,7 +295,7 @@ window.YouTubeMusicFlowController = (function() {
 
     function sendRequest_LoadGooglePlayMusicExportData(callback) {
         const _filepath = "ExportedData/LocalStorageExport_2020-10-12-10-30PM_ThumbsUpDuplicatedAsYourLikes.txt";
-        loadTextFileViaXMLHttpRequest(_filepath, callback, true)
+        window.Utilities.LoadTextFileViaXMLHttpRequest(_filepath, callback, true)
     }
 
     //TODO NEW - this should take a tracklist key to be more general. Right now it only works for the current playlist which is unclear
@@ -249,26 +307,6 @@ window.YouTubeMusicFlowController = (function() {
 
     //     convertArrayOfObjectsToCsv(tracklistArray[_gpmTracklistKey]);
     // }
-
-    /**
-     * Loads text data from a file via XMLHttpRequest and then executes the provided callback function
-     * @param {string} filepath The path of the file to load
-     * @param {function} callback The function to execute once the data has been successfully loaded from the file
-     * @param {boolean} [parseJSON] Indicates whether or not the loaded text data should be parsed into JSON before being returned. Defaults to true.
-     */
-    function loadTextFileViaXMLHttpRequest(filepath, callback, parseJSON=true) {
-        const xmlhttp = new XMLHttpRequest();
-
-        //Once the data has been succssfully loaded from the file, either return the raw text data or the parsed JSON
-        xmlhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-                const _result = (parseJSON == true) ? JSON.parse(this.responseText) : this.responseText;
-                callback(_result);
-            }
-        };
-        xmlhttp.open("GET", filepath, true);
-        xmlhttp.send();
-    }
 
     //TODO this could go in a GPM Utilities file or something like that
     /**
@@ -285,7 +323,38 @@ window.YouTubeMusicFlowController = (function() {
         console.log("ERROR: Tried to get a tracklist key from its name, but no matching key could be found.");
     }
 
-     /**
+    //TODO NEW - Could consider only outputting the 'duration' if the difference between the before and after is more than 1 second. 
+        //However, that would require us to do that comparison before hand, so would need quite a bit of extra logic. 
+    // function convertDurationStringToSeconds(duration) {
+    //     if (typeof(duration) == "string") {
+    //         const _splitDurationString = duration.split(':');
+
+    //         if (_splitDurationString.length == 1) {
+    //             return parseInt(_splitDurationString[0]);
+    //         }
+    //         else if (_splitDurationString.length == 2) {
+    //             return parseInt(_splitDurationString[0])*60+parseInt(_splitDurationString[1]);
+    //         }
+    //         else { //TODO Note that currently songs with a duration of an hour or longer may not be properly supported
+    //             console.log("ERROR: Tried to convert a duration string into a seconds integer value, but the duration string was not in the correct MM:SS format");
+    //         }
+    //     }
+    //     else {
+    //         console.log("ERROR: Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
+    //     }
+    // }
+
+    // return {
+    //     InitializeFlow: initializeFlow,
+    //     InitializeYouTubeMusicFlow: initializeYouTubeMusicFlow
+    // };
+})();
+
+window.Utilities = (function() {
+
+    //** Private Helper Functions **//
+    
+    /**
      * Creates a row of comma-separated strings from the provided array
      * @param {array} columnValues An array of the column values to use to create a row for a CSV file
      */
@@ -315,6 +384,8 @@ window.YouTubeMusicFlowController = (function() {
             console.log("ERROR: Request received to create a CSV row but an array of column values was not provided.");
         }
     }
+
+    //** Publicly-Exposed Utility Functions **//
     
     /**
      * Converts an array of objects to a CSV file and then downloads the file locally
@@ -330,26 +401,30 @@ window.YouTubeMusicFlowController = (function() {
             _csv += createCsvRow(objectKeysToInclude);
         }
 
-        //For each object in the array...
-        for (let i = 0; i < array.length; i++) {
-            const _currentObject = array[i]; //For better readability, track the current object in the objects array
-            let _valuesInCurrentObject = []; //Create an array to contain all the values for the current object that are going to be included in the CSV
+        //If a valid array was provided...
+        if (array != null) {
+            //For each object in the array...
+            for (let i = 0; i < array.length; i++) {
+                const _currentObject = array[i]; //For better readability, track the current object in the objects array
+                let _valuesInCurrentObject = []; //Create an array to contain all the values for the current object that are going to be included in the CSV
 
-            //If a list of specific keys to use wasn't provided, use all of the object's keys
-            objectKeysToInclude = objectKeysToInclude || Object.keys(_currentObject);
+                //If a list of specific keys to use wasn't provided, use all of the object's keys
+                objectKeysToInclude = objectKeysToInclude || Object.keys(_currentObject);
 
-            //For each key that should be included in the CSV output...
-            for (let j = 0; j < objectKeysToInclude.length; j++) { 
-                //If the value that matches the current key isn't falsy (e.g. undefined), use that value, otherwise set it to a blank string so that the column is still included in the CSV row later
-                const _currentValue = _currentObject[objectKeysToInclude[j]] || '';
-                //Add the key's value to the array of values to include in the CSV row later
-                _valuesInCurrentObject.push(_currentValue);      
+                //For each key that should be included in the CSV output...
+                for (let j = 0; j < objectKeysToInclude.length; j++) { 
+                    //If the value that matches the current key isn't falsy (e.g. undefined), use that value, otherwise set it to a blank string so that the column is still included in the CSV row later
+                    const _currentValue = _currentObject[objectKeysToInclude[j]] || '';
+                    //Add the key's value to the array of values to include in the CSV row later
+                    _valuesInCurrentObject.push(_currentValue);      
+                }
+
+                //Create a CSV row from the array of recorded values and append the resulting string to the CSV string
+                _csv += createCsvRow(_valuesInCurrentObject);
             }
-
-            //Create a CSV row from the array of recorded values and append the resulting string to the CSV string
-            _csv += createCsvRow(_valuesInCurrentObject);
         }
 
+        //TODO at some point, pull this logic out of this function and into a separate one specifically for downloading a csv file
         //If the CSV actually has some data in it after the array has been converted...
         if (_csv.length > 0) {
             //Create a new link DOM element to use to trigger a download of the file locally
@@ -363,33 +438,36 @@ window.YouTubeMusicFlowController = (function() {
         }
     }
 
-    //TODO NEW - Could consider only outputting the 'duration' if the difference between the before and after is more than 1 second. 
-        //However, that would require us to do that comparison before hand, so would need quite a bit of extra logic. 
-    // function convertDurationStringToSeconds(duration) {
-    //     if (typeof(duration) == "string") {
-    //         const _splitDurationString = duration.split(':');
+    // function downloadCsvFile(csv, filename, linkElement) {
+    //     //If the provided CSV actually has some data in it...
+    //     if (csv != null && csv.length > 0) {
+    //         //If an existing element was provided to trigger the download, use that, otherwise create a new one
+    //         linkElement = linkElement || document.createElement('a');
 
-    //         if (_splitDurationString.length == 1) {
-    //             return parseInt(_splitDurationString[0]);
+    //         linkElement.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(csv));
+    //         linkElement.setAttribute('download', filename+'.csv');
+            
+            
+    //         //If an element to use as the download link was provided...
+    //         if (linkElement != null) {
+    //             linkElement
     //         }
-    //         else if (_splitDurationString.length == 2) {
-    //             return parseInt(_splitDurationString[0])*60+parseInt(_splitDurationString[1]);
-    //         }
-    //         else { //TODO Note that currently songs with a duration of an hour or longer may not be properly supported
-    //             console.log("ERROR: Tried to convert a duration string into a seconds integer value, but the duration string was not in the correct MM:SS format");
+    //         //Else, if an existing link element was not provided...
+    //         else {
+    //             //Create a new link DOM element to use to trigger a download of the file locally
+    //             linkElement = document.createElement('a');
+    //             //_link.id = 'download-csv';
+    //             linkElement.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(csv));
+    //             linkElement.setAttribute('download', filename+'.csv');
+    //             document.body.appendChild(linkElement); //Add the link element to the DOM
+    //             linkElement.click(); //Trigger an automated click of the link to download the CSV file
+    //             linkElement.remove(); //Remove the temporary link element from the DOM
     //         }
     //     }
     //     else {
-    //         console.log("ERROR: Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
+    //         console.log("ERROR: Request recevied to download a CSV file, but the CSV provided is not valid.")
     //     }
     // }
-
-    return {
-        InitializeYouTubeMusicFlow: initializeYouTubeMusicFlow
-    };
-})();
-
-window.Utilities = (function() {
 
     /**
      * 
@@ -426,7 +504,7 @@ window.Utilities = (function() {
 					window.clearInterval(_fadeInterval);
                     
                     //TODO can we abstract all the null checks for all the callbacks? 
-					if(typeof callback !== "undefined") { 
+					if (typeof callback !== "undefined") { 
 						callback();
 					}
                 }	
@@ -441,11 +519,31 @@ window.Utilities = (function() {
 			},
 			_intervalPeriod
 		);
-	}
+    }
+    
+    /**
+     * Loads text data from a file via XMLHttpRequest and then executes the provided callback function
+     * @param {string} filepath The path of the file to load
+     * @param {function} callback The function to execute once the data has been successfully loaded from the file
+     * @param {boolean} [parseJSON] Indicates whether or not the loaded text data should be parsed into JSON before being returned. Defaults to true.
+     */
+    function loadTextFileViaXMLHttpRequest(filepath, callback, parseJSON=true) {
+        const xmlhttp = new XMLHttpRequest();
+
+        //Once the data has been succssfully loaded from the file, either return the raw text data or the parsed JSON
+        xmlhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                const _result = (parseJSON == true) ? JSON.parse(this.responseText) : this.responseText;
+                callback(_result);
+            }
+        };
+        xmlhttp.open("GET", filepath, true);
+        xmlhttp.send();
+    }
     
     /**
      * Sends a message to content scripts and then handles the provided callback response
-     * @param {object} message  A JSON-ifiable object to send as a message
+     * @param {object} message A JSON-ifiable object to send as a message
      * @param {function} callback The function to call when a response has been received
      */
     function sendMessageToContentScripts(message, callback) {	
@@ -455,7 +553,8 @@ window.Utilities = (function() {
 			function(response) {
                 //If an error occurred during the message connection, print an error
                 if(chrome.runtime.lastError) {
-                    console.log('ERROR: An error occurred during the message connection: ' + chrome.runtime.lastError);
+                    console.log('ERROR: An error occurred during the message connection: ');
+                    console.log(chrome.runtime.lastError);
                     return;
                 }
                 //Otherwise excute the provided callback function
@@ -464,10 +563,12 @@ window.Utilities = (function() {
                 }
 			}
 		);
-	}
+    }
 
     return {
+        ConvertArrayOfObjectsToCsv: convertArrayOfObjectsToCsv,
         FadeIn: fadeIn,
+        LoadTextFileViaXMLHttpRequest: loadTextFileViaXMLHttpRequest,
         SendMessageToContentScripts: sendMessageToContentScripts
     };
 })();
@@ -495,6 +596,10 @@ window.ViewRenderer = (function() {
     function hideLandingPage() {
 		document.getElementById('landingPage').hidden = true;
     }
+
+    function showScrapeCompletedPage() {
+        document.getElementById('divScrapeCompleted').hidden = false;
+    }
     
     function showStatusMessage(text) {
 		document.getElementById('status').textContent = text;
@@ -512,6 +617,7 @@ window.ViewRenderer = (function() {
         SetElementOpacity: setElementOpacity,
         ShowLandingPage: showLandingPage,
         HideLandingPage: hideLandingPage,
+        ShowScrapeCompletedPage: showScrapeCompletedPage,
         ShowStatusMessage: showStatusMessage,
         ShowTitle: showTitle
     };

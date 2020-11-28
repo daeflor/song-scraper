@@ -50,6 +50,7 @@
                   <th>Title</th>
                   <th>Artist</th>
                   <th>Album</th>
+                  <th>Duration</th>
                 </tr>
               </table>
             </div>      
@@ -63,6 +64,21 @@
                   <th>Title</th>
                   <th>Artist</th>
                   <th>Album</th>
+                  <th>Duration</th>
+                </tr>
+              </table>
+            </div>
+
+            <p id='pTracksDisabledHeader' style='color:#ff0000; padding-top:20px'>Tracks Disabled</p>
+            <p id='pTracksDisabledDescription' class='indent'>- No tracks disabled.</p>
+            <div class="trackTableWrapper">
+              <table id='tableTracksDisabled' class="trackTable" hidden=true>
+                <tr>
+                  <th>Index</th>
+                  <th>Title</th>
+                  <th>Artist</th>
+                  <th>Album</th>
+                  <th>Duration</th>
                 </tr>
               </table>
             </div>
@@ -75,6 +91,12 @@
       
       <div id='divBack' hidden=true>
         <button id='buttonBack' class='popupButton' type='button'>Back</button>
+      </div>
+
+      <div id='divScrapeCompleted' hidden=true>
+        <button id='buttonExportScrapedTracklist' class='popupButton' type='button'>Export Scraped Tracklist</button>
+        <button id='buttonExportStoredTracklistGPM' class='popupButton' type='button'>Export Stored GPM Tracklist</button>
+        <button id='buttonExportStoredTracklistYTM' class='popupButton' type='button'>Export Stored YTM Tracklist</button>
       </div>
       
     </div> 

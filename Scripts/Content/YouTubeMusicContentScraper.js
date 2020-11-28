@@ -1,71 +1,146 @@
+//TODO should rename this file to remove YouTubeMusic from it
+
 'use strict';
 (function() {
     let currentApp = null;
 
     const elementsInDOM = {
         scrollContainer: {
-            ytm: function() {return document.body;}
+            ytm: function() {return document.body;},
+            gpm: function() {return document.querySelectorAll('.paper-header-panel')[1]}
         },
         playlistName: {
-            ytm: function() {return document.querySelector('#header .metadata yt-formatted-string.title');}
+            ytm: function() {return document.querySelector('#header .metadata yt-formatted-string.title');},
+            gpm: function() {return document.querySelector('div.title-row h2');}
         },
         playlistTrackCount: {
-            ytm: function() {return document.querySelector('div#header div.metadata yt-formatted-string.second-subtitle span');}
+            ytm: function() {return document.querySelector('div#header div.metadata yt-formatted-string.second-subtitle span');},
+            gpm: function() {return document.querySelector('span[slot="metadata"').children[0];}
         },
         yourLikesTrackCount: {
-            ytm: function() {return document.querySelector('div#header div.metadata yt-formatted-string.second-subtitle');}
+            ytm: function() {return document.querySelector('div#header div.metadata yt-formatted-string.second-subtitle');},
+            gpm: function() {return document.querySelector('span[slot="metadata"').children[0];}
         },
         trackRowContainer: {
-            ytm: function() {return document.querySelector("[main-page-type='MUSIC_PAGE_TYPE_PLAYLIST'] div#contents ytmusic-playlist-shelf-renderer div#contents");}
+            ytm: function() {return document.querySelector("[main-page-type='MUSIC_PAGE_TYPE_PLAYLIST'] div#contents ytmusic-playlist-shelf-renderer div#contents");},
+            gpm: function() {return document.querySelector('tbody');}
         }
     };
 
-    const urlParts = {
-        playlistUrlParameters: {
-            ytm: '?list=PL'
+    //TODO the urlPart could probably be omitted without issue
+    const urlProperties = {
+        ytm: {
+            urlPart: 'search',
+            playlistUrlCondition: '?list=PL',
+            yourLikesUrlCondition: '?list=LM'
         },
-        yourLikesUrlParameters: {
-            ytm: '?list=LM'
+        gpm: {
+            urlPart: 'hash',
+            playlistUrlCondition: '#/pl/',
+            yourLikesUrlCondition: '#/ap/'
         }
     }
 
+    // const urlProperties = {
+    //     playlistUrlParameters: {
+    //         ytm: {
+    //             urlPart: 'search',
+    //             condition: '?list=PL'
+    //         }
+    //     },
+    //     yourLikesUrlParameters: {
+    //         ytm: {
+    //             urlPart: 'search',
+    //             condition: '?list=LM'
+    //         }
+    //     }
+    // }
+
+    // const urlParts = {
+    //     playlistUrlParameters: {
+    //         ytm: '?list=PL',
+    //         gpm: 'music/listen?u=0#/pl/'
+    //     },
+    //     yourLikesUrlParameters: { //TODO Maybe this should be renamed to autoPlaylistUrlParameters
+    //         ytm: '?list=LM',
+    //         gpm: 'music/listen?u=0#/ap/'
+    //     }
+    // }
+
+    //TODO could/should probably just make this return an object
+    //TODO should think of a more concise or clearer way of doing this while supporting multiple apps
     function TrackMetadata(trackRowElement) {
-        const _trackTitleElement = trackRowElement.querySelector('div.title-column yt-formatted-string.title');
-        if (_trackTitleElement != null) {
-            this.title = _trackTitleElement.title;
-        }
-        else {
-            console.log("ERROR: Track title could not be retrieved from DOM.");
-        }
+        if (currentApp == 'ytm') {
+            const _trackTitleElement = trackRowElement.querySelector('div.title-column yt-formatted-string.title');
+            if (_trackTitleElement != null) {
+                this.title = _trackTitleElement.title;
+            }
+            else {
+                console.log("ERROR: Track title could not be retrieved from DOM.");
+            }
 
-        const _trackArtistElement = trackRowElement.querySelectorAll('div.secondary-flex-columns yt-formatted-string')[0];
-        if (_trackArtistElement != null) {
-            this.artist = _trackArtistElement.title;
-        }
-        else {
-            console.log("ERROR: Track artist could not be retrieved from DOM.");
-        }
+            const _trackArtistElement = trackRowElement.querySelectorAll('div.secondary-flex-columns yt-formatted-string')[0];
+            if (_trackArtistElement != null) {
+                this.artist = _trackArtistElement.title;
+            }
+            else {
+                console.log("ERROR: Track artist could not be retrieved from DOM.");
+            }
 
-        const _trackAlbumElement = trackRowElement.querySelectorAll('div.secondary-flex-columns yt-formatted-string')[1];
-        if (_trackAlbumElement != null) {
-            this.album = _trackAlbumElement.title;
-        }
-        else {
-            console.log("ERROR: Track album could not be retrieved from DOM.");
-        }
+            const _trackAlbumElement = trackRowElement.querySelectorAll('div.secondary-flex-columns yt-formatted-string')[1];
+            if (_trackAlbumElement != null) {
+                this.album = _trackAlbumElement.title;
+            }
+            else {
+                console.log("ERROR: Track album could not be retrieved from DOM.");
+            }
 
-        const _trackDurationElement = trackRowElement.querySelector('div.fixed-columns yt-formatted-string');
-        if (_trackDurationElement != null) {
-            this.duration = _trackDurationElement.title;
-        }
-        else {
-            console.log("ERROR: Track duration could not be retrieved from DOM.");
-        }
+            const _trackDurationElement = trackRowElement.querySelector('div.fixed-columns yt-formatted-string');
+            if (_trackDurationElement != null) {
+                this.duration = _trackDurationElement.title;
+            }
+            else {
+                console.log("ERROR: Track duration could not be retrieved from DOM.");
+            }
 
-        //If the track row element has an unplayable flag, record the track as being unplayable
-        if (trackRowElement.attributes.unplayable_ != undefined) { //Note: <if (trackRowElement.unplayable_ == true)> should work but it doesn't for some reason
-            this.unplayable = true;
-            console.log("Found an unplayable track called: " + this.title);
+            //If the track row element has an unplayable flag, record the track as being unplayable
+            if (trackRowElement.attributes.unplayable_ != undefined) { //Note: <if (trackRowElement.unplayable_ == true)> should work but it doesn't for some reason
+                this.unplayable = true;
+                console.log("Found an unplayable track called: " + this.title);
+            }
+        }
+        else if (currentApp == 'gpm') {
+            const _trackTitleElement = trackRowElement.querySelector('td[data-col="title"] span');
+            if (_trackTitleElement != null) {
+                this.title = _trackTitleElement.textContent;
+            }
+            else {
+                console.log("ERROR: Track title could not be retrieved from DOM.");
+            }
+
+            const _trackArtistElement = trackRowElement.querySelector('td[data-col="artist"] .text');
+            if (_trackArtistElement != null) {
+                this.artist = _trackArtistElement.textContent;
+            }
+            else {
+                console.log("ERROR: Track artist could not be retrieved from DOM.");
+            }
+
+            const _trackAlbumElement = trackRowElement.querySelector('td[data-col="album"] .text');
+            if (_trackAlbumElement != null) {
+                this.album = _trackAlbumElement.textContent;
+            }
+            else {
+                console.log("ERROR: Track album could not be retrieved from DOM.");
+            }
+
+            const _trackDurationElement = trackRowElement.querySelector('td[data-col="duration"]');
+            if (_trackDurationElement != null) {
+                this.duration = _trackDurationElement.textContent;
+            }
+            else {
+                console.log("ERROR: Track duration could not be retrieved from DOM.");
+            } 
         }
     }
 
@@ -74,13 +149,13 @@
             console.log(sender.tab ? 'Message received from a content script:' + sender.tab.url : 'Message received from the extension: ' + message.greeting); 
 
             if (message.greeting == 'RecordCurrentApp') {
-                processMessage_RecordCurrentApp(message.app, sendResponse);
+                processMessage_RecordCurrentApp(message.app);
             }
             if (message.greeting == 'GetTracklistName') {   
                 processMessage_GetTracklistName(sendResponse);
             }
-            else if (message.greeting == 'GetTrackList') {
-                processMessage_GetTracklist(sendResponse);
+            else if (message.greeting == 'GetTracklistMetadata') {
+                processMessage_GetTracklistMetadata(sendResponse);
             }
             
             //Return true to keep the message channel open
@@ -93,10 +168,9 @@
      * @param {string} app The reference string for the current app being used
      * @param {function} sendResponse The function to execute once the current app has been recorded
      */
-    function processMessage_RecordCurrentApp(app, sendResponse) {
+    function processMessage_RecordCurrentApp(app) {
         if (app != null) {
             currentApp = app;
-            sendResponse();
         }
         else {
             console.log("ERROR: Received request to record the current app, but no valid app parameter was provided.");
@@ -119,45 +193,30 @@
         }
     }
 
-    //TODO NEW - Much of this logic (and the TrackMetadata constructor) could be handled in a logic script instead of in the content script
-        //That would probably make more sense, to limit the content script to really just extracting the raw data required
-    /**
-     * Perform the scroll and scrape process to get the current tracklist and then execute the provided callback function
-     * @param {function} sendResponse The function to execute once the tracklist has been retrieved
-     */
-    function processMessage_GetTracklist(sendResponse)
-    {
-        //Scroll to the top of the tracklist, as an extra safety measure just to be certain that no tracks are missed in the scrape
-        scrollToElement(elementsInDOM.playlistName[currentApp]());
-        
-        const _trackRowContainer = elementsInDOM.trackRowContainer[currentApp]();
-        const _trackCount = getPlaylistTrackCount();
-        let _tracklist = [];
-
-        const _onScrollComplete = function() {
-            //For each track row loaded in the DOM...
-            for (let i = 0; i < _trackRowContainer.childElementCount; i++) {                
-                _tracklist.push(new TrackMetadata(_trackRowContainer.children[i])); 
-            }
-
-            sendResponse({tracklist:_tracklist});
-        };
-        
-        //Wait a short amount of time to allow the page to scroll to the top of the tracklist, and then start the scroll and scrape process
-        setTimeout(scrollToEndOfTracklist(_trackRowContainer, _trackCount, _onScrollComplete), 500);
-    }
-
+    //TODO could check if YouTube API reports correct track count value for "Your Likes"
+        //Could even consider ONLY using the API to get track counts, though it does seem like a lot of extra work that shouldn't be necessary
     function getPlaylistTrackCount() {
         let _trackCountElement = null;
 
-        //If the url parameters exactly match those of the "Your Likes" list, use the corresponding track count element
-        if (window.location.search == urlParts.yourLikesUrlParameters[currentApp]) {
-            _trackCountElement = elementsInDOM.yourLikesTrackCount[currentApp]();
-        }
-        //Else, if the url parameters match those for standard playists, use the corresponding track count element
-        else if (window.location.search.includes(urlParts.playlistUrlParameters[currentApp])) {
+        //TODO this logic is overly convoluted
+        //If the url matches those of standard playlists for the current app, use the corresponding track count element
+        if (window.location[urlProperties[currentApp].urlPart].includes(urlProperties[currentApp].playlistUrlCondition) == true) {
             _trackCountElement = elementsInDOM.playlistTrackCount[currentApp]();
         }
+        //Else, if the url matches the 'Your Likes' list for the current app, use the corresponding track count element
+        else if (window.location[urlProperties[currentApp].urlPart].includes(urlProperties[currentApp].yourLikesUrlCondition) == true) {
+            _trackCountElement = elementsInDOM.yourLikesTrackCount[currentApp]();
+        }
+
+
+        // //If the url parameters exactly match those of the "Your Likes" list, use the corresponding track count element
+        // if (window.location.search == urlParts.yourLikesUrlParameters[currentApp]) {
+        //     _trackCountElement = elementsInDOM.yourLikesTrackCount[currentApp]();
+        // }
+        // //Else, if the url parameters match those for standard playists, use the corresponding track count element
+        // else if (window.location.search.includes(urlParts.playlistUrlParameters[currentApp])) {
+        //     _trackCountElement = elementsInDOM.playlistTrackCount[currentApp]();
+        // }
 
         if (_trackCountElement != null) {
             //Get the track count string from the DOM element and split off the trailing text after the actual number
@@ -224,52 +283,96 @@
         }
     }
 
+    //TODO NEW - Some of this logic (and the TrackMetadata constructor) could be handled in a logic script instead of in the content script
+        //That mightmake more sense, to limit the content script to really just extracting the raw data required
     /**
-     * Initiates an automatic scrolling process which will complete once the end of the current tracklist is reached
-     * @param {element} trackRowContainer The DOM element that contains all the track row elements
-     * @param {number} trackCount The official track count of the tracklist, used to know when the end of the list has been reached
-     * @param {function} callback The function to execute once the end of the tracklist has been reached
+     * Runs through a process that scrolls through the current tracklist and scrapes the metadata out of all the track rows
+     * @param {function} callback The function to execute once the scrape process has ended, either due to successful completion or timeout. Expects an object with a 'tracklist' key as a parameter
      */
-    function scrollToEndOfTracklist(trackRowContainer, trackCount, callback)
-    {  
+    function processMessage_GetTracklistMetadata(callback) {
+        const _trackRowContainer = elementsInDOM.trackRowContainer[currentApp](); //Fetch the DOM element that contains all the track row elements
+        const _trackCount = getPlaylistTrackCount(); //Fetch the official track count of the tracklist, if one exists
+        const _observerConfig = {childList: true}; //Set up the configuration options for the Mutation Observer
+
+        let _trackMetadataArray = []; //Create an array to store the metadata for each scraped track in the tracklist
+        let _lastScrapedElement = null; //Variable to track the last track row element from the most recent scrape
+        let _scrollingTimeout = null; //Variable tracking the timeout to end the scroll & scrape process, in case no changes to the track row container element are observed for a while
+        let _scrapeStartingIndex = (currentApp == 'gpm') ? 1 : 0; //Variable to track the row index to begin each scrape with. Starts at 1 for GPM, 0 for other sites. 
+        const _scrapeEndingIndexModifier = (currentApp == 'gpm') ? -1 : 0; //Variable to track the modifier to the index to end each scrape with. Typically 0, but -1 for GPM due to how the DOM is laid out.
+
+        //Set up the callback function to execute once the scraped has either been successfully completed or timed out
+        const _endScrape = function() {
+            //Allow the user to scroll manually again
+            allowManualScrolling(true);
+
+            //Disconnect the mutation observer
+            _observer.disconnect();
+
+            //Execute the provided callback function, passing the track metadata array as a parameter
+            callback({tracklist:_trackMetadataArray});
+        }
+
+        const _scrapeTrackMetadataFromNodeList = function() {
+            //If the scrolling timeout has been set...
+            if (_scrollingTimeout != null) {
+                //Clear the timeout. If the scrape is not yet complete after the current iteration, a new timeout will be set for the next one later.
+                clearTimeout(_scrollingTimeout);
+            }
+
+            //If a previous scrape has been completed, set the starting index for the next scrape accordingly
+            if (_lastScrapedElement != null) {
+                //'Array.prototype.indexOf.call' is used here because '_trackRowContainer.children' is a NodeList, not an Array, and so it doesn't have the 'indexOf' function, but is set up similarly enough that calling it works
+                //The starting index for the next scrape should be one greater than then index of the last child element from the previous scrape
+                _scrapeStartingIndex = Array.prototype.indexOf.call(_trackRowContainer.children, _lastScrapedElement) + 1 ;
+            }
+            
+            //For each new track row loaded in the DOM...
+            for (let i = _scrapeStartingIndex; i < (_trackRowContainer.childElementCount + _scrapeEndingIndexModifier); i++) {
+                //Scrape the track metadata from the track row and add it to the metadata array
+                _trackMetadataArray.push(new TrackMetadata(_trackRowContainer.children[i])); 
+            }
+
+            //If a valid target track count was provided and it matches the length of the metadata array, end the scrape
+            if (_trackCount != null && _trackCount == _trackMetadataArray.length) {
+                _endScrape();
+            }
+            else {
+                //Record the last available child element in the track row container for future reference
+                _lastScrapedElement = _trackRowContainer.children[_trackRowContainer.childElementCount-1];
+                
+                //Scroll to the last available child element in the track row container
+                scrollToElement(_lastScrapedElement);
+
+                //Set a timeout to end the scrolling if no new changes to the container element have been observed for a while, to avoid infinite scrolling in edge cases
+                _scrollingTimeout = setTimeout(_endScrape, 4000);
+            }
+        }
+
+        //Set up the callback to execute whenever the track row container DOM element has its childList modified
+        const _onTrackRowContainerChildListModified = function (mutationsList, observer) {
+            //For each mutation observed on the target DOM element...
+            for (const mutation of mutationsList) {
+                //If the observed mutation is that the element's childList was modified...
+                if (mutation.type === 'childList') {
+                    //Scrape the track metadata from the next set of track rows, and continue with the process accordingly
+                    _scrapeTrackMetadataFromNodeList();
+                }
+            }
+        };
+
+        //Create a new mutation observer instance linked to the callback function defined above
+        const _observer = new MutationObserver(_onTrackRowContainerChildListModified);
+
         //Temporarily disable manual scrolling to avoid any interference from the user during the scrape process
         allowManualScrolling(false);
 
-        //Create an array to track the increasing scroll height of the scrolling element, used to prevent any infinite scrolling in edge cases.
-        const _scrollHeightTrackerArray = [];
+        //Scroll to the top of the tracklist, as an extra safety measure just to be certain that no tracks are missed in the scrape
+        scrollToElement(elementsInDOM.playlistName[currentApp]());
 
-        const _scrollInterval = setInterval(
-            function() {
-                //If the number of child elements in the track row container matches the track count of the list...
-                if (trackRowContainer.childElementCount == trackCount || 
-                    //Or, if at least three iterations have occurred, and the scroll height hasn't changed for the past three iterations... 
-                    (_scrollHeightTrackerArray.length > 2 && _scrollHeightTrackerArray[_scrollHeightTrackerArray.length-1] == _scrollHeightTrackerArray[_scrollHeightTrackerArray.length-3]) ) {
-                    console.log('Finished scrolling to the end of the track list');
-                   
-                    //Stop the scrolling process
-                    clearInterval(_scrollInterval);
+        //Start observing the track row container element for configured mutations (i.e. for any changes to its childList)
+        _observer.observe(_trackRowContainer, _observerConfig);
 
-                    //Allow the user to scroll manually again
-                    allowManualScrolling(true);
-
-                    //Execute the provided callback function
-                    callback();
-                }
-                //Otherwise, scroll to the last child element in the track row container
-                else {
-                    console.log("Still Scrolling. Track Row Container Child Count: " + trackRowContainer.childElementCount);
-
-                    //Scroll to the last available child element in the container element of track rows
-                    scrollToElement(trackRowContainer.children[trackRowContainer.childElementCount-1]);
-
-                    //Add the current scroll height of the scrolling element to the tracker array
-                    _scrollHeightTrackerArray.push(document.body.scrollHeight);
-                }
-            },
-            2000
-        );
+        //Wait a short amount of time to allow the page to scroll to the top of the tracklist, and then begin the scroll & scrape process
+        setTimeout(_scrapeTrackMetadataFromNodeList, 1000);
     }
 })();
-
-//TODO could check if YouTube API reports correct track count value for "Your Likes"
-    //Could even consider ONLY using the API to get track counts, though it does seem like a lot of extra work that shouldn't be necessary
