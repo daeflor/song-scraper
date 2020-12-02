@@ -2,7 +2,7 @@
 
 'use strict';
 (function() {
-    let currentApp = null;
+    let currentApp = null; //TODO maybe just pass this as a param after all
 
     const elementsInDOM = {
         scrollContainer: {
@@ -13,16 +13,16 @@
             ytm: function() {return document.querySelector('#header .metadata yt-formatted-string.title');},
             gpm: function() {return document.querySelector('div.title-row h2');}
         },
-        playlistTrackCount: {
+        playlistTrackCount: { //TODO There was a typo here, in the attribute check
             ytm: function() {return document.querySelector('div#header div.metadata yt-formatted-string.second-subtitle span');},
-            gpm: function() {return document.querySelector('span[slot="metadata"').children[0];}
+            gpm: function() {return document.querySelector('span[slot="metadata"]').children[0];}
         },
         yourLikesTrackCount: {
             ytm: function() {return document.querySelector('div#header div.metadata yt-formatted-string.second-subtitle');},
-            gpm: function() {return document.querySelector('span[slot="metadata"').children[0];}
+            gpm: function() {return document.querySelector('span[slot="metadata"]').children[0];}
         },
         trackRowContainer: {
-            ytm: function() {return document.querySelector("[main-page-type='MUSIC_PAGE_TYPE_PLAYLIST'] div#contents ytmusic-playlist-shelf-renderer div#contents");},
+            ytm: function() {return document.querySelector("ytmusic-section-list-renderer[main-page-type='MUSIC_PAGE_TYPE_PLAYLIST'] div#contents ytmusic-playlist-shelf-renderer div#contents");},
             gpm: function() {return document.querySelector('tbody');}
         }
     };
@@ -66,6 +66,8 @@
     //         gpm: 'music/listen?u=0#/ap/'
     //     }
     // }
+
+//TODO perhaps individual scrapeTrackMetadatum_XX functions
 
     //TODO could/should probably just make this return an object
     //TODO should think of a more concise or clearer way of doing this while supporting multiple apps
@@ -155,7 +157,7 @@
                 processMessage_GetTracklistName(sendResponse);
             }
             else if (message.greeting == 'GetTracklistMetadata') {
-                processMessage_GetTracklistMetadata(sendResponse);
+                processMessage_GetTracklistMetadata(message.app, sendResponse);
             }
             
             //Return true to keep the message channel open
@@ -235,15 +237,39 @@
 
     /**
      * Scrolls the page such that the given element is in view
-     * @param {element} element The DOM element to scroll to
+     * @param {object} element The DOM element to scroll into view
      */
     function scrollToElement(element) {
-        if (element != null) {
+        if (typeof element === 'object') {
             element.scrollIntoView(true);
         }
         else {
-            //TODO would be good to set up a DebugController to better handle warnings, errors, etc.
+            //TODO would be good to set up a DebugController to better handle warnings, errors, asserts, etc.
             console.log('There is no element to scroll to');
+        }
+    }
+
+    /**
+     * Scrolls to the top of the current tracklist
+     * @param {string} app The current app being used (e.g. YouTube Music, Google Play Music, etc.)
+     */
+    function scrollToTopOfTracklist(app) {
+        //console.assert(typeof app == 'string', 'Parameter [app] should be a string');
+        //console.assert(typeof scrollContainer == 'object', 'Parameter [scrollContainer] should be an object');
+
+        //Get the scroll container element for the current app being used
+        const _container = elementsInDOM.scrollContainer[app]();
+
+        //If the current app is YouTube Music, trigger a scroll such that the scroll container is in view...
+        if (app == 'ytm') {
+            scrollToElement(_container);
+        }
+        //Else if the app is Google Play Music, modify the scrollTop property to scroll to the top of the scroll container
+        else if (app == 'gpm' && typeof _container === 'object') {
+            _container.scrollTop = 0;
+        }
+        else {
+            console.log("ERROR: Tried to scroll to the top of the tracklist, but the given inputs were invalid. app: " + app + ". scroll container: " + _container);
         }
     }
 
@@ -265,8 +291,8 @@
      * Sets whether or not the user should be able to scroll manually in the page
      * @param {boolean} enabled Indicates whether or not manual scrolling should be allowed. Defaults to true, meaning the user can scroll manually.
      */
-    function allowManualScrolling(enabled=true) {
-        const _container = elementsInDOM.scrollContainer[currentApp]();
+    function allowManualScrolling(app, enabled=true) {
+        const _container = elementsInDOM.scrollContainer[app]();
 
         //If a valid container element was found...
         if (_container != null) {
@@ -283,27 +309,29 @@
         }
     }
 
+    //TODO maybe take the bulk of the logic outside of the processMessage function, for better readability?
+
     //TODO NEW - Some of this logic (and the TrackMetadata constructor) could be handled in a logic script instead of in the content script
         //That mightmake more sense, to limit the content script to really just extracting the raw data required
     /**
      * Runs through a process that scrolls through the current tracklist and scrapes the metadata out of all the track rows
      * @param {function} callback The function to execute once the scrape process has ended, either due to successful completion or timeout. Expects an object with a 'tracklist' key as a parameter
      */
-    function processMessage_GetTracklistMetadata(callback) {
-        const _trackRowContainer = elementsInDOM.trackRowContainer[currentApp](); //Fetch the DOM element that contains all the track row elements
+    function processMessage_GetTracklistMetadata(app, callback) {
+        const _trackRowContainer = elementsInDOM.trackRowContainer[app](); //Fetch the DOM element that contains all the track row elements
         const _trackCount = getPlaylistTrackCount(); //Fetch the official track count of the tracklist, if one exists
         const _observerConfig = {childList: true}; //Set up the configuration options for the Mutation Observer
 
         let _trackMetadataArray = []; //Create an array to store the metadata for each scraped track in the tracklist
         let _lastScrapedElement = null; //Variable to track the last track row element from the most recent scrape
         let _scrollingTimeout = null; //Variable tracking the timeout to end the scroll & scrape process, in case no changes to the track row container element are observed for a while
-        let _scrapeStartingIndex = (currentApp == 'gpm') ? 1 : 0; //Variable to track the row index to begin each scrape with. Starts at 1 for GPM, 0 for other sites. 
-        const _scrapeEndingIndexModifier = (currentApp == 'gpm') ? -1 : 0; //Variable to track the modifier to the index to end each scrape with. Typically 0, but -1 for GPM due to how the DOM is laid out.
+        let _scrapeStartingIndex = (app == 'gpm') ? 1 : 0; //Variable to track the row index to begin each scrape with. Starts at 1 for GPM, 0 for other sites. 
+        const _scrapeEndingIndexModifier = (app == 'gpm') ? -1 : 0; //Variable to track the modifier to the index to end each scrape with. Typically 0, but -1 for GPM due to how the DOM is laid out.
 
         //Set up the callback function to execute once the scraped has either been successfully completed or timed out
         const _endScrape = function() {
             //Allow the user to scroll manually again
-            allowManualScrolling(true);
+            allowManualScrolling(app, true);
 
             //Disconnect the mutation observer
             _observer.disconnect();
@@ -364,10 +392,10 @@
         const _observer = new MutationObserver(_onTrackRowContainerChildListModified);
 
         //Temporarily disable manual scrolling to avoid any interference from the user during the scrape process
-        allowManualScrolling(false);
+        allowManualScrolling(app, false);
 
         //Scroll to the top of the tracklist, as an extra safety measure just to be certain that no tracks are missed in the scrape
-        scrollToElement(elementsInDOM.playlistName[currentApp]());
+        scrollToTopOfTracklist(app);
 
         //Start observing the track row container element for configured mutations (i.e. for any changes to its childList)
         _observer.observe(_trackRowContainer, _observerConfig);

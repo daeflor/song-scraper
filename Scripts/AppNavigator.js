@@ -1,86 +1,190 @@
 'use strict';
+window.Model = (function() {
+    // //TODO might want to freeze this once the values have been set
+    // //TODO should this be inside of or consolidated with TabManager?
+    //     //Could consolidate this into model
+    // const currentState = {
+    //     app: null,
+    //     tracklistType: null,
+    //     //tracklistTitle: null
+    // }
+        
+    let tabId = null;
+    let app = null; //TODO might want to keep app and tracklistType together in one object to be set and passed around together more easily
+    let tracklistType = null;
+    let tracklistTitle = null;
+    //const localStorageKey;
+    //const localStorageBackupKey = chrome.runtime.id + '_Backup';
+
+    return { 
+        GetTabId: function() {
+            return tabId; 
+        },
+        SetTabId: function(id){
+            tabId = id;
+        },
+        GetApp: function() {
+            return app;
+        },
+        SetApp: function(currentApp) {
+            app = currentApp;
+        },
+        GetTracklistType: function() {
+            return tracklistType;
+        },
+        SetTracklistType: function(type) {
+            tracklistType = type;
+        },
+        GetTracklistTitle: function() {
+            return tracklistTitle;
+        },
+        SetTracklistTitle: function(title) {
+            tracklistTitle = title;
+            //localStorageKey = chrome.runtime.id + '_Playlist_\'' + playlistName + '\'';
+            //console.log("Playlist name set to: " + playlistName + ". Key set to: " + key);
+        }
+        // GetLocalStorageKey : function()
+        // {
+        //     return localStorageKey; 
+        // },
+        // GetBackupKey : function()
+        // {
+        //     return localStorageBackupKey; 
+        // },
+    };
+})();
+
+
 window.AppController = (function() {
-    const supportedApps = {
+    const supportedApps = Object.freeze({
         youTubeMusic: 'ytm',
         googlePlayMusic: 'gpm'
-    };
+    });
+
+    const supportedTracklistTypes = Object.freeze({
+        playlist: 'playlist',
+        autoPlaylist: 'auto',
+        genreList: 'genre',
+        allSongsList: 'all',
+        uploadsList: 'uploads'
+    });
     
     document.addEventListener('DOMContentLoaded', function() { window.Utilities.FadeIn(document.getElementById('popup'), init, 500) } );					
 
     function init() {
         //Query for the Active Tab...
-        chrome.tabs.query(
-            { 
-                active: true, 
-                currentWindow: true
-            }, 
-            function(tabs) {	
-                //Get the URL from the active tab
-                const url = tabs[0].url;
-                console.assert(typeof url == 'string', 'tab.url should be a string');
+        chrome.tabs.query( { active: true, currentWindow: true}, function(tabs) {	
+                //Make a record of the current/active tab for future reference
+                window.Model.SetTabId(tabs[0].id);
 
-                //If the URL matches a YouTube Music playlist URL...
-                if (url.indexOf('https://music.youtube.com/playlist?list=') > -1) {
-                    //Go through the YouTube Music flow    
-                    console.log('Initiating YTM Flow');
-                    
-                    initializeFlow(tabs[0], supportedApps.youTubeMusic);
-                    //window.FlowController.InitializeFlow();
-                    //YouTubeMusicFlowController.InitializeYouTubeMusicFlow(tabs[0]);
-                }
-                else {
-                    //Go through the legacy Google Play Music flow
-                    console.log('Initiating GPM Flow');
-                    initializeFlow(tabs[0], supportedApps.googlePlayMusic);
-                    //GooglePlayMusicFlowController.PreparePopup();
+                validateUrlAndRecordTracklistInfo(tabs[0].url);
+
+                //Send a message to the content script to make a record of the current app for future reference
+                sendMessage_RecordCurrentApp(window.Model.GetApp());
+
+                //If the current app and tracklist type have been set...
+                if (window.Model.GetApp() != null && window.Model.GetTracklistType() != null) {
+                    //If the tracklist title has also already been set, proceed to prepare the extension's landing page
+                    if (window.Model.GetTracklistTitle() != null) {
+                        prepareLandingPage(); 
+                    }
+                    //Else, if the tracklist title has not yet been set, retrieve it from the content script before displaying the extension's landing page
+                    else {
+                        //Set up a callback function so that when the tracklist title is fetched, the popup landing page gets prepared and displayed
+                        const _onTracklistTitleReceived = function(response) {
+                            window.Model.SetTracklistTitle(response.tracklistName); //Make a record of the tracklist title
+                            //updateTracklistTitle(response.tracklistName); //Make a record of the tracklist title
+                            prepareLandingPage(); //Prepare the extension' landing page
+                        }
+
+                        //Send a message to the content script to fetch the name of the current tracklist
+                        sendMessage_GetTracklistName(_onTracklistTitleReceived);
+                    }
                 }
             }
         );
     }
 
-    // function initializeYouTubeMusicFlow(currentTab) {
-    //     //Store the current tab for future reference
-    //     TabManager.SetTab(currentTab);
+    //TODO rename to indicate that this also sets up basic data gleaned from the URL
+    function validateUrlAndRecordTracklistInfo(url) {
+        console.assert(typeof url == 'string', 'url should be a string');
 
-    //     //Send a message to the content script to make a record of the current app 
-    //     sendMessage_RecordCurrentApp();
+        //If the URL indicates the current app/site is YouTube Music...
+        if (url != null && url.includes('music.youtube.com') == true) {
+            //Make a record of the current app for future reference
+            window.Model.SetApp(supportedApps.youTubeMusic);
 
+            //Make a record of the current tracklist type based on certain URL conditions
+            if (url.includes('list=PL')) {
+                window.Model.SetTracklistType(supportedTracklistTypes.playlist);
+            } 
+            else if (url.includes('list=LM')) {
+                window.Model.SetTracklistType(supportedTracklistTypes.autoPlaylist);
+            }
+            //TODO the options below are currently not supported due to how the manifest is setup
+            else if (url.includes('library/songs')) {
+                window.Model.SetTracklistType(supportedTracklistTypes.allSongsList);
+            }
+            else if (url.includes('library/uploaded_songs')) {
+                window.Model.SetTracklistType(supportedTracklistTypes.uploadsList);
+            }
+        }
+        //Else, if the URL indicates the current app/site is Google Play Music...
+        else if (url != null && url.includes('play.google.com/music') == true) {
+            //Make a record of the current app for future reference
+            window.Model.SetApp(supportedApps.googlePlayMusic);
 
-    //     //sendMessage_RecordCurrentApp(sendMessage_GetTracklistName.bind(null, prepareLandingPageForYouTubeMusic));
-
-    //     // //Once the tracklist name is acquired from a content script, prepare the popup's landing page
-    //     // const _onTracklistNameAcquired = function() {
-    //     //     prepareLandingPageForYouTubeMusic();
-    //     // };
-
-    //     // //Get the tracklist name from a content script and then execute the passed callback function
-    //     // getTracklistNameForYouTubeMusic(_onTracklistNameAcquired);
-
-
-    // }
-
-    function initializeFlow(currentTab, currentApp) {
-        //TODO could use some error handling here to ensure the parameters are passed correclty, since the error is quite hard to track down if, for example, the tab isn't actually passed.
-        //Store the current tab for future reference
-        TabManager.SetTab(currentTab);
-
-        //Send a message to the content script to make a record of the current app for future reference
-        sendMessage_RecordCurrentApp(currentApp);
-        
-        //Set up a callback function so that when the tracklist name is fetched, the popup landing page gets prepared and displayed
-        const _onTracklistNameFetched = function(response) {
-            //Store the tracklist's name
-            TabManager.SetPlaylistName(response.tracklistName);
-            console.log('Current playlist\'s name is %s.', response.tracklistName);
-
-            //Prepare the YouTube Music extension popup landing page
-            prepareLandingPage();
-        };
-        
-        //TODO need to account for situations in which there is no tracklist name and handle it correctly
-        //Send a message to the content script to fetch the name of the current tracklist
-        sendMessage_GetTracklistName(_onTracklistNameFetched);
+            //Make a record of the current tracklist type based on certain URL conditions
+            if (url.includes('#/pl')) {
+                window.Model.SetTracklistType(supportedTracklistTypes.playlist);
+            } 
+            else if (url.includes('#/ap')) {
+                window.Model.SetTracklistType(supportedTracklistTypes.autoPlaylist);
+            }
+            else if (url.includes('#/tgs')) {
+                window.Model.SetTracklistType(supportedTracklistTypes.genreList);
+                const _splitUrl = url.split("/");
+                const _genre = _splitUrl[_splitUrl.length-1];
+                window.Model.SetTracklistTitle(_genre); //Make a record of the tracklist title
+            }
+            else if (url.includes('#/all')) {
+                window.Model.SetTracklistType(supportedTracklistTypes.allSongsList);
+            }
+        }
+        else {
+            window.ViewRenderer.ShowStatusMessage('The current URL is not supported by this extension.');
+        }
     }
+
+    // function initializeFlow(url) {
+    //     //TODO could use some more error handling here to ensure the parameters are passed correclty, since the error is quite hard to track down if, for example, the tab isn't actually passed.
+    //     console.assert(typeof url == 'string', 'url should be a string');
+        
+    //     validateUrlAndRecordTracklistInfo(url);
+
+    //     //Send a message to the content script to make a record of the current app for future reference
+    //     sendMessage_RecordCurrentApp(window.Model.GetApp());
+
+    //     //If the current app and tracklist type have been set...
+    //     if (window.Model.GetApp() != null && window.Model.GetTracklistType() != null) {
+    //         //If the tracklist title has also already been set, proceed to prepare the extension's landing page
+    //         if (window.Model.GetTracklistTitle() != null) {
+    //             prepareLandingPage(); 
+    //         }
+    //         //Else, if the tracklist title has not yet been set, retrieve it from the content script before displaying the extension's landing page
+    //         else {
+    //             //Set up a callback function so that when the tracklist title is fetched, the popup landing page gets prepared and displayed
+    //             const _onTracklistTitleReceived = function(response) {
+    //                 window.Model.SetTracklistTitle(response.tracklistName); //Make a record of the tracklist title
+    //                 //updateTracklistTitle(response.tracklistName); //Make a record of the tracklist title
+    //                 prepareLandingPage(); //Prepare the extension' landing page
+    //             }
+
+    //             //Send a message to the content script to fetch the name of the current tracklist
+    //             sendMessage_GetTracklistName(_onTracklistTitleReceived);
+    //         }
+    //     }
+    // }
 
     function sendMessage_RecordCurrentApp(currentApp) {
         //Send a message to the content script to make a record of the current app
@@ -90,14 +194,14 @@ window.AppController = (function() {
 
     function sendMessage_GetTracklistName(callback) {
         //Send a message to the content script to get the tracklist name
-        let _message = {greeting:'GetTracklistName'};
+        const _message = {greeting:'GetTracklistName'};
         window.Utilities.SendMessageToContentScripts(_message, callback);
     }
 
     function prepareLandingPage()
     {
         window.ViewRenderer.HideStatusMessage();
-        window.ViewRenderer.ShowTitle(TabManager.GetPlaylistName());
+        window.ViewRenderer.ShowTitle(window.Model.GetTracklistTitle());
 
         document.getElementById('buttonComparePlaylist').textContent = "Scrub!";
         document.getElementById('buttonComparePlaylist').onclick = initiateTrackScraper;
@@ -166,7 +270,7 @@ window.AppController = (function() {
 		window.ViewRenderer.ShowStatusMessage('Song list comparison in progress.');
 
 		window.Utilities.SendMessageToContentScripts(
-			{greeting:'GetTracklistMetadata'},
+			{greeting:'GetTracklistMetadata', app:window.Model.GetApp()},
 			function(response)
 			{
 				if (response.tracklist == null)
@@ -213,7 +317,7 @@ window.AppController = (function() {
 
         //Once the exported Google Play Music tracklist data has been loaded from a local file, convert it to a CSV file
         const _onGooglePlayMusicDataLoaded = function(tracklistsArray) {
-            const _gpmTracklistKey = getTracklistKeyFromTracklistName(tracklistsArray, TabManager.GetPlaylistName());
+            const _gpmTracklistKey = getTracklistKeyFromTracklistName(tracklistsArray, window.Model.GetTracklistTitle());
             console.log('GPM Tracklist Key: ' + _gpmTracklistKey);
             console.log(tracklistsArray[_gpmTracklistKey]);
 
@@ -263,7 +367,7 @@ window.AppController = (function() {
             'unplayable'
         ];
 
-        const _filename = 'TracklistExport_After_' + TabManager.GetPlaylistName();
+        const _filename = 'TracklistExport_After_' + window.Model.GetTracklistTitle();
 
         window.Utilities.ConvertArrayOfObjectsToCsv(tracklist, _filename, _keysToIncludeInExport);
     }
@@ -280,11 +384,11 @@ window.AppController = (function() {
 
         //Once the exported Google Play Music tracklist data has been loaded from a local file, convert it to a CSV file
         const _onGooglePlayMusicDataLoaded = function(tracklistsArray) {
-            const _gpmTracklistKey = getTracklistKeyFromTracklistName(tracklistsArray, TabManager.GetPlaylistName());
+            const _gpmTracklistKey = getTracklistKeyFromTracklistName(tracklistsArray, window.Model.GetTracklistTitle());
             console.log('GPM Tracklist Key: ' + _gpmTracklistKey);
             console.log(tracklistsArray[_gpmTracklistKey]);
 
-            const _filename = 'TracklistExport_Before_' + TabManager.GetPlaylistName();
+            const _filename = 'TracklistExport_Before_' + window.Model.GetTracklistTitle();
 
             window.Utilities.ConvertArrayOfObjectsToCsv(tracklistsArray[_gpmTracklistKey], _filename, _keysToIncludeInExport);
         };
@@ -548,7 +652,7 @@ window.Utilities = (function() {
      */
     function sendMessageToContentScripts(message, callback) {	
 		chrome.tabs.sendMessage(
-			TabManager.GetTab().id, 
+			window.Model.GetTabId(), 
 			message, 
 			function(response) {
                 //If an error occurred during the message connection, print an error
