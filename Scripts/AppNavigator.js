@@ -1,66 +1,70 @@
 'use strict';
-window.Model = (function() {
-    // //TODO might want to freeze this once the values have been set
-    // //TODO should this be inside of or consolidated with TabManager?
-    //     //Could consolidate this into model
-    // const currentState = {
-    //     app: null,
-    //     tracklistType: null,
-    //     //tracklistTitle: null
-    // }
-        
-    let tabId = null;
-    let app = null; //TODO might want to keep app and tracklistType together in one object to be set and passed around together more easily
-    let tracklistType = null;
-    let tracklistTitle = null;
-    //const localStorageKey;
-    //const localStorageBackupKey = chrome.runtime.id + '_Backup';
+import * as DebugController from './Modules/DebugController.js';
+import * as Model from './Modules/Model.js';
+import * as IO from './Modules/Utilities/IO.js';
 
-    return { 
-        GetTabId: function() {
-            return tabId; 
-        },
-        SetTabId: function(id){
-            tabId = id;
-        },
-        GetApp: function() {
-            return app;
-        },
-        SetApp: function(currentApp) {
-            app = currentApp;
-        },
-        GetTracklistType: function() {
-            return tracklistType;
-        },
-        SetTracklistType: function(type) {
-            tracklistType = type;
-        },
-        GetTracklistTitle: function() {
-            return tracklistTitle;
-        },
-        SetTracklistTitle: function(title) {
-            tracklistTitle = title;
-            //localStorageKey = chrome.runtime.id + '_Playlist_\'' + playlistName + '\'';
-            //console.log("Playlist name set to: " + playlistName + ". Key set to: " + key);
-        }
-        // GetLocalStorageKey : function()
-        // {
-        //     return localStorageKey; 
-        // },
-        // GetBackupKey : function()
-        // {
-        //     return localStorageBackupKey; 
-        // },
-    };
-})();
+// window.Model = (function() {
+//     // //TODO might want to freeze this once the values have been set
+//     // //TODO should this be inside of or consolidated with TabManager?
+//     //     //Could consolidate this into model
+//     // const currentState = {
+//     //     app: null,
+//     //     tracklistType: null,
+//     //     //tracklistTitle: null
+//     // }
+//     let tabId = null;
+//     let app = null; //TODO might want to keep app and tracklistType together in one object to be set and passed around together more easily
+//     let tracklistType = null;
+//     let tracklistTitle = null;
+//     let localStorageKey = null;
+//     //const localStorageBackupKey = chrome.runtime.id + '_Backup';
+
+//     return { 
+//         GetTabId: function() {
+//             return tabId; 
+//         },
+//         SetTabId: function(id){
+//             tabId = id;
+//         },
+//         GetApp: function() {
+//             return app;
+//         },
+//         SetApp: function(currentApp) {
+//             app = currentApp;
+//         },
+//         GetTracklistType: function() {
+//             return tracklistType;
+//         },
+//         SetTracklistType: function(type) {
+//             tracklistType = type;
+//         },
+//         GetTracklistTitle: function() {
+//             return tracklistTitle;
+//         },
+//         SetTracklistTitle: function(title) {
+//             tracklistTitle = title;
+//             //localStorageKey = chrome.runtime.id + '_Playlist_\'' + playlistName + '\'';
+//             localStorageKey = title;
+//             //console.log("Playlist name set to: " + playlistName + ". Key set to: " + key);
+//         },
+//         GetLocalStorageKey : function() {
+//             return localStorageKey; 
+//         },
+//         // GetBackupKey : function()
+//         // {
+//         //     return localStorageBackupKey; 
+//         // },
+//     };
+// })();
 
 
-window.AppController = (function() {
+//window.AppController = (function() {
     const supportedApps = Object.freeze({
         youTubeMusic: 'ytm',
         googlePlayMusic: 'gpm'
     });
 
+    //TODO This isn't being used as much as it could be
     const supportedTracklistTypes = Object.freeze({
         playlist: 'playlist',
         autoPlaylist: 'auto',
@@ -68,32 +72,30 @@ window.AppController = (function() {
         allSongsList: 'all',
         uploadsList: 'uploads'
     });
-    
-    document.addEventListener('DOMContentLoaded', function() { window.Utilities.FadeIn(document.getElementById('popup'), init, 500) } );					
 
     function init() {
         //Query for the Active Tab...
         chrome.tabs.query( { active: true, currentWindow: true}, function(tabs) {	
                 //Make a record of the current/active tab for future reference
-                window.Model.SetTabId(tabs[0].id);
+                //window.Model.SetTabId(tabs[0].id);
+                Model.tab.id = tabs[0].id;
 
                 validateUrlAndRecordTracklistInfo(tabs[0].url);
 
                 //Send a message to the content script to make a record of the current app for future reference
-                sendMessage_RecordCurrentApp(window.Model.GetApp());
+                sendMessage_RecordCurrentApp(Model.tab.app);
 
                 //If the current app and tracklist type have been set...
-                if (window.Model.GetApp() != null && window.Model.GetTracklistType() != null) {
+                if (typeof(Model.tab.app) === 'string' && typeof(Model.tracklist.type) === 'string') {
                     //If the tracklist title has also already been set, proceed to prepare the extension's landing page
-                    if (window.Model.GetTracklistTitle() != null) {
+                    if (typeof(Model.tracklist.title) === 'string') {
                         prepareLandingPage(); 
                     }
                     //Else, if the tracklist title has not yet been set, retrieve it from the content script before displaying the extension's landing page
                     else {
                         //Set up a callback function so that when the tracklist title is fetched, the popup landing page gets prepared and displayed
                         const _onTracklistTitleReceived = function(response) {
-                            window.Model.SetTracklistTitle(response.tracklistName); //Make a record of the tracklist title
-                            //updateTracklistTitle(response.tracklistName); //Make a record of the tracklist title
+                            Model.tracklist.title = response.tracklistName; //Make a record of the tracklist title
                             prepareLandingPage(); //Prepare the extension' landing page
                         }
 
@@ -112,43 +114,44 @@ window.AppController = (function() {
         //If the URL indicates the current app/site is YouTube Music...
         if (url != null && url.includes('music.youtube.com') == true) {
             //Make a record of the current app for future reference
-            window.Model.SetApp(supportedApps.youTubeMusic);
+            Model.tab.app = supportedApps.youTubeMusic;
 
             //Make a record of the current tracklist type based on certain URL conditions
             if (url.includes('list=PL')) {
-                window.Model.SetTracklistType(supportedTracklistTypes.playlist);
+                Model.tracklist.type = supportedTracklistTypes.playlist;
             } 
             else if (url.includes('list=LM')) {
-                window.Model.SetTracklistType(supportedTracklistTypes.autoPlaylist);
+                Model.tracklist.type = supportedTracklistTypes.autoPlaylist;
             }
             //TODO the options below are currently not supported due to how the manifest is setup
             else if (url.includes('library/songs')) {
-                window.Model.SetTracklistType(supportedTracklistTypes.allSongsList);
+                Model.tracklist.type = supportedTracklistTypes.allSongsList;
             }
             else if (url.includes('library/uploaded_songs')) {
-                window.Model.SetTracklistType(supportedTracklistTypes.uploadsList);
+                Model.tracklist.type = supportedTracklistTypes.allSongsList;
+                //Model.tracklist.type = supportedTracklistTypes.uploadsList;
             }
         }
         //Else, if the URL indicates the current app/site is Google Play Music...
         else if (url != null && url.includes('play.google.com/music') == true) {
             //Make a record of the current app for future reference
-            window.Model.SetApp(supportedApps.googlePlayMusic);
+            Model.tab.app = supportedApps.googlePlayMusic;
 
             //Make a record of the current tracklist type based on certain URL conditions
             if (url.includes('#/pl')) {
-                window.Model.SetTracklistType(supportedTracklistTypes.playlist);
+                Model.tracklist.type = supportedTracklistTypes.playlist;
             } 
             else if (url.includes('#/ap')) {
-                window.Model.SetTracklistType(supportedTracklistTypes.autoPlaylist);
+                Model.tracklist.type = supportedTracklistTypes.autoPlaylist;
             }
             else if (url.includes('#/tgs')) {
-                window.Model.SetTracklistType(supportedTracklistTypes.genreList);
+                Model.tracklist.type = supportedTracklistTypes.genreList;
                 const _splitUrl = url.split("/");
                 const _genre = _splitUrl[_splitUrl.length-1];
-                window.Model.SetTracklistTitle(_genre); //Make a record of the tracklist title
+                Model.tracklist.title = _genre; //Make a record of the tracklist title
             }
             else if (url.includes('#/all')) {
-                window.Model.SetTracklistType(supportedTracklistTypes.allSongsList);
+                Model.tracklist.type = supportedTracklistTypes.allSongsList;
             }
         }
         else {
@@ -190,6 +193,7 @@ window.AppController = (function() {
         //Send a message to the content script to make a record of the current app
         const _message = {greeting:'RecordCurrentApp', app:currentApp};
         window.Utilities.SendMessageToContentScripts(_message);
+        //TODO pretty sure this results in an error because no response is sent, but not certain
     }
 
     function sendMessage_GetTracklistName(callback) {
@@ -198,13 +202,9 @@ window.AppController = (function() {
         window.Utilities.SendMessageToContentScripts(_message, callback);
     }
 
-    function prepareLandingPage()
-    {
+    function prepareLandingPage() {
         window.ViewRenderer.HideStatusMessage();
-        window.ViewRenderer.ShowTitle(window.Model.GetTracklistTitle());
-
-        document.getElementById('buttonComparePlaylist').textContent = "Scrub!";
-        document.getElementById('buttonComparePlaylist').onclick = initiateTrackScraper;
+        window.ViewRenderer.ShowTitle(Model.tracklist.title);
 
         window.ViewRenderer.ShowLandingPage();
     }
@@ -270,11 +270,10 @@ window.AppController = (function() {
 		window.ViewRenderer.ShowStatusMessage('Song list comparison in progress.');
 
 		window.Utilities.SendMessageToContentScripts(
-			{greeting:'GetTracklistMetadata', app:window.Model.GetApp()},
+			{greeting:'GetTracklistMetadata', app:Model.tab.app},
 			function(response)
 			{
-				if (response.tracklist == null)
-				{
+				if (response.tracklist == null) {
 					window.ViewRenderer.ShowStatusMessage('Failed to retrieve track list.');
 					return;
                 }
@@ -288,8 +287,22 @@ window.AppController = (function() {
                     window.ViewRenderer.HideStatusMessage();
                     window.ViewRenderer.ShowScrapeCompletedPage();
 
-                    document.getElementById('buttonExportScrapedTracklist').onclick = function() {downloadCurrentTracklistAsCSV(response.tracklist);};
-                    document.getElementById('buttonExportStoredTracklistGPM').onclick = downloadGooglePlayMusicTracklistAsCSV;
+
+                    Model.tracklist.metadataScraped = response.tracklist;
+                    Model.tracklist.metadataTest = response.tracklist;
+                    //setupListeners_ScrapeCompletedPage();
+
+
+                    //TODO much of the below needs to be moved to View (ViewBinder?)
+
+                    
+
+                    //
+
+                    document.getElementById('buttonShowComparisonPage').onclick = function() {
+                        window.ViewRenderer.HideScrapeCompletedPage();
+                        window.ViewRenderer.ShowComparisonPage();
+                    };
 
                     //
 
@@ -313,11 +326,16 @@ window.AppController = (function() {
 		);
     }
 
+    //TODO rename this
+    function setupListeners_ScrapeCompletedPage() {
+        //listenForEvent_ButtonPressed_PrintScrapedMetadata();
+    }
+
     function compareScrapedTracklistWithPreviousVersion(tracklist) {
 
         //Once the exported Google Play Music tracklist data has been loaded from a local file, convert it to a CSV file
         const _onGooglePlayMusicDataLoaded = function(tracklistsArray) {
-            const _gpmTracklistKey = getTracklistKeyFromTracklistName(tracklistsArray, window.Model.GetTracklistTitle());
+            const _gpmTracklistKey = getTracklistKeyFromTracklistName(tracklistsArray, Model.tracklist.title);
             console.log('GPM Tracklist Key: ' + _gpmTracklistKey);
             console.log(tracklistsArray[_gpmTracklistKey]);
 
@@ -367,9 +385,9 @@ window.AppController = (function() {
             'unplayable'
         ];
 
-        const _filename = 'TracklistExport_After_' + window.Model.GetTracklistTitle();
+        const _filename = 'TracklistExport_After_' + Model.tracklist.title;
 
-        window.Utilities.ConvertArrayOfObjectsToCsv(tracklist, _filename, _keysToIncludeInExport);
+        IO.convertArrayOfObjectsToCsv(tracklist, _filename, _keysToIncludeInExport);
     }
 
     function downloadGooglePlayMusicTracklistAsCSV() {
@@ -384,13 +402,15 @@ window.AppController = (function() {
 
         //Once the exported Google Play Music tracklist data has been loaded from a local file, convert it to a CSV file
         const _onGooglePlayMusicDataLoaded = function(tracklistsArray) {
-            const _gpmTracklistKey = getTracklistKeyFromTracklistName(tracklistsArray, window.Model.GetTracklistTitle());
+            //TODO I don't think this is actually an array, I think it's an object
+            console.log(tracklistsArray);
+            const _gpmTracklistKey = getTracklistKeyFromTracklistName(tracklistsArray, Model.tracklist.title);
             console.log('GPM Tracklist Key: ' + _gpmTracklistKey);
             console.log(tracklistsArray[_gpmTracklistKey]);
 
-            const _filename = 'TracklistExport_Before_' + window.Model.GetTracklistTitle();
+            const _filename = 'TracklistExport_Before_' + Model.tracklist.title;
 
-            window.Utilities.ConvertArrayOfObjectsToCsv(tracklistsArray[_gpmTracklistKey], _filename, _keysToIncludeInExport);
+            IO.convertArrayOfObjectsToCsv(tracklistsArray[_gpmTracklistKey], _filename, _keysToIncludeInExport);
         };
 
         //Send an XMLHttpRequest to load the exported GPM tracklist data from a local file, and then execute the callback
@@ -399,7 +419,7 @@ window.AppController = (function() {
 
     function sendRequest_LoadGooglePlayMusicExportData(callback) {
         const _filepath = "ExportedData/LocalStorageExport_2020-10-12-10-30PM_ThumbsUpDuplicatedAsYourLikes.txt";
-        window.Utilities.LoadTextFileViaXMLHttpRequest(_filepath, callback, true)
+        IO.loadTextFileViaXMLHttpRequest(_filepath, callback, true)
     }
 
     //TODO NEW - this should take a tracklist key to be more general. Right now it only works for the current playlist which is unclear
@@ -448,130 +468,7 @@ window.AppController = (function() {
     //     }
     // }
 
-    // return {
-    //     InitializeFlow: initializeFlow,
-    //     InitializeYouTubeMusicFlow: initializeYouTubeMusicFlow
-    // };
-})();
-
 window.Utilities = (function() {
-
-    //** Private Helper Functions **//
-    
-    /**
-     * Creates a row of comma-separated strings from the provided array
-     * @param {array} columnValues An array of the column values to use to create a row for a CSV file
-     */
-    function createCsvRow(columnValues) {
-        if (columnValues != null) { 
-            let _row = ''; //Start with a blank string for the row
-
-            //For each column except for the last one...
-            for (let i = 0; i < columnValues.length-1; i++) {
-                //If the value type for this column is a string...
-                if (typeof(columnValues[i]) == 'string') {
-                    //Include double-quotes around the output string, followed by a comma to indicate the end of the column
-                    _row += '"' + columnValues[i] + '",';
-                }
-                //Otherwise, output the value without quotes, followed by a comma to indicate the end of the column
-                else {
-                    _row += columnValues[i] + ',';
-                }
-            }
-
-            //Add the last column value to the row, followed by a newline character to indicate the end of the row
-            _row += columnValues[columnValues.length-1] + '\r\n';
-
-            return _row;
-        }
-        else {
-            console.log("ERROR: Request received to create a CSV row but an array of column values was not provided.");
-        }
-    }
-
-    //** Publicly-Exposed Utility Functions **//
-    
-    /**
-     * Converts an array of objects to a CSV file and then downloads the file locally
-     * @param {array} array An array of object to convert to CSV
-     * @param {string} filename The name of the file to download
-     * @param {array} [objectKeysToInclude] An optional array to indicate the specific object keys which should be included in the CSV, and the order in which to output them. If none is provided, all keys for every object will be outputted.
-     */
-    function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=null) {
-        let _csv = ''; //Begin with a blank string for the CSV
-        
-        //If a list of object keys to include was provided, use that to set up a header row for the CSV file
-        if (objectKeysToInclude != null) {
-            _csv += createCsvRow(objectKeysToInclude);
-        }
-
-        //If a valid array was provided...
-        if (array != null) {
-            //For each object in the array...
-            for (let i = 0; i < array.length; i++) {
-                const _currentObject = array[i]; //For better readability, track the current object in the objects array
-                let _valuesInCurrentObject = []; //Create an array to contain all the values for the current object that are going to be included in the CSV
-
-                //If a list of specific keys to use wasn't provided, use all of the object's keys
-                objectKeysToInclude = objectKeysToInclude || Object.keys(_currentObject);
-
-                //For each key that should be included in the CSV output...
-                for (let j = 0; j < objectKeysToInclude.length; j++) { 
-                    //If the value that matches the current key isn't falsy (e.g. undefined), use that value, otherwise set it to a blank string so that the column is still included in the CSV row later
-                    const _currentValue = _currentObject[objectKeysToInclude[j]] || '';
-                    //Add the key's value to the array of values to include in the CSV row later
-                    _valuesInCurrentObject.push(_currentValue);      
-                }
-
-                //Create a CSV row from the array of recorded values and append the resulting string to the CSV string
-                _csv += createCsvRow(_valuesInCurrentObject);
-            }
-        }
-
-        //TODO at some point, pull this logic out of this function and into a separate one specifically for downloading a csv file
-        //If the CSV actually has some data in it after the array has been converted...
-        if (_csv.length > 0) {
-            //Create a new link DOM element to use to trigger a download of the file locally
-            const _link = document.createElement('a');
-            _link.id = 'download-csv';
-            _link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(_csv));
-            _link.setAttribute('download', filename+'.csv');
-            document.body.appendChild(_link); //Add the link element to the DOM
-            _link.click(); //Trigger an automated click of the link to download the CSV file
-            _link.remove(); //Remove the temporary link element from the DOM
-        }
-    }
-
-    // function downloadCsvFile(csv, filename, linkElement) {
-    //     //If the provided CSV actually has some data in it...
-    //     if (csv != null && csv.length > 0) {
-    //         //If an existing element was provided to trigger the download, use that, otherwise create a new one
-    //         linkElement = linkElement || document.createElement('a');
-
-    //         linkElement.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(csv));
-    //         linkElement.setAttribute('download', filename+'.csv');
-            
-            
-    //         //If an element to use as the download link was provided...
-    //         if (linkElement != null) {
-    //             linkElement
-    //         }
-    //         //Else, if an existing link element was not provided...
-    //         else {
-    //             //Create a new link DOM element to use to trigger a download of the file locally
-    //             linkElement = document.createElement('a');
-    //             //_link.id = 'download-csv';
-    //             linkElement.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(csv));
-    //             linkElement.setAttribute('download', filename+'.csv');
-    //             document.body.appendChild(linkElement); //Add the link element to the DOM
-    //             linkElement.click(); //Trigger an automated click of the link to download the CSV file
-    //             linkElement.remove(); //Remove the temporary link element from the DOM
-    //         }
-    //     }
-    //     else {
-    //         console.log("ERROR: Request recevied to download a CSV file, but the CSV provided is not valid.")
-    //     }
-    // }
 
     /**
      * 
@@ -626,33 +523,13 @@ window.Utilities = (function() {
     }
     
     /**
-     * Loads text data from a file via XMLHttpRequest and then executes the provided callback function
-     * @param {string} filepath The path of the file to load
-     * @param {function} callback The function to execute once the data has been successfully loaded from the file
-     * @param {boolean} [parseJSON] Indicates whether or not the loaded text data should be parsed into JSON before being returned. Defaults to true.
-     */
-    function loadTextFileViaXMLHttpRequest(filepath, callback, parseJSON=true) {
-        const xmlhttp = new XMLHttpRequest();
-
-        //Once the data has been succssfully loaded from the file, either return the raw text data or the parsed JSON
-        xmlhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-                const _result = (parseJSON == true) ? JSON.parse(this.responseText) : this.responseText;
-                callback(_result);
-            }
-        };
-        xmlhttp.open("GET", filepath, true);
-        xmlhttp.send();
-    }
-    
-    /**
      * Sends a message to content scripts and then handles the provided callback response
      * @param {object} message A JSON-ifiable object to send as a message
      * @param {function} callback The function to call when a response has been received
      */
     function sendMessageToContentScripts(message, callback) {	
 		chrome.tabs.sendMessage(
-			window.Model.GetTabId(), 
+			Model.tab.id, 
 			message, 
 			function(response) {
                 //If an error occurred during the message connection, print an error
@@ -669,11 +546,24 @@ window.Utilities = (function() {
 		);
     }
 
+    function getElement(id) {
+        let element = document.getElementById(id);
+
+        if (element != null)
+        {
+            return element
+        }
+        else
+        {
+            //window.DebugController.LogError("ERROR: Failed to get element with an ID of: " + id);
+            DebugController.logError("ERROR: Failed to get element with an ID of: " + id);
+        }
+    }
+
     return {
-        ConvertArrayOfObjectsToCsv: convertArrayOfObjectsToCsv,
         FadeIn: fadeIn,
-        LoadTextFileViaXMLHttpRequest: loadTextFileViaXMLHttpRequest,
-        SendMessageToContentScripts: sendMessageToContentScripts
+        SendMessageToContentScripts: sendMessageToContentScripts,
+        GetElement: getElement
     };
 })();
 
@@ -704,6 +594,10 @@ window.ViewRenderer = (function() {
     function showScrapeCompletedPage() {
         document.getElementById('divScrapeCompleted').hidden = false;
     }
+
+    function hideScrapeCompletedPage() {
+        document.getElementById('divScrapeCompleted').hidden = true;
+    }
     
     function showStatusMessage(text) {
 		document.getElementById('status').textContent = text;
@@ -715,6 +609,19 @@ window.ViewRenderer = (function() {
 		document.getElementById('title').hidden = false;
 	}
 
+    function showComparisonPage() {
+		document.getElementById('comparisonPage').hidden = false;
+	}
+
+    // function toggleScreenVisibility(screenName, visible) {
+    //     if (typeof(screenName) === 'string' && typeof(visible) === 'boolean') {
+    //         document.getElementById(screenName).hidden = !visible;
+    //     }
+    //     else {
+    //         console.log("ERROR: Tried to toggle the visibility of a screen, but the necessary parameters were not provided correctly.");
+    //     }
+    // }
+
     return {
         DisableElement: disableElement,
         HideStatusMessage: hideStatusMessage,
@@ -722,7 +629,13 @@ window.ViewRenderer = (function() {
         ShowLandingPage: showLandingPage,
         HideLandingPage: hideLandingPage,
         ShowScrapeCompletedPage: showScrapeCompletedPage,
+        HideScrapeCompletedPage: hideScrapeCompletedPage,
         ShowStatusMessage: showStatusMessage,
-        ShowTitle: showTitle
+        ShowTitle: showTitle,
+        ShowComparisonPage: showComparisonPage
     };
 })();
+
+window.Utilities.FadeIn(window.Utilities.GetElement('popup'), init, 500);
+
+export {initiateTrackScraper, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};

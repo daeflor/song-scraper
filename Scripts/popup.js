@@ -3,46 +3,46 @@
 'use strict';
 window.GooglePlayMusicFlowController = (function() 
 {
-	chrome.storage.onChanged.addListener
-	(
-		function(changes, namespace) 
-		{
-			for (key in changes) 
-			{
-				var storageChange = changes[key];
+	// chrome.storage.onChanged.addListener
+	// (
+	// 	function(changes, namespace) 
+	// 	{
+	// 		for (key in changes) 
+	// 		{
+	// 			var storageChange = changes[key];
 
-				if (key.indexOf(chrome.runtime.id + '_Playlist') > -1) //TODO should this only check for the current tab's playlist/key?
-				{
+	// 			if (key.indexOf(chrome.runtime.id + '_Playlist') > -1) //TODO should this only check for the current tab's playlist/key?
+	// 			{
 					
-					var playlistName = key.split('_')[2];
+	// 				var playlistName = key.split('_')[2];
 					
-					if (storageChange.oldValue == undefined)
-					{	
-						console.log('New playlist stored: %s.', playlistName);
-						ShowStorageResultText();	
-						HideTrackLists();		
-						return;
-					}
+	// 				if (storageChange.oldValue == undefined)
+	// 				{	
+	// 					console.log('New playlist stored: %s.', playlistName);
+	// 					ShowStorageResultText();	
+	// 					HideTrackLists();		
+	// 					return;
+	// 				}
 					
-					console.log('Stored song list for %s has changed. It previously had %s tracks, and now has %s tracks.', playlistName, storageChange.oldValue.length, storageChange.newValue.length);
-					StoreObjectInLocalNamespace(TabManager.GetBackupKey(), storageChange.oldValue);
-					CompareTrackLists(storageChange.newValue, storageChange.oldValue);	
-				}
-				else if(key.indexOf(TabManager.GetBackupKey()) > -1)
-				{
-					console.log('The Backup song list has been modified. It previously had %s tracks, and now has %s tracks.', storageChange.oldValue.length, storageChange.newValue.length);
-				}
-				else
-				{
-					console.log
-					(
-						'Storage key "%s" in namespace "%s" changed. Old value was "%s", new value is "%s".',
-						key, namespace, storageChange.oldValue, storageChange.newValue
-					);
-				}
-			}
-		}
-	);
+	// 				console.log('Stored song list for %s has changed. It previously had %s tracks, and now has %s tracks.', playlistName, storageChange.oldValue.length, storageChange.newValue.length);
+	// 				StoreObjectInLocalNamespace(TabManager.GetBackupKey(), storageChange.oldValue);
+	// 				CompareTrackLists(storageChange.newValue, storageChange.oldValue);	
+	// 			}
+	// 			else if(key.indexOf(TabManager.GetBackupKey()) > -1)
+	// 			{
+	// 				console.log('The Backup song list has been modified. It previously had %s tracks, and now has %s tracks.', storageChange.oldValue.length, storageChange.newValue.length);
+	// 			}
+	// 			else
+	// 			{
+	// 				console.log
+	// 				(
+	// 					'Storage key "%s" in namespace "%s" changed. Old value was "%s", new value is "%s".',
+	// 					key, namespace, storageChange.oldValue, storageChange.newValue
+	// 				);
+	// 			}
+	// 		}
+	// 	}
+	// );
 
 	/*** Message Passing ***/
 
