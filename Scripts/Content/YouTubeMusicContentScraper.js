@@ -2,7 +2,7 @@
 
 'use strict';
 (function() {
-    let currentApp = null; //TODO maybe just pass this as a param after all
+    //let currentApp = null; //TODO maybe just pass this as a param after all
 
     const elementsInDOM = {
         scrollContainer: {
@@ -27,6 +27,7 @@
         }
     };
 
+    //TODO this seems duplicated with the tracklist.type in AppNavigator. They seem reduntant.
     //TODO the urlPart could probably be omitted without issue
     const urlProperties = {
         ytm: {
@@ -71,8 +72,8 @@
 
     //TODO could/should probably just make this return an object
     //TODO should think of a more concise or clearer way of doing this while supporting multiple apps
-    function TrackMetadata(trackRowElement) {
-        if (currentApp == 'ytm') {
+    function TrackMetadata(app, trackRowElement) { //TODO maybe split this up into multiple TrackMetaData classes per app, and possibly move to a separate module?
+        if (app === 'ytm') {
             const _trackTitleElement = trackRowElement.querySelector('div.title-column yt-formatted-string.title');
             if (_trackTitleElement != null) {
                 this.title = _trackTitleElement.title;
@@ -97,6 +98,7 @@
                 console.log("ERROR: Track album could not be retrieved from DOM.");
             }
 
+            //TODO for some reason this isn't working (the error message is printing), although it looks like it should work
             const _trackDurationElement = trackRowElement.querySelector('div.fixed-columns yt-formatted-string');
             if (_trackDurationElement != null) {
                 this.duration = _trackDurationElement.title;
@@ -111,7 +113,7 @@
                 console.log("Found an unplayable track called: " + this.title);
             }
         }
-        else if (currentApp == 'gpm') {
+        else if (app === 'gpm') {
             const _trackTitleElement = trackRowElement.querySelector('td[data-col="title"] span');
             if (_trackTitleElement != null) {
                 this.title = _trackTitleElement.textContent;
@@ -150,14 +152,16 @@
         function(message, sender, sendResponse) {
             console.log(sender.tab ? 'Message received from a content script:' + sender.tab.url : 'Message received from the extension: ' + message.greeting); 
 
-            if (message.greeting == 'RecordCurrentApp') {
-                processMessage_RecordCurrentApp(message.app);
+            const _onRequestComplete = function(response) {
+                message.response = response;
+                sendResponse(message);
             }
-            if (message.greeting == 'GetTracklistName') {   
-                processMessage_GetTracklistName(sendResponse);
+
+            if (message.greeting == 'GetTracklistTitle') {   
+                processMessage_GetTracklistName(message.app, _onRequestComplete);
             }
             else if (message.greeting == 'GetTracklistMetadata') {
-                processMessage_GetTracklistMetadata(message.app, sendResponse);
+                processMessage_GetTracklistMetadata(message.app, _onRequestComplete);
             }
             
             //Return true to keep the message channel open
@@ -165,30 +169,31 @@
         }
     );
 
-    /**
-     * Sets the current app to the parameter provided and then executes the provided callback function
-     * @param {string} app The reference string for the current app being used
-     * @param {function} sendResponse The function to execute once the current app has been recorded
-     */
-    function processMessage_RecordCurrentApp(app) {
-        if (app != null) {
-            currentApp = app;
-        }
-        else {
-            console.log("ERROR: Received request to record the current app, but no valid app parameter was provided.");
-        }
-    }
+    // /**
+    //  * Sets the current app to the parameter provided and then executes the provided callback function
+    //  * @param {string} app The reference string for the current app being used
+    //  * @param {function} sendResponse The function to execute once the current app has been recorded
+    //  */
+    // function processMessage_RecordCurrentApp(app) {
+    //     if (app != null) {
+    //         currentApp = app;
+    //     }
+    //     else {
+    //         console.log("ERROR: Received request to record the current app, but no valid app parameter was provided.");
+    //     }
+    // }
 
     /**
      * Gets the current tracklist name from the DOM and then executes the provided callback function
+     * @param {string} app the current app that the extension is running on
      * @param {function} sendResponse The function to execute once the tracklist name has been retrieved
      */
-    function processMessage_GetTracklistName(sendResponse) {
-        const _tracklistNameElement = elementsInDOM.playlistName[currentApp]();
+    function processMessage_GetTracklistName(app, callback) {
+        const _tracklistNameElement = elementsInDOM.playlistName[app]();
         
         if (_tracklistNameElement != null) {
             console.log("Tracklist name is: " + _tracklistNameElement.textContent)
-            sendResponse({tracklistName:_tracklistNameElement.textContent});
+            callback(_tracklistNameElement.textContent); //TODO this could be a return instead of a callback
         }
         else {
             console.log("ERROR: Received request to get the tracklist name, but it failed to be retrieved from the DOM.");
@@ -197,17 +202,17 @@
 
     //TODO could check if YouTube API reports correct track count value for "Your Likes"
         //Could even consider ONLY using the API to get track counts, though it does seem like a lot of extra work that shouldn't be necessary
-    function getPlaylistTrackCount() {
+    function getPlaylistTrackCount(app) {
         let _trackCountElement = null;
 
         //TODO this logic is overly convoluted
         //If the url matches those of standard playlists for the current app, use the corresponding track count element
-        if (window.location[urlProperties[currentApp].urlPart].includes(urlProperties[currentApp].playlistUrlCondition) == true) {
-            _trackCountElement = elementsInDOM.playlistTrackCount[currentApp]();
+        if (window.location[urlProperties[app].urlPart].includes(urlProperties[app].playlistUrlCondition) == true) {
+            _trackCountElement = elementsInDOM.playlistTrackCount[app]();
         }
         //Else, if the url matches the 'Your Likes' list for the current app, use the corresponding track count element
-        else if (window.location[urlProperties[currentApp].urlPart].includes(urlProperties[currentApp].yourLikesUrlCondition) == true) {
-            _trackCountElement = elementsInDOM.yourLikesTrackCount[currentApp]();
+        else if (window.location[urlProperties[app].urlPart].includes(urlProperties[app].yourLikesUrlCondition) == true) {
+            _trackCountElement = elementsInDOM.yourLikesTrackCount[app]();
         }
 
 
@@ -315,11 +320,12 @@
         //That mightmake more sense, to limit the content script to really just extracting the raw data required
     /**
      * Runs through a process that scrolls through the current tracklist and scrapes the metadata out of all the track rows
+     * @param {string} app the current app that the extension is running on
      * @param {function} callback The function to execute once the scrape process has ended, either due to successful completion or timeout. Expects an object with a 'tracklist' key as a parameter
      */
     function processMessage_GetTracklistMetadata(app, callback) {
         const _trackRowContainer = elementsInDOM.trackRowContainer[app](); //Fetch the DOM element that contains all the track row elements
-        const _trackCount = getPlaylistTrackCount(); //Fetch the official track count of the tracklist, if one exists
+        const _trackCount = getPlaylistTrackCount(app); //Fetch the official track count of the tracklist, if one exists
         const _observerConfig = {childList: true}; //Set up the configuration options for the Mutation Observer
 
         let _trackMetadataArray = []; //Create an array to store the metadata for each scraped track in the tracklist
@@ -337,7 +343,7 @@
             _observer.disconnect();
 
             //Execute the provided callback function, passing the track metadata array as a parameter
-            callback({tracklist:_trackMetadataArray});
+            callback(_trackMetadataArray);
         }
 
         const _scrapeTrackMetadataFromNodeList = function() {
@@ -357,7 +363,7 @@
             //For each new track row loaded in the DOM...
             for (let i = _scrapeStartingIndex; i < (_trackRowContainer.childElementCount + _scrapeEndingIndexModifier); i++) {
                 //Scrape the track metadata from the track row and add it to the metadata array
-                _trackMetadataArray.push(new TrackMetadata(_trackRowContainer.children[i])); 
+                _trackMetadataArray.push(new TrackMetadata(app, _trackRowContainer.children[i])); 
             }
 
             //If a valid target track count was provided and it matches the length of the metadata array, end the scrape

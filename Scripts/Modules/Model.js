@@ -18,8 +18,7 @@ let tracklist = { //TODO maybe rename to currentTracklist?
     type: null,
     title: null,
     metadataScraped: null,
-    metadataFromStorage: null,
-    metadataTest: null //TODO TEMP
+    metadataFromStorage: null
 };
 
 // let scrapedTracklistMetadata = null;
@@ -40,7 +39,7 @@ let tracklist = { //TODO maybe rename to currentTracklist?
 function getStoredMetadata(callback) {
 
     //If the metadata in storage for the current tracklist has already been set, pass that as the parameter in the provided callback function
-    if (Array.isArray(tracklist.metadataFromStorage)) {
+    if (Array.isArray(tracklist.metadataFromStorage) === true) {
         callback(tracklist.metadataFromStorage);
     }
     else { //Else, retrieve the metadata from storage and then pass it as a parameter in the provided callback function

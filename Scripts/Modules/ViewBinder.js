@@ -22,6 +22,9 @@ function bind(event, callback) {
     else if (event === 'buttonPressed_ExportStoredTracklistGPM') {
         window.Utilities.GetElement('buttonExportStoredTracklistGPM').addEventListener('click', callback);
     }
+    else if (event === 'buttonPressed_ShowComparisonPage') {
+        window.Utilities.GetElement('buttonShowComparisonPage').addEventListener('click', callback);
+    }
 }
 
 export {bind};

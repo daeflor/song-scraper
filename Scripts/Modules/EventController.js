@@ -1,10 +1,12 @@
 import * as Storage from './StorageManager.js';
 import * as Model from './Model.js';
 import * as ViewBinder from './ViewBinder.js';
-import * as Controller from '../AppNavigator.js';
+import * as UIController from '../AppNavigator.js';
+import * as Messenger from './MessageController.js';
 
 function react_InitiateScrape() {
-    Controller.initiateTrackScraper();
+    UIController.navigateToScreen('StartScrape');
+    Messenger.sendMessage('GetTracklistMetadata');
 }
 
 function react_PrintScrapedMetadata() {
@@ -26,11 +28,16 @@ function react_StoreScrapedMetadata() {
 }
 
 function react_ExportScrapedTracklist() {
-    Controller.downloadCurrentTracklistAsCSV(response.tracklist);
+    UIController.downloadCurrentTracklistAsCSV(response.tracklist);
 }
 
 function react_ExportStoredTracklistGPM() {
-    Controller.downloadGooglePlayMusicTracklistAsCSV();
+    UIController.downloadGooglePlayMusicTracklistAsCSV();
+}
+
+function react_ShowComparisonPage() {
+    //UIController.navigateToComparisonScreen();
+    UIController.navigateToScreen('ShowComparison');
 }
 
 ViewBinder.bind('buttonPressed_InitiateScrape', react_InitiateScrape);
@@ -39,3 +46,4 @@ ViewBinder.bind('buttonPressed_PrintStoredMetadata', react_PrintStoredMetadata);
 ViewBinder.bind('buttonPressed_StoreScrapedMetadata', react_StoreScrapedMetadata);
 ViewBinder.bind('buttonPressed_ExportScrapedTracklist', react_ExportScrapedTracklist);
 ViewBinder.bind('buttonPressed_ExportStoredTracklistGPM', react_ExportStoredTracklistGPM);
+ViewBinder.bind('buttonPressed_ShowComparisonPage', react_ShowComparisonPage);

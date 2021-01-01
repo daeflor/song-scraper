@@ -1,7 +1,8 @@
-'use strict';
 import * as DebugController from './Modules/DebugController.js';
+import * as ViewRenderer from './Modules/ViewRenderer.js';
 import * as Model from './Modules/Model.js';
 import * as IO from './Modules/Utilities/IO.js';
+import * as Messenger from './Modules/MessageController.js';
 
 // window.Model = (function() {
 //     // //TODO might want to freeze this once the values have been set
@@ -75,7 +76,9 @@ import * as IO from './Modules/Utilities/IO.js';
 
     function init() {
         //Query for the Active Tab...
-        chrome.tabs.query( { active: true, currentWindow: true}, function(tabs) {	
+        chrome.tabs.query( 
+            { active: true, currentWindow: true}, 
+            function(tabs) {	
                 //Make a record of the current/active tab for future reference
                 //window.Model.SetTabId(tabs[0].id);
                 Model.tab.id = tabs[0].id;
@@ -83,31 +86,24 @@ import * as IO from './Modules/Utilities/IO.js';
                 validateUrlAndRecordTracklistInfo(tabs[0].url);
 
                 //Send a message to the content script to make a record of the current app for future reference
-                sendMessage_RecordCurrentApp(Model.tab.app);
+                //sendMessage_RecordCurrentApp(Model.tab.app);
 
                 //If the current app and tracklist type have been set...
                 if (typeof(Model.tab.app) === 'string' && typeof(Model.tracklist.type) === 'string') {
                     //If the tracklist title has also already been set, proceed to prepare the extension's landing page
-                    if (typeof(Model.tracklist.title) === 'string') {
-                        prepareLandingPage(); 
+                    if (typeof(Model.tracklist.title) === 'string') { 
+                        prepareLandingPage();
                     }
                     //Else, if the tracklist title has not yet been set, retrieve it from the content script before displaying the extension's landing page
                     else {
-                        //Set up a callback function so that when the tracklist title is fetched, the popup landing page gets prepared and displayed
-                        const _onTracklistTitleReceived = function(response) {
-                            Model.tracklist.title = response.tracklistName; //Make a record of the tracklist title
-                            prepareLandingPage(); //Prepare the extension' landing page
-                        }
-
                         //Send a message to the content script to fetch the name of the current tracklist
-                        sendMessage_GetTracklistName(_onTracklistTitleReceived);
+                        Messenger.sendMessage('GetTracklistTitle');
                     }
                 }
             }
         );
     }
 
-    //TODO rename to indicate that this also sets up basic data gleaned from the URL
     function validateUrlAndRecordTracklistInfo(url) {
         console.assert(typeof url == 'string', 'url should be a string');
 
@@ -122,13 +118,16 @@ import * as IO from './Modules/Utilities/IO.js';
             } 
             else if (url.includes('list=LM')) {
                 Model.tracklist.type = supportedTracklistTypes.autoPlaylist;
+                Model.tracklist.title = 'Liked Songs';
             }
             //TODO the options below are currently not supported due to how the manifest is setup
             else if (url.includes('library/songs')) {
                 Model.tracklist.type = supportedTracklistTypes.allSongsList;
+                Model.tracklist.title = 'Added from YouTube Music';
             }
             else if (url.includes('library/uploaded_songs')) {
                 Model.tracklist.type = supportedTracklistTypes.allSongsList;
+                Model.tracklist.title = 'Uploaded Songs';
                 //Model.tracklist.type = supportedTracklistTypes.uploadsList;
             }
         }
@@ -155,7 +154,7 @@ import * as IO from './Modules/Utilities/IO.js';
             }
         }
         else {
-            window.ViewRenderer.ShowStatusMessage('The current URL is not supported by this extension.');
+            navigateToScreen('UrlInvalid');
         }
     }
 
@@ -189,142 +188,101 @@ import * as IO from './Modules/Utilities/IO.js';
     //     }
     // }
 
-    function sendMessage_RecordCurrentApp(currentApp) {
-        //Send a message to the content script to make a record of the current app
-        const _message = {greeting:'RecordCurrentApp', app:currentApp};
-        window.Utilities.SendMessageToContentScripts(_message);
-        //TODO pretty sure this results in an error because no response is sent, but not certain
-    }
+    // function sendMessage_RecordCurrentApp(currentApp) {
+    //     //Send a message to the content script to make a record of the current app
+    //     const _message = {greeting:'RecordCurrentApp', app:currentApp};
+    //     window.Utilities.SendMessageToContentScripts(_message);
+    //     //TODO pretty sure this results in an error because no response is sent, but not certain
+    // }
 
-    function sendMessage_GetTracklistName(callback) {
-        //Send a message to the content script to get the tracklist name
-        const _message = {greeting:'GetTracklistName'};
-        window.Utilities.SendMessageToContentScripts(_message, callback);
-    }
+    // function sendMessage_GetTracklistName(callback) {
+    //     //Send a message to the content script to get the tracklist name
+    //     const _message = {greeting:'GetTracklistName'};
+    //     window.Utilities.SendMessageToContentScripts(_message, callback);
+    // }
 
     function prepareLandingPage() {
-        window.ViewRenderer.HideStatusMessage();
-        window.ViewRenderer.ShowTitle(Model.tracklist.title);
+        ViewRenderer.hideStatusMessage();
+        ViewRenderer.showTitle(Model.tracklist.title);
 
-        window.ViewRenderer.ShowLandingPage();
+        ViewRenderer.showLandingPage();
     }
 
-    // function sendMessage_RecordCurrentApp() {
-    //     //Send a message to the content script to make a record of the current app
-    //     const _message = {greeting:'RecordCurrentApp', app:supportedApps.youTubeMusic};
-    //     window.Utilities.SendMessageToContentScripts(_message, processResponse_RecordCurrentApp);
+    // function navigateToComparisonScreen() {
+    //     ViewRenderer.HideScrapeCompletedPage();
+    //     ViewRenderer.ShowComparisonPage();
     // }
 
-    // function processResponse_RecordCurrentApp() {
-    //     //Send a message to the content script to get the name of the current tracklist
-    //     sendMessage_GetTracklistName();
-    //     //TODO NEW - Does it make sense to call a sendMessage here?
-    // }
-
-    // function sendMessage_GetTracklistName() {
-    //     //Send a message to the content script to get the tracklist name
-    //     let _message = {greeting:'GetTracklistName'};
-    //     window.Utilities.SendMessageToContentScripts(_message, processResponse_GetTracklistName);
-    // }
-
-    // function processResponse_GetTracklistName(response) {
-    //     //Store the tracklist's name
-    //     console.log('Current playlist\'s name is %s.', response.tracklistName);
-    //     TabManager.SetPlaylistName(response.tracklistName);
-
-    //     //Prepare the YouTube Music extension popup landing page
-    //     prepareLandingPageForYouTubeMusic();
-    // }
-
-    // function getTracklistNameForYouTubeMusic(callback) {
-    
-    //     //Assign the greeting that will be sent to the content script
-    //     let _greeting = 'greeting_ytm_GetTracklistName_Playlist';
-
-    //     //When a response is received from the content script, store the tracklist's name and execute the callback function
-    //     const _onMessageResponseReceived = function(tracklistName) {
-    //         console.log('Current playlist\'s name is %s.', tracklistName);
-    //         TabManager.SetPlaylistName(tracklistName);
-    //         callback();
-    //     };
-
-    //     //Send the message to the content script, passing along the greeting and callback
-    //     window.Utilities.SendMessageToContentScripts(_greeting, _onMessageResponseReceived);
-    // }
-
-    // function prepareLandingPageForYouTubeMusic()
-    // {
-    //     window.ViewRenderer.HideStatusMessage();
-    //     window.ViewRenderer.ShowTitle(TabManager.GetPlaylistName());
-
-    //     document.getElementById('buttonComparePlaylist').textContent = "Scrub!";
-    //     document.getElementById('buttonComparePlaylist').onclick = initiateTrackScraper;
-
-    //     window.ViewRenderer.ShowLandingPage();
-    // }
-
-    function initiateTrackScraper()
-	{		
-        window.ViewRenderer.DisableElement('buttonComparePlaylist');
-		window.ViewRenderer.HideLandingPage();
-		window.ViewRenderer.ShowStatusMessage('Song list comparison in progress.');
-
-		window.Utilities.SendMessageToContentScripts(
-			{greeting:'GetTracklistMetadata', app:Model.tab.app},
-			function(response)
-			{
-				if (response.tracklist == null) {
-					window.ViewRenderer.ShowStatusMessage('Failed to retrieve track list.');
-					return;
-                }
-                else {
-                    //window.ViewRenderer.ShowStatusMessage('Tracklist retrieved. Wouldnt you like to see it?');
-                    //console.log("Here's the tracklist, maybe:");
-                    //console.log(response.tracklist);
-
-                    //
-
-                    window.ViewRenderer.HideStatusMessage();
-                    window.ViewRenderer.ShowScrapeCompletedPage();
-
-
-                    Model.tracklist.metadataScraped = response.tracklist;
-                    Model.tracklist.metadataTest = response.tracklist;
-                    //setupListeners_ScrapeCompletedPage();
-
-
-                    //TODO much of the below needs to be moved to View (ViewBinder?)
-
-                    
-
-                    //
-
-                    document.getElementById('buttonShowComparisonPage').onclick = function() {
-                        window.ViewRenderer.HideScrapeCompletedPage();
-                        window.ViewRenderer.ShowComparisonPage();
-                    };
-
-                    //
-
-                    //compareScrapedTracklistWithPreviousVersion(response.tracklist);
-
-					return;
-                }
-
-				// FadeTransition //when the tracklist has been collected, begin the fade transition
-				// (
-				// 	function() //when the fade transition has completed...
-				// 	{
-				// 		HideStatusMessage();
-				// 		ShowComparisonPage();
-				// 		ShowTrackLists();
-				// 		ShowBackButton();
-				// 		StoreObjectInLocalNamespace(TabManager.GetKey(), trackList);
-				// 	}
-				// );
-			}
-		);
+    function navigateToScreen(transition) { //TODO maybe rename to something like 'transitionScreens()'?
+        if (transition === 'UrlInvalid') {
+            ViewRenderer.showStatusMessage('The current URL is not supported by this extension.');
+        }
+        else if (transition === 'StartScrape') {
+            ViewRenderer.disableElement('buttonComparePlaylist');
+		    ViewRenderer.hideLandingPage();
+		    ViewRenderer.showStatusMessage('Song list comparison in progress.');
+        } 
+        else if (transition === 'ScrapeSuccessful') {
+            ViewRenderer.hideStatusMessage();
+            ViewRenderer.showScrapeCompletedPage();
+        }
+        else if (transition === 'ScrapeFailed') {
+            ViewRenderer.showStatusMessage('Failed to retrieve track list.');
+        }
+        else if (transition === 'ShowComparison') {
+            ViewRenderer.hideScrapeCompletedPage();
+            ViewRenderer.showComparisonPage();
+        }
     }
+
+    // function initiateTrackScraper()
+	// {		
+    //     ViewRenderer.disableElement('buttonComparePlaylist');
+	// 	ViewRenderer.hideLandingPage();
+	// 	ViewRenderer.showStatusMessage('Song list comparison in progress.');
+
+	// 	// window.Utilities.SendMessageToContentScripts(
+	// 	// 	{greeting:'GetTracklistMetadata', app:Model.tab.app},
+	// 	// 	function(response)
+	// 	// 	{
+	// 	// 		if (response.tracklist == null) {
+	// 	// 			ViewRenderer.ShowStatusMessage('Failed to retrieve track list.');
+	// 	// 			return;
+    //     //         }
+    //     //         else {
+    //     //             ViewRenderer.HideStatusMessage();
+    //     //             ViewRenderer.ShowScrapeCompletedPage();
+
+    //     //             Model.tracklist.metadataScraped = response.tracklist;
+    //     //             //Model.tracklist.metadataTest = response.tracklist;
+    //     //             //setupListeners_ScrapeCompletedPage();
+
+    //     //             document.getElementById('buttonShowComparisonPage').onclick = function() {
+    //     //                 ViewRenderer.HideScrapeCompletedPage();
+    //     //                 ViewRenderer.ShowComparisonPage();
+    //     //             };
+
+    //     //             //
+
+    //     //             //compareScrapedTracklistWithPreviousVersion(response.tracklist);
+
+	// 	// 			return;
+    //     //         }
+
+	// 	// 		// FadeTransition //when the tracklist has been collected, begin the fade transition
+	// 	// 		// (
+	// 	// 		// 	function() //when the fade transition has completed...
+	// 	// 		// 	{
+	// 	// 		// 		HideStatusMessage();
+	// 	// 		// 		ShowComparisonPage();
+	// 	// 		// 		ShowTrackLists();
+	// 	// 		// 		ShowBackButton();
+	// 	// 		// 		StoreObjectInLocalNamespace(TabManager.GetKey(), trackList);
+	// 	// 		// 	}
+	// 	// 		// );
+	// 	// 	}
+	// 	// );
+    // }
 
     //TODO rename this
     function setupListeners_ScrapeCompletedPage() {
@@ -498,7 +456,7 @@ window.Utilities = (function() {
 			function() {
                 
                 //Apply the current opacity level to the element
-                window.ViewRenderer.SetElementOpacity(element, _currentOpacityLevel);
+                ViewRenderer.setElementOpacity(element, _currentOpacityLevel);
                 
                 //If the current opacity level is 1 then the fade-in is complete, so clear the interval/timer and execute the provided callback function
 				if (_currentOpacityLevel == 1) {
@@ -521,121 +479,24 @@ window.Utilities = (function() {
 			_intervalPeriod
 		);
     }
-    
-    /**
-     * Sends a message to content scripts and then handles the provided callback response
-     * @param {object} message A JSON-ifiable object to send as a message
-     * @param {function} callback The function to call when a response has been received
-     */
-    function sendMessageToContentScripts(message, callback) {	
-		chrome.tabs.sendMessage(
-			Model.tab.id, 
-			message, 
-			function(response) {
-                //If an error occurred during the message connection, print an error
-                if(chrome.runtime.lastError) {
-                    console.log('ERROR: An error occurred during the message connection: ');
-                    console.log(chrome.runtime.lastError);
-                    return;
-                }
-                //Otherwise excute the provided callback function
-                else {
-                    callback(response); 
-                }
-			}
-		);
-    }
 
     function getElement(id) {
         let element = document.getElementById(id);
 
-        if (element != null)
-        {
+        if (element != null) {
             return element
         }
-        else
-        {
-            //window.DebugController.LogError("ERROR: Failed to get element with an ID of: " + id);
+        else {
             DebugController.logError("ERROR: Failed to get element with an ID of: " + id);
         }
     }
 
     return {
         FadeIn: fadeIn,
-        SendMessageToContentScripts: sendMessageToContentScripts,
         GetElement: getElement
-    };
-})();
-
-window.ViewRenderer = (function() {
-
-    function disableElement(id) {
-        document.getElementById(id).disabled = true;
-    }
-    
-    function hideStatusMessage() {
-        document.getElementById('status').hidden = true;
-    }
-
-    function setElementOpacity(element, targetOpacity)
-    {
-        element.style.opacity = targetOpacity;
-    }
-
-    function showLandingPage() {
-		//document.getElementById('popup').style.minHeight = '250px';
-		document.getElementById('landingPage').hidden = false;
-    }
-    
-    function hideLandingPage() {
-		document.getElementById('landingPage').hidden = true;
-    }
-
-    function showScrapeCompletedPage() {
-        document.getElementById('divScrapeCompleted').hidden = false;
-    }
-
-    function hideScrapeCompletedPage() {
-        document.getElementById('divScrapeCompleted').hidden = true;
-    }
-    
-    function showStatusMessage(text) {
-		document.getElementById('status').textContent = text;
-		document.getElementById('status').hidden = false;
-	}
-
-    function showTitle(title) {
-		document.getElementById('title').textContent = title;
-		document.getElementById('title').hidden = false;
-	}
-
-    function showComparisonPage() {
-		document.getElementById('comparisonPage').hidden = false;
-	}
-
-    // function toggleScreenVisibility(screenName, visible) {
-    //     if (typeof(screenName) === 'string' && typeof(visible) === 'boolean') {
-    //         document.getElementById(screenName).hidden = !visible;
-    //     }
-    //     else {
-    //         console.log("ERROR: Tried to toggle the visibility of a screen, but the necessary parameters were not provided correctly.");
-    //     }
-    // }
-
-    return {
-        DisableElement: disableElement,
-        HideStatusMessage: hideStatusMessage,
-        SetElementOpacity: setElementOpacity,
-        ShowLandingPage: showLandingPage,
-        HideLandingPage: hideLandingPage,
-        ShowScrapeCompletedPage: showScrapeCompletedPage,
-        HideScrapeCompletedPage: hideScrapeCompletedPage,
-        ShowStatusMessage: showStatusMessage,
-        ShowTitle: showTitle,
-        ShowComparisonPage: showComparisonPage
     };
 })();
 
 window.Utilities.FadeIn(window.Utilities.GetElement('popup'), init, 500);
 
-export {initiateTrackScraper, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};
+export {prepareLandingPage, navigateToScreen, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};
