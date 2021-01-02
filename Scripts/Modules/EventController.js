@@ -36,7 +36,8 @@ function react_ExportStoredTracklistGPM() {
 }
 
 function react_ShowComparisonPage() {
-    //UIController.navigateToComparisonScreen();
+    //UIController.displayTracklistTable(Model.tracklist.metadataScraped, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
+    UIController.createTracklistTable(Model.tracklist.metadataScraped);
     UIController.navigateToScreen('ShowComparison');
 }
 

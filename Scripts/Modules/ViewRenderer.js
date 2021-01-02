@@ -40,6 +40,7 @@ export function showTitle(title) {
 
 export function showComparisonPage() {
     document.getElementById('comparisonPage').hidden = false;
+    document.getElementById('trackLists').hidden = false;
 }
 
 //     // function toggleScreenVisibility(screenName, visible) {

@@ -235,59 +235,172 @@ import * as Messenger from './Modules/MessageController.js';
         }
     }
 
-    // function initiateTrackScraper()
-	// {		
-    //     ViewRenderer.disableElement('buttonComparePlaylist');
-	// 	ViewRenderer.hideLandingPage();
-	// 	ViewRenderer.showStatusMessage('Song list comparison in progress.');
+    //TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove any existing tracklist tables.
+    export function createTracklistTable(tracklist, header, descriptionIfEmpty) {
 
-	// 	// window.Utilities.SendMessageToContentScripts(
-	// 	// 	{greeting:'GetTracklistMetadata', app:Model.tab.app},
-	// 	// 	function(response)
-	// 	// 	{
-	// 	// 		if (response.tracklist == null) {
-	// 	// 			ViewRenderer.ShowStatusMessage('Failed to retrieve track list.');
-	// 	// 			return;
-    //     //         }
-    //     //         else {
-    //     //             ViewRenderer.HideStatusMessage();
-    //     //             ViewRenderer.ShowScrapeCompletedPage();
+        let _tr = document.createElement('tr');
+        
+        //TODO would be good to use a 'keys' param to determine which to use here, similar to the scraper
+        let _th = document.createElement('th');
+        _th.textContent = 'Index';
+        _tr.appendChild(_th);
+        _th = document.createElement('th');
+        _th.textContent = 'Title';
+        _tr.appendChild(_th);
+        _th = document.createElement('th');
+        _th.textContent = 'Artist';
+        _tr.appendChild(_th);
+        _th = document.createElement('th');
+        _th.textContent = 'Album';
+        _tr.appendChild(_th);
+        _th = document.createElement('th');
+        _th.textContent = 'Duration';
+        _tr.appendChild(_th);
+        _th = document.createElement('th');
+        _th.textContent = 'Unplayable';
+        _tr.appendChild(_th);
 
-    //     //             Model.tracklist.metadataScraped = response.tracklist;
-    //     //             //Model.tracklist.metadataTest = response.tracklist;
-    //     //             //setupListeners_ScrapeCompletedPage();
+        const _table = window.Utilities.CreateNewElement('table', {attributes:{class:'trackTable'}, children:[_tr]});
 
-    //     //             document.getElementById('buttonShowComparisonPage').onclick = function() {
-    //     //                 ViewRenderer.HideScrapeCompletedPage();
-    //     //                 ViewRenderer.ShowComparisonPage();
-    //     //             };
+        console.log(tracklist);
 
-    //     //             //
+        if (Array.isArray(tracklist) === true) {
+            for (let i = 0; i < tracklist.length; i++) {
 
-    //     //             //compareScrapedTracklistWithPreviousVersion(response.tracklist);
+                //console.log("Traversing the tracklist to create a table. Current index: " + i);
 
-	// 	// 			return;
-    //     //         }
+                if (typeof tracklist[i] === 'object') {
+                    //console.log("Currently at " + tracklist[i]);
 
-	// 	// 		// FadeTransition //when the tracklist has been collected, begin the fade transition
-	// 	// 		// (
-	// 	// 		// 	function() //when the fade transition has completed...
-	// 	// 		// 	{
-	// 	// 		// 		HideStatusMessage();
-	// 	// 		// 		ShowComparisonPage();
-	// 	// 		// 		ShowTrackLists();
-	// 	// 		// 		ShowBackButton();
-	// 	// 		// 		StoreObjectInLocalNamespace(TabManager.GetKey(), trackList);
-	// 	// 		// 	}
-	// 	// 		// );
-	// 	// 	}
-	// 	// );
-    // }
+                    //let td = document.createElement('TD');
+                    //let _td = createNewElement('td', {attributes:{textContent: i+1}});
+                    let _td = document.createElement('td');
+                    _td.textContent = i+1;
+                    _tr = window.Utilities.CreateNewElement('tr', {children:[_td]});    
+                    _table.appendChild(_tr);
+    
+                    // for (const [key, value] of Object.entries(tracklist[i])) {
+                    //     let _td = document.createElement('td');
+                    //     _td.textContent = ;
+                    //     _tr.appendChild(_td);
+                    // }
+    
+                    //TODO would be good to use a 'keys' param to determine which to use here, similar to the scraper
+                    if (typeof tracklist[i].title === 'string') {
+                        _td = document.createElement('td');
+                        _td.textContent = tracklist[i].title;
+                        _tr.appendChild(_td);
+                    }
+                    if (typeof tracklist[i].artist === 'string') {
+                        _td = document.createElement('td');
+                        _td.textContent = tracklist[i].artist;
+                        _tr.appendChild(_td);
+                    }
+                    if (typeof tracklist[i].album === 'string') {
+                        _td = document.createElement('td');
+                        _td.textContent = tracklist[i].album;
+                        _tr.appendChild(_td);
+                    }
+                    if (typeof tracklist[i].duration === 'string') {
+                        _td = document.createElement('td');
+                        _td.textContent = tracklist[i].duration;
+                        _tr.appendChild(_td);
+                    }
+                    //if (typeof tracklist[i].unplayable === 'boolean') {
+                    if (tracklist[i].unplayable === true) {
+                        _td = document.createElement('td');
+                        _td.textContent = tracklist[i].unplayable;
+                        _tr.appendChild(_td);
+                    }
+                }
+                else {
+                    DebugController.logError("Expected an object containing track metadata. Instead found: " + tracklist[i]);
+                }
+            }
+        }
 
-    //TODO rename this
-    function setupListeners_ScrapeCompletedPage() {
-        //listenForEvent_ButtonPressed_PrintScrapedMetadata();
+        const _tableWrapper = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableWrapper'}, children:[_table]});
+        const _tracklistTablesDiv = document.getElementById('trackLists');
+        _tracklistTablesDiv.appendChild(_tableWrapper);
+        //_tracklistTablesDiv.hidden = false;
+
+        //const _numTracks = _table.childElementCount -1; //Exclude the header row to get the number of tracks
+
+        // if (_numTracks > 0)
+		// {
+		// 	//_table.hidden = false;
+
+		// 	const _header = document.getElementById(headerId);
+		// 	const _description = document.getElementById(descriptionId);
+			
+		// 	if(typeof _header === 'object') { //TODO standardize usage of 'typeof' (i.e. typeof x vs typeof(x))
+		// 		_header.textContent = _header.textContent.concat(" (" + count + ")");
+		// 	}
+
+		// 	if (typeof _description === 'object') {
+		// 		_description.hidden = true;
+		// 		//description.textContent = count + " Tracks";
+		// 	}
+		// }
+
+
     }
+
+    function displayTracklistTable(list, tableId, headerId, descriptionId) {
+		const _table = document.getElementById(tableId);
+		var tr;
+		var td;	
+
+		var count = 0;
+			
+		for (var i = 0; i < list.length; i++)
+		{
+			if (list[i] == null)
+			{
+				continue;
+			}
+
+			count++;
+			
+			console.log(list[i].title);
+			tr = document.createElement('TR');
+			
+			td = document.createElement('TD');
+			td.textContent = i+1; 
+			tr.appendChild(td);
+			
+			td = document.createElement('TD');
+			td.textContent = list[i].title;
+			tr.appendChild(td);
+			
+			td = document.createElement('TD');
+			td.textContent = list[i].artist;
+			tr.appendChild(td);
+			
+			td = document.createElement('TD');
+			td.textContent = list[i].album;
+			tr.appendChild(td);
+			
+			_table.appendChild(tr);
+		}
+		
+		if (_table.childElementCount > 1)
+		{
+			_table.hidden = false;
+
+			const _header = document.getElementById(headerId);
+			const _description = document.getElementById(descriptionId);
+			
+			if(typeof _header === 'object') { //TODO standardize usage of 'typeof' (i.e. typeof x vs typeof(x))
+				_header.textContent = _header.textContent.concat(" (" + count + ")");
+			}
+
+			if (typeof _description === 'object') {
+				_description.hidden = true;
+				//description.textContent = count + " Tracks";
+			}
+		}
+	}
 
     function compareScrapedTracklistWithPreviousVersion(tracklist) {
 
@@ -429,6 +542,40 @@ import * as Messenger from './Modules/MessageController.js';
 window.Utilities = (function() {
 
     /**
+     * Creates and returns an element of the specified type and with the specified attributes and/or children
+     * @param {string} type The type of element to create
+     * @param {object} [options] An optional object to provide attributes or children to the new element (using the 'attributes' and 'children' properties) 
+     * @returns the new element object
+     */
+    function createNewElement(type, options) {
+        if (typeof type === 'string') { //If a valid element type was provided...
+            const _element = document.createElement(type); //Create a new element of the specified type
+
+            if (typeof options === 'object') { //If an options object was provided...
+                if (typeof options.attributes === 'object') { //If a attributes object was provided...                    
+                    // for (let i = 0; i < options.attributes.length; i++) {
+                    //     _element.setAttribute(options.attributes[i].key, attributes[i].value);
+                    // }
+                    for (const [key, value] of Object.entries(options.attributes)) {
+                        _element.setAttribute(key, value);
+                    }
+                }
+
+                if (Array.isArray(options.children) === true) { //If a valid array of children was provided...                    
+                    for (let i = 0; i < options.children.length; i++) {
+                        _element.appendChild(options.children[i]);
+                    }
+                }
+            }
+
+            return _element;
+        }
+        else {
+            DebugController.LogError("ERROR: Could not create new element as the element type was not provided.");
+        }
+    }
+
+    /**
      * 
      * @param {element} element The element to fade in
      * @param {function} callback The callback function to execute once the fade-in is complete
@@ -493,10 +640,11 @@ window.Utilities = (function() {
 
     return {
         FadeIn: fadeIn,
-        GetElement: getElement
+        GetElement: getElement,
+        CreateNewElement: createNewElement
     };
 })();
 
 window.Utilities.FadeIn(window.Utilities.GetElement('popup'), init, 500);
 
-export {prepareLandingPage, navigateToScreen, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};
+export {prepareLandingPage, navigateToScreen, displayTracklistTable, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};
