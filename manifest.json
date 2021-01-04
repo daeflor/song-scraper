@@ -9,13 +9,8 @@
     },
     "content_scripts": [
         {
-            "matches": [
-                "https://play.google.com/music/listen*",
-                "https://music.youtube.com/*"
-            ],
-            "js": [
-                "Scripts/content.js"
-            ],
+            "matches": ["https://music.youtube.com/*","https://play.google.com/music/listen*"],
+            "js": ["Scripts/Content/YouTubeMusicContentScraper.js"],
             "run_at": "document_idle"
         }
     ],

@@ -2,9 +2,16 @@
 <html>
   <head>
   	<link rel='stylesheet' type='text/css' href='Styles/style.css'>
-    <title>Music Extension</title>
-    <script src='Scripts/popup.js'></script>
+    <title>Song Scraper</title>
     <script src='Scripts/TabManager.js'></script>
+    <script src='Scripts/popup.js'></script>
+    <script type="module" src='Scripts/Modules/DebugController.js'></script>
+    <script type="module" src='Scripts/Modules/StorageManager.js'></script>
+    <script type="module" src='Scripts/Modules/Model.js'></script>
+    <script type="module" src='Scripts/Modules/ViewBinder.js'></script>
+    <script type="module" src='Scripts/AppNavigator.js'></script>
+    <script type="module" src='Scripts/Modules/MessageController.js'></script>
+    <script type="module" src='Scripts/Modules/EventController.js'></script>
   </head>
   <body> 
     <div id='popup'>
@@ -15,7 +22,7 @@
       <div id='landingPage' hidden=true>
         <p id='trackCountValue'></p>
         <div id='trackCountSubtext'></div>
-        <button id='buttonComparePlaylist' class='popupButton' type='button'>Compare & Save Playlist</button> 
+        <button id='buttonComparePlaylist' class='popupButton' type='button'>Scrape Current Tracklist</button> 
       
         <!-- TODO clean this up
         -->
@@ -49,6 +56,7 @@
                   <th>Title</th>
                   <th>Artist</th>
                   <th>Album</th>
+                  <th>Duration</th>
                 </tr>
               </table>
             </div>      
@@ -62,6 +70,21 @@
                   <th>Title</th>
                   <th>Artist</th>
                   <th>Album</th>
+                  <th>Duration</th>
+                </tr>
+              </table>
+            </div>
+
+            <p id='pTracksDisabledHeader' style='color:#ff0000; padding-top:20px'>Tracks Disabled</p>
+            <p id='pTracksDisabledDescription' class='indent'>- No tracks disabled.</p>
+            <div class="trackTableWrapper">
+              <table id='tableTracksDisabled' class="trackTable" hidden=true>
+                <tr>
+                  <th>Index</th>
+                  <th>Title</th>
+                  <th>Artist</th>
+                  <th>Album</th>
+                  <th>Duration</th>
                 </tr>
               </table>
             </div>
@@ -74,6 +97,17 @@
       
       <div id='divBack' hidden=true>
         <button id='buttonBack' class='popupButton' type='button'>Back</button>
+      </div>
+
+      <div id='divScrapeCompleted' hidden=true>
+        <!--<a id='buttonExportScrapedTracklist' class='popupButton'>Export Scraped Tracklist</a>-->
+        <button id='buttonShowComparisonPage' class='popupButton' type='button'>Show Comparison</button>
+        <button id='buttonExportScrapedTracklist' class='popupButton' type='button'>Export Scraped Tracklist</button>
+        <button id='buttonExportStoredTracklistGPM' class='popupButton' type='button'>Export Stored GPM Tracklist</button>
+        <!--<button id='buttonExportStoredTracklistYTM' class='popupButton' type='button' disabled>Export Stored YTM Tracklist</button>-->
+        <button id='buttonPrintScrapedMetadataToConsole' class='popupButton' type='button'>Print Scraped Metadata to Console</button>
+        <button id='buttonSaveScrapedMetadataToStorage' class='popupButton' type='button'>Save Scraped Metadata to Storage</button>
+        <button id='buttonPrintStoredTracklistYTM' class='popupButton' type='button'>Print Stored YTM Tracklist</button>
       </div>
       
     </div> 
