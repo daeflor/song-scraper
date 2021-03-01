@@ -28,7 +28,7 @@ function react_StoreScrapedMetadata() {
 }
 
 function react_ExportScrapedTracklist() {
-    UIController.downloadCurrentTracklistAsCSV(response.tracklist);
+    UIController.downloadCurrentTracklistAsCSV(Model.tracklist.metadataScraped);
 }
 
 function react_ExportStoredTracklistGPM() {
