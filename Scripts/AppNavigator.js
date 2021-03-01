@@ -233,10 +233,14 @@ import * as Messenger from './Modules/MessageController.js';
             ViewRenderer.hideScrapeCompletedPage();
             ViewRenderer.showComparisonPage();
         }
+        else if (transition === 'screen_Tracklist') {
+            ViewRenderer.hideScrapeCompletedPage();
+            ViewRenderer.displayScreen_Tracklist();
+        }
     }
 
     //TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove any existing tracklist tables.
-    export function createTracklistTable(tracklist, header, descriptionIfEmpty) {
+    export function createTracklistTable(tracklist, parentElement, header, descriptionIfEmpty) {
 
         let _tr = document.createElement('tr');
         
@@ -320,8 +324,9 @@ import * as Messenger from './Modules/MessageController.js';
         }
 
         const _tableWrapper = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableWrapper'}, children:[_table]});
-        const _tracklistTablesDiv = document.getElementById('trackLists');
-        _tracklistTablesDiv.appendChild(_tableWrapper);
+        //const _tracklistTablesDiv = document.getElementById('trackLists');
+        //_tracklistTablesDiv.appendChild(_tableWrapper);
+        parentElement.appendChild(_tableWrapper);
         //_tracklistTablesDiv.hidden = false;
 
         //const _numTracks = _table.childElementCount -1; //Exclude the header row to get the number of tracks

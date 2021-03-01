@@ -37,8 +37,17 @@ function react_ExportStoredTracklistGPM() {
 
 function react_ShowComparisonPage() {
     //UIController.displayTracklistTable(Model.tracklist.metadataScraped, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
-    UIController.createTracklistTable(Model.tracklist.metadataScraped);
+    const tracklistTableParentElement = document.getElementById('trackLists');
+    UIController.createTracklistTable(Model.tracklist.metadataScraped, tracklistTableParentElement);
     UIController.navigateToScreen('ShowComparison');
+    //TODO need to actually do a comparison before displaying the track tables here
+}
+
+function react_DisplayTracklistPage() {
+    //UIController.displayTracklistTable(Model.tracklist.metadataScraped, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
+    const tracklistTableParentElement = document.getElementById('screen_Tracklist');
+    UIController.createTracklistTable(Model.tracklist.metadataScraped, tracklistTableParentElement);
+    UIController.navigateToScreen('screen_Tracklist');
 }
 
 ViewBinder.bind('buttonPressed_InitiateScrape', react_InitiateScrape);
@@ -48,3 +57,4 @@ ViewBinder.bind('buttonPressed_StoreScrapedMetadata', react_StoreScrapedMetadata
 ViewBinder.bind('buttonPressed_ExportScrapedTracklist', react_ExportScrapedTracklist);
 ViewBinder.bind('buttonPressed_ExportStoredTracklistGPM', react_ExportStoredTracklistGPM);
 ViewBinder.bind('buttonPressed_ShowComparisonPage', react_ShowComparisonPage);
+ViewBinder.bind('buttonPressed_DisplayScrapedTracklist', react_DisplayTracklistPage);

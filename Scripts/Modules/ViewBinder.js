@@ -25,6 +25,9 @@ function bind(event, callback) {
     else if (event === 'buttonPressed_ShowComparisonPage') {
         window.Utilities.GetElement('buttonShowComparisonPage').addEventListener('click', callback);
     }
+    else if (event === 'buttonPressed_DisplayScrapedTracklist') {
+        window.Utilities.GetElement('buttonDisplayTracklistPage').addEventListener('click', callback);
+    }
 }
 
 export {bind};

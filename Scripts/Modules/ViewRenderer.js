@@ -43,6 +43,10 @@ export function showComparisonPage() {
     document.getElementById('trackLists').hidden = false;
 }
 
+export function displayScreen_Tracklist() {
+    document.getElementById('screen_Tracklist').hidden = false;
+}
+
 //     // function toggleScreenVisibility(screenName, visible) {
 //     //     if (typeof(screenName) === 'string' && typeof(visible) === 'boolean') {
 //     //         document.getElementById(screenName).hidden = !visible;
