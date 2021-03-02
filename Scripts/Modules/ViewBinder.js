@@ -8,7 +8,7 @@ function bind(event, callback) {
         window.Utilities.GetElement('buttonPrintScrapedMetadataToConsole').addEventListener('click', callback);
     }
     else if (event === 'buttonPressed_InitiateScrape') {
-        window.Utilities.GetElement('buttonComparePlaylist').addEventListener('click', callback);
+        window.Utilities.GetElement('btnScrape').addEventListener('click', callback);
     }
     else if (event === 'buttonPressed_PrintStoredMetadata') {
         window.Utilities.GetElement('buttonPrintStoredTracklistYTM').addEventListener('click', callback);
@@ -17,7 +17,7 @@ function bind(event, callback) {
         window.Utilities.GetElement('buttonSaveScrapedMetadataToStorage').addEventListener('click', callback);
     }
     else if (event === 'buttonPressed_ExportScrapedTracklist') {
-        window.Utilities.GetElement('buttonExportScrapedTracklist').addEventListener('click', callback);
+        window.Utilities.GetElement('btnExportScrapedMetadata').addEventListener('click', callback);
     }
     else if (event === 'buttonPressed_ExportStoredTracklistGPM') {
         window.Utilities.GetElement('buttonExportStoredTracklistGPM').addEventListener('click', callback);
@@ -26,7 +26,8 @@ function bind(event, callback) {
         window.Utilities.GetElement('buttonShowComparisonPage').addEventListener('click', callback);
     }
     else if (event === 'buttonPressed_DisplayScrapedTracklist') {
-        window.Utilities.GetElement('buttonDisplayTracklistPage').addEventListener('click', callback);
+        //TODO IN PROGRESS
+        window.Utilities.GetElement('checkboxScrapedTracklist').addEventListener('change', callback);
     }
 }
 

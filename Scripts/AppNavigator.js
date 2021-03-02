@@ -202,7 +202,7 @@ import * as Messenger from './Modules/MessageController.js';
     // }
 
     function prepareLandingPage() {
-        ViewRenderer.hideStatusMessage();
+        ViewRenderer.hideElement(ViewRenderer.divs.status);
         ViewRenderer.showTitle(Model.tracklist.title);
 
         ViewRenderer.showLandingPage();
@@ -218,13 +218,22 @@ import * as Messenger from './Modules/MessageController.js';
             ViewRenderer.showStatusMessage('The current URL is not supported by this extension.');
         }
         else if (transition === 'StartScrape') {
-            ViewRenderer.disableElement('buttonComparePlaylist');
-		    ViewRenderer.hideLandingPage();
+            ViewRenderer.disableElement(ViewRenderer.buttons.scrape);
+		    ViewRenderer.hideElement(ViewRenderer.divs.buttons);
+            ViewRenderer.hideElement(ViewRenderer.divs.checkboxes);
+            
+            //ViewRenderer.hideLandingPage();
+
 		    ViewRenderer.showStatusMessage('Song list comparison in progress.');
         } 
         else if (transition === 'ScrapeSuccessful') {
-            ViewRenderer.hideStatusMessage();
-            ViewRenderer.showScrapeCompletedPage();
+            //ViewRenderer.showScrapeCompletedPage();
+            ViewRenderer.hideElement(ViewRenderer.divs.status);
+            ViewRenderer.unhideElement(ViewRenderer.divs.buttons);
+            ViewRenderer.unhideElement(ViewRenderer.divs.checkboxes);
+            ViewRenderer.enableElement(ViewRenderer.buttons.scrape);
+            ViewRenderer.enableElement(ViewRenderer.buttons.exportScrapedMetadata);
+            ViewRenderer.enableElement(ViewRenderer.checkboxes.scrapedTracklist);
         }
         else if (transition === 'ScrapeFailed') {
             ViewRenderer.showStatusMessage('Failed to retrieve track list.');
@@ -324,7 +333,7 @@ import * as Messenger from './Modules/MessageController.js';
         }
 
         const _tableWrapper = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableWrapper'}, children:[_table]});
-        //const _tracklistTablesDiv = document.getElementById('trackLists');
+        //const _tracklistTablesDiv = document.getElementById('divTracklistsAndAnalysis');
         //_tracklistTablesDiv.appendChild(_tableWrapper);
         parentElement.appendChild(_tableWrapper);
         //_tracklistTablesDiv.hidden = false;
@@ -650,6 +659,6 @@ window.Utilities = (function() {
     };
 })();
 
-window.Utilities.FadeIn(window.Utilities.GetElement('popup'), init, 500);
+window.Utilities.FadeIn(document.body, init, 500);
 
 export {prepareLandingPage, navigateToScreen, displayTracklistTable, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};

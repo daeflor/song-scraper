@@ -4,6 +4,8 @@ import * as ViewBinder from './ViewBinder.js';
 import * as UIController from '../AppNavigator.js';
 import * as Messenger from './MessageController.js';
 
+//TODO maybe don't need this naming convention now that this is its own module
+    //Although perhaps this should be merged with ViewBinder somehow for better readability
 function react_InitiateScrape() {
     UIController.navigateToScreen('StartScrape');
     Messenger.sendMessage('GetTracklistMetadata');
@@ -45,9 +47,9 @@ function react_ShowComparisonPage() {
 
 function react_DisplayTracklistPage() {
     //UIController.displayTracklistTable(Model.tracklist.metadataScraped, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
-    const tracklistTableParentElement = document.getElementById('screen_Tracklist');
+    const tracklistTableParentElement = document.body;//document.getElementById('screen_Tracklist');
     UIController.createTracklistTable(Model.tracklist.metadataScraped, tracklistTableParentElement);
-    UIController.navigateToScreen('screen_Tracklist');
+    //UIController.navigateToScreen('screen_Tracklist');
 }
 
 ViewBinder.bind('buttonPressed_InitiateScrape', react_InitiateScrape);

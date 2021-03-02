@@ -1,9 +1,34 @@
-export function disableElement(id) {
-    document.getElementById(id).disabled = true;
+export const divs = Object.freeze({
+    status: document.getElementById('status'),
+    buttons: document.getElementById('buttons'),
+    checkboxes: document.getElementById('checkboxes')
+});
+
+export const buttons = Object.freeze({
+    scrape: document.getElementById('btnScrape'),
+    storeScrapedMetadata: document.getElementById('btnStoreScrapedMetadata'),
+    exportScrapedMetadata: document.getElementById('btnExportScrapedMetadata')
+});
+
+export const checkboxes = Object.freeze({
+    storedTracklist: document.getElementById('checkboxStoredTracklist'),
+    scrapedTracklist: document.getElementById('checkboxScrapedTracklist')
+});
+
+export function disableElement(element) {
+    element.disabled = true;
 }
 
-export function hideStatusMessage() {
-    document.getElementById('status').hidden = true;
+export function enableElement(element) {
+    element.disabled = false;
+}
+
+export function hideElement(element) {
+    element.hidden = true;
+}
+
+export function unhideElement(element) {
+    element.hidden = false;
 }
 
 export function setElementOpacity(element, targetOpacity)
