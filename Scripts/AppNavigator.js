@@ -251,6 +251,8 @@ import * as Messenger from './Modules/MessageController.js';
     //TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove any existing tracklist tables.
     export function createTracklistTable(tracklist, parentElement, header, descriptionIfEmpty) {
 
+        //TODO Should all or some of this be done in ViewRenderer instead?
+
         let _tr = document.createElement('tr');
         
         //TODO would be good to use a 'keys' param to determine which to use here, similar to the scraper
@@ -336,6 +338,7 @@ import * as Messenger from './Modules/MessageController.js';
         //const _tracklistTablesDiv = document.getElementById('divTracklistsAndAnalysis');
         //_tracklistTablesDiv.appendChild(_tableWrapper);
         parentElement.appendChild(_tableWrapper);
+        return _tableWrapper;
         //_tracklistTablesDiv.hidden = false;
 
         //const _numTracks = _table.childElementCount -1; //Exclude the header row to get the number of tracks

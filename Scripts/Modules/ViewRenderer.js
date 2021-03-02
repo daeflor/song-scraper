@@ -1,3 +1,5 @@
+//Should these objects be in the ViewRenderer, ViewBinder, or other (e.g. ViewState?)?
+
 export const divs = Object.freeze({
     status: document.getElementById('status'),
     buttons: document.getElementById('buttons'),
@@ -14,6 +16,11 @@ export const checkboxes = Object.freeze({
     storedTracklist: document.getElementById('checkboxStoredTracklist'),
     scrapedTracklist: document.getElementById('checkboxScrapedTracklist')
 });
+
+export const tracklists = {
+    stored: null,
+    scraped: null
+};
 
 export function disableElement(element) {
     element.disabled = true;

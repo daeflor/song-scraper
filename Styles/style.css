@@ -96,6 +96,10 @@ td {
 	text-align: center;
 }
 
+#tracklists {
+	margin: 0.5%;
+}
+
 .popupButton {
 	-moz-box-shadow: 1px 1px 10px 2px #1c1b18;
 	-webkit-box-shadow: 1px 1px 10px 2px #1c1b18;

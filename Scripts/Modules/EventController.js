@@ -1,5 +1,6 @@
 import * as Storage from './StorageManager.js';
 import * as Model from './Model.js';
+import * as ViewRenderer from './ViewRenderer.js';
 import * as ViewBinder from './ViewBinder.js';
 import * as UIController from '../AppNavigator.js';
 import * as Messenger from './MessageController.js';
@@ -45,11 +46,18 @@ function react_ShowComparisonPage() {
     //TODO need to actually do a comparison before displaying the track tables here
 }
 
-function react_DisplayTracklistPage() {
+function react_ShowScrapedTracklist() {
     //UIController.displayTracklistTable(Model.tracklist.metadataScraped, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
-    const tracklistTableParentElement = document.body;//document.getElementById('screen_Tracklist');
-    UIController.createTracklistTable(Model.tracklist.metadataScraped, tracklistTableParentElement);
+    const tracklistTableParentElement = document.getElementById('tracklists');//document.getElementById('screen_Tracklist');
+    const _tracklistWrapper = UIController.createTracklistTable(Model.tracklist.metadataScraped, tracklistTableParentElement);
     //UIController.navigateToScreen('screen_Tracklist');
+    ViewRenderer.tracklists.scraped = _tracklistWrapper;
+}
+
+function react_HideScrapedTracklist() {
+    if (typeof ViewRenderer.tracklists.scraped === 'object') {
+        ViewRenderer.hideElement(ViewRenderer.tracklists.scraped);
+    }
 }
 
 ViewBinder.bind('buttonPressed_InitiateScrape', react_InitiateScrape);
@@ -59,4 +67,4 @@ ViewBinder.bind('buttonPressed_StoreScrapedMetadata', react_StoreScrapedMetadata
 ViewBinder.bind('buttonPressed_ExportScrapedTracklist', react_ExportScrapedTracklist);
 ViewBinder.bind('buttonPressed_ExportStoredTracklistGPM', react_ExportStoredTracklistGPM);
 ViewBinder.bind('buttonPressed_ShowComparisonPage', react_ShowComparisonPage);
-ViewBinder.bind('buttonPressed_DisplayScrapedTracklist', react_DisplayTracklistPage);
+ViewBinder.bind('checkboxChanged_ScrapedTracklist', react_ShowScrapedTracklist, react_HideScrapedTracklist);

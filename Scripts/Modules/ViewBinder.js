@@ -3,7 +3,8 @@
  * @param {string} event The name used to identify the event being bound
  * @param {function} callback the function to execute when the event is triggered
  */
-function bind(event, callback) {
+function bind(event, callback, altCallback) {
+    //TODO if we really want to allow multiple callbacks, we should handle this better
     if (event === 'buttonPressed_PrintScrapedMetadata') {
         window.Utilities.GetElement('buttonPrintScrapedMetadataToConsole').addEventListener('click', callback);
     }
@@ -25,9 +26,19 @@ function bind(event, callback) {
     else if (event === 'buttonPressed_ShowComparisonPage') {
         window.Utilities.GetElement('buttonShowComparisonPage').addEventListener('click', callback);
     }
-    else if (event === 'buttonPressed_DisplayScrapedTracklist') {
-        //TODO IN PROGRESS
-        window.Utilities.GetElement('checkboxScrapedTracklist').addEventListener('change', callback);
+    else if (event === 'checkboxChanged_ScrapedTracklist') {
+        const _element = window.Utilities.GetElement('checkboxScrapedTracklist');
+
+        const _callback = function() {
+            if (_element.checked) {
+                callback();
+            }
+            else {
+                altCallback();
+            }
+        }
+
+        _element.addEventListener('change', _callback);
     }
 }
 
