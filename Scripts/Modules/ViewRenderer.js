@@ -12,8 +12,10 @@ export function setElementOpacity(element, targetOpacity)
 }
 
 export function showLandingPage() {
-    //document.getElementById('popup').style.minHeight = '250px';
-    document.getElementById('landingPage').hidden = false;
+    document.getElementById('buttons').hidden = false;
+    document.getElementById('checkboxes').hidden = false;
+    
+    //document.getElementById('landingPage').hidden = false;
 }
 
 export function hideLandingPage() {
