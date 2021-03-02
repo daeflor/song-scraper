@@ -3,7 +3,8 @@
 export const divs = Object.freeze({
     status: document.getElementById('status'),
     buttons: document.getElementById('buttons'),
-    checkboxes: document.getElementById('checkboxes')
+    checkboxes: document.getElementById('checkboxes'),
+    tracklists: document.getElementById('tracklists')
 });
 
 export const buttons = Object.freeze({
@@ -18,8 +19,8 @@ export const checkboxes = Object.freeze({
 });
 
 export const tracklists = {
-    stored: null,
-    scraped: null
+    stored: undefined,
+    scraped: undefined
 };
 
 export function disableElement(element) {

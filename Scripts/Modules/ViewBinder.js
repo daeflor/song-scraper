@@ -11,8 +11,19 @@ function bind(event, callback, altCallback) {
     else if (event === 'buttonPressed_InitiateScrape') {
         window.Utilities.GetElement('btnScrape').addEventListener('click', callback);
     }
-    else if (event === 'buttonPressed_PrintStoredMetadata') {
-        window.Utilities.GetElement('buttonPrintStoredTracklistYTM').addEventListener('click', callback);
+    else if (event === 'checkboxChanged_StoredTracklist') {
+        const _element = window.Utilities.GetElement('checkboxStoredTracklist');
+
+        const _callback = function() {
+            if (_element.checked) {
+                callback();
+            }
+            else {
+                altCallback();
+            }
+        }
+
+        _element.addEventListener('change', _callback);
     }
     else if (event === 'buttonPressed_StoreScrapedMetadata') {
         window.Utilities.GetElement('buttonSaveScrapedMetadataToStorage').addEventListener('click', callback);
@@ -21,7 +32,7 @@ function bind(event, callback, altCallback) {
         window.Utilities.GetElement('btnExportScrapedMetadata').addEventListener('click', callback);
     }
     else if (event === 'buttonPressed_ExportStoredTracklistGPM') {
-        window.Utilities.GetElement('buttonExportStoredTracklistGPM').addEventListener('click', callback);
+        window.Utilities.GetElement('btnExportStoredMetadataForCurrentTracklist').addEventListener('click', callback);
     }
     else if (event === 'buttonPressed_ShowComparisonPage') {
         window.Utilities.GetElement('buttonShowComparisonPage').addEventListener('click', callback);

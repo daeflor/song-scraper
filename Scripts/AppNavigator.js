@@ -221,7 +221,7 @@ import * as Messenger from './Modules/MessageController.js';
             ViewRenderer.disableElement(ViewRenderer.buttons.scrape);
 		    ViewRenderer.hideElement(ViewRenderer.divs.buttons);
             ViewRenderer.hideElement(ViewRenderer.divs.checkboxes);
-            
+            ViewRenderer.hideElement(ViewRenderer.divs.tracklists);
             //ViewRenderer.hideLandingPage();
 
 		    ViewRenderer.showStatusMessage('Song list comparison in progress.');
@@ -231,6 +231,7 @@ import * as Messenger from './Modules/MessageController.js';
             ViewRenderer.hideElement(ViewRenderer.divs.status);
             ViewRenderer.unhideElement(ViewRenderer.divs.buttons);
             ViewRenderer.unhideElement(ViewRenderer.divs.checkboxes);
+            ViewRenderer.unhideElement(ViewRenderer.divs.tracklists);
             ViewRenderer.enableElement(ViewRenderer.buttons.scrape);
             ViewRenderer.enableElement(ViewRenderer.buttons.exportScrapedMetadata);
             ViewRenderer.enableElement(ViewRenderer.checkboxes.scrapedTracklist);
@@ -248,7 +249,7 @@ import * as Messenger from './Modules/MessageController.js';
         }
     }
 
-    //TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove any existing tracklist tables.
+    //TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove any existing tracklist tables, including from ViewRenderer's tracker object
     export function createTracklistTable(tracklist, parentElement, header, descriptionIfEmpty) {
 
         //TODO Should all or some of this be done in ViewRenderer instead?
