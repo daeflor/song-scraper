@@ -262,26 +262,6 @@ import * as Messenger from './Modules/MessageController.js';
         _header.textContent = header;
 
         let _tr = document.createElement('tr');
-        
-        // //TODO would be good to use a 'keys' param to determine which to use here, similar to the scraper
-        // let _th = document.createElement('th');
-        // _th.textContent = 'Index';
-        // _tr.appendChild(_th);
-        // _th = document.createElement('th');
-        // _th.textContent = 'Title';
-        // _tr.appendChild(_th);
-        // _th = document.createElement('th');
-        // _th.textContent = 'Artist';
-        // _tr.appendChild(_th);
-        // _th = document.createElement('th');
-        // _th.textContent = 'Album';
-        // _tr.appendChild(_th);
-        // _th = document.createElement('th');
-        // _th.textContent = 'Duration';
-        // _tr.appendChild(_th);
-        // _th = document.createElement('th');
-        // _th.textContent = 'Unplayable';
-        // _tr.appendChild(_th);
 
         //Added a header column to the track table for the track index
         let _th = document.createElement('th');
@@ -298,9 +278,8 @@ import * as Messenger from './Modules/MessageController.js';
             }
         }
 
+        //Create a new table element, with the header row as a child
         const _table = window.Utilities.CreateNewElement('table', {attributes:{class:'trackTable'}, children:[_tr]});
-
-        console.log(tracklist);
 
         //If the tracklist parameter provided is a valid array...
         if (Array.isArray(tracklist) === true) {
@@ -308,7 +287,6 @@ import * as Messenger from './Modules/MessageController.js';
             for (let i = 0; i < tracklist.length; i++) {
                 //If the current value in the array is a valid object...
                 if (typeof tracklist[i] === 'object') {
-                    
                     //Create a new data cell for the track's index
                     let _td = document.createElement('td'); 
                     _td.textContent = i+1; 
@@ -316,64 +294,28 @@ import * as Messenger from './Modules/MessageController.js';
                     _tr = window.Utilities.CreateNewElement('tr', {children:[_td]}); 
                     //Add the new row to the table
                     _table.appendChild(_tr);
-    
-                    // for (const [key, value] of Object.entries(tracklist[i])) {
-                    //     let _td = document.createElement('td');
-                    //     _td.textContent = ;
-                    //     _tr.appendChild(_td);
-                    // }
 
                     //For each additional column in the Track Table...
                     for (let j = 0; j < _columnsToIncludeInTrackTable.length; j++) { 
                         //If the current column's name is a valid string...
                         if (typeof _columnsToIncludeInTrackTable[j] === 'string') {
                             
-                            //Force the column name string to lower case and assign it to a variable for future reference 
-                            const _currentColumn = _columnsToIncludeInTrackTable[j].toLowerCase();
-                        
-                            console.log("Column value is a valid string. has been converted to: " + _currentColumn);
-
+                            //Force the column name string to lower case and use that value to extract the corresponding metadatum value for the track
+                            const _trackMetadatum = tracklist[i][_columnsToIncludeInTrackTable[j].toLowerCase()];
+                    
                             //If the track's metadatum for the current column is a valid string or has a value of true
-                            if (typeof tracklist[i][_currentColumn] === 'string' || tracklist[i][_currentColumn] === true) {
-                                //Create a new data cell for the track's value in the current column
+                            if (typeof _trackMetadatum === 'string' || _trackMetadatum === true) {
+                                //Create a new data cell for the track's metadatum
                                 _td = document.createElement('td');
-                                _td.textContent = tracklist[i][_currentColumn];
+                                _td.textContent = _trackMetadatum;
                                 //Add the new cell to the track's row
                                 _tr.appendChild(_td);
                             }
                             else {
-                                DebugController.logWarning("A piece of track metadata was encountered that is neither a string value nor equal to 'true'. It could not be handled and was skipped over.");
+                                DebugController.logInfo("A piece of track metadata was encountered that is neither a string value nor equal to 'true' and so it was skipped over. This is normal in the case of the 'Unplayable' column, but otherwise could indicate that an issue was encountered.");
                             }
                         }
                     }
-    
-                    // //TODO would be good to use a 'keys' param to determine which to use here, similar to the scraper
-                    // if (typeof tracklist[i].title === 'string') {
-                    //     _td = document.createElement('td');
-                    //     _td.textContent = tracklist[i].title;
-                    //     _tr.appendChild(_td);
-                    // }
-                    // if (typeof tracklist[i].artist === 'string') {
-                    //     _td = document.createElement('td');
-                    //     _td.textContent = tracklist[i].artist;
-                    //     _tr.appendChild(_td);
-                    // }
-                    // if (typeof tracklist[i].album === 'string') {
-                    //     _td = document.createElement('td');
-                    //     _td.textContent = tracklist[i].album;
-                    //     _tr.appendChild(_td);
-                    // }
-                    // if (typeof tracklist[i].duration === 'string') {
-                    //     _td = document.createElement('td');
-                    //     _td.textContent = tracklist[i].duration;
-                    //     _tr.appendChild(_td);
-                    // }
-                    // //if (typeof tracklist[i].unplayable === 'boolean') {
-                    // if (tracklist[i].unplayable === true) {
-                    //     _td = document.createElement('td');
-                    //     _td.textContent = tracklist[i].unplayable;
-                    //     _tr.appendChild(_td);
-                    // }
                 }
                 else {
                     DebugController.logError("Expected an object containing track metadata. Instead found: " + tracklist[i]);
