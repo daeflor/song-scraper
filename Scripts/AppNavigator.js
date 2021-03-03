@@ -343,7 +343,7 @@ import * as Messenger from './Modules/MessageController.js';
         //const _tracklistTablesDiv = document.getElementById('divTracklistsAndAnalysis');
         //_tracklistTablesDiv.appendChild(_tableWrapper);
         parentElement.appendChild(_tableWithHeader);
-        return _tableWrapper;
+        return _tableWithHeader;
         //_tracklistTablesDiv.hidden = false;
 
         //const _numTracks = _table.childElementCount -1; //Exclude the header row to get the number of tracks
@@ -483,6 +483,7 @@ import * as Messenger from './Modules/MessageController.js';
         IO.convertArrayOfObjectsToCsv(tracklist, _filename, _keysToIncludeInExport);
     }
 
+    //TODO Should I have an IOController?
     function downloadGooglePlayMusicTracklistAsCSV() {
         //The object keys to include when outputting the GPM track data to CSV
         const _keysToIncludeInExport = [
@@ -493,26 +494,14 @@ import * as Messenger from './Modules/MessageController.js';
             'unplayable' //TODO This is currently hard-coded. We probably should only pass one copy of _keysToIncludeInExport per 'comparison' so that the two csv files match
         ];
 
-        //Once the exported Google Play Music tracklist data has been loaded from a local file, convert it to a CSV file
-        const _onGooglePlayMusicDataLoaded = function(tracklistsArray) {
-            //TODO I don't think this is actually an array, I think it's an object
-            console.log(tracklistsArray);
-            const _gpmTracklistKey = getTracklistKeyFromTracklistName(tracklistsArray, Model.tracklist.title);
-            console.log('GPM Tracklist Key: ' + _gpmTracklistKey);
-            console.log(tracklistsArray[_gpmTracklistKey]);
-
+        //Once the Google Play Music metadata for the current tracklist has been fetched, convert it to a CSV file
+        const _onGooglePlayMusicMetadataRetrieved = function(tracklistsArray) {
             const _filename = 'TracklistExport_Before_' + Model.tracklist.title;
-
-            IO.convertArrayOfObjectsToCsv(tracklistsArray[_gpmTracklistKey], _filename, _keysToIncludeInExport);
+            IO.convertArrayOfObjectsToCsv(tracklistsArray, _filename, _keysToIncludeInExport);
         };
 
-        //Send an XMLHttpRequest to load the exported GPM tracklist data from a local file, and then execute the callback
-        sendRequest_LoadGooglePlayMusicExportData(_onGooglePlayMusicDataLoaded);
-    }
-
-    function sendRequest_LoadGooglePlayMusicExportData(callback) {
-        const _filepath = "ExportedData/LocalStorageExport_2020-10-12-10-30PM_ThumbsUpDuplicatedAsYourLikes.txt";
-        IO.loadTextFileViaXMLHttpRequest(_filepath, callback, true)
+        //Fetch the Google Play Music tracklist metadata from the Model and then execute the callback
+        Model.getStoredMetadataGPM(_onGooglePlayMusicMetadataRetrieved);
     }
 
     //TODO NEW - this should take a tracklist key to be more general. Right now it only works for the current playlist which is unclear
@@ -525,20 +514,7 @@ import * as Messenger from './Modules/MessageController.js';
     //     convertArrayOfObjectsToCsv(tracklistArray[_gpmTracklistKey]);
     // }
 
-    //TODO this could go in a GPM Utilities file or something like that
-    /**
-     * Gets the tracklist key that corresponds to the given tracklist name within the provided array
-     * @param {array} tracklistArray The array within which to search
-     * @param {string} tracklistName The name of the tracklist to search for
-     */
-    function getTracklistKeyFromTracklistName(tracklistArray, tracklistName) {
-        for (let key in tracklistArray) {
-            if (key.includes("'" + tracklistName + "'")) {
-                return key;
-            }
-        }
-        console.log("ERROR: Tried to get a tracklist key from its name, but no matching key could be found.");
-    }
+
 
     //TODO NEW - Could consider only outputting the 'duration' if the difference between the before and after is more than 1 second. 
         //However, that would require us to do that comparison before hand, so would need quite a bit of extra logic. 
@@ -660,10 +636,35 @@ window.Utilities = (function() {
         }
     }
 
+    //TODO this could go in a GPM Utilities file or something like that
+        //It doesn't make sense for a general utilities section
+    /**
+     * Gets the tracklist key that corresponds to the given tracklist name within the provided array
+     * @param {array} tracklistArray The array within which to search
+     * @param {string} tracklistName The name of the tracklist to search for
+     */
+     function getTracklistKeyFromTracklistName(tracklistArray, tracklistName) {
+        for (let key in tracklistArray) {
+            if (key.includes("'" + tracklistName + "'")) {
+                return key;
+            }
+        }
+        console.log("ERROR: Tried to get a tracklist key from its name, but no matching key could be found.");
+    }
+
+    //TODO Move this out of the general Utilities section and into somewhere more applicable
+        //This one could maybe go into the storage manager?
+    function sendRequest_LoadGooglePlayMusicExportData(callback) {
+        const _filepath = "ExportedData/LocalStorageExport_2020-10-12-10-30PM_ThumbsUpDuplicatedAsYourLikes.txt";
+        IO.loadTextFileViaXMLHttpRequest(_filepath, callback, true)
+    }
+
     return {
         FadeIn: fadeIn,
         GetElement: getElement,
-        CreateNewElement: createNewElement
+        CreateNewElement: createNewElement,
+        GetTracklistKeyFromTracklistName: getTracklistKeyFromTracklistName,
+        SendRequest_LoadGooglePlayMusicExportData: sendRequest_LoadGooglePlayMusicExportData
     };
 })();
 
