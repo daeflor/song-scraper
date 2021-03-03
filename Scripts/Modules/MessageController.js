@@ -50,14 +50,13 @@ function handleMessageResponse(message) {
     else if (message.greeting === 'GetTracklistMetadata') { 
         if (Array.isArray(message.response) === true) { //If the response received is an array...
             Model.tracklist.metadataScraped = message.response; //Update the scraped tracklist metadata in the Model
-            UIController.navigateToScreen('ScrapeSuccessful'); //Navigate to the 'Scrape Successful' screen
-            //TODO may want to rename these since it may be less about navigating to a new screen and more about transitioning the state of the UI
-            //
+            UIController.triggerUITransition('ScrapeSuccessful'); //Navigate to the 'Scrape Successful' screen
+
 
             //compareScrapedTracklistWithPreviousVersion(response.tracklist);
         }
         else {
-            UIController.navigateToScreen('ScrapeFailed');
+            UIController.triggerUITransition('ScrapeFailed');
             DebugController.logError("Requested tracklist metadata from content script, but response was not a valid array.");
         }
 	}

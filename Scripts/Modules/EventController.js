@@ -6,7 +6,7 @@ import * as Messenger from './MessageController.js';
 
 //Button Pressed: Scrape Current Tracklist
 ViewRenderer.buttons.scrape.addEventListener('click', function() {
-    UIController.navigateToScreen('StartScrape');
+    UIController.triggerUITransition('StartScrape');
     Messenger.sendMessage('GetTracklistMetadata');
 });
 
@@ -32,7 +32,7 @@ window.Utilities.GetElement('buttonShowComparisonPage').addEventListener('click'
     //UIController.displayTracklistTable(Model.tracklist.metadataScraped, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
     const tracklistTableParentElement = document.getElementById('trackLists');
     UIController.createTracklistTable(Model.tracklist.metadataScraped, tracklistTableParentElement);
-    UIController.navigateToScreen('ShowComparison');
+    UIController.triggerUITransition('ShowComparison');
     //TODO need to actually do a comparison before displaying the track tables here
 });
 
@@ -50,7 +50,7 @@ ViewRenderer.checkboxes.storedTracklist.addEventListener('change', function() {
             const _onMetadataRetrieved = function(metadata) {
                 const tracklistTableParentElement = ViewRenderer.divs.tracklists;
                 const _tracklistWrapper = UIController.createTracklistTable(metadata, tracklistTableParentElement, "Stored YTM Tracklist");
-                //UIController.navigateToScreen('screen_Tracklist');
+                //UIController.triggerUITransition('screen_Tracklist');
                 ViewRenderer.tracklists.stored = _tracklistWrapper;
                 //TODO this interaction with ViewRenderer is WIP
             }
@@ -70,7 +70,7 @@ ViewRenderer.checkboxes.scrapedTracklist.addEventListener('change', function() {
     //If the checkbox is checked, display the scraped tracklist metadata; Otherwise hide it
     if (ViewRenderer.checkboxes.scrapedTracklist.checked === true) {
         //UIController.displayTracklistTable(Model.tracklist.metadataScraped, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
-        //UIController.navigateToScreen('screen_Tracklist');
+        //UIController.triggerUITransition('screen_Tracklist');
 
         //If a tracklist DOM element has previously been created, just show the existing element
         if (typeof ViewRenderer.tracklists.scraped === 'object') {

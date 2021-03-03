@@ -154,7 +154,7 @@ import * as Messenger from './Modules/MessageController.js';
             }
         }
         else {
-            navigateToScreen('UrlInvalid');
+            triggerUITransition('UrlInvalid');
         }
     }
 
@@ -208,12 +208,7 @@ import * as Messenger from './Modules/MessageController.js';
         ViewRenderer.showLandingPage();
     }
 
-    // function navigateToComparisonScreen() {
-    //     ViewRenderer.HideScrapeCompletedPage();
-    //     ViewRenderer.ShowComparisonPage();
-    // }
-
-    function navigateToScreen(transition) { //TODO maybe rename to something like 'transitionScreens()'?
+    export function triggerUITransition(transition) {
         if (transition === 'UrlInvalid') {
             ViewRenderer.showStatusMessage('The current URL is not supported by this extension.');
         }
@@ -670,4 +665,4 @@ window.Utilities = (function() {
 
 window.Utilities.FadeIn(document.body, init, 500);
 
-export {prepareLandingPage, navigateToScreen, displayTracklistTable, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};
+export {prepareLandingPage, displayTracklistTable, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};
