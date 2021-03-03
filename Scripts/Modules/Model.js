@@ -19,7 +19,7 @@ let tracklist = { //TODO maybe rename to currentTracklist?
     title: null,
     metadataScraped: null,
     metadataFromStorage: null
-};
+}; //TODO why are these let instead of const?
 
 // let scrapedTracklistMetadata = null;
 
@@ -33,7 +33,7 @@ let tracklist = { //TODO maybe rename to currentTracklist?
 // }
 
 /**
- * Retrieves a tracklist's metadata from storage and then executes the callback function
+ * Retrieves a tracklist's metadata (either from storage or from a local variable, if previously fetched), and then executes the callback function
  * @param {function} callback The function to execute once the metadata has been retrieved from storage
  */
 function getStoredMetadata(callback) {

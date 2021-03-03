@@ -1,4 +1,4 @@
-//Should these objects be in the ViewRenderer, ViewBinder, or other (e.g. ViewState?)?
+//Should these objects be in the ViewRenderer or elsewhere (e.g. ViewState?)?
 
 export const divs = Object.freeze({
     status: document.getElementById('status'),
@@ -10,7 +10,8 @@ export const divs = Object.freeze({
 export const buttons = Object.freeze({
     scrape: document.getElementById('btnScrape'),
     storeScrapedMetadata: document.getElementById('btnStoreScrapedMetadata'),
-    exportScrapedMetadata: document.getElementById('btnExportScrapedMetadata')
+    exportScrapedMetadata: document.getElementById('btnExportScrapedMetadata'),
+    exportStoredMetadata: document.getElementById('btnExportStoredMetadataForCurrentTracklist')
 });
 
 export const checkboxes = Object.freeze({

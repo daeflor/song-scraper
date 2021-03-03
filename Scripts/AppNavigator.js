@@ -254,6 +254,9 @@ import * as Messenger from './Modules/MessageController.js';
 
         //TODO Should all or some of this be done in ViewRenderer instead?
 
+        const _header = window.Utilities.CreateNewElement('p'/*, {attributes:{class:'trackTableWrapper'}}*/);
+        _header.textContent = header;
+
         let _tr = document.createElement('tr');
         
         //TODO would be good to use a 'keys' param to determine which to use here, similar to the scraper
@@ -336,9 +339,10 @@ import * as Messenger from './Modules/MessageController.js';
         }
 
         const _tableWrapper = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableWrapper'}, children:[_table]});
+        const _tableWithHeader = window.Utilities.CreateNewElement('div', {children:[_header, _tableWrapper]});
         //const _tracklistTablesDiv = document.getElementById('divTracklistsAndAnalysis');
         //_tracklistTablesDiv.appendChild(_tableWrapper);
-        parentElement.appendChild(_tableWrapper);
+        parentElement.appendChild(_tableWithHeader);
         return _tableWrapper;
         //_tracklistTablesDiv.hidden = false;
 
@@ -570,7 +574,7 @@ window.Utilities = (function() {
             const _element = document.createElement(type); //Create a new element of the specified type
 
             if (typeof options === 'object') { //If an options object was provided...
-                if (typeof options.attributes === 'object') { //If a attributes object was provided...                    
+                if (typeof options.attributes === 'object') { //If an attributes object was provided...                    
                     // for (let i = 0; i < options.attributes.length; i++) {
                     //     _element.setAttribute(options.attributes[i].key, attributes[i].value);
                     // }
