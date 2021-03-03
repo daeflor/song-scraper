@@ -5,20 +5,23 @@ body {
 	font-family: 'Gill Sans', Optima, "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
     font-size: 100%;
 	font-style: normal;
-	font-size: 16px;
-	min-width: 330px;
-	max-width: 1000px;
+	/* font-size: 16px; */
+	width: 800px;
 	background-color: #383838;
 	color: #FFCC66;
 	min-height: 80px; /*TODO: We might have a depper error that is somewhat hidden by setting this - sometimes the error popup is cut off. This is still happening. Fix it. */
-	max-height: 750px; 
+	margin: 0px;
+	/* padding: 0px; */
 }
 
-/*TODO WHY DID SCROLL BARS APPEAR AGAIN?*/
-/*AND NOW DISAPPEAR?*/
+[hidden] { display: none !important; }
 
-#popup {
-	text-align: center;
+#checkboxes {
+	display: flex;
+}
+
+input[type='checkbox'] {
+	margin-left: 25px;
 }
 
 #title {
@@ -27,7 +30,8 @@ body {
 	background-color: #303030;
 	color: #FFCC66;
 	padding: 20px;
-	min-height: 30px;
+	/* min-height: 30px; */
+	margin: 0.5%;
 }
 
 .statusText {
@@ -86,6 +90,16 @@ td {
 	padding-right: 5px;
 }
 
+#buttons {
+	/* padding: 4px; */
+	margin: 0.5%;
+	text-align: center;
+}
+
+#tracklists {
+	margin: 0.5%;
+}
+
 .popupButton {
 	-moz-box-shadow: 1px 1px 10px 2px #1c1b18;
 	-webkit-box-shadow: 1px 1px 10px 2px #1c1b18;
@@ -106,12 +120,15 @@ td {
 	cursor:pointer;
 	color:#505739;
 	font-size:14px;
-	padding:12px 16px;
+	padding:6px 6px;
 	text-decoration:none;
 	text-shadow:1px 1px 5px #ffffff;
 	
-	margin: 10px;
-	min-width: 200px;
+	margin: 7px;
+	/* width: 245px; */
+	width: 30%;
+	height: 40px;
+	overflow: hidden;
 }
 .popupButton:hover {
 	background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #ccc2a6), color-stop(1, #eae0c2));
@@ -131,4 +148,8 @@ td {
 
 .popupButton:focus {
   outline: none;
+}
+
+.popupButton:disabled {
+	background: gainsboro;
 }

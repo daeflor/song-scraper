@@ -14,10 +14,36 @@
     <script type="module" src='Scripts/Modules/EventController.js'></script>
   </head>
   <body> 
-    <div id='popup'>
       
       <div id='title' hidden=true></div>
       <div id='status' class='statusText'>Loading...</div>
+
+      <div id='buttons' hidden=true class='menu'>
+        <button type='button' id='btnScrape' class='popupButton'>Scrape Current Tracklist</button>
+        <button type='button' id='btnStoreScrapedMetadata' class='popupButton' disabled=true>Save Scraped Metadata to Storage</button>
+        <button type='button' id='btnRevert' class='popupButton' type='button' disabled=true>Revert Stored Tracklist to Backup</button>
+        <button type='button' id='btnExportStoredMetadataForCurrentTracklist' class='popupButton'>Export Stored GPM Tracklist</button>
+        <button type='button' id='btnExportScrapedMetadata' class='popupButton' disabled=true>Export Scraped Tracklist</button>
+        <button type='button' id='btnExportAllLocalStorage' class='popupButton' disabled=true>Export All Local Storage</button>
+      </div>
+      <div id='checkboxes' hidden=true>
+        <input type="checkbox" id="checkboxStoredGPMTracklist" disabled=true>
+        <label for="checkboxStoredGPMTracklist"> Stored GPM Tracklist</label><br>
+        <input type="checkbox" id="checkboxStoredTracklist">
+        <label for="checkboxStoredTracklist"> Stored YTM Tracklist</label><br>
+        <input type="checkbox" id="checkboxScrapedTracklist" disabled=true>
+        <label for="checkboxScrapedTracklist"> Scraped Tracklist</label><br>
+        <input type="checkbox" id="checkboxDelta" disabled=true>
+        <label for="checkboxDelta"> Delta</label><br>
+        <input type="checkbox" id="checkboxTracksNotInPlaylists" disabled=true>
+        <label for="checkboxTracksNotInPlaylists"> Tracks not in Playlists</label><br>
+        <input type="checkbox" id="checkboxTracksNotInLibrary" disabled=true>
+        <label for="checkboxTracksNotInLibrary"> Tracks not in Library</label><br><br>
+      </div>
+
+      <div id='tracklists'>
+
+      </div>
       
       <div id='landingPage' hidden=true>
         <p id='trackCountValue'></p>
@@ -42,6 +68,10 @@
 
         <!---
         -->
+      </div>
+
+      <div id='screen_Tracklist' hidden=true>
+
       </div>
       
       <div id='comparisonPage' hidden=true>
@@ -100,17 +130,24 @@
       </div>
 
       <div id='divScrapeCompleted' hidden=true>
-        <!--<a id='buttonExportScrapedTracklist' class='popupButton'>Export Scraped Tracklist</a>-->
-        <button id='buttonShowComparisonPage' class='popupButton' type='button'>Show Comparison</button>
-        <button id='buttonExportScrapedTracklist' class='popupButton' type='button'>Export Scraped Tracklist</button>
-        <button id='buttonExportStoredTracklistGPM' class='popupButton' type='button'>Export Stored GPM Tracklist</button>
-        <!--<button id='buttonExportStoredTracklistYTM' class='popupButton' type='button' disabled>Export Stored YTM Tracklist</button>-->
-        <button id='buttonPrintScrapedMetadataToConsole' class='popupButton' type='button'>Print Scraped Metadata to Console</button>
-        <button id='buttonSaveScrapedMetadataToStorage' class='popupButton' type='button'>Save Scraped Metadata to Storage</button>
-        <button id='buttonPrintStoredTracklistYTM' class='popupButton' type='button'>Print Stored YTM Tracklist</button>
+
+        <div id='divTracklistsAndAnalysis'>
+
+        </div>
+
+        <div id='divScrapeCompletedButtons'>
+          <!--<a id='buttonExportScrapedTracklist' class='popupButton'>Export Scraped Tracklist</a>-->
+          <button id='buttonShowComparisonPage' class='popupButton' type='button'>Show Comparison</button>
+          <button id='buttonDisplayTracklistPage' class='popupButton' type='button'>Show Scraped Tracklist</button>
+          <button id='buttonExportScrapedTracklist' class='popupButton' type='button'>Export Scraped Tracklist</button>
+          <button id='buttonExportStoredTracklistGPM' class='popupButton' type='button'>Export Stored GPM Tracklist</button>
+          <!--<button id='buttonExportStoredTracklistYTM' class='popupButton' type='button' disabled>Export Stored YTM Tracklist</button>-->
+          <button id='buttonPrintScrapedMetadataToConsole' class='popupButton' type='button'>Print Scraped Metadata to Console</button>
+          <button id='buttonSaveScrapedMetadataToStorage' class='popupButton' type='button'>Save Scraped Metadata to Storage</button>
+          <button id='buttonPrintStoredTracklistYTM' class='popupButton' type='button'>Print Stored YTM Tracklist</button>
+        </div>   
       </div>
       
-    </div> 
   </body>
 </html>
  

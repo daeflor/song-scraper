@@ -202,7 +202,7 @@ import * as Messenger from './Modules/MessageController.js';
     // }
 
     function prepareLandingPage() {
-        ViewRenderer.hideStatusMessage();
+        ViewRenderer.hideElement(ViewRenderer.divs.status);
         ViewRenderer.showTitle(Model.tracklist.title);
 
         ViewRenderer.showLandingPage();
@@ -218,13 +218,23 @@ import * as Messenger from './Modules/MessageController.js';
             ViewRenderer.showStatusMessage('The current URL is not supported by this extension.');
         }
         else if (transition === 'StartScrape') {
-            ViewRenderer.disableElement('buttonComparePlaylist');
-		    ViewRenderer.hideLandingPage();
+            ViewRenderer.disableElement(ViewRenderer.buttons.scrape);
+		    ViewRenderer.hideElement(ViewRenderer.divs.buttons);
+            ViewRenderer.hideElement(ViewRenderer.divs.checkboxes);
+            ViewRenderer.hideElement(ViewRenderer.divs.tracklists);
+            //ViewRenderer.hideLandingPage();
+
 		    ViewRenderer.showStatusMessage('Song list comparison in progress.');
         } 
         else if (transition === 'ScrapeSuccessful') {
-            ViewRenderer.hideStatusMessage();
-            ViewRenderer.showScrapeCompletedPage();
+            //ViewRenderer.showScrapeCompletedPage();
+            ViewRenderer.hideElement(ViewRenderer.divs.status);
+            ViewRenderer.unhideElement(ViewRenderer.divs.buttons);
+            ViewRenderer.unhideElement(ViewRenderer.divs.checkboxes);
+            ViewRenderer.unhideElement(ViewRenderer.divs.tracklists);
+            ViewRenderer.enableElement(ViewRenderer.buttons.scrape);
+            ViewRenderer.enableElement(ViewRenderer.buttons.exportScrapedMetadata);
+            ViewRenderer.enableElement(ViewRenderer.checkboxes.scrapedTracklist);
         }
         else if (transition === 'ScrapeFailed') {
             ViewRenderer.showStatusMessage('Failed to retrieve track list.');
@@ -233,10 +243,16 @@ import * as Messenger from './Modules/MessageController.js';
             ViewRenderer.hideScrapeCompletedPage();
             ViewRenderer.showComparisonPage();
         }
+        else if (transition === 'screen_Tracklist') {
+            ViewRenderer.hideScrapeCompletedPage();
+            ViewRenderer.displayScreen_Tracklist();
+        }
     }
 
-    //TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove any existing tracklist tables.
-    export function createTracklistTable(tracklist, header, descriptionIfEmpty) {
+    //TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove any existing tracklist tables, including from ViewRenderer's tracker object
+    export function createTracklistTable(tracklist, parentElement, header, descriptionIfEmpty) {
+
+        //TODO Should all or some of this be done in ViewRenderer instead?
 
         let _tr = document.createElement('tr');
         
@@ -320,8 +336,10 @@ import * as Messenger from './Modules/MessageController.js';
         }
 
         const _tableWrapper = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableWrapper'}, children:[_table]});
-        const _tracklistTablesDiv = document.getElementById('trackLists');
-        _tracklistTablesDiv.appendChild(_tableWrapper);
+        //const _tracklistTablesDiv = document.getElementById('divTracklistsAndAnalysis');
+        //_tracklistTablesDiv.appendChild(_tableWrapper);
+        parentElement.appendChild(_tableWrapper);
+        return _tableWrapper;
         //_tracklistTablesDiv.hidden = false;
 
         //const _numTracks = _table.childElementCount -1; //Exclude the header row to get the number of tracks
@@ -645,6 +663,6 @@ window.Utilities = (function() {
     };
 })();
 
-window.Utilities.FadeIn(window.Utilities.GetElement('popup'), init, 500);
+window.Utilities.FadeIn(document.body, init, 500);
 
 export {prepareLandingPage, navigateToScreen, displayTracklistTable, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};

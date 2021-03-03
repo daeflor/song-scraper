@@ -411,7 +411,7 @@ window.GooglePlayMusicFlowController = (function()
 
 	function ReloadPopup() //TODO is there a better way to do this? Maybe without having to reload and Fade In?
 	{
-		FadeOut(document.getElementById('popup'), function() { location.reload(true); });
+		FadeOut(document.body, function() { location.reload(true); });
 	}
 
 	function PrintListToTextArea(textArea, list)
@@ -461,11 +461,11 @@ window.GooglePlayMusicFlowController = (function()
 	{
 		FadeOut
 		(	
-			document.getElementById('popup'),
+			document.body,
 			function()
 			{
 				callback();
-				FadeIn(document.getElementById('popup'));
+				FadeIn(document.body);
 			}
 		);	
 	}

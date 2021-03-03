@@ -1,9 +1,42 @@
-export function disableElement(id) {
-    document.getElementById(id).disabled = true;
+//Should these objects be in the ViewRenderer, ViewBinder, or other (e.g. ViewState?)?
+
+export const divs = Object.freeze({
+    status: document.getElementById('status'),
+    buttons: document.getElementById('buttons'),
+    checkboxes: document.getElementById('checkboxes'),
+    tracklists: document.getElementById('tracklists')
+});
+
+export const buttons = Object.freeze({
+    scrape: document.getElementById('btnScrape'),
+    storeScrapedMetadata: document.getElementById('btnStoreScrapedMetadata'),
+    exportScrapedMetadata: document.getElementById('btnExportScrapedMetadata')
+});
+
+export const checkboxes = Object.freeze({
+    storedTracklist: document.getElementById('checkboxStoredTracklist'),
+    scrapedTracklist: document.getElementById('checkboxScrapedTracklist')
+});
+
+export const tracklists = {
+    stored: undefined,
+    scraped: undefined
+};
+
+export function disableElement(element) {
+    element.disabled = true;
 }
 
-export function hideStatusMessage() {
-    document.getElementById('status').hidden = true;
+export function enableElement(element) {
+    element.disabled = false;
+}
+
+export function hideElement(element) {
+    element.hidden = true;
+}
+
+export function unhideElement(element) {
+    element.hidden = false;
 }
 
 export function setElementOpacity(element, targetOpacity)
@@ -12,8 +45,10 @@ export function setElementOpacity(element, targetOpacity)
 }
 
 export function showLandingPage() {
-    //document.getElementById('popup').style.minHeight = '250px';
-    document.getElementById('landingPage').hidden = false;
+    document.getElementById('buttons').hidden = false;
+    document.getElementById('checkboxes').hidden = false;
+    
+    //document.getElementById('landingPage').hidden = false;
 }
 
 export function hideLandingPage() {
@@ -41,6 +76,10 @@ export function showTitle(title) {
 export function showComparisonPage() {
     document.getElementById('comparisonPage').hidden = false;
     document.getElementById('trackLists').hidden = false;
+}
+
+export function displayScreen_Tracklist() {
+    document.getElementById('screen_Tracklist').hidden = false;
 }
 
 //     // function toggleScreenVisibility(screenName, visible) {
