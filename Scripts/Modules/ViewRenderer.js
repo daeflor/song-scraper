@@ -10,7 +10,8 @@ export const divs = Object.freeze({
 export const buttons = Object.freeze({
     scrape: document.getElementById('btnScrape'),
     storeScrapedMetadata: document.getElementById('btnStoreScrapedMetadata'),
-    exportScrapedMetadata: document.getElementById('btnExportScrapedMetadata')
+    exportScrapedMetadata: document.getElementById('btnExportScrapedMetadata'),
+    exportStoredMetadata: document.getElementById('btnExportStoredMetadataForCurrentTracklist')
 });
 
 export const checkboxes = Object.freeze({
