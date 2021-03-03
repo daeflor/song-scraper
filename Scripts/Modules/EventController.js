@@ -49,7 +49,7 @@ ViewRenderer.checkboxes.storedTracklist.addEventListener('change', function() {
         else {
             const _onMetadataRetrieved = function(metadata) {
                 const tracklistTableParentElement = ViewRenderer.divs.tracklists;
-                const _tracklistWrapper = UIController.createTracklistTable(metadata, tracklistTableParentElement);
+                const _tracklistWrapper = UIController.createTracklistTable(metadata, tracklistTableParentElement, "Stored YTM Tracklist");
                 //UIController.navigateToScreen('screen_Tracklist');
                 ViewRenderer.tracklists.stored = _tracklistWrapper;
                 //TODO this interaction with ViewRenderer is WIP
@@ -79,7 +79,7 @@ ViewRenderer.checkboxes.scrapedTracklist.addEventListener('change', function() {
         //Else, if a tracklist element doesn't exist yet, create a new one using the scraped metadata and add it to the DOM
         else {
             const tracklistTableParentElement = ViewRenderer.divs.tracklists;
-            const _tracklistWrapper = UIController.createTracklistTable(Model.tracklist.metadataScraped, tracklistTableParentElement);
+            const _tracklistWrapper = UIController.createTracklistTable(Model.tracklist.metadataScraped, tracklistTableParentElement, "Scraped Tracklist");
             ViewRenderer.tracklists.scraped = _tracklistWrapper;
             //TODO this interaction with ViewRenderer is WIP
         }
