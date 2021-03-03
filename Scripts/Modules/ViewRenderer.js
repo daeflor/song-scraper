@@ -1,4 +1,4 @@
-//Should these objects be in the ViewRenderer, ViewBinder, or other (e.g. ViewState?)?
+//Should these objects be in the ViewRenderer or elsewhere (e.g. ViewState?)?
 
 export const divs = Object.freeze({
     status: document.getElementById('status'),
