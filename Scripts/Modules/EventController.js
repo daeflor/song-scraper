@@ -5,48 +5,49 @@ import * as ViewBinder from './ViewBinder.js';
 import * as UIController from '../AppNavigator.js';
 import * as Messenger from './MessageController.js';
 
-//TODO maybe don't need this naming convention now that this is its own module
-    //Although perhaps this should be merged with ViewBinder somehow for better readability
-function react_InitiateScrape() {
+//Button Pressed: Scrape Current Tracklist
+ViewRenderer.buttons.scrape.addEventListener('click', function() {
     UIController.navigateToScreen('StartScrape');
     Messenger.sendMessage('GetTracklistMetadata');
-}
+});
 
-function react_PrintScrapedMetadata() {
-    console.log(Model.tracklist.metadataScraped);
-}
-
-function react_ShowStoredTracklist() {
-    //If a tracklist DOM element has previously been created, just show the existing element
-    console.log(typeof ViewRenderer.tracklists.stored);
-    console.log(ViewRenderer.tracklists.stored);
-    if (typeof ViewRenderer.tracklists.stored === 'object') {
-        ViewRenderer.unhideElement(ViewRenderer.tracklists.stored);
-    }
-    //Else, if a tracklist element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
-    else {
-        const _onMetadataRetrieved = function(metadata) {
-            console.log(metadata);
-            const tracklistTableParentElement = document.getElementById('tracklists');//document.getElementById('screen_Tracklist');
-            const _tracklistWrapper = UIController.createTracklistTable(metadata, tracklistTableParentElement);
-            //UIController.navigateToScreen('screen_Tracklist');
-            ViewRenderer.tracklists.stored = _tracklistWrapper;
+//Checkbox Value Changed: Stored YTM Tracklist
+ViewRenderer.checkboxes.storedTracklist.addEventListener('change', function() {
+    //If the checkbox is checked, display the stored metadata for the current tracklist; Otherwise hide it
+    if (ViewRenderer.checkboxes.storedTracklist.checked === true) {
+        //If a tracklist DOM element has previously been created, just show the existing element
+        if (typeof ViewRenderer.tracklists.stored === 'object') {
+            ViewRenderer.unhideElement(ViewRenderer.tracklists.stored);
         }
-    
-        Model.getStoredMetadata(_onMetadataRetrieved);
+        //Else, if a tracklist element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
+        else {
+            const _onMetadataRetrieved = function(metadata) {
+                const tracklistTableParentElement = document.getElementById('tracklists');
+                const _tracklistWrapper = UIController.createTracklistTable(metadata, tracklistTableParentElement);
+                //UIController.navigateToScreen('screen_Tracklist');
+                ViewRenderer.tracklists.stored = _tracklistWrapper;
+                //TODO this interaction with ViewRenderer is WIP
+            }
+        
+            Model.getStoredMetadata(_onMetadataRetrieved);
+        }
     }
-}
-
-function react_HideStoredTracklist() {
-    if (typeof ViewRenderer.tracklists.stored === 'object') {
-        ViewRenderer.hideElement(ViewRenderer.tracklists.stored);
+    else {
+        if (typeof ViewRenderer.tracklists.stored === 'object') {
+            ViewRenderer.hideElement(ViewRenderer.tracklists.stored);
+        }
     }
-}
+});
 
-function react_StoreScrapedMetadata() {
+//Button Pressed: Store Scraped Metadata
+ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
     //TODO is it right to call Storage functions from here?
     Storage.storeTracklistMetadata(Model.tracklist.type, Model.tracklist.title, Model.tracklist.metadataScraped);
-}
+});
+
+// function react_PrintScrapedMetadata() {
+//     console.log(Model.tracklist.metadataScraped);
+// }
 
 function react_ExportScrapedTracklist() {
     UIController.downloadCurrentTracklistAsCSV(Model.tracklist.metadataScraped);
@@ -86,10 +87,6 @@ function react_HideScrapedTracklist() {
     }
 }
 
-ViewBinder.bind('buttonPressed_InitiateScrape', react_InitiateScrape);
-ViewBinder.bind('buttonPressed_PrintScrapedMetadata', react_PrintScrapedMetadata);
-ViewBinder.bind('checkboxChanged_StoredTracklist', react_ShowStoredTracklist, react_HideStoredTracklist);
-ViewBinder.bind('buttonPressed_StoreScrapedMetadata', react_StoreScrapedMetadata);
 ViewBinder.bind('buttonPressed_ExportScrapedTracklist', react_ExportScrapedTracklist);
 ViewBinder.bind('buttonPressed_ExportStoredTracklistGPM', react_ExportStoredTracklistGPM);
 ViewBinder.bind('buttonPressed_ShowComparisonPage', react_ShowComparisonPage);
