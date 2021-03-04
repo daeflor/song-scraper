@@ -262,14 +262,15 @@ import * as Messenger from './Modules/MessageController.js';
 
         //TODO Should all or some of this be done in ViewRenderer instead?
 
-        //TODO clean up tracklist/tracktable terminology
+        //TODO A nice-to-have in the future would be to omit any header/column (e.g. 'Unplayable') if there are zero displayable values for that metadatum
         const _columnsToIncludeInTrackTable = [
             'Title',
             'Artist',
             'Album',
             'Duration',
-            'Unplayable' //TODO This is currently hard-coded. Should eventually be a param, probably. Although it would be good to have a default set of keys to fall back to.
-        ];
+            'Seconds',
+            'Unplayable' 
+        ]; //TODO This is currently hard-coded. Should eventually be a param, probably. Although it would be good to have a default set of keys to fall back to.
 
         let _tr = document.createElement('tr');
 
@@ -312,9 +313,10 @@ import * as Messenger from './Modules/MessageController.js';
                             
                             //Force the column name string to lower case and use that value to extract the corresponding metadatum value for the track
                             const _trackMetadatum = tracklist[i][_columnsToIncludeInTrackTable[j].toLowerCase()];
-                    
+
                             //If the track's metadatum for the current column is a valid string or has a value of true
-                            if (typeof _trackMetadatum === 'string' || _trackMetadatum === true) {
+                            //if (typeof _trackMetadatum === 'string' || _trackMetadatum === true || typeof _trackMetadatum === 'number') {
+                            if (typeof _trackMetadatum !== 'undefined' && _trackMetadatum != false) {
                                 //Create a new data cell for the track's metadatum
                                 _td = document.createElement('td');
                                 _td.textContent = _trackMetadatum;
@@ -322,12 +324,13 @@ import * as Messenger from './Modules/MessageController.js';
                                 _tr.appendChild(_td);
                             }
                             else {
-                                DebugController.logInfo("A piece of track metadata was encountered that is neither a string value nor equal to 'true' and so it was skipped over. This is normal in the case of the 'Unplayable' column, but otherwise could indicate that an issue was encountered. Current column is: " + _columnsToIncludeInTrackTable[j]);
+                                DebugController.logInfo("A piece of track metadata was encountered that is blank, false, or undefined, and so it was skipped over. This is typical in the case of the 'Unplayable' column, but otherwise could indicate that an issue was encountered. Current column is: " + _columnsToIncludeInTrackTable[j]);
+                                //DebugController.logInfo("A piece of track metadata was encountered that is neither a string value nor equal to 'true' and so it was skipped over. This is normal in the case of the 'Unplayable' column, but otherwise could indicate that an issue was encountered. Current column is: " + _columnsToIncludeInTrackTable[j]);
                             }
                         }
                     }
                 }
-                else if (tracklist[i] === null) {
+                else if (tracklist[i] === null) { //TODO it's a bit weird that this is an expected case
                     DebugController.logInfo("Encountered a null reference in the tracklist array. Skipping over it as this indicates it should be omitted from the track table.");
                 }
                 else {
@@ -339,11 +342,8 @@ import * as Messenger from './Modules/MessageController.js';
 
         const _tableScrollArea = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableScrollArea'}, children:[_table]});
         const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _tableScrollArea]});
-        //const _tracklistTablesDiv = document.getElementById('divTracklistsAndAnalysis');
-        //_tracklistTablesDiv.appendChild(_tableWrapper);
         _parentElement.appendChild(_tableContainer);
         return _tableContainer;
-        //_tracklistTablesDiv.hidden = false;
 
         //const _numTracks = _table.childElementCount -1; //Exclude the header row to get the number of tracks
 
@@ -428,8 +428,18 @@ import * as Messenger from './Modules/MessageController.js';
 
         //Once the Google Play Music metadata for the current tracklist has been fetched...
         const _onGooglePlayMusicMetadataRetrieved = function(gpmTracklist) {
-            for (var i = 0; i < scrapedTracklist.length; i++) {
-                for (var j = 0; j < gpmTracklist.length; j++) {
+
+            //const _gpmTracklist = tracklistsArray[_gpmTracklistKey];
+            for (let i = 0; i < gpmTracklist.length; i++) { 
+                gpmTracklist[i].seconds = convertDurationStringToSeconds(gpmTracklist[i].duration);
+            }
+            for (let i = 0; i < scrapedTracklist.length; i++) { 
+                scrapedTracklist[i].seconds = convertDurationStringToSeconds(scrapedTracklist[i].duration);
+            }
+
+
+            for (let i = 0; i < scrapedTracklist.length; i++) {
+                for (let j = 0; j < gpmTracklist.length; j++) {
                     if (scrapedTracklist[i] != null && gpmTracklist[j] != null && 
                         scrapedTracklist[i].title === gpmTracklist[j].title && scrapedTracklist[i].album === gpmTracklist[j].album && scrapedTracklist[i].duration === gpmTracklist[j].duration)
                     {
@@ -549,28 +559,38 @@ import * as Messenger from './Modules/MessageController.js';
     //     convertArrayOfObjectsToCsv(tracklistArray[_gpmTracklistKey]);
     // }
 
+    function convertDurationStringToSeconds(duration) {
+        if (typeof duration === 'string') {
+            const _splitDurationString = duration.split(':');
 
+            if (_splitDurationString.length < 4) {
+                let _totalSeconds = 0;
+                let _multiplier = 1;
+    
+                for (let i = _splitDurationString.length-1; i >= 0; i--) {
+                    _totalSeconds += (parseInt(_splitDurationString[i])*_multiplier);
+                    _multiplier *= 60;
+                }
 
-    //TODO NEW - Could consider only outputting the 'duration' if the difference between the before and after is more than 1 second. 
-        //However, that would require us to do that comparison before hand, so would need quite a bit of extra logic. 
-    // function convertDurationStringToSeconds(duration) {
-    //     if (typeof(duration) == "string") {
-    //         const _splitDurationString = duration.split(':');
-
-    //         if (_splitDurationString.length == 1) {
-    //             return parseInt(_splitDurationString[0]);
-    //         }
-    //         else if (_splitDurationString.length == 2) {
-    //             return parseInt(_splitDurationString[0])*60+parseInt(_splitDurationString[1]);
-    //         }
-    //         else { //TODO Note that currently songs with a duration of an hour or longer may not be properly supported
-    //             console.log("ERROR: Tried to convert a duration string into a seconds integer value, but the duration string was not in the correct MM:SS format");
-    //         }
-    //     }
-    //     else {
-    //         console.log("ERROR: Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
-    //     }
-    // }
+                return _totalSeconds;
+            }
+            else {
+                DebugController.logWarning("Tried to convert a duration string into a seconds integer value, but the duration is longer than 24 hours and this is not currently supported.");
+            }
+            // if (_splitDurationString.length === 1) {
+            //     return parseInt(_splitDurationString[0]);
+            // }
+            // else if (_splitDurationString.length == 2) {
+            //     return parseInt(_splitDurationString[0])*60+parseInt(_splitDurationString[1]);
+            // }
+            // else { //TODO Note that currently songs with a duration of an hour or longer may not be properly supported
+            //     console.log("ERROR: Tried to convert a duration string into a seconds integer value, but the duration string was not in the correct MM:SS format");
+            // }
+        }
+        else {
+            console.log("ERROR: Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
+        }
+    }
 
 window.Utilities = (function() {
 
