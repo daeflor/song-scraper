@@ -255,33 +255,12 @@ import * as Messenger from './Modules/MessageController.js';
     export function createTrackTable(tracklist, headerText, options/*parentElement, header, descriptionIfEmpty*/) {
     //TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove (or replace?) any existing scraped tracklist tables, including from ViewRenderer's tracker object
 
-        // const _parentElement = ViewRenderer.divs.tracktables;
-        // if (typeof options === 'object') {
-        //     const _headerColor = options.headerColor || 'default';
-        //     //const _parentElement = options.parentElement || ViewRenderer.divs.tracktables;
-        //     _parentElement = options.parentElement || _parentElement;
-        //     const _descriptionIfEmpty = options.descriptionIfEmpty || 'No tracks to display';
-        // }
-
-        /** */
-
-        // const _parentElement = (typeof options === 'object') ? options.parentElement || ViewRenderer.divs.tracktables : ViewRenderer.divs.tracktables;
-        // const _descriptionIfEmpty = (typeof options === 'object') ? options.descriptionIfEmpty || 'No tracks to display' : 'No tracks to display';
-
-        /** */
-
         const _parentElement      = (typeof options === 'object' && typeof options.parentElement === 'object')      ? options.parentElement      : ViewRenderer.divs.tracktables;
         const _descriptionIfEmpty = (typeof options === 'object' && typeof options.descriptionIfEmpty === 'string') ? options.descriptionIfEmpty : 'No tracks to display';
-        //const _headerColor        = (typeof options === 'object' && typeof options.headerColor === 'string')        ? options.headerColor        : 'default';
-        const _headerElement      = (typeof options === 'object' && typeof options.headerElement === 'object')      ? options.headerElement      : window.Utilities.CreateNewElement('p', {attributes:{class:'noBottomMargin'}});
+        const _headerElement      = (typeof options === 'object' && typeof options.headerElement === 'object')      ? options.headerElement      : window.Utilities.CreateNewElement('p', {attributes:{class:'noVerticalMargins'}});
         _headerElement.textContent = headerText;
 
         //TODO Should all or some of this be done in ViewRenderer instead?
-
-        //TODO it seems that the parent element is always going to be the same. 
-            //Is it really necessary to pass it as a parameter?
-            //Could at least make it optional
-                //Actually it's different for the delta track tables, but still, it *could* be an optional param.
 
         //TODO clean up tracklist/tracktable terminology
         const _columnsToIncludeInTrackTable = [
@@ -357,15 +336,6 @@ import * as Messenger from './Modules/MessageController.js';
                 }
             }
         }
-
-        // const _header = window.Utilities.CreateNewElement('p'/*, {attributes:{class:'trackTableWrapper'}}*/);
-        // _header.textContent = headerText;
-        // if (_headerColor == 'green') {
-        //     _header.classList.add("greenFont");
-        // }
-        // else if (_headerColor == 'red') {
-        //     _header.classList.add("redFont");
-        // }
 
         const _tableScrollArea = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableScrollArea'}, children:[_table]});
         const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _tableScrollArea]});
@@ -474,11 +444,11 @@ import * as Messenger from './Modules/MessageController.js';
             ViewRenderer.tracktables.deltas = window.Utilities.CreateNewElement('div');
             
             //Create a header element and track table for the list of 'Added Tracks'
-            let _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noBottomMargin'}});
+            let _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
             createTrackTable(scrapedTracklist, 'Added Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement});
             
             //Create a header element and track table for the list of 'Removed Tracks'
-            _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noBottomMargin'}});
+            _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
             createTrackTable(gpmTracklist, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement});
 
             //Add the new container div for all the delta track tables to the DOM, within the general track tables div

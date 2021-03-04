@@ -60,7 +60,8 @@ input[type='checkbox'] {
 	color: #ff0000;
 }
 
-.noBottomMargin {
+.noVerticalMargins {
+	margin-top: 0px;
 	margin-bottom: 0px;
 }
 
@@ -81,6 +82,7 @@ input[type='checkbox'] {
 	max-height: 200px;
 	overflow-y: scroll;
 	margin-top: 2%;
+	margin-bottom: 18px;
 }
 
 .trackTable {
