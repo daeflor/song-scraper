@@ -8,5 +8,5 @@ export function logWarning(logString) {
 
 export function logError(logString) {
     console.error(logString);
-    console.trace();
+    //console.trace();
 }

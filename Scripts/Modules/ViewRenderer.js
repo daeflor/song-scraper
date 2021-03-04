@@ -4,7 +4,7 @@ export const divs = Object.freeze({
     status: document.getElementById('status'),
     buttons: document.getElementById('buttons'),
     checkboxes: document.getElementById('checkboxes'),
-    tracklists: document.getElementById('tracklists')
+    tracktables: document.getElementById('tracktables')
 });
 
 export const buttons = Object.freeze({
@@ -14,14 +14,17 @@ export const buttons = Object.freeze({
     exportStoredMetadata: document.getElementById('btnExportStoredMetadataForCurrentTracklist')
 });
 
+//TODO Rename the below to tracktables probably
 export const checkboxes = Object.freeze({
     storedTracklist: document.getElementById('checkboxStoredTracklist'),
-    scrapedTracklist: document.getElementById('checkboxScrapedTracklist')
+    scrapedTracklist: document.getElementById('checkboxScrapedTracklist'),
+    deltaTracklists: document.getElementById('checkboxDeltaTracklists')
 });
 
-export const tracklists = {
+export const tracktables = {
     stored: undefined,
-    scraped: undefined
+    scraped: undefined,
+    deltas: undefined
 };
 
 export function disableElement(element) {

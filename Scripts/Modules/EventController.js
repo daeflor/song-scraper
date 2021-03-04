@@ -30,8 +30,8 @@ ViewRenderer.buttons.exportStoredMetadata.addEventListener('click', function() {
 //Button Pressed: Show Comparison Page
 window.Utilities.GetElement('buttonShowComparisonPage').addEventListener('click', function() {
     //UIController.displayTracklistTable(Model.tracklist.metadataScraped, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
-    const tracklistTableParentElement = document.getElementById('trackLists');
-    UIController.createTracklistTable(Model.tracklist.metadataScraped, tracklistTableParentElement);
+    const _tracklistTableParentElement = document.getElementById('trackLists');
+    UIController.createTracklistTable(Model.tracklist.metadataScraped, _tracklistTableParentElement);
     UIController.triggerUITransition('ShowComparison');
     //TODO need to actually do a comparison before displaying the track tables here
 });
@@ -41,26 +41,24 @@ window.Utilities.GetElement('buttonShowComparisonPage').addEventListener('click'
 ViewRenderer.checkboxes.storedTracklist.addEventListener('change', function() {
     //If the checkbox is checked, display the stored metadata for the current tracklist; Otherwise hide it
     if (ViewRenderer.checkboxes.storedTracklist.checked === true) {
-        //If a tracklist DOM element has previously been created, just show the existing element
-        if (typeof ViewRenderer.tracklists.stored === 'object') {
-            ViewRenderer.unhideElement(ViewRenderer.tracklists.stored);
+        //If a track table DOM element has previously been created, just show the existing element
+        if (typeof ViewRenderer.tracktables.stored === 'object') {
+            ViewRenderer.unhideElement(ViewRenderer.tracktables.stored);
         }
-        //Else, if a tracklist element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
+        //Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
         else {
             const _onMetadataRetrieved = function(metadata) {
-                const tracklistTableParentElement = ViewRenderer.divs.tracklists;
-                const _tracklistWrapper = UIController.createTracklistTable(metadata, tracklistTableParentElement, "Stored YTM Tracklist");
+                ViewRenderer.tracktables.stored = UIController.createTracklistTable(metadata, ViewRenderer.divs.tracktables, "Stored YTM Tracklist");
                 //UIController.triggerUITransition('screen_Tracklist');
-                ViewRenderer.tracklists.stored = _tracklistWrapper;
                 //TODO this interaction with ViewRenderer is WIP
             }
         
             Model.getStoredMetadata(_onMetadataRetrieved);
         }
     }
-    else {
-        if (typeof ViewRenderer.tracklists.stored === 'object') {
-            ViewRenderer.hideElement(ViewRenderer.tracklists.stored);
+    else { //Else, if the checkbox is unchecked, hide the track table element
+        if (typeof ViewRenderer.tracktables.stored === 'object') {
+            ViewRenderer.hideElement(ViewRenderer.tracktables.stored);
         }
     }
 });
@@ -72,21 +70,39 @@ ViewRenderer.checkboxes.scrapedTracklist.addEventListener('change', function() {
         //UIController.displayTracklistTable(Model.tracklist.metadataScraped, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
         //UIController.triggerUITransition('screen_Tracklist');
 
-        //If a tracklist DOM element has previously been created, just show the existing element
-        if (typeof ViewRenderer.tracklists.scraped === 'object') {
-            ViewRenderer.unhideElement(ViewRenderer.tracklists.scraped);
+        //If a track table DOM element has previously been created, just show the existing element
+        if (typeof ViewRenderer.tracktables.scraped === 'object') {
+            ViewRenderer.unhideElement(ViewRenderer.tracktables.scraped);
         }
-        //Else, if a tracklist element doesn't exist yet, create a new one using the scraped metadata and add it to the DOM
+        //Else, if a track table element doesn't exist yet, create a new one using the scraped metadata and add it to the DOM
         else {
-            const tracklistTableParentElement = ViewRenderer.divs.tracklists;
-            const _tracklistWrapper = UIController.createTracklistTable(Model.tracklist.metadataScraped, tracklistTableParentElement, "Scraped Tracklist");
-            ViewRenderer.tracklists.scraped = _tracklistWrapper;
+            ViewRenderer.tracktables.scraped = UIController.createTracklistTable(Model.tracklist.metadataScraped, ViewRenderer.divs.tracktables, "Scraped Tracklist");
             //TODO this interaction with ViewRenderer is WIP
         }
     }
-    else {
-        if (typeof ViewRenderer.tracklists.scraped === 'object') {
-            ViewRenderer.hideElement(ViewRenderer.tracklists.scraped);
+    else { //Else, if the checkbox is unchecked, hide the track table element
+        if (typeof ViewRenderer.tracktables.scraped === 'object') {
+            ViewRenderer.hideElement(ViewRenderer.tracktables.scraped);
+        }
+    }
+});
+
+//Checkbox Value Changed: Delta Tracklists
+ViewRenderer.checkboxes.deltaTracklists.addEventListener('change', function() {
+    //If the checkbox is checked, display the delta tracklists metadata; Otherwise hide them
+    if (ViewRenderer.checkboxes.deltaTracklists.checked === true) {
+        //If the track table DOM elements have previously been created, just show the existing elements
+        if (typeof ViewRenderer.tracktables.deltas === 'object') {
+            ViewRenderer.unhideElement(ViewRenderer.tracktables.deltas);
+        }
+        else { //Else, if the track table elements dont exist yet...
+            //Create new track tables based on the scraped and stored metadata and add them to the DOM
+            UIController.createDeltaTracklistsGPM(Model.tracklist.metadataScraped);
+        }
+    }
+    else { //Else, if the checkbox is unchecked, hide the track table elements
+        if (typeof ViewRenderer.tracktables.deltas === 'object') {
+            ViewRenderer.hideElement(ViewRenderer.tracktables.deltas);
         }
     }
 });

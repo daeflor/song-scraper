@@ -216,7 +216,7 @@ import * as Messenger from './Modules/MessageController.js';
             ViewRenderer.disableElement(ViewRenderer.buttons.scrape);
 		    ViewRenderer.hideElement(ViewRenderer.divs.buttons);
             ViewRenderer.hideElement(ViewRenderer.divs.checkboxes);
-            ViewRenderer.hideElement(ViewRenderer.divs.tracklists);
+            ViewRenderer.hideElement(ViewRenderer.divs.tracktables);
             //ViewRenderer.hideLandingPage();
 
 		    ViewRenderer.showStatusMessage('Song list comparison in progress.');
@@ -226,10 +226,11 @@ import * as Messenger from './Modules/MessageController.js';
             ViewRenderer.hideElement(ViewRenderer.divs.status);
             ViewRenderer.unhideElement(ViewRenderer.divs.buttons);
             ViewRenderer.unhideElement(ViewRenderer.divs.checkboxes);
-            ViewRenderer.unhideElement(ViewRenderer.divs.tracklists);
+            ViewRenderer.unhideElement(ViewRenderer.divs.tracktables);
             ViewRenderer.enableElement(ViewRenderer.buttons.scrape);
             ViewRenderer.enableElement(ViewRenderer.buttons.exportScrapedMetadata);
             ViewRenderer.enableElement(ViewRenderer.checkboxes.scrapedTracklist);
+            ViewRenderer.enableElement(ViewRenderer.checkboxes.deltaTracklists);
         }
         else if (transition === 'ScrapeFailed') {
             ViewRenderer.showStatusMessage('Failed to retrieve track list.');
@@ -248,6 +249,11 @@ import * as Messenger from './Modules/MessageController.js';
     export function createTracklistTable(tracklist, parentElement, header, descriptionIfEmpty) {
 
         //TODO Should all or some of this be done in ViewRenderer instead?
+
+        //TODO it seems that the parent element is always going to be the same. 
+            //Is it really necessary to pass it as a parameter?
+            //Could at least make it optional
+                //Actually it's different for the delta track tables, but still, it *could* be an optional param.
 
         //TODO clean up tracklist/tracktable terminology
         const _columnsToIncludeInTrackTable = [
@@ -286,7 +292,7 @@ import * as Messenger from './Modules/MessageController.js';
             //For each track in the tracklist...
             for (let i = 0; i < tracklist.length; i++) {
                 //If the current value in the array is a valid object...
-                if (typeof tracklist[i] === 'object') {
+                if (typeof tracklist[i] === 'object' && tracklist[i] !== null) { //TODO added this null check temporarily as a work-around, but would prefer a better long-term solution
                     //Create a new data cell for the track's index
                     let _td = document.createElement('td'); 
                     _td.textContent = i+1; 
@@ -312,13 +318,17 @@ import * as Messenger from './Modules/MessageController.js';
                                 _tr.appendChild(_td);
                             }
                             else {
-                                DebugController.logInfo("A piece of track metadata was encountered that is neither a string value nor equal to 'true' and so it was skipped over. This is normal in the case of the 'Unplayable' column, but otherwise could indicate that an issue was encountered.");
+                                DebugController.logInfo("A piece of track metadata was encountered that is neither a string value nor equal to 'true' and so it was skipped over. This is normal in the case of the 'Unplayable' column, but otherwise could indicate that an issue was encountered. Current column is: " + _columnsToIncludeInTrackTable[j]);
                             }
                         }
                     }
                 }
+                else if (tracklist[i] === null) {
+                    DebugController.logInfo("Encountered a null reference in the tracklist array. Skipping over it as this indicates it should be omitted from the track table.");
+                }
                 else {
-                    DebugController.logError("Expected an object containing track metadata. Instead found: " + tracklist[i]);
+                    DebugController.logError("Expected an object containing track metadata or null. Instead found: " + tracklist[i] + ". Current index in array: " + i + ". Tracklist: ");
+                    console.table(tracklist);
                 }
             }
         }
@@ -408,6 +418,44 @@ import * as Messenger from './Modules/MessageController.js';
 			}
 		}
 	}
+
+    export function createDeltaTracklistsGPM(scrapedTracklist) {
+        //TODO why pass the parameter, when we can get the scraped tracklist from the Model right here?
+
+        //Once the Google Play Music metadata for the current tracklist has been fetched...
+        const _onGooglePlayMusicMetadataRetrieved = function(gpmTracklist) {
+             
+            // console.log("Here are the scraped and gpm tracklist arrays:");
+            // console.table(scrapedTracklist);
+            // console.table(gpmTracklist);
+
+            for (var i = 0; i < scrapedTracklist.length; i++)
+            {
+                for (var j = 0; j < gpmTracklist.length; j++)
+                {
+                    if (scrapedTracklist[i] != null && gpmTracklist[j] != null && 
+                        scrapedTracklist[i].title === gpmTracklist[j].title && scrapedTracklist[i].album === gpmTracklist[j].album && scrapedTracklist[i].duration === gpmTracklist[j].duration)
+                    {
+                        scrapedTracklist[i] = null;
+                        gpmTracklist[j] = null;
+                        break;
+                    }
+                }
+            } //TODO OLD - removed track index wrong if there were duplicates
+
+            //TODO need to pass appropriate class(es) to stylize the header (and maybe tracktable?)
+            ViewRenderer.tracktables.deltas = window.Utilities.CreateNewElement('div');
+            createTracklistTable(scrapedTracklist, ViewRenderer.tracktables.deltas, "Added Tracks");
+            createTracklistTable(gpmTracklist, ViewRenderer.tracktables.deltas, "Removed Tracks");
+            ViewRenderer.divs.tracktables.appendChild(ViewRenderer.tracktables.deltas);
+
+            // ViewRenderer.tracktables.deltaAdded = createTracklistTable(scrapedTracklist, ViewRenderer.divs.tracktables, "Added Tracks");
+            // ViewRenderer.tracktables.deltaRemoved = createTracklistTable(gpmTracklist, ViewRenderer.divs.tracktables, "Removed Tracks");
+        };
+
+        //Fetch the Google Play Music tracklist metadata from the Model and then execute the callback
+        Model.getStoredMetadataGPM(_onGooglePlayMusicMetadataRetrieved);
+    }
 
     function compareScrapedTracklistWithPreviousVersion(tracklist) {
 

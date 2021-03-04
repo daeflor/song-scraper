@@ -104,7 +104,7 @@ td {
 	text-align: center;
 }
 
-#tracklists {
+#tracktables {
 	padding-top: 1%;
 	padding-bottom: 0.5%;
 	padding-left: 2%;
@@ -113,6 +113,17 @@ td {
 	max-height: 375px;
 
 	font-size: 18px;
+}
+
+#tracktables::-webkit-scrollbar {
+	-webkit-appearance: none;
+	width: 7px;
+}
+
+#tracktables::-webkit-scrollbar-thumb {
+	border-radius: 4px;
+	background-color: rgba(0, 0, 0, .5);
+	box-shadow: 0 0 1px rgba(255, 255, 255, .5);
 }
 
 .popupButton {
