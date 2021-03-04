@@ -245,8 +245,36 @@ import * as Messenger from './Modules/MessageController.js';
         }
     }
 
+    /**
+     * Creates a track table from the provided tracklist and other inputs
+     * @param {array} tracklist The tracklist array for which to create a table element
+     * @param {string} headerText The name of the track table to display above it
+     * @param {object} [options] An object to provide the following optional parameters: parentElement (object); headerElement (object); descriptionIfEmpty (string)
+     * @returns The container element for the track table and all associated elements
+     */
+    export function createTrackTable(tracklist, headerText, options/*parentElement, header, descriptionIfEmpty*/) {
     //TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove (or replace?) any existing scraped tracklist tables, including from ViewRenderer's tracker object
-    export function createTracklistTable(tracklist, parentElement, header, descriptionIfEmpty) {
+
+        // const _parentElement = ViewRenderer.divs.tracktables;
+        // if (typeof options === 'object') {
+        //     const _headerColor = options.headerColor || 'default';
+        //     //const _parentElement = options.parentElement || ViewRenderer.divs.tracktables;
+        //     _parentElement = options.parentElement || _parentElement;
+        //     const _descriptionIfEmpty = options.descriptionIfEmpty || 'No tracks to display';
+        // }
+
+        /** */
+
+        // const _parentElement = (typeof options === 'object') ? options.parentElement || ViewRenderer.divs.tracktables : ViewRenderer.divs.tracktables;
+        // const _descriptionIfEmpty = (typeof options === 'object') ? options.descriptionIfEmpty || 'No tracks to display' : 'No tracks to display';
+
+        /** */
+
+        const _parentElement      = (typeof options === 'object' && typeof options.parentElement === 'object')      ? options.parentElement      : ViewRenderer.divs.tracktables;
+        const _descriptionIfEmpty = (typeof options === 'object' && typeof options.descriptionIfEmpty === 'string') ? options.descriptionIfEmpty : 'No tracks to display';
+        //const _headerColor        = (typeof options === 'object' && typeof options.headerColor === 'string')        ? options.headerColor        : 'default';
+        const _headerElement      = (typeof options === 'object' && typeof options.headerElement === 'object')      ? options.headerElement      : window.Utilities.CreateNewElement('p', {attributes:{class:'noBottomMargin'}});
+        _headerElement.textContent = headerText;
 
         //TODO Should all or some of this be done in ViewRenderer instead?
 
@@ -263,9 +291,6 @@ import * as Messenger from './Modules/MessageController.js';
             'Duration',
             'Unplayable' //TODO This is currently hard-coded. Should eventually be a param, probably. Although it would be good to have a default set of keys to fall back to.
         ];
-
-        const _header = window.Utilities.CreateNewElement('p'/*, {attributes:{class:'trackTableWrapper'}}*/);
-        _header.textContent = header;
 
         let _tr = document.createElement('tr');
 
@@ -333,12 +358,21 @@ import * as Messenger from './Modules/MessageController.js';
             }
         }
 
-        const _tableWrapper = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableWrapper'}, children:[_table]});
-        const _tableWithHeader = window.Utilities.CreateNewElement('div', {children:[_header, _tableWrapper]});
+        // const _header = window.Utilities.CreateNewElement('p'/*, {attributes:{class:'trackTableWrapper'}}*/);
+        // _header.textContent = headerText;
+        // if (_headerColor == 'green') {
+        //     _header.classList.add("greenFont");
+        // }
+        // else if (_headerColor == 'red') {
+        //     _header.classList.add("redFont");
+        // }
+
+        const _tableScrollArea = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableScrollArea'}, children:[_table]});
+        const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _tableScrollArea]});
         //const _tracklistTablesDiv = document.getElementById('divTracklistsAndAnalysis');
         //_tracklistTablesDiv.appendChild(_tableWrapper);
-        parentElement.appendChild(_tableWithHeader);
-        return _tableWithHeader;
+        _parentElement.appendChild(_tableContainer);
+        return _tableContainer;
         //_tracklistTablesDiv.hidden = false;
 
         //const _numTracks = _table.childElementCount -1; //Exclude the header row to get the number of tracks
@@ -424,15 +458,8 @@ import * as Messenger from './Modules/MessageController.js';
 
         //Once the Google Play Music metadata for the current tracklist has been fetched...
         const _onGooglePlayMusicMetadataRetrieved = function(gpmTracklist) {
-             
-            // console.log("Here are the scraped and gpm tracklist arrays:");
-            // console.table(scrapedTracklist);
-            // console.table(gpmTracklist);
-
-            for (var i = 0; i < scrapedTracklist.length; i++)
-            {
-                for (var j = 0; j < gpmTracklist.length; j++)
-                {
+            for (var i = 0; i < scrapedTracklist.length; i++) {
+                for (var j = 0; j < gpmTracklist.length; j++) {
                     if (scrapedTracklist[i] != null && gpmTracklist[j] != null && 
                         scrapedTracklist[i].title === gpmTracklist[j].title && scrapedTracklist[i].album === gpmTracklist[j].album && scrapedTracklist[i].duration === gpmTracklist[j].duration)
                     {
@@ -443,14 +470,19 @@ import * as Messenger from './Modules/MessageController.js';
                 }
             } //TODO OLD - removed track index wrong if there were duplicates
 
-            //TODO need to pass appropriate class(es) to stylize the header (and maybe tracktable?)
+            //Create a new container div element for all the track tables used to show the deltas (e.g. Added, Removed, Disabled)
             ViewRenderer.tracktables.deltas = window.Utilities.CreateNewElement('div');
-            createTracklistTable(scrapedTracklist, ViewRenderer.tracktables.deltas, "Added Tracks");
-            createTracklistTable(gpmTracklist, ViewRenderer.tracktables.deltas, "Removed Tracks");
-            ViewRenderer.divs.tracktables.appendChild(ViewRenderer.tracktables.deltas);
+            
+            //Create a header element and track table for the list of 'Added Tracks'
+            let _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noBottomMargin'}});
+            createTrackTable(scrapedTracklist, 'Added Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement});
+            
+            //Create a header element and track table for the list of 'Removed Tracks'
+            _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noBottomMargin'}});
+            createTrackTable(gpmTracklist, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement});
 
-            // ViewRenderer.tracktables.deltaAdded = createTracklistTable(scrapedTracklist, ViewRenderer.divs.tracktables, "Added Tracks");
-            // ViewRenderer.tracktables.deltaRemoved = createTracklistTable(gpmTracklist, ViewRenderer.divs.tracktables, "Removed Tracks");
+            //Add the new container div for all the delta track tables to the DOM, within the general track tables div
+            ViewRenderer.divs.tracktables.appendChild(ViewRenderer.tracktables.deltas);
         };
 
         //Fetch the Google Play Music tracklist metadata from the Model and then execute the callback

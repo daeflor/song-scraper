@@ -31,7 +31,7 @@ ViewRenderer.buttons.exportStoredMetadata.addEventListener('click', function() {
 window.Utilities.GetElement('buttonShowComparisonPage').addEventListener('click', function() {
     //UIController.displayTracklistTable(Model.tracklist.metadataScraped, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
     const _tracklistTableParentElement = document.getElementById('trackLists');
-    UIController.createTracklistTable(Model.tracklist.metadataScraped, _tracklistTableParentElement);
+    UIController.createTrackTable(Model.tracklist.metadataScraped, _tracklistTableParentElement);
     UIController.triggerUITransition('ShowComparison');
     //TODO need to actually do a comparison before displaying the track tables here
 });
@@ -48,7 +48,7 @@ ViewRenderer.checkboxes.storedTracklist.addEventListener('change', function() {
         //Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
         else {
             const _onMetadataRetrieved = function(metadata) {
-                ViewRenderer.tracktables.stored = UIController.createTracklistTable(metadata, ViewRenderer.divs.tracktables, "Stored YTM Tracklist");
+                ViewRenderer.tracktables.stored = UIController.createTrackTable(metadata, 'Stored YTM Tracklist');
                 //UIController.triggerUITransition('screen_Tracklist');
                 //TODO this interaction with ViewRenderer is WIP
             }
@@ -76,7 +76,7 @@ ViewRenderer.checkboxes.scrapedTracklist.addEventListener('change', function() {
         }
         //Else, if a track table element doesn't exist yet, create a new one using the scraped metadata and add it to the DOM
         else {
-            ViewRenderer.tracktables.scraped = UIController.createTracklistTable(Model.tracklist.metadataScraped, ViewRenderer.divs.tracktables, "Scraped Tracklist");
+            ViewRenderer.tracktables.scraped = UIController.createTrackTable(Model.tracklist.metadataScraped, 'Scraped Tracklist');
             //TODO this interaction with ViewRenderer is WIP
         }
     }
