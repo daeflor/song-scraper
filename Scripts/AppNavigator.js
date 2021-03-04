@@ -229,8 +229,8 @@ import * as Messenger from './Modules/MessageController.js';
             ViewRenderer.unhideElement(ViewRenderer.divs.tracktables);
             ViewRenderer.enableElement(ViewRenderer.buttons.scrape);
             ViewRenderer.enableElement(ViewRenderer.buttons.exportScrapedMetadata);
-            ViewRenderer.enableElement(ViewRenderer.checkboxes.scrapedTracklist);
-            ViewRenderer.enableElement(ViewRenderer.checkboxes.deltaTracklists);
+            ViewRenderer.enableElement(ViewRenderer.checkboxes.scrapedTrackTable);
+            ViewRenderer.enableElement(ViewRenderer.checkboxes.deltaTrackTables);
         }
         else if (transition === 'ScrapeFailed') {
             ViewRenderer.showStatusMessage('Failed to retrieve track list.');

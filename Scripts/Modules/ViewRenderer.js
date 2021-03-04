@@ -14,11 +14,10 @@ export const buttons = Object.freeze({
     exportStoredMetadata: document.getElementById('btnExportStoredMetadataForCurrentTracklist')
 });
 
-//TODO Rename the below to tracktables probably
 export const checkboxes = Object.freeze({
-    storedTracklist: document.getElementById('checkboxStoredTracklist'),
-    scrapedTracklist: document.getElementById('checkboxScrapedTracklist'),
-    deltaTracklists: document.getElementById('checkboxDeltaTracklists')
+    storedTrackTable: document.getElementById('checkboxStoredTrackTable'),
+    scrapedTrackTable: document.getElementById('checkboxScrapedTrackTable'),
+    deltaTrackTables: document.getElementById('checkboxDeltaTrackTables')
 });
 
 export const tracktables = {

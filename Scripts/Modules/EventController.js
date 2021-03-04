@@ -38,9 +38,9 @@ window.Utilities.GetElement('buttonShowComparisonPage').addEventListener('click'
 
 
 //Checkbox Value Changed: Stored YTM Tracklist
-ViewRenderer.checkboxes.storedTracklist.addEventListener('change', function() {
+ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', function() {
     //If the checkbox is checked, display the stored metadata for the current tracklist; Otherwise hide it
-    if (ViewRenderer.checkboxes.storedTracklist.checked === true) {
+    if (ViewRenderer.checkboxes.storedTrackTable.checked === true) {
         //If a track table DOM element has previously been created, just show the existing element
         if (typeof ViewRenderer.tracktables.stored === 'object') {
             ViewRenderer.unhideElement(ViewRenderer.tracktables.stored);
@@ -64,9 +64,9 @@ ViewRenderer.checkboxes.storedTracklist.addEventListener('change', function() {
 });
 
 //Checkbox Value Changed: Scraped Tracklist
-ViewRenderer.checkboxes.scrapedTracklist.addEventListener('change', function() {
+ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() {
     //If the checkbox is checked, display the scraped tracklist metadata; Otherwise hide it
-    if (ViewRenderer.checkboxes.scrapedTracklist.checked === true) {
+    if (ViewRenderer.checkboxes.scrapedTrackTable.checked === true) {
         //UIController.displayTracklistTable(Model.tracklist.metadataScraped, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
         //UIController.triggerUITransition('screen_Tracklist');
 
@@ -88,9 +88,9 @@ ViewRenderer.checkboxes.scrapedTracklist.addEventListener('change', function() {
 });
 
 //Checkbox Value Changed: Delta Tracklists
-ViewRenderer.checkboxes.deltaTracklists.addEventListener('change', function() {
+ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', function() {
     //If the checkbox is checked, display the delta tracklists metadata; Otherwise hide them
-    if (ViewRenderer.checkboxes.deltaTracklists.checked === true) {
+    if (ViewRenderer.checkboxes.deltaTrackTables.checked === true) {
         //If the track table DOM elements have previously been created, just show the existing elements
         if (typeof ViewRenderer.tracktables.deltas === 'object') {
             ViewRenderer.unhideElement(ViewRenderer.tracktables.deltas);
