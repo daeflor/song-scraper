@@ -13,7 +13,7 @@ function createCommaSeparatedStringFromArray(array) {
         //For each element in the array except for the last one...
         for (let i = 0; i < array.length-1; i++) {
             //If the element's value type is a string...
-            if (typeof(array[i]) === 'string') {
+            if (typeof array[i] === 'string') {
                 //Include double-quotes around the output string, followed by a comma to indicate the end of the current element/value
                 _string += '"' + array[i] + '",';
             }
@@ -41,7 +41,7 @@ function createCommaSeparatedStringFromArray(array) {
  * @param {string} filename The name of the file to download
  * @param {array} [objectKeysToInclude] An optional array to indicate the specific object keys which should be included in the CSV, and the order in which to output them. If none is provided, all keys for every object will be outputted.
  */
-function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=null) {
+export function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=null) {
     let _csv = ''; //Begin with a blank string for the CSV
     
     //If a list of object keys to include was provided...
@@ -96,7 +96,7 @@ function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=null) {
  * @param {function} callback The function to execute once the data has been successfully loaded from the file
  * @param {boolean} [parseJSON] Indicates whether or not the loaded text data should be parsed into JSON before being returned. Defaults to true.
  */
-function loadTextFileViaXMLHttpRequest(filepath, callback, parseJSON=true) {
+export function loadTextFileViaXMLHttpRequest(filepath, callback, parseJSON=true) {
     const xmlhttp = new XMLHttpRequest();
 
     //Once the data has been succssfully loaded from the file, either return the raw text data or the parsed JSON
@@ -109,5 +109,3 @@ function loadTextFileViaXMLHttpRequest(filepath, callback, parseJSON=true) {
     xmlhttp.open("GET", filepath, true);
     xmlhttp.send();
 }
-
-export { convertArrayOfObjectsToCsv, loadTextFileViaXMLHttpRequest };

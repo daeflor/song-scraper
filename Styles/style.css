@@ -18,6 +18,7 @@ body {
 
 #checkboxes {
 	display: flex;
+	margin-bottom: 16px;
 }
 
 input[type='checkbox'] {
@@ -59,23 +60,22 @@ input[type='checkbox'] {
 	color: #ff0000;
 }
 
-#trackLists {
-	text-align: left;
-	padding-left: 20px;
-	padding-right: 20px;
-	font-size: 20px;
-	color: #339933;
+.noVerticalMargins {
+	margin-top: 0px;
+	margin-bottom: 0px;
 }
+
 .indent {
 	padding-left: 20px;
 	color: antiquewhite;
 	font-size: 16px;
 }
 
-.trackTableWrapper {
+.trackTableScrollArea {
 	max-height: 200px;
 	overflow-y: scroll;
 	margin-top: 2%;
+	margin-bottom: 18px;
 }
 
 .trackTable {
@@ -91,7 +91,7 @@ input[type='checkbox'] {
 }
 
 td {
-	max-width: 215px;
+	max-width: 212px;
 	min-width: 100%;
 	text-overflow: ellipsis; 
 	overflow-x: hidden;
@@ -104,15 +104,26 @@ td {
 	text-align: center;
 }
 
-#tracklists {
-	padding-top: 1%;
-	padding-bottom: 0.5%;
-	padding-left: 2%;
-	padding-right: 2%;
+#tracktables {
+	padding-top: 6px;
+	padding-bottom: 3px;
+	padding-left: 16px;
+	padding-right: 16px;
 	overflow-y: scroll;
 	max-height: 375px;
 
 	font-size: 18px;
+}
+
+#tracktables::-webkit-scrollbar {
+	/* -webkit-appearance: none; */
+	width: 5px;
+}
+
+#tracktables::-webkit-scrollbar-thumb {
+	border-radius: 3px;
+	background-color: rgba(0, 0, 0, .5);
+	box-shadow: 0 0 1px rgba(255, 255, 255, .5);
 }
 
 .popupButton {
@@ -145,6 +156,7 @@ td {
 	height: 40px;
 	overflow: hidden;
 }
+
 .popupButton:hover {
 	background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #ccc2a6), color-stop(1, #eae0c2));
 	background:-moz-linear-gradient(top, #ccc2a6 5%, #eae0c2 100%);

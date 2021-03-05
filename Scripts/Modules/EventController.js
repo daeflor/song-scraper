@@ -6,7 +6,7 @@ import * as Messenger from './MessageController.js';
 
 //Button Pressed: Scrape Current Tracklist
 ViewRenderer.buttons.scrape.addEventListener('click', function() {
-    UIController.navigateToScreen('StartScrape');
+    UIController.triggerUITransition('StartScrape');
     Messenger.sendMessage('GetTracklistMetadata');
 });
 
@@ -26,67 +26,71 @@ ViewRenderer.buttons.exportStoredMetadata.addEventListener('click', function() {
     UIController.downloadGooglePlayMusicTracklistAsCSV();
 });
 
-//TODO This is deprecated. Needs updating or removal.
-//Button Pressed: Show Comparison Page
-window.Utilities.GetElement('buttonShowComparisonPage').addEventListener('click', function() {
-    //UIController.displayTracklistTable(Model.tracklist.metadataScraped, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
-    const tracklistTableParentElement = document.getElementById('trackLists');
-    UIController.createTracklistTable(Model.tracklist.metadataScraped, tracklistTableParentElement);
-    UIController.navigateToScreen('ShowComparison');
-    //TODO need to actually do a comparison before displaying the track tables here
-});
-
-
 //Checkbox Value Changed: Stored YTM Tracklist
-ViewRenderer.checkboxes.storedTracklist.addEventListener('change', function() {
+ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', function() {
     //If the checkbox is checked, display the stored metadata for the current tracklist; Otherwise hide it
-    if (ViewRenderer.checkboxes.storedTracklist.checked === true) {
-        //If a tracklist DOM element has previously been created, just show the existing element
-        if (typeof ViewRenderer.tracklists.stored === 'object') {
-            ViewRenderer.unhideElement(ViewRenderer.tracklists.stored);
+    if (ViewRenderer.checkboxes.storedTrackTable.checked === true) {
+        //If a track table DOM element has previously been created, just show the existing element
+        if (typeof ViewRenderer.tracktables.stored === 'object') {
+            ViewRenderer.unhideElement(ViewRenderer.tracktables.stored);
         }
-        //Else, if a tracklist element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
+        //Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
         else {
             const _onMetadataRetrieved = function(metadata) {
-                const tracklistTableParentElement = ViewRenderer.divs.tracklists;
-                const _tracklistWrapper = UIController.createTracklistTable(metadata, tracklistTableParentElement, "Stored YTM Tracklist");
-                //UIController.navigateToScreen('screen_Tracklist');
-                ViewRenderer.tracklists.stored = _tracklistWrapper;
+                ViewRenderer.tracktables.stored = UIController.createTrackTable(metadata, 'Stored YTM Tracklist');
                 //TODO this interaction with ViewRenderer is WIP
             }
         
             Model.getStoredMetadata(_onMetadataRetrieved);
         }
     }
-    else {
-        if (typeof ViewRenderer.tracklists.stored === 'object') {
-            ViewRenderer.hideElement(ViewRenderer.tracklists.stored);
+    else { //Else, if the checkbox is unchecked, hide the track table element
+        if (typeof ViewRenderer.tracktables.stored === 'object') {
+            ViewRenderer.hideElement(ViewRenderer.tracktables.stored);
         }
     }
 });
 
 //Checkbox Value Changed: Scraped Tracklist
-ViewRenderer.checkboxes.scrapedTracklist.addEventListener('change', function() {
+ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() {
     //If the checkbox is checked, display the scraped tracklist metadata; Otherwise hide it
-    if (ViewRenderer.checkboxes.scrapedTracklist.checked === true) {
-        //UIController.displayTracklistTable(Model.tracklist.metadataScraped, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
-        //UIController.navigateToScreen('screen_Tracklist');
-
-        //If a tracklist DOM element has previously been created, just show the existing element
-        if (typeof ViewRenderer.tracklists.scraped === 'object') {
-            ViewRenderer.unhideElement(ViewRenderer.tracklists.scraped);
+    if (ViewRenderer.checkboxes.scrapedTrackTable.checked === true) {
+        //If a track table DOM element has previously been created, just show the existing element
+        if (typeof ViewRenderer.tracktables.scraped === 'object') {
+            ViewRenderer.unhideElement(ViewRenderer.tracktables.scraped);
         }
-        //Else, if a tracklist element doesn't exist yet, create a new one using the scraped metadata and add it to the DOM
+        //Else, if a track table element doesn't exist yet, create a new one using the scraped metadata and add it to the DOM
         else {
-            const tracklistTableParentElement = ViewRenderer.divs.tracklists;
-            const _tracklistWrapper = UIController.createTracklistTable(Model.tracklist.metadataScraped, tracklistTableParentElement, "Scraped Tracklist");
-            ViewRenderer.tracklists.scraped = _tracklistWrapper;
+            ViewRenderer.tracktables.scraped = UIController.createTrackTable(Model.tracklist.metadataScraped, 'Scraped Tracklist');
             //TODO this interaction with ViewRenderer is WIP
         }
     }
-    else {
-        if (typeof ViewRenderer.tracklists.scraped === 'object') {
-            ViewRenderer.hideElement(ViewRenderer.tracklists.scraped);
+    else { //Else, if the checkbox is unchecked, hide the track table element
+        if (typeof ViewRenderer.tracktables.scraped === 'object') {
+            ViewRenderer.hideElement(ViewRenderer.tracktables.scraped);
+        }
+    }
+});
+
+//TODO need to handle the case where there is no stored tracklist (e.g. because this is the first time the track was scraped)
+    //Could consider leaving the checkbox disabled unless both tracklists (scraped & stored) exist
+    //But would also be nice to have some feedback about this, such as a message showing up when the checkbox is pressed, indicating a delta cannot yet be displayed
+//Checkbox Value Changed: Delta Tracklists
+ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', function() {
+    //If the checkbox is checked, display the delta tracklists metadata; Otherwise hide them
+    if (ViewRenderer.checkboxes.deltaTrackTables.checked === true) {
+        //If the track table DOM elements have previously been created, just show the existing elements
+        if (typeof ViewRenderer.tracktables.deltas === 'object') {
+            ViewRenderer.unhideElement(ViewRenderer.tracktables.deltas);
+        }
+        else { //Else, if the track table elements dont exist yet...
+            //Create new track tables based on the scraped and stored metadata and add them to the DOM
+            UIController.createDeltaTracklistsGPM(Model.tracklist.metadataScraped);
+        }
+    }
+    else { //Else, if the checkbox is unchecked, hide the track table elements
+        if (typeof ViewRenderer.tracktables.deltas === 'object') {
+            ViewRenderer.hideElement(ViewRenderer.tracktables.deltas);
         }
     }
 });

@@ -4,7 +4,7 @@ export const divs = Object.freeze({
     status: document.getElementById('status'),
     buttons: document.getElementById('buttons'),
     checkboxes: document.getElementById('checkboxes'),
-    tracklists: document.getElementById('tracklists')
+    tracktables: document.getElementById('tracktables')
 });
 
 export const buttons = Object.freeze({
@@ -15,13 +15,15 @@ export const buttons = Object.freeze({
 });
 
 export const checkboxes = Object.freeze({
-    storedTracklist: document.getElementById('checkboxStoredTracklist'),
-    scrapedTracklist: document.getElementById('checkboxScrapedTracklist')
+    storedTrackTable: document.getElementById('checkboxStoredTrackTable'),
+    scrapedTrackTable: document.getElementById('checkboxScrapedTrackTable'),
+    deltaTrackTables: document.getElementById('checkboxDeltaTrackTables')
 });
 
-export const tracklists = {
+export const tracktables = {
     stored: undefined,
-    scraped: undefined
+    scraped: undefined,
+    deltas: undefined
 };
 
 export function disableElement(element) {
@@ -56,14 +58,6 @@ export function hideLandingPage() {
     document.getElementById('landingPage').hidden = true;
 }
 
-export function showScrapeCompletedPage() {
-    document.getElementById('divScrapeCompleted').hidden = false;
-}
-
-export function hideScrapeCompletedPage() {
-    document.getElementById('divScrapeCompleted').hidden = true;
-}
-
 export function showStatusMessage(text) {
     document.getElementById('status').textContent = text;
     document.getElementById('status').hidden = false;
@@ -72,15 +66,6 @@ export function showStatusMessage(text) {
 export function showTitle(title) {
     document.getElementById('title').textContent = title;
     document.getElementById('title').hidden = false;
-}
-
-export function showComparisonPage() {
-    document.getElementById('comparisonPage').hidden = false;
-    document.getElementById('trackLists').hidden = false;
-}
-
-export function displayScreen_Tracklist() {
-    document.getElementById('screen_Tracklist').hidden = false;
 }
 
 //     // function toggleScreenVisibility(screenName, visible) {

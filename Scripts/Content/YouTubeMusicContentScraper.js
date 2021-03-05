@@ -388,8 +388,9 @@
             for (const mutation of mutationsList) {
                 //If the observed mutation is that the element's childList was modified...
                 if (mutation.type === 'childList') {
-                    //Scrape the track metadata from the next set of track rows, and continue with the process accordingly
-                    _scrapeTrackMetadataFromNodeList();
+                    //Wait a very short amount of time to allow all the elements in the DOM to load (e.g. the 'duration', which can take longer)
+                        //And then scrape the track metadata from the next set of track rows, and continue with the process accordingly
+                    setTimeout(_scrapeTrackMetadataFromNodeList, 100);
                 }
             }
         };

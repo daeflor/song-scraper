@@ -27,21 +27,21 @@
         <button type='button' id='btnExportAllLocalStorage' class='popupButton' disabled=true>Export All Local Storage</button>
       </div>
       <div id='checkboxes' hidden=true>
-        <input type="checkbox" id="checkboxStoredGPMTracklist" disabled=true>
-        <label for="checkboxStoredGPMTracklist"> Stored GPM Tracklist</label><br>
-        <input type="checkbox" id="checkboxStoredTracklist">
-        <label for="checkboxStoredTracklist"> Stored YTM Tracklist</label><br>
-        <input type="checkbox" id="checkboxScrapedTracklist" disabled=true>
-        <label for="checkboxScrapedTracklist"> Scraped Tracklist</label><br>
-        <input type="checkbox" id="checkboxDelta" disabled=true>
-        <label for="checkboxDelta"> Delta</label><br>
+        <input type="checkbox" id="checkboxStoredGPMTrackTable" disabled=true>
+        <label for="checkboxStoredGPMTrackTable"> Stored GPM Track Table</label><br>
+        <input type="checkbox" id="checkboxStoredTrackTable">
+        <label for="checkboxStoredTrackTable"> Stored YTM Track Table</label><br>
+        <input type="checkbox" id="checkboxScrapedTrackTable" disabled=true>
+        <label for="checkboxScrapedTrackTable"> Scraped Track Table</label><br>
+        <input type="checkbox" id="checkboxDeltaTrackTables" disabled=true>
+        <label for="checkboxDeltaTrackTables"> Delta Track Tables</label><br>
         <input type="checkbox" id="checkboxTracksNotInPlaylists" disabled=true>
         <label for="checkboxTracksNotInPlaylists"> Tracks not in Playlists</label><br>
         <input type="checkbox" id="checkboxTracksNotInLibrary" disabled=true>
         <label for="checkboxTracksNotInLibrary"> Tracks not in Library</label><br><br>
       </div>
 
-      <div id='tracklists'>
+      <div id='tracktables'>
       </div>
       
       <div id='landingPage' hidden=true>
@@ -50,17 +50,7 @@
         <button id='buttonComparePlaylist' class='popupButton' type='button'>Scrape Current Tracklist</button> 
       
         <!-- TODO clean this up
-        -->
-        <button id='buttonPrint' class='popupButton' type='button'>Print Stored List</button> 
-        <table id='tableSavedList' class="trackTable" hidden=true>
-          <tr>
-              <th>Index</th>
-              <th>Title</th>
-              <th>Artist</th>
-              <th>Album</th>
-          </tr>
-        </table>
-               
+        -->               
         <button id='buttonBackup' class='popupButton' type='button'>Revert to Backup</button> 
         
         <button id='buttonExport' class='popupButton' type='button'>Export Local Storage</button> 
@@ -68,56 +58,9 @@
         <!---
         -->
       </div>
-
-      <div id='screen_Tracklist' hidden=true>
-      </div>
       
       <div id='comparisonPage' hidden=true>
-        <div id='trackLists' hidden=true>
-         
-            <p id='pTracksAddedHeader'>Tracks Added</p>
-            <p id='pTracksAddedDescription' class='indent'>- No new tracks added.</p>
-            <div class="trackTableWrapper">
-              <table id='tableTracksAdded' class="trackTable" hidden=true>
-                <tr>
-                  <th>Index</th>
-                  <th>Title</th>
-                  <th>Artist</th>
-                  <th>Album</th>
-                  <th>Duration</th>
-                </tr>
-              </table>
-            </div>      
-      
-            <p id='pTracksRemovedHeader' style='color:#ff0000; padding-top:20px'>Tracks Removed</p>
-            <p id='pTracksRemovedDescription' class='indent'>- No tracks removed.</p>
-            <div class="trackTableWrapper">
-              <table id='tableTracksRemoved' class="trackTable" hidden=true>
-                <tr>
-                  <th>Index</th>
-                  <th>Title</th>
-                  <th>Artist</th>
-                  <th>Album</th>
-                  <th>Duration</th>
-                </tr>
-              </table>
-            </div>
-
-            <p id='pTracksDisabledHeader' style='color:#ff0000; padding-top:20px'>Tracks Disabled</p>
-            <p id='pTracksDisabledDescription' class='indent'>- No tracks disabled.</p>
-            <div class="trackTableWrapper">
-              <table id='tableTracksDisabled' class="trackTable" hidden=true>
-                <tr>
-                  <th>Index</th>
-                  <th>Title</th>
-                  <th>Artist</th>
-                  <th>Album</th>
-                  <th>Duration</th>
-                </tr>
-              </table>
-            </div>
-          
-        </div>       
+              
         <div id='storageResultText'  class='statusText' hidden=true>
           First time saving data for this playlist.
         </div>                
@@ -125,25 +68,6 @@
       
       <div id='divBack' hidden=true>
         <button id='buttonBack' class='popupButton' type='button'>Back</button>
-      </div>
-
-      <div id='divScrapeCompleted' hidden=true>
-
-        <div id='divTracklistsAndAnalysis'>
-
-        </div>
-
-        <div id='divScrapeCompletedButtons'>
-          <!--<a id='buttonExportScrapedTracklist' class='popupButton'>Export Scraped Tracklist</a>-->
-          <button id='buttonShowComparisonPage' class='popupButton' type='button'>Show Comparison</button>
-          <button id='buttonDisplayTracklistPage' class='popupButton' type='button'>Show Scraped Tracklist</button>
-          <button id='buttonExportScrapedTracklist' class='popupButton' type='button'>Export Scraped Tracklist</button>
-          <button id='buttonExportStoredTracklistGPM' class='popupButton' type='button'>Export Stored GPM Tracklist</button>
-          <!--<button id='buttonExportStoredTracklistYTM' class='popupButton' type='button' disabled>Export Stored YTM Tracklist</button>-->
-          <button id='buttonPrintScrapedMetadataToConsole' class='popupButton' type='button'>Print Scraped Metadata to Console</button>
-          <button id='buttonSaveScrapedMetadataToStorage' class='popupButton' type='button'>Save Scraped Metadata to Storage</button>
-          <button id='buttonPrintStoredTracklistYTM' class='popupButton' type='button'>Print Stored YTM Tracklist</button>
-        </div>   
       </div>
       
   </body>

@@ -1,10 +1,12 @@
-function logWarning(logString) {
+export function logInfo(logString) {
+    console.info(logString);
+}
+
+export function logWarning(logString) {
     console.warn(logString);
 }
 
-function logError(logString) {
+export function logError(logString) {
     console.error(logString);
-    console.trace();
+    //console.trace();
 }
-
-export { logWarning, logError };

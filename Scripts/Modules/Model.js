@@ -1,3 +1,4 @@
+import * as DebugController from './DebugController.js';
 import * as Storage from './StorageManager.js';
 
 //TODO might want to freeze this once the values have been set
@@ -18,8 +19,10 @@ let tracklist = { //TODO maybe rename to currentTracklist?
     type: null,
     title: null,
     metadataScraped: null,
-    metadataFromStorage: null
+    metadataFromStorage: null,
+    metadataFromStorageGPM: null,
 }; //TODO why are these let instead of const?
+//TODO should these be undefined instead of null to start with?
 
 // let scrapedTracklistMetadata = null;
 
@@ -36,9 +39,9 @@ let tracklist = { //TODO maybe rename to currentTracklist?
  * Retrieves a tracklist's metadata (either from storage or from a local variable, if previously fetched), and then executes the callback function
  * @param {function} callback The function to execute once the metadata has been retrieved from storage
  */
-function getStoredMetadata(callback) {
+export function getStoredMetadata(callback) {
 
-    //If the metadata in storage for the current tracklist has already been set, pass that as the parameter in the provided callback function
+    //If the metadata in storage for the current tracklist has previously been fetched, pass that as the parameter in the provided callback function
     if (Array.isArray(tracklist.metadataFromStorage) === true) {
         callback(tracklist.metadataFromStorage);
     }
@@ -52,5 +55,39 @@ function getStoredMetadata(callback) {
     }
 }
 
+export function getStoredMetadataGPM(callback) {
+
+    //If the GPM metadata in storage for the current tracklist has previously been fetched, pass that as the parameter in the provided callback function
+    if (Array.isArray(tracklist.metadataFromStorageGPM) === true) {
+        callback(tracklist.metadataFromStorageGPM);
+    }
+    //Otherwise, fetch the GPM data from a local file and extract the current tracklist metadata from that
+    else {
+        //Once the exported Google Play Music tracklist data has been loaded from a local file, convert it to a CSV file
+        const _onGooglePlayMusicDataLoaded = function(gpmLibraryObject) {
+            //TODO If I'm searching for the key based on the title, I could just get the array by using the title instead of going through the extra step
+                //Although generally I dislike the idea of relying on the title, it seems the only way in this case anyway.
+            const _gpmTracklistKey = window.Utilities.GetTracklistKeyFromTracklistName(gpmLibraryObject, tracklist.title);
+            // console.log('GPM Tracklist Key: ' + _gpmTracklistKey);
+            // console.log("TracklistArray:");
+            // console.log(gpmLibraryObject);
+            // console.log(typeof gpmLibraryObject);
+            // console.log("Item at the extracted key in TracklistArray:");
+            // console.log(gpmLibraryObject[_gpmTracklistKey]);
+            // console.log(typeof gpmLibraryObject[_gpmTracklistKey]);
+
+            if (typeof _gpmTracklistKey === 'string') {
+                callback(gpmLibraryObject[_gpmTracklistKey]);
+            }
+            else {
+                DebugController.logError("Request received to fetch a tracklist array from an exported GPM data file, but a matching key couldn't be found for the current tracklist.");
+            }
+        };
+
+        //Send an XMLHttpRequest to load the exported GPM tracklist data from a local file, and then execute the callback
+        window.Utilities.SendRequest_LoadGooglePlayMusicExportData(_onGooglePlayMusicDataLoaded);
+    }    
+}
+
 //export {getScrapedTracklistMetadata, setScrapedTracklistMetadata};
-export {tab, tracklist, getStoredMetadata};
+export {tab, tracklist};
