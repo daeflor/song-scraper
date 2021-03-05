@@ -89,9 +89,9 @@ import * as Messenger from './Modules/MessageController.js';
                 //sendMessage_RecordCurrentApp(Model.tab.app);
 
                 //If the current app and tracklist type have been set...
-                if (typeof(Model.tab.app) === 'string' && typeof(Model.tracklist.type) === 'string') {
+                if (typeof Model.tab.app === 'string' && typeof Model.tracklist.type === 'string') {
                     //If the tracklist title has also already been set, proceed to prepare the extension's landing page
-                    if (typeof(Model.tracklist.title) === 'string') { 
+                    if (typeof Model.tracklist.title === 'string') { 
                         prepareLandingPage();
                     }
                     //Else, if the tracklist title has not yet been set, retrieve it from the content script before displaying the extension's landing page
@@ -262,7 +262,6 @@ import * as Messenger from './Modules/MessageController.js';
         const _parentElement      = (typeof options === 'object' && typeof options.parentElement === 'object')      ? options.parentElement      : ViewRenderer.divs.tracktables;
         const _descriptionIfEmpty = (typeof options === 'object' && typeof options.descriptionIfEmpty === 'string') ? options.descriptionIfEmpty : 'No tracks to display';
         const _headerElement      = (typeof options === 'object' && typeof options.headerElement === 'object')      ? options.headerElement      : window.Utilities.CreateNewElement('p', {attributes:{class:'noVerticalMargins'}});
-        _headerElement.textContent = headerText;
 
         //TODO Should all or some of this be done in ViewRenderer instead?
 
@@ -348,19 +347,22 @@ import * as Messenger from './Modules/MessageController.js';
             }
         }
 
+        
+
+        const _numTracks = _table.childElementCount -1; //Exclude the header row to get the number of tracks
+        _headerElement.textContent = headerText.concat(' (' + _numTracks + ')');
+
         const _tableScrollArea = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableScrollArea'}, children:[_table]});
         const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _tableScrollArea]});
-        _parentElement.appendChild(_tableContainer);
-        return _tableContainer;
 
-        //const _numTracks = _table.childElementCount -1; //Exclude the header row to get the number of tracks
 
         // if (_numTracks > 0)
 		// {
-		// 	//_table.hidden = false;
 
-		// 	const _header = document.getElementById(headerId);
-		// 	const _description = document.getElementById(descriptionId);
+        //     window.Utilities.CreateNewElement('p', {attributes:{class:'indent'}});
+
+		// 	//const _header = document.getElementById(headerId);
+		// 	//const _description = document.getElementById(descriptionId);
 			
 		// 	if(typeof _header === 'object') { //TODO standardize usage of 'typeof' (i.e. typeof x vs typeof(x))
 		// 		_header.textContent = _header.textContent.concat(" (" + count + ")");
@@ -372,7 +374,8 @@ import * as Messenger from './Modules/MessageController.js';
 		// 	}
 		// }
 
-
+        _parentElement.appendChild(_tableContainer);
+        return _tableContainer;
     }
 
     function displayTracklistTable(list, tableId, headerId, descriptionId) {
@@ -507,50 +510,6 @@ import * as Messenger from './Modules/MessageController.js';
 
         //Fetch the Google Play Music tracklist metadata from the Model and then execute the callback
         Model.getStoredMetadataGPM(_onGooglePlayMusicMetadataRetrieved);
-    }
-
-    function compareScrapedTracklistWithPreviousVersion(tracklist) {
-
-        //Once the exported Google Play Music tracklist data has been loaded from a local file, convert it to a CSV file
-        const _onGooglePlayMusicDataLoaded = function(tracklistsArray) {
-            const _gpmTracklistKey = getTracklistKeyFromTracklistName(tracklistsArray, Model.tracklist.title);
-            console.log('GPM Tracklist Key: ' + _gpmTracklistKey);
-            console.log(tracklistsArray[_gpmTracklistKey]);
-
-            //COMPARE DURATION OF TRACKS BEFORE AND AFTER
-            //compareSecondsValuesBetweenTracklists(tracklistsArray[_gpmTracklistKey], tracklist);
-
-            /* This code will output the total seconds as an integer instead of a duration string
-            const _gpmTracklist = tracklistsArray[_gpmTracklistKey];
-            for (let i = 0; i < _gpmTracklist.length; i++) { 
-                _gpmTracklist[i].duration = convertDurationStringToSeconds(_gpmTracklist[i].duration);
-            }
-
-            for (let i = 0; i < tracklist.length; i++) { 
-                tracklist[i].duration = convertDurationStringToSeconds(tracklist[i].duration);
-            }
-
-            downloadCurrentTracklistAsCSV(tracklist);
-
-            const _keysToIncludeInExport = [
-                'title',
-                'artist',
-                'album',
-                'duration',
-            ];
-
-            convertArrayOfObjectsToCsv(_gpmTracklist, 'TracklistExport_Before', _keysToIncludeInExport);
-            */
-
-            //THEN, IF THE DIFFERENCE IS 0 or 1, don't include it in the 'keys to include? Hmm not sure how that would work
-                //would have to have a dedicated "keys to include" per object, which seems really messy
-
-
-            //convertArrayOfObjectsToCsv(tracklistsArray[_gpmTracklistKey], 'TracklistExport_Before', _keysToIncludeInExport);
-        };
-
-        //Send an XMLHttpRequest to load the exported GPM tracklist data from a local file, and then execute the callback
-        sendRequest_LoadGooglePlayMusicExportData(_onGooglePlayMusicDataLoaded);
     }
 
     function downloadCurrentTracklistAsCSV(tracklist) {
