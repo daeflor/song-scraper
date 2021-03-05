@@ -249,12 +249,16 @@ import * as Messenger from './Modules/MessageController.js';
      * Creates a track table from the provided tracklist and other inputs
      * @param {array} tracklist The tracklist array for which to create a table element
      * @param {string} headerText The name of the track table to display above it
-     * @param {object} [options] An object to provide the following optional parameters: parentElement (object); headerElement (object); descriptionIfEmpty (string)
+     * @param {object} [options] An object to provide the following optional parameters: parentElement (object); headerElement (object); descriptionIfEmpty (string); skipMatchedTracks (boolean);
      * @returns The container element for the track table and all associated elements
      */
     export function createTrackTable(tracklist, headerText, options/*parentElement, header, descriptionIfEmpty*/) {
     //TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove (or replace?) any existing scraped tracklist tables, including from ViewRenderer's tracker object
 
+        // console.log("Creating a track table with header: " + headerText);
+        // console.table(tracklist);
+
+        const _skipMatchedTracks  = (typeof options === 'object' && typeof options.skipMatchedTracks === 'boolean') ? options.skipMatchedTracks  : false;
         const _parentElement      = (typeof options === 'object' && typeof options.parentElement === 'object')      ? options.parentElement      : ViewRenderer.divs.tracktables;
         const _descriptionIfEmpty = (typeof options === 'object' && typeof options.descriptionIfEmpty === 'string') ? options.descriptionIfEmpty : 'No tracks to display';
         const _headerElement      = (typeof options === 'object' && typeof options.headerElement === 'object')      ? options.headerElement      : window.Utilities.CreateNewElement('p', {attributes:{class:'noVerticalMargins'}});
@@ -268,7 +272,8 @@ import * as Messenger from './Modules/MessageController.js';
             'Artist',
             'Album',
             'Duration',
-            'Seconds',
+            //'Seconds',
+            //'Matched'
             'Unplayable' 
         ]; //TODO This is currently hard-coded. Should eventually be a param, probably. Although it would be good to have a default set of keys to fall back to.
 
@@ -297,7 +302,13 @@ import * as Messenger from './Modules/MessageController.js';
             //For each track in the tracklist...
             for (let i = 0; i < tracklist.length; i++) {
                 //If the current value in the array is a valid object...
-                if (typeof tracklist[i] === 'object' && tracklist[i] !== null) { //TODO added this null check temporarily as a work-around, but would prefer a better long-term solution
+                if (typeof tracklist[i] === 'object') {
+                    //If 'matched' tracks are purposefully being skipped for this track table, and the current track is 'matched', skip over it.
+                    if (_skipMatchedTracks === true && tracklist[i].matched === true) {
+                        //DebugController.logInfo("Track at index " + i + " will be skipped over because it is listed as 'matched' and matched tracks are being skipped for this track table.");
+                        continue;
+                    }
+
                     //Create a new data cell for the track's index
                     let _td = document.createElement('td'); 
                     _td.textContent = i+1; 
@@ -329,9 +340,6 @@ import * as Messenger from './Modules/MessageController.js';
                             }
                         }
                     }
-                }
-                else if (tracklist[i] === null) { //TODO it's a bit weird that this is an expected case
-                    DebugController.logInfo("Encountered a null reference in the tracklist array. Skipping over it as this indicates it should be omitted from the track table.");
                 }
                 else {
                     DebugController.logError("Expected an object containing track metadata or null. Instead found: " + tracklist[i] + ". Current index in array: " + i + ". Tracklist: ");
@@ -423,6 +431,49 @@ import * as Messenger from './Modules/MessageController.js';
 		}
 	}
 
+    function checkIfDurationValuesMatch(durationA, durationB) {
+        if (typeof durationA === 'number' && typeof durationB === 'number') {
+            const _differenceInSeconds = durationA - durationB;
+            return (_differenceInSeconds > -2 && _differenceInSeconds < 2) ? true : false;
+        }
+        else {
+            DebugController.logError("Error: Expected two parameters of type 'number' but instead received a) " + durationA + "; b) " + durationB);
+        }
+    }
+
+    function markMatchingTracks(tracklistCurrent, tracklistPrevious) {
+        for (let i = 0; i < tracklistCurrent.length; i++) {
+            const _scrapedTrack = tracklistCurrent[i];
+            
+            for (let j = 0; j < tracklistPrevious.length; j++) {
+                const _storedTrack = tracklistPrevious[j];
+
+                //If both the scraped and stored tracks have valid values...
+                if (_scrapedTrack != null && _storedTrack != null) {
+                    //If the stored track hasn't already been marked as 'matched'...
+                    if (_storedTrack.matched !== true) {
+                        //If the scraped and stored tracks match...
+                        if (_scrapedTrack.title === _storedTrack.title && _scrapedTrack.artist === _storedTrack.artist &&
+                            _scrapedTrack.album === _storedTrack.album && checkIfDurationValuesMatch(_scrapedTrack.seconds, _storedTrack.seconds) === true ) {
+                            
+                                //Mark the scraped and stored tracks both as 'matched' and move onto the next scraped track
+                                _scrapedTrack.matched = true;
+                                _storedTrack.matched = true;
+                                break;
+                        }
+                    }
+                } //TODO OLD - removed track index wrong if there were duplicates
+
+                //TODO would it work to start at the same j position that was last matched + 1, as opposed to always starting at j=0?
+                    //Probably more hassle and room for error than it's worth
+
+                else {
+                    DebugController.logError("Attempted to compare two tracks but at least one of them was null.");
+                }  
+            }
+        }
+    }
+
     export function createDeltaTracklistsGPM(scrapedTracklist) {
         //TODO why pass the parameter, when we can get the scraped tracklist from the Model right here?
 
@@ -437,29 +488,18 @@ import * as Messenger from './Modules/MessageController.js';
                 scrapedTracklist[i].seconds = convertDurationStringToSeconds(scrapedTracklist[i].duration);
             }
 
-
-            for (let i = 0; i < scrapedTracklist.length; i++) {
-                for (let j = 0; j < gpmTracklist.length; j++) {
-                    if (scrapedTracklist[i] != null && gpmTracklist[j] != null && 
-                        scrapedTracklist[i].title === gpmTracklist[j].title && scrapedTracklist[i].album === gpmTracklist[j].album && scrapedTracklist[i].duration === gpmTracklist[j].duration)
-                    {
-                        scrapedTracklist[i] = null;
-                        gpmTracklist[j] = null;
-                        break;
-                    }
-                }
-            } //TODO OLD - removed track index wrong if there were duplicates
+            markMatchingTracks(scrapedTracklist, gpmTracklist);
 
             //Create a new container div element for all the track tables used to show the deltas (e.g. Added, Removed, Disabled)
             ViewRenderer.tracktables.deltas = window.Utilities.CreateNewElement('div');
             
             //Create a header element and track table for the list of 'Added Tracks'
             let _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
-            createTrackTable(scrapedTracklist, 'Added Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement});
+            createTrackTable(scrapedTracklist, 'Added Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement, skipMatchedTracks:true});
             
             //Create a header element and track table for the list of 'Removed Tracks'
             _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
-            createTrackTable(gpmTracklist, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement});
+            createTrackTable(gpmTracklist, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement, skipMatchedTracks:true});
 
             //Add the new container div for all the delta track tables to the DOM, within the general track tables div
             ViewRenderer.divs.tracktables.appendChild(ViewRenderer.tracktables.deltas);
