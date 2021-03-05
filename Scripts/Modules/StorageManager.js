@@ -23,7 +23,7 @@ function retrieveTracklistMetadata(tracklistType, tracklistTitle, callback) {
     //If Test Mode is enabled, get the test data object from storage and then get the tracklist metadata kvp from that
     if (_testMode === true) {
         const _onTestDataRetrieved = function(testDataObject) {
-            if (typeof(callback) === 'function') {
+            if (typeof callback === 'function') {
                 callback(testDataObject[_tracklistKey]);
             }
         }

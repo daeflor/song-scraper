@@ -13,7 +13,7 @@ function createCommaSeparatedStringFromArray(array) {
         //For each element in the array except for the last one...
         for (let i = 0; i < array.length-1; i++) {
             //If the element's value type is a string...
-            if (typeof(array[i]) === 'string') {
+            if (typeof array[i] === 'string') {
                 //Include double-quotes around the output string, followed by a comma to indicate the end of the current element/value
                 _string += '"' + array[i] + '",';
             }

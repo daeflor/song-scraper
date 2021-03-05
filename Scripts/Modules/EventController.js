@@ -26,17 +26,6 @@ ViewRenderer.buttons.exportStoredMetadata.addEventListener('click', function() {
     UIController.downloadGooglePlayMusicTracklistAsCSV();
 });
 
-//TODO This is deprecated. Needs updating or removal.
-//Button Pressed: Show Comparison Page
-window.Utilities.GetElement('buttonShowComparisonPage').addEventListener('click', function() {
-    //UIController.displayTracklistTable(Model.tracklist.metadataScraped, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
-    const _tracklistTableParentElement = document.getElementById('trackLists');
-    UIController.createTrackTable(Model.tracklist.metadataScraped, _tracklistTableParentElement);
-    UIController.triggerUITransition('ShowComparison');
-    //TODO need to actually do a comparison before displaying the track tables here
-});
-
-
 //Checkbox Value Changed: Stored YTM Tracklist
 ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', function() {
     //If the checkbox is checked, display the stored metadata for the current tracklist; Otherwise hide it
@@ -49,7 +38,6 @@ ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', function() {
         else {
             const _onMetadataRetrieved = function(metadata) {
                 ViewRenderer.tracktables.stored = UIController.createTrackTable(metadata, 'Stored YTM Tracklist');
-                //UIController.triggerUITransition('screen_Tracklist');
                 //TODO this interaction with ViewRenderer is WIP
             }
         
@@ -67,9 +55,6 @@ ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', function() {
 ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() {
     //If the checkbox is checked, display the scraped tracklist metadata; Otherwise hide it
     if (ViewRenderer.checkboxes.scrapedTrackTable.checked === true) {
-        //UIController.displayTracklistTable(Model.tracklist.metadataScraped, 'tableTracksAdded', 'pTracksAddedHeader', 'pTracksAddedDescription');
-        //UIController.triggerUITransition('screen_Tracklist');
-
         //If a track table DOM element has previously been created, just show the existing element
         if (typeof ViewRenderer.tracktables.scraped === 'object') {
             ViewRenderer.unhideElement(ViewRenderer.tracktables.scraped);
@@ -87,6 +72,9 @@ ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() 
     }
 });
 
+//TODO need to handle the case where there is no stored tracklist (e.g. because this is the first time the track was scraped)
+    //Could consider leaving the checkbox disabled unless both tracklists (scraped & stored) exist
+    //But would also be nice to have some feedback about this, such as a message showing up when the checkbox is pressed, indicating a delta cannot yet be displayed
 //Checkbox Value Changed: Delta Tracklists
 ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', function() {
     //If the checkbox is checked, display the delta tracklists metadata; Otherwise hide them

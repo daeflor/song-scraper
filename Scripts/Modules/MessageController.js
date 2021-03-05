@@ -39,7 +39,7 @@ function sendMessage(messageGreeting) {
  */
 function handleMessageResponse(message) {
 	if (message.greeting === 'GetTracklistTitle') {         
-		if (typeof(message.response) === 'string') { //If the response received is a string...
+		if (typeof message.response === 'string') { //If the response received is a string...
             Model.tracklist.title = message.response; //Update the tracklist title in the Model
             UIController.prepareLandingPage(); //Display the popup landing page
         }
@@ -50,10 +50,7 @@ function handleMessageResponse(message) {
     else if (message.greeting === 'GetTracklistMetadata') { 
         if (Array.isArray(message.response) === true) { //If the response received is an array...
             Model.tracklist.metadataScraped = message.response; //Update the scraped tracklist metadata in the Model
-            UIController.triggerUITransition('ScrapeSuccessful'); //Navigate to the 'Scrape Successful' screen
-
-
-            //compareScrapedTracklistWithPreviousVersion(response.tracklist);
+            UIController.triggerUITransition('ScrapeSuccessful'); //Transition the UI accordingly
         }
         else {
             UIController.triggerUITransition('ScrapeFailed');
@@ -61,5 +58,7 @@ function handleMessageResponse(message) {
         }
 	}
 }
+
+//TODO may want to restructure this similarly to new EventController
 
 export {sendMessage};

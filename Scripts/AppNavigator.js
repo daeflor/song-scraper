@@ -222,7 +222,6 @@ import * as Messenger from './Modules/MessageController.js';
 		    ViewRenderer.showStatusMessage('Song list comparison in progress.');
         } 
         else if (transition === 'ScrapeSuccessful') {
-            //ViewRenderer.showScrapeCompletedPage();
             ViewRenderer.hideElement(ViewRenderer.divs.status);
             ViewRenderer.unhideElement(ViewRenderer.divs.buttons);
             ViewRenderer.unhideElement(ViewRenderer.divs.checkboxes);
@@ -235,14 +234,6 @@ import * as Messenger from './Modules/MessageController.js';
         else if (transition === 'ScrapeFailed') {
             ViewRenderer.showStatusMessage('Failed to retrieve track list.');
         }
-        else if (transition === 'ShowComparison') {
-            ViewRenderer.hideScrapeCompletedPage();
-            ViewRenderer.showComparisonPage();
-        }
-        else if (transition === 'screen_Tracklist') {
-            ViewRenderer.hideScrapeCompletedPage();
-            ViewRenderer.displayScreen_Tracklist();
-        }
     }
 
     /**
@@ -254,27 +245,10 @@ import * as Messenger from './Modules/MessageController.js';
      */
     export function createTrackTable(tracklist, headerText, options/*parentElement, header, descriptionIfEmpty*/) {
     //TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove (or replace?) any existing scraped tracklist tables, including from ViewRenderer's tracker object
-
-        // console.log("Creating a track table with header: " + headerText);
-        // console.table(tracklist);
-
         const _skipMatchedTracks  = (typeof options === 'object' && typeof options.skipMatchedTracks === 'boolean') ? options.skipMatchedTracks  : false;
         const _parentElement      = (typeof options === 'object' && typeof options.parentElement === 'object')      ? options.parentElement      : ViewRenderer.divs.tracktables;
         const _descriptionIfEmpty = (typeof options === 'object' && typeof options.descriptionIfEmpty === 'string') ? options.descriptionIfEmpty : 'No tracks to display'; //TODO Not sure it's ever going to be necessary to pass this as a parameter instead of just using the default value.
         const _headerElement      = (typeof options === 'object' && typeof options.headerElement === 'object')      ? options.headerElement      : window.Utilities.CreateNewElement('p', {attributes:{class:'noVerticalMargins'}});
-
-        // //If the tracklist has no tracks in it...
-        // if (tracklist.length === 0) {
-
-        //     _headerElement.textContent = headerText.concat(' (0)');
-        //     const _description = window.Utilities.CreateNewElement('p', {attributes:{class:'indent'}});
-        //     _description.textContent = _descriptionIfEmpty;
-        //     //const _tableScrollArea = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableScrollArea'}, children:[_table]});
-        //     const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _description]});
-
-        //     _parentElement.appendChild(_tableContainer);
-        //     return _tableContainer;
-        // }
         
         //TODO Should all or some of this be done in ViewRenderer instead?
 
@@ -332,11 +306,9 @@ import * as Messenger from './Modules/MessageController.js';
                     //For each additional column in the Track Table...
                     for (let j = 0; j < _columnsToIncludeInTrackTable.length; j++) { 
                         //If the current column's name is a valid string...
-                        if (typeof _columnsToIncludeInTrackTable[j] === 'string') {
-                            
+                        if (typeof _columnsToIncludeInTrackTable[j] === 'string') {  
                             //Force the column name string to lower case and use that value to extract the corresponding metadatum value for the track
                             const _trackMetadatum = tracklist[i][_columnsToIncludeInTrackTable[j].toLowerCase()];
-
                             //If the track's metadatum for the current column is a valid string or has a value of true
                             //if (typeof _trackMetadatum === 'string' || _trackMetadatum === true || typeof _trackMetadatum === 'number') {
                             if (typeof _trackMetadatum !== 'undefined' && _trackMetadatum != false) {
@@ -348,7 +320,6 @@ import * as Messenger from './Modules/MessageController.js';
                             }
                             else {
                                 DebugController.logInfo("A piece of track metadata was encountered that is blank, false, or undefined, and so it was skipped over. This is typical in the case of the 'Unplayable' column, but otherwise could indicate that an issue was encountered. Current column is: " + _columnsToIncludeInTrackTable[j]);
-                                //DebugController.logInfo("A piece of track metadata was encountered that is neither a string value nor equal to 'true' and so it was skipped over. This is normal in the case of the 'Unplayable' column, but otherwise could indicate that an issue was encountered. Current column is: " + _columnsToIncludeInTrackTable[j]);
                             }
                         }
                     }
@@ -358,99 +329,23 @@ import * as Messenger from './Modules/MessageController.js';
                     console.table(tracklist);
                 }
             }
-        }
-
-        //const _numTracks = _table.childElementCount -1; //Exclude the header row to get the number of tracks
+        } //TODO could probably separate creating the track table itself from all the various other elements (e.g. header, description) that go along with it, to have smaller and easier-to-read functions
 
         let _tableBody = undefined;
-
-        //If the table has no tracks in it (i.e. the child count is 1 because of the header row)...
-        if (_table.childElementCount === 1)
+        if (_table.childElementCount === 1) //If the table has no tracks in it (i.e. the child count is 1, because of the header row)...
 		{
+            //Create a new element for a description of the empty track table
             _tableBody = window.Utilities.CreateNewElement('p', {attributes:{class:'indent'}});
             _tableBody.textContent = _descriptionIfEmpty;
 		}
-        else {
+        else { //Else, if the table does have tracks in it, create a scroll area to contain the table
             _tableBody = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableScrollArea'}, children:[_table]});
         }
-
-        _headerElement.textContent = headerText.concat(' (' + (_table.childElementCount -1) + ')');
-        const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _tableBody]});
-        _parentElement.appendChild(_tableContainer);
-        return _tableContainer;
-
-        
-		// //If the table has no tracks in it...
-        // if (_numTracks === 0) {
-        //     const _description = window.Utilities.CreateNewElement('p', {attributes:{class:'indent'}});
-        //     _description.textContent = _descriptionIfEmpty;
-        //     const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _description]});
-        //     _parentElement.appendChild(_tableContainer);
-        //     return _tableContainer; 
-		// }
-        // else {
-        //     const _tableScrollArea = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableScrollArea'}, children:[_table]});
-        //     const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _tableScrollArea]});
-        //     _parentElement.appendChild(_tableContainer);
-        //     return _tableContainer;
-        // }
+        _headerElement.textContent = headerText.concat(' (' + (_table.childElementCount -1) + ')'); //Set the header text, including the number of tracks in the table
+        const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _tableBody]}); //Create a new element to contain the various table elements
+        _parentElement.appendChild(_tableContainer); //Add the new container element (and its children) to the DOM
+        return _tableContainer; 
     }
-
-    function displayTracklistTable(list, tableId, headerId, descriptionId) {
-		const _table = document.getElementById(tableId);
-		var tr;
-		var td;	
-
-		var count = 0;
-			
-		for (var i = 0; i < list.length; i++)
-		{
-			if (list[i] == null)
-			{
-				continue;
-			}
-
-			count++;
-			
-			console.log(list[i].title);
-			tr = document.createElement('TR');
-			
-			td = document.createElement('TD');
-			td.textContent = i+1; 
-			tr.appendChild(td);
-			
-			td = document.createElement('TD');
-			td.textContent = list[i].title;
-			tr.appendChild(td);
-			
-			td = document.createElement('TD');
-			td.textContent = list[i].artist;
-			tr.appendChild(td);
-			
-			td = document.createElement('TD');
-			td.textContent = list[i].album;
-			tr.appendChild(td);
-			
-			_table.appendChild(tr);
-		}
-		
-		if (_table.childElementCount > 1)
-		{
-			_table.hidden = false;
-
-			const _header = document.getElementById(headerId);
-			const _description = document.getElementById(descriptionId);
-			
-			if(typeof _header === 'object') { //TODO standardize usage of 'typeof' (i.e. typeof x vs typeof(x))
-				_header.textContent = _header.textContent.concat(" (" + count + ")");
-			}
-
-			if (typeof _description === 'object') {
-				_description.hidden = true;
-				//description.textContent = count + " Tracks";
-			}
-		}
-	}
 
     function checkIfDurationValuesMatch(durationA, durationB) {
         if (typeof durationA === 'number' && typeof durationB === 'number') {
@@ -742,4 +637,4 @@ window.Utilities = (function() {
 
 window.Utilities.FadeIn(document.body, init, 500);
 
-export {prepareLandingPage, displayTracklistTable, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};
+export {prepareLandingPage, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};

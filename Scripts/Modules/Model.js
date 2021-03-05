@@ -75,6 +75,8 @@ export function getStoredMetadataGPM(callback) {
             // console.log(gpmLibraryObject[_gpmTracklistKey]);
             // console.log(typeof gpmLibraryObject[_gpmTracklistKey]);
 
+            //TODO I don't think this properly handles the case when no matching tracklist key is found (I think the helper function above would just return undefined currently)
+
             callback(gpmLibraryObject[_gpmTracklistKey]);
         };
 
