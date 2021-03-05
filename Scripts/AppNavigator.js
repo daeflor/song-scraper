@@ -260,9 +260,22 @@ import * as Messenger from './Modules/MessageController.js';
 
         const _skipMatchedTracks  = (typeof options === 'object' && typeof options.skipMatchedTracks === 'boolean') ? options.skipMatchedTracks  : false;
         const _parentElement      = (typeof options === 'object' && typeof options.parentElement === 'object')      ? options.parentElement      : ViewRenderer.divs.tracktables;
-        const _descriptionIfEmpty = (typeof options === 'object' && typeof options.descriptionIfEmpty === 'string') ? options.descriptionIfEmpty : 'No tracks to display';
+        const _descriptionIfEmpty = (typeof options === 'object' && typeof options.descriptionIfEmpty === 'string') ? options.descriptionIfEmpty : 'No tracks to display'; //TODO Not sure it's ever going to be necessary to pass this as a parameter instead of just using the default value.
         const _headerElement      = (typeof options === 'object' && typeof options.headerElement === 'object')      ? options.headerElement      : window.Utilities.CreateNewElement('p', {attributes:{class:'noVerticalMargins'}});
 
+        // //If the tracklist has no tracks in it...
+        // if (tracklist.length === 0) {
+
+        //     _headerElement.textContent = headerText.concat(' (0)');
+        //     const _description = window.Utilities.CreateNewElement('p', {attributes:{class:'indent'}});
+        //     _description.textContent = _descriptionIfEmpty;
+        //     //const _tableScrollArea = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableScrollArea'}, children:[_table]});
+        //     const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _description]});
+
+        //     _parentElement.appendChild(_tableContainer);
+        //     return _tableContainer;
+        // }
+        
         //TODO Should all or some of this be done in ViewRenderer instead?
 
         //TODO A nice-to-have in the future would be to omit any header/column (e.g. 'Unplayable') if there are zero displayable values for that metadatum
@@ -347,35 +360,40 @@ import * as Messenger from './Modules/MessageController.js';
             }
         }
 
-        
+        //const _numTracks = _table.childElementCount -1; //Exclude the header row to get the number of tracks
 
-        const _numTracks = _table.childElementCount -1; //Exclude the header row to get the number of tracks
-        _headerElement.textContent = headerText.concat(' (' + _numTracks + ')');
+        let _tableBody = undefined;
 
-        const _tableScrollArea = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableScrollArea'}, children:[_table]});
-        const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _tableScrollArea]});
+        //If the table has no tracks in it (i.e. the child count is 1 because of the header row)...
+        if (_table.childElementCount === 1)
+		{
+            _tableBody = window.Utilities.CreateNewElement('p', {attributes:{class:'indent'}});
+            _tableBody.textContent = _descriptionIfEmpty;
+		}
+        else {
+            _tableBody = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableScrollArea'}, children:[_table]});
+        }
 
-
-        // if (_numTracks > 0)
-		// {
-
-        //     window.Utilities.CreateNewElement('p', {attributes:{class:'indent'}});
-
-		// 	//const _header = document.getElementById(headerId);
-		// 	//const _description = document.getElementById(descriptionId);
-			
-		// 	if(typeof _header === 'object') { //TODO standardize usage of 'typeof' (i.e. typeof x vs typeof(x))
-		// 		_header.textContent = _header.textContent.concat(" (" + count + ")");
-		// 	}
-
-		// 	if (typeof _description === 'object') {
-		// 		_description.hidden = true;
-		// 		//description.textContent = count + " Tracks";
-		// 	}
-		// }
-
+        _headerElement.textContent = headerText.concat(' (' + (_table.childElementCount -1) + ')');
+        const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _tableBody]});
         _parentElement.appendChild(_tableContainer);
         return _tableContainer;
+
+        
+		// //If the table has no tracks in it...
+        // if (_numTracks === 0) {
+        //     const _description = window.Utilities.CreateNewElement('p', {attributes:{class:'indent'}});
+        //     _description.textContent = _descriptionIfEmpty;
+        //     const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _description]});
+        //     _parentElement.appendChild(_tableContainer);
+        //     return _tableContainer; 
+		// }
+        // else {
+        //     const _tableScrollArea = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableScrollArea'}, children:[_table]});
+        //     const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _tableScrollArea]});
+        //     _parentElement.appendChild(_tableContainer);
+        //     return _tableContainer;
+        // }
     }
 
     function displayTracklistTable(list, tableId, headerId, descriptionId) {
