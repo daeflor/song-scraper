@@ -1,3 +1,4 @@
+import * as DebugController from './DebugController.js';
 import * as Storage from './StorageManager.js';
 
 //TODO might want to freeze this once the values have been set
@@ -75,9 +76,12 @@ export function getStoredMetadataGPM(callback) {
             // console.log(gpmLibraryObject[_gpmTracklistKey]);
             // console.log(typeof gpmLibraryObject[_gpmTracklistKey]);
 
-            //TODO I don't think this properly handles the case when no matching tracklist key is found (I think the helper function above would just return undefined currently)
-
-            callback(gpmLibraryObject[_gpmTracklistKey]);
+            if (typeof _gpmTracklistKey === 'string') {
+                callback(gpmLibraryObject[_gpmTracklistKey]);
+            }
+            else {
+                DebugController.logError("Request received to fetch a tracklist array from an exported GPM data file, but a matching key couldn't be found for the current tracklist.");
+            }
         };
 
         //Send an XMLHttpRequest to load the exported GPM tracklist data from a local file, and then execute the callback

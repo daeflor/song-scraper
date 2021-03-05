@@ -616,7 +616,7 @@ window.Utilities = (function() {
                 return key;
             }
         }
-        console.log("ERROR: Tried to get a tracklist key from its name, but no matching key could be found.");
+        DebugController.logWarning("Tried to get a tracklist key from its name, but no matching key could be found.");
     }
 
     //TODO Move this out of the general Utilities section and into somewhere more applicable
