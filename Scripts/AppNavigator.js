@@ -396,7 +396,6 @@ import * as Messenger from './Modules/MessageController.js';
         //Once the Google Play Music metadata for the current tracklist has been fetched...
         const _onGooglePlayMusicMetadataRetrieved = function(gpmTracklist) {
 
-            //const _gpmTracklist = tracklistsArray[_gpmTracklistKey];
             for (let i = 0; i < gpmTracklist.length; i++) { 
                 gpmTracklist[i].seconds = convertDurationStringToSeconds(gpmTracklist[i].duration);
             }
@@ -473,39 +472,27 @@ import * as Messenger from './Modules/MessageController.js';
 
     function convertDurationStringToSeconds(duration) {
         if (typeof duration === 'string') {
-            const _splitDurationString = duration.split(':');
+            //Split the duration string, then convert each split portion into an integer and return a new array of split integer values
+            const _splitDurationIntegers = duration.split(':').map(durationString => parseInt(durationString, 10));
 
-            if (_splitDurationString.length < 4) {
-                let _totalSeconds = 0;
-                let _multiplier = 1;
-    
-                for (let i = _splitDurationString.length-1; i >= 0; i--) {
-                    _totalSeconds += (parseInt(_splitDurationString[i])*_multiplier);
-                    _multiplier *= 60;
-                }
-
-                return _totalSeconds;
+            switch(_splitDurationIntegers.length) {
+                case 1:
+                    return _splitDurationIntegers[0];
+                case 2:
+                    return _splitDurationIntegers[0]*60 + _splitDurationIntegers[1];
+                case 3:
+                    return _splitDurationIntegers[0]*3600 + _splitDurationIntegers[1]*60 + _splitDurationIntegers[2];
+                default:
+                    DebugController.logWarning("Tried to extract a seconds integer value from a duration string, but the duration is not in a supported format (e.g. the duration may be longer than 24 hours).");
             }
-            else {
-                DebugController.logWarning("Tried to convert a duration string into a seconds integer value, but the duration is longer than 24 hours and this is not currently supported.");
-            }
-            // if (_splitDurationString.length === 1) {
-            //     return parseInt(_splitDurationString[0]);
-            // }
-            // else if (_splitDurationString.length == 2) {
-            //     return parseInt(_splitDurationString[0])*60+parseInt(_splitDurationString[1]);
-            // }
-            // else { //TODO Note that currently songs with a duration of an hour or longer may not be properly supported
-            //     console.log("ERROR: Tried to convert a duration string into a seconds integer value, but the duration string was not in the correct MM:SS format");
-            // }
         }
         else {
-            console.log("ERROR: Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
+            DebugController.LogError("ERROR: Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
         }
     }
 
+//TODO this should be a module instead (or move the few different remaining helper functions here into other already-existing modules as applicable)
 window.Utilities = (function() {
-
     /**
      * Creates and returns an element of the specified type and with the specified attributes and/or children
      * @param {string} type The type of element to create
