@@ -32,5 +32,4 @@
         "declarativeContent"
     ],
     "content_security_policy":"script-src 'self' https://www.gstatic.com/ https://apis.google.com; object-src 'self'"
-    //"content_security_policy":"script-src 'self' https://www.gstatic.com/ https://*.firebaseio.com https://www.googleapis.com https://cdn.firebase.com https://apis.google.com; object-src 'self'"
 }
