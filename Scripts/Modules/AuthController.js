@@ -77,5 +77,5 @@ function startFirebaseUIAuthFlow() {
         };
     }
 
-    _authUI.start('#firebaseui-auth-container', _uiConfig);
+    _authUI.start('#auth', _uiConfig);
 }
