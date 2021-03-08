@@ -1,6 +1,7 @@
 //Should these objects be in the ViewRenderer or elsewhere (e.g. ViewState?)?
 
 export const divs = Object.freeze({
+    auth: document.getElementById('auth'),
     status: document.getElementById('status'),
     buttons: document.getElementById('buttons'),
     checkboxes: document.getElementById('checkboxes'),

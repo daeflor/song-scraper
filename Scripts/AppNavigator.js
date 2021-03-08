@@ -60,103 +60,103 @@ import * as Messenger from './Modules/MessageController.js';
 
 
 //window.AppController = (function() {
-    const supportedApps = Object.freeze({
-        youTubeMusic: 'ytm',
-        googlePlayMusic: 'gpm'
-    });
+const supportedApps = Object.freeze({
+    youTubeMusic: 'ytm',
+    googlePlayMusic: 'gpm'
+});
 
-    //TODO This isn't being used as much as it could be
-    const supportedTracklistTypes = Object.freeze({
-        playlist: 'playlist',
-        autoPlaylist: 'auto',
-        genreList: 'genre',
-        allSongsList: 'all',
-        uploadsList: 'uploads'
-    });
+//TODO This isn't being used as much as it could be
+const supportedTracklistTypes = Object.freeze({
+    playlist: 'playlist',
+    autoPlaylist: 'auto',
+    genreList: 'genre',
+    allSongsList: 'all',
+    uploadsList: 'uploads'
+});
 
-    function init() {
-        //Query for the Active Tab...
-        chrome.tabs.query( 
-            { active: true, currentWindow: true}, 
-            function(tabs) {	
-                //Make a record of the current/active tab for future reference
-                //window.Model.SetTabId(tabs[0].id);
-                Model.tab.id = tabs[0].id;
+export function init() {
+    //Query for the Active Tab...
+    chrome.tabs.query( 
+        { active: true, currentWindow: true}, 
+        function(tabs) {	
+            //Make a record of the current/active tab for future reference
+            //window.Model.SetTabId(tabs[0].id);
+            Model.tab.id = tabs[0].id;
 
-                validateUrlAndRecordTracklistInfo(tabs[0].url);
+            validateUrlAndRecordTracklistInfo(tabs[0].url);
 
-                //Send a message to the content script to make a record of the current app for future reference
-                //sendMessage_RecordCurrentApp(Model.tab.app);
+            //Send a message to the content script to make a record of the current app for future reference
+            //sendMessage_RecordCurrentApp(Model.tab.app);
 
-                //If the current app and tracklist type have been set...
-                if (typeof Model.tab.app === 'string' && typeof Model.tracklist.type === 'string') {
-                    //If the tracklist title has also already been set, proceed to prepare the extension's landing page
-                    if (typeof Model.tracklist.title === 'string') { 
-                        prepareLandingPage();
-                    }
-                    //Else, if the tracklist title has not yet been set, retrieve it from the content script before displaying the extension's landing page
-                    else {
-                        //Send a message to the content script to fetch the name of the current tracklist
-                        Messenger.sendMessage('GetTracklistTitle');
-                    }
+            //If the current app and tracklist type have been set...
+            if (typeof Model.tab.app === 'string' && typeof Model.tracklist.type === 'string') {
+                //If the tracklist title has also already been set, proceed to prepare the extension's landing page
+                if (typeof Model.tracklist.title === 'string') { 
+                    prepareLandingPage();
+                }
+                //Else, if the tracklist title has not yet been set, retrieve it from the content script before displaying the extension's landing page
+                else {
+                    //Send a message to the content script to fetch the name of the current tracklist
+                    Messenger.sendMessage('GetTracklistTitle');
                 }
             }
-        );
-    }
-
-    function validateUrlAndRecordTracklistInfo(url) {
-        console.assert(typeof url == 'string', 'url should be a string');
-
-        //If the URL indicates the current app/site is YouTube Music...
-        if (url != null && url.includes('music.youtube.com') == true) {
-            //Make a record of the current app for future reference
-            Model.tab.app = supportedApps.youTubeMusic;
-
-            //Make a record of the current tracklist type based on certain URL conditions
-            if (url.includes('list=PL')) {
-                Model.tracklist.type = supportedTracklistTypes.playlist;
-            } 
-            else if (url.includes('list=LM')) {
-                Model.tracklist.type = supportedTracklistTypes.autoPlaylist;
-                Model.tracklist.title = 'Liked Songs';
-            }
-            //TODO the options below are currently not supported due to how the manifest is setup
-            else if (url.includes('library/songs')) {
-                Model.tracklist.type = supportedTracklistTypes.allSongsList;
-                Model.tracklist.title = 'Added from YouTube Music';
-            }
-            else if (url.includes('library/uploaded_songs')) {
-                Model.tracklist.type = supportedTracklistTypes.allSongsList;
-                Model.tracklist.title = 'Uploaded Songs';
-                //Model.tracklist.type = supportedTracklistTypes.uploadsList;
-            }
         }
-        //Else, if the URL indicates the current app/site is Google Play Music...
-        else if (url != null && url.includes('play.google.com/music') == true) {
-            //Make a record of the current app for future reference
-            Model.tab.app = supportedApps.googlePlayMusic;
+    );
+}
 
-            //Make a record of the current tracklist type based on certain URL conditions
-            if (url.includes('#/pl')) {
-                Model.tracklist.type = supportedTracklistTypes.playlist;
-            } 
-            else if (url.includes('#/ap')) {
-                Model.tracklist.type = supportedTracklistTypes.autoPlaylist;
-            }
-            else if (url.includes('#/tgs')) {
-                Model.tracklist.type = supportedTracklistTypes.genreList;
-                const _splitUrl = url.split("/");
-                const _genre = _splitUrl[_splitUrl.length-1];
-                Model.tracklist.title = _genre; //Make a record of the tracklist title
-            }
-            else if (url.includes('#/all')) {
-                Model.tracklist.type = supportedTracklistTypes.allSongsList;
-            }
+function validateUrlAndRecordTracklistInfo(url) {
+    console.assert(typeof url == 'string', 'url should be a string');
+
+    //If the URL indicates the current app/site is YouTube Music...
+    if (url != null && url.includes('music.youtube.com') == true) {
+        //Make a record of the current app for future reference
+        Model.tab.app = supportedApps.youTubeMusic;
+
+        //Make a record of the current tracklist type based on certain URL conditions
+        if (url.includes('list=PL')) {
+            Model.tracklist.type = supportedTracklistTypes.playlist;
+        } 
+        else if (url.includes('list=LM')) {
+            Model.tracklist.type = supportedTracklistTypes.autoPlaylist;
+            Model.tracklist.title = 'Liked Songs';
         }
-        else {
-            triggerUITransition('UrlInvalid');
+        //TODO the options below are currently not supported due to how the manifest is setup
+        else if (url.includes('library/songs')) {
+            Model.tracklist.type = supportedTracklistTypes.allSongsList;
+            Model.tracklist.title = 'Added from YouTube Music';
+        }
+        else if (url.includes('library/uploaded_songs')) {
+            Model.tracklist.type = supportedTracklistTypes.allSongsList;
+            Model.tracklist.title = 'Uploaded Songs';
+            //Model.tracklist.type = supportedTracklistTypes.uploadsList;
         }
     }
+    //Else, if the URL indicates the current app/site is Google Play Music...
+    else if (url != null && url.includes('play.google.com/music') == true) {
+        //Make a record of the current app for future reference
+        Model.tab.app = supportedApps.googlePlayMusic;
+
+        //Make a record of the current tracklist type based on certain URL conditions
+        if (url.includes('#/pl')) {
+            Model.tracklist.type = supportedTracklistTypes.playlist;
+        } 
+        else if (url.includes('#/ap')) {
+            Model.tracklist.type = supportedTracklistTypes.autoPlaylist;
+        }
+        else if (url.includes('#/tgs')) {
+            Model.tracklist.type = supportedTracklistTypes.genreList;
+            const _splitUrl = url.split("/");
+            const _genre = _splitUrl[_splitUrl.length-1];
+            Model.tracklist.title = _genre; //Make a record of the tracklist title
+        }
+        else if (url.includes('#/all')) {
+            Model.tracklist.type = supportedTracklistTypes.allSongsList;
+        }
+    }
+    else {
+        triggerUITransition('UrlInvalid');
+    }
+}
 
     // function initializeFlow(url) {
     //     //TODO could use some more error handling here to ensure the parameters are passed correclty, since the error is quite hard to track down if, for example, the tab isn't actually passed.
@@ -201,264 +201,268 @@ import * as Messenger from './Modules/MessageController.js';
     //     window.Utilities.SendMessageToContentScripts(_message, callback);
     // }
 
-    function prepareLandingPage() {
+function prepareLandingPage() {
+    ViewRenderer.hideElement(ViewRenderer.divs.status);
+    ViewRenderer.showTitle(Model.tracklist.title);
+
+    ViewRenderer.showLandingPage();
+}
+
+export function triggerUITransition(transition) {
+    if (transition === 'UrlInvalid') {
+        ViewRenderer.showStatusMessage('The current URL is not supported by this extension.');
+    }
+    else if (transition === 'ShowAuthPrompt') {
         ViewRenderer.hideElement(ViewRenderer.divs.status);
-        ViewRenderer.showTitle(Model.tracklist.title);
+        ViewRenderer.unhideElement(ViewRenderer.divs.auth);
+    }
+    else if (transition === 'StartScrape') {
+        ViewRenderer.disableElement(ViewRenderer.buttons.scrape);
+        ViewRenderer.hideElement(ViewRenderer.divs.buttons);
+        ViewRenderer.hideElement(ViewRenderer.divs.checkboxes);
+        ViewRenderer.hideElement(ViewRenderer.divs.tracktables);
+        //ViewRenderer.hideLandingPage();
 
-        ViewRenderer.showLandingPage();
+        ViewRenderer.showStatusMessage('Song list comparison in progress.');
+    } 
+    else if (transition === 'ScrapeSuccessful') {
+        ViewRenderer.hideElement(ViewRenderer.divs.status);
+        ViewRenderer.unhideElement(ViewRenderer.divs.buttons);
+        ViewRenderer.unhideElement(ViewRenderer.divs.checkboxes);
+        ViewRenderer.unhideElement(ViewRenderer.divs.tracktables);
+        ViewRenderer.enableElement(ViewRenderer.buttons.scrape);
+        ViewRenderer.enableElement(ViewRenderer.buttons.exportScrapedMetadata);
+        ViewRenderer.enableElement(ViewRenderer.checkboxes.scrapedTrackTable);
+        ViewRenderer.enableElement(ViewRenderer.checkboxes.deltaTrackTables);
+    }
+    else if (transition === 'ScrapeFailed') {
+        ViewRenderer.showStatusMessage('Failed to retrieve track list.');
+    }
+}
+
+/**
+ * Creates a track table from the provided tracklist and other inputs
+ * @param {array} tracklist The tracklist array for which to create a table element
+ * @param {string} headerText The name of the track table to display above it
+ * @param {object} [options] An object to provide the following optional parameters: parentElement (object); headerElement (object); descriptionIfEmpty (string); skipMatchedTracks (boolean);
+ * @returns The container element for the track table and all associated elements
+ */
+export function createTrackTable(tracklist, headerText, options/*parentElement, header, descriptionIfEmpty*/) {
+//TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove (or replace?) any existing scraped tracklist tables, including from ViewRenderer's tracker object
+    const _skipMatchedTracks  = (typeof options === 'object' && typeof options.skipMatchedTracks === 'boolean') ? options.skipMatchedTracks  : false;
+    const _parentElement      = (typeof options === 'object' && typeof options.parentElement === 'object')      ? options.parentElement      : ViewRenderer.divs.tracktables;
+    const _descriptionIfEmpty = (typeof options === 'object' && typeof options.descriptionIfEmpty === 'string') ? options.descriptionIfEmpty : 'No tracks to display'; //TODO Not sure it's ever going to be necessary to pass this as a parameter instead of just using the default value.
+    const _headerElement      = (typeof options === 'object' && typeof options.headerElement === 'object')      ? options.headerElement      : window.Utilities.CreateNewElement('p', {attributes:{class:'noVerticalMargins'}});
+    
+    //TODO Should all or some of this be done in ViewRenderer instead?
+
+    //TODO A nice-to-have in the future would be to omit any header/column (e.g. 'Unplayable') if there are zero displayable values for that metadatum
+    const _columnsToIncludeInTrackTable = [
+        'Title',
+        'Artist',
+        'Album',
+        'Duration',
+        //'Seconds',
+        //'Matched'
+        'Unplayable' 
+    ]; //TODO This is currently hard-coded. Should eventually be a param, probably. Although it would be good to have a default set of keys to fall back to.
+
+    let _tr = document.createElement('tr');
+
+    //Added a header column to the track table for the track index
+    let _th = document.createElement('th');
+    _th.textContent = 'Index';
+    _tr.appendChild(_th);
+
+    //For each additional column that should be included in the Track Table...
+    for (let i = 0; i < _columnsToIncludeInTrackTable.length; i++) { 
+        //If the key's value is a string, use it to add a header column to the track table
+        if (typeof _columnsToIncludeInTrackTable[i] === 'string') {
+            _th = document.createElement('th');
+            _th.textContent = _columnsToIncludeInTrackTable[i];
+            _tr.appendChild(_th);
+        }
     }
 
-    export function triggerUITransition(transition) {
-        if (transition === 'UrlInvalid') {
-            ViewRenderer.showStatusMessage('The current URL is not supported by this extension.');
-        }
-        else if (transition === 'StartScrape') {
-            ViewRenderer.disableElement(ViewRenderer.buttons.scrape);
-		    ViewRenderer.hideElement(ViewRenderer.divs.buttons);
-            ViewRenderer.hideElement(ViewRenderer.divs.checkboxes);
-            ViewRenderer.hideElement(ViewRenderer.divs.tracktables);
-            //ViewRenderer.hideLandingPage();
+    //Create a new table element, with the header row as a child
+    const _table = window.Utilities.CreateNewElement('table', {attributes:{class:'trackTable'}, children:[_tr]});
 
-		    ViewRenderer.showStatusMessage('Song list comparison in progress.');
-        } 
-        else if (transition === 'ScrapeSuccessful') {
-            ViewRenderer.hideElement(ViewRenderer.divs.status);
-            ViewRenderer.unhideElement(ViewRenderer.divs.buttons);
-            ViewRenderer.unhideElement(ViewRenderer.divs.checkboxes);
-            ViewRenderer.unhideElement(ViewRenderer.divs.tracktables);
-            ViewRenderer.enableElement(ViewRenderer.buttons.scrape);
-            ViewRenderer.enableElement(ViewRenderer.buttons.exportScrapedMetadata);
-            ViewRenderer.enableElement(ViewRenderer.checkboxes.scrapedTrackTable);
-            ViewRenderer.enableElement(ViewRenderer.checkboxes.deltaTrackTables);
+    //If the tracklist parameter provided is a valid array...
+    if (Array.isArray(tracklist) === true) {
+        //For each track in the tracklist...
+        for (let i = 0; i < tracklist.length; i++) {
+            //If the current value in the array is a valid object...
+            if (typeof tracklist[i] === 'object') {
+                //If 'matched' tracks are purposefully being skipped for this track table, and the current track is 'matched', skip over it.
+                if (_skipMatchedTracks === true && tracklist[i].matched === true) {
+                    //DebugController.logInfo("Track at index " + i + " will be skipped over because it is listed as 'matched' and matched tracks are being skipped for this track table.");
+                    continue;
+                }
+
+                //Create a new data cell for the track's index
+                let _td = document.createElement('td'); 
+                _td.textContent = i+1; 
+                //Create a new row for the track, adding the index cell to the new row
+                _tr = window.Utilities.CreateNewElement('tr', {children:[_td]}); 
+                //Add the new row to the table
+                _table.appendChild(_tr);
+
+                //For each additional column in the Track Table...
+                for (let j = 0; j < _columnsToIncludeInTrackTable.length; j++) { 
+                    //If the current column's name is a valid string...
+                    if (typeof _columnsToIncludeInTrackTable[j] === 'string') {  
+                        //Force the column name string to lower case and use that value to extract the corresponding metadatum value for the track
+                        const _trackMetadatum = tracklist[i][_columnsToIncludeInTrackTable[j].toLowerCase()];
+                        //If the track's metadatum for the current column is a valid string or has a value of true
+                        //if (typeof _trackMetadatum === 'string' || _trackMetadatum === true || typeof _trackMetadatum === 'number') {
+                        if (typeof _trackMetadatum !== 'undefined' && _trackMetadatum != false) {
+                            //Create a new data cell for the track's metadatum
+                            _td = document.createElement('td');
+                            _td.textContent = _trackMetadatum;
+                            //Add the new cell to the track's row
+                            _tr.appendChild(_td);
+                        }
+                        else {
+                            DebugController.logInfo("A piece of track metadata was encountered that is blank, false, or undefined, and so it was skipped over. This is typical in the case of the 'Unplayable' column, but otherwise could indicate that an issue was encountered. Current column is: " + _columnsToIncludeInTrackTable[j]);
+                        }
+                    }
+                }
+            }
+            else {
+                DebugController.logError("Expected an object containing track metadata or null. Instead found: " + tracklist[i] + ". Current index in array: " + i + ". Tracklist: ");
+                console.table(tracklist);
+            }
         }
-        else if (transition === 'ScrapeFailed') {
-            ViewRenderer.showStatusMessage('Failed to retrieve track list.');
-        }
+    } //TODO could probably separate creating the track table itself from all the various other elements (e.g. header, description) that go along with it, to have smaller and easier-to-read functions
+
+    let _tableBody = undefined;
+    if (_table.childElementCount === 1) //If the table has no tracks in it (i.e. the child count is 1, because of the header row)...
+    {
+        //Create a new element for a description of the empty track table
+        _tableBody = window.Utilities.CreateNewElement('p', {attributes:{class:'indent'}});
+        _tableBody.textContent = _descriptionIfEmpty;
     }
+    else { //Else, if the table does have tracks in it, create a scroll area to contain the table
+        _tableBody = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableScrollArea'}, children:[_table]});
+    }
+    _headerElement.textContent = headerText.concat(' (' + (_table.childElementCount -1) + ')'); //Set the header text, including the number of tracks in the table
+    const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _tableBody]}); //Create a new element to contain the various table elements
+    _parentElement.appendChild(_tableContainer); //Add the new container element (and its children) to the DOM
+    return _tableContainer; 
+}
 
-    /**
-     * Creates a track table from the provided tracklist and other inputs
-     * @param {array} tracklist The tracklist array for which to create a table element
-     * @param {string} headerText The name of the track table to display above it
-     * @param {object} [options] An object to provide the following optional parameters: parentElement (object); headerElement (object); descriptionIfEmpty (string); skipMatchedTracks (boolean);
-     * @returns The container element for the track table and all associated elements
-     */
-    export function createTrackTable(tracklist, headerText, options/*parentElement, header, descriptionIfEmpty*/) {
-    //TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove (or replace?) any existing scraped tracklist tables, including from ViewRenderer's tracker object
-        const _skipMatchedTracks  = (typeof options === 'object' && typeof options.skipMatchedTracks === 'boolean') ? options.skipMatchedTracks  : false;
-        const _parentElement      = (typeof options === 'object' && typeof options.parentElement === 'object')      ? options.parentElement      : ViewRenderer.divs.tracktables;
-        const _descriptionIfEmpty = (typeof options === 'object' && typeof options.descriptionIfEmpty === 'string') ? options.descriptionIfEmpty : 'No tracks to display'; //TODO Not sure it's ever going to be necessary to pass this as a parameter instead of just using the default value.
-        const _headerElement      = (typeof options === 'object' && typeof options.headerElement === 'object')      ? options.headerElement      : window.Utilities.CreateNewElement('p', {attributes:{class:'noVerticalMargins'}});
+function checkIfDurationValuesMatch(durationA, durationB) {
+    if (typeof durationA === 'number' && typeof durationB === 'number') {
+        const _differenceInSeconds = durationA - durationB;
+        return (_differenceInSeconds > -2 && _differenceInSeconds < 2) ? true : false;
+    }
+    else {
+        DebugController.logError("Error: Expected two parameters of type 'number' but instead received a) " + durationA + "; b) " + durationB);
+    }
+}
+
+function markMatchingTracks(tracklistCurrent, tracklistPrevious) {
+    for (let i = 0; i < tracklistCurrent.length; i++) {
+        const _scrapedTrack = tracklistCurrent[i];
         
-        //TODO Should all or some of this be done in ViewRenderer instead?
+        for (let j = 0; j < tracklistPrevious.length; j++) {
+            const _storedTrack = tracklistPrevious[j];
 
-        //TODO A nice-to-have in the future would be to omit any header/column (e.g. 'Unplayable') if there are zero displayable values for that metadatum
-        const _columnsToIncludeInTrackTable = [
-            'Title',
-            'Artist',
-            'Album',
-            'Duration',
-            //'Seconds',
-            //'Matched'
-            'Unplayable' 
-        ]; //TODO This is currently hard-coded. Should eventually be a param, probably. Although it would be good to have a default set of keys to fall back to.
-
-        let _tr = document.createElement('tr');
-
-        //Added a header column to the track table for the track index
-        let _th = document.createElement('th');
-        _th.textContent = 'Index';
-        _tr.appendChild(_th);
-
-        //For each additional column that should be included in the Track Table...
-        for (let i = 0; i < _columnsToIncludeInTrackTable.length; i++) { 
-            //If the key's value is a string, use it to add a header column to the track table
-            if (typeof _columnsToIncludeInTrackTable[i] === 'string') {
-                _th = document.createElement('th');
-                _th.textContent = _columnsToIncludeInTrackTable[i];
-                _tr.appendChild(_th);
-            }
-        }
-
-        //Create a new table element, with the header row as a child
-        const _table = window.Utilities.CreateNewElement('table', {attributes:{class:'trackTable'}, children:[_tr]});
-
-        //If the tracklist parameter provided is a valid array...
-        if (Array.isArray(tracklist) === true) {
-            //For each track in the tracklist...
-            for (let i = 0; i < tracklist.length; i++) {
-                //If the current value in the array is a valid object...
-                if (typeof tracklist[i] === 'object') {
-                    //If 'matched' tracks are purposefully being skipped for this track table, and the current track is 'matched', skip over it.
-                    if (_skipMatchedTracks === true && tracklist[i].matched === true) {
-                        //DebugController.logInfo("Track at index " + i + " will be skipped over because it is listed as 'matched' and matched tracks are being skipped for this track table.");
-                        continue;
-                    }
-
-                    //Create a new data cell for the track's index
-                    let _td = document.createElement('td'); 
-                    _td.textContent = i+1; 
-                    //Create a new row for the track, adding the index cell to the new row
-                    _tr = window.Utilities.CreateNewElement('tr', {children:[_td]}); 
-                    //Add the new row to the table
-                    _table.appendChild(_tr);
-
-                    //For each additional column in the Track Table...
-                    for (let j = 0; j < _columnsToIncludeInTrackTable.length; j++) { 
-                        //If the current column's name is a valid string...
-                        if (typeof _columnsToIncludeInTrackTable[j] === 'string') {  
-                            //Force the column name string to lower case and use that value to extract the corresponding metadatum value for the track
-                            const _trackMetadatum = tracklist[i][_columnsToIncludeInTrackTable[j].toLowerCase()];
-                            //If the track's metadatum for the current column is a valid string or has a value of true
-                            //if (typeof _trackMetadatum === 'string' || _trackMetadatum === true || typeof _trackMetadatum === 'number') {
-                            if (typeof _trackMetadatum !== 'undefined' && _trackMetadatum != false) {
-                                //Create a new data cell for the track's metadatum
-                                _td = document.createElement('td');
-                                _td.textContent = _trackMetadatum;
-                                //Add the new cell to the track's row
-                                _tr.appendChild(_td);
-                            }
-                            else {
-                                DebugController.logInfo("A piece of track metadata was encountered that is blank, false, or undefined, and so it was skipped over. This is typical in the case of the 'Unplayable' column, but otherwise could indicate that an issue was encountered. Current column is: " + _columnsToIncludeInTrackTable[j]);
-                            }
-                        }
+            //If both the scraped and stored tracks have valid values...
+            if (_scrapedTrack != null && _storedTrack != null) {
+                //If the stored track hasn't already been marked as 'matched'...
+                if (_storedTrack.matched !== true) {
+                    //If the scraped and stored tracks match...
+                    if (_scrapedTrack.title === _storedTrack.title && _scrapedTrack.artist === _storedTrack.artist &&
+                        _scrapedTrack.album === _storedTrack.album && checkIfDurationValuesMatch(_scrapedTrack.seconds, _storedTrack.seconds) === true ) {
+                        
+                            //Mark the scraped and stored tracks both as 'matched' and move onto the next scraped track
+                            _scrapedTrack.matched = true;
+                            _storedTrack.matched = true;
+                            break;
                     }
                 }
-                else {
-                    DebugController.logError("Expected an object containing track metadata or null. Instead found: " + tracklist[i] + ". Current index in array: " + i + ". Tracklist: ");
-                    console.table(tracklist);
-                }
-            }
-        } //TODO could probably separate creating the track table itself from all the various other elements (e.g. header, description) that go along with it, to have smaller and easier-to-read functions
+            } //TODO OLD - removed track index wrong if there were duplicates
 
-        let _tableBody = undefined;
-        if (_table.childElementCount === 1) //If the table has no tracks in it (i.e. the child count is 1, because of the header row)...
-		{
-            //Create a new element for a description of the empty track table
-            _tableBody = window.Utilities.CreateNewElement('p', {attributes:{class:'indent'}});
-            _tableBody.textContent = _descriptionIfEmpty;
-		}
-        else { //Else, if the table does have tracks in it, create a scroll area to contain the table
-            _tableBody = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableScrollArea'}, children:[_table]});
-        }
-        _headerElement.textContent = headerText.concat(' (' + (_table.childElementCount -1) + ')'); //Set the header text, including the number of tracks in the table
-        const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _tableBody]}); //Create a new element to contain the various table elements
-        _parentElement.appendChild(_tableContainer); //Add the new container element (and its children) to the DOM
-        return _tableContainer; 
-    }
+            //TODO would it work to start at the same j position that was last matched + 1, as opposed to always starting at j=0?
+                //Probably more hassle and room for error than it's worth
 
-    function checkIfDurationValuesMatch(durationA, durationB) {
-        if (typeof durationA === 'number' && typeof durationB === 'number') {
-            const _differenceInSeconds = durationA - durationB;
-            return (_differenceInSeconds > -2 && _differenceInSeconds < 2) ? true : false;
-        }
-        else {
-            DebugController.logError("Error: Expected two parameters of type 'number' but instead received a) " + durationA + "; b) " + durationB);
+            else {
+                DebugController.logError("Attempted to compare two tracks but at least one of them was null.");
+            }  
         }
     }
+}
 
-    function markMatchingTracks(tracklistCurrent, tracklistPrevious) {
-        for (let i = 0; i < tracklistCurrent.length; i++) {
-            const _scrapedTrack = tracklistCurrent[i];
-            
-            for (let j = 0; j < tracklistPrevious.length; j++) {
-                const _storedTrack = tracklistPrevious[j];
+export function createDeltaTracklistsGPM(scrapedTracklist) {
+    //TODO why pass the parameter, when we can get the scraped tracklist from the Model right here?
 
-                //If both the scraped and stored tracks have valid values...
-                if (_scrapedTrack != null && _storedTrack != null) {
-                    //If the stored track hasn't already been marked as 'matched'...
-                    if (_storedTrack.matched !== true) {
-                        //If the scraped and stored tracks match...
-                        if (_scrapedTrack.title === _storedTrack.title && _scrapedTrack.artist === _storedTrack.artist &&
-                            _scrapedTrack.album === _storedTrack.album && checkIfDurationValuesMatch(_scrapedTrack.seconds, _storedTrack.seconds) === true ) {
-                            
-                                //Mark the scraped and stored tracks both as 'matched' and move onto the next scraped track
-                                _scrapedTrack.matched = true;
-                                _storedTrack.matched = true;
-                                break;
-                        }
-                    }
-                } //TODO OLD - removed track index wrong if there were duplicates
+    //Once the Google Play Music metadata for the current tracklist has been fetched...
+    const _onGooglePlayMusicMetadataRetrieved = function(gpmTracklist) {
 
-                //TODO would it work to start at the same j position that was last matched + 1, as opposed to always starting at j=0?
-                    //Probably more hassle and room for error than it's worth
-
-                else {
-                    DebugController.logError("Attempted to compare two tracks but at least one of them was null.");
-                }  
-            }
+        for (let i = 0; i < gpmTracklist.length; i++) { 
+            gpmTracklist[i].seconds = convertDurationStringToSeconds(gpmTracklist[i].duration);
         }
-    }
+        for (let i = 0; i < scrapedTracklist.length; i++) { 
+            scrapedTracklist[i].seconds = convertDurationStringToSeconds(scrapedTracklist[i].duration);
+        }
 
-    export function createDeltaTracklistsGPM(scrapedTracklist) {
-        //TODO why pass the parameter, when we can get the scraped tracklist from the Model right here?
+        markMatchingTracks(scrapedTracklist, gpmTracklist);
 
-        //Once the Google Play Music metadata for the current tracklist has been fetched...
-        const _onGooglePlayMusicMetadataRetrieved = function(gpmTracklist) {
+        //Create a new container div element for all the track tables used to show the deltas (e.g. Added, Removed, Disabled)
+        ViewRenderer.tracktables.deltas = window.Utilities.CreateNewElement('div');
+        
+        //Create a header element and track table for the list of 'Added Tracks'
+        let _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
+        createTrackTable(scrapedTracklist, 'Added Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement, skipMatchedTracks:true});
+        
+        //Create a header element and track table for the list of 'Removed Tracks'
+        _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
+        createTrackTable(gpmTracklist, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement, skipMatchedTracks:true});
 
-            for (let i = 0; i < gpmTracklist.length; i++) { 
-                gpmTracklist[i].seconds = convertDurationStringToSeconds(gpmTracklist[i].duration);
-            }
-            for (let i = 0; i < scrapedTracklist.length; i++) { 
-                scrapedTracklist[i].seconds = convertDurationStringToSeconds(scrapedTracklist[i].duration);
-            }
+        //Add the new container div for all the delta track tables to the DOM, within the general track tables div
+        ViewRenderer.divs.tracktables.appendChild(ViewRenderer.tracktables.deltas);
+    };
 
-            markMatchingTracks(scrapedTracklist, gpmTracklist);
+    //Fetch the Google Play Music tracklist metadata from the Model and then execute the callback
+    Model.getStoredMetadataGPM(_onGooglePlayMusicMetadataRetrieved);
+}
 
-            //Create a new container div element for all the track tables used to show the deltas (e.g. Added, Removed, Disabled)
-            ViewRenderer.tracktables.deltas = window.Utilities.CreateNewElement('div');
-            
-            //Create a header element and track table for the list of 'Added Tracks'
-            let _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
-            createTrackTable(scrapedTracklist, 'Added Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement, skipMatchedTracks:true});
-            
-            //Create a header element and track table for the list of 'Removed Tracks'
-            _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
-            createTrackTable(gpmTracklist, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement, skipMatchedTracks:true});
+function downloadCurrentTracklistAsCSV(tracklist) {
+    //The object keys to include when outputting the tracklist data to CSV
+    const _keysToIncludeInExport = [
+        'title',
+        'artist',
+        'album',
+        'duration',
+        'unplayable'
+    ];
 
-            //Add the new container div for all the delta track tables to the DOM, within the general track tables div
-            ViewRenderer.divs.tracktables.appendChild(ViewRenderer.tracktables.deltas);
-        };
+    const _filename = 'TracklistExport_After_' + Model.tracklist.title;
 
-        //Fetch the Google Play Music tracklist metadata from the Model and then execute the callback
-        Model.getStoredMetadataGPM(_onGooglePlayMusicMetadataRetrieved);
-    }
+    IO.convertArrayOfObjectsToCsv(tracklist, _filename, _keysToIncludeInExport);
+}
 
-    function downloadCurrentTracklistAsCSV(tracklist) {
-        //The object keys to include when outputting the tracklist data to CSV
-        const _keysToIncludeInExport = [
-            'title',
-            'artist',
-            'album',
-            'duration',
-            'unplayable'
-        ];
+//TODO Should I have an IOController?
+function downloadGooglePlayMusicTracklistAsCSV() {
+    //The object keys to include when outputting the GPM track data to CSV
+    const _keysToIncludeInExport = [
+        'title',
+        'artist',
+        'album',
+        'duration',
+        'unplayable' //TODO This is currently hard-coded. We probably should only pass one copy of _keysToIncludeInExport per 'comparison' so that the two csv files match
+    ];
 
-        const _filename = 'TracklistExport_After_' + Model.tracklist.title;
+    //Once the Google Play Music metadata for the current tracklist has been fetched, convert it to a CSV file
+    const _onGooglePlayMusicMetadataRetrieved = function(tracklistsArray) {
+        const _filename = 'TracklistExport_Before_' + Model.tracklist.title;
+        IO.convertArrayOfObjectsToCsv(tracklistsArray, _filename, _keysToIncludeInExport);
+    };
 
-        IO.convertArrayOfObjectsToCsv(tracklist, _filename, _keysToIncludeInExport);
-    }
-
-    //TODO Should I have an IOController?
-    function downloadGooglePlayMusicTracklistAsCSV() {
-        //The object keys to include when outputting the GPM track data to CSV
-        const _keysToIncludeInExport = [
-            'title',
-            'artist',
-            'album',
-            'duration',
-            'unplayable' //TODO This is currently hard-coded. We probably should only pass one copy of _keysToIncludeInExport per 'comparison' so that the two csv files match
-        ];
-
-        //Once the Google Play Music metadata for the current tracklist has been fetched, convert it to a CSV file
-        const _onGooglePlayMusicMetadataRetrieved = function(tracklistsArray) {
-            const _filename = 'TracklistExport_Before_' + Model.tracklist.title;
-            IO.convertArrayOfObjectsToCsv(tracklistsArray, _filename, _keysToIncludeInExport);
-        };
-
-        //Fetch the Google Play Music tracklist metadata from the Model and then execute the callback
-        Model.getStoredMetadataGPM(_onGooglePlayMusicMetadataRetrieved);
-    }
+    //Fetch the Google Play Music tracklist metadata from the Model and then execute the callback
+    Model.getStoredMetadataGPM(_onGooglePlayMusicMetadataRetrieved);
+}
 
     //TODO NEW - this should take a tracklist key to be more general. Right now it only works for the current playlist which is unclear
     // function downloadTracklistAsCsv(tracklistArray)
@@ -470,26 +474,26 @@ import * as Messenger from './Modules/MessageController.js';
     //     convertArrayOfObjectsToCsv(tracklistArray[_gpmTracklistKey]);
     // }
 
-    function convertDurationStringToSeconds(duration) {
-        if (typeof duration === 'string') {
-            //Split the duration string, then convert each split portion into an integer and return a new array of split integer values
-            const _splitDurationIntegers = duration.split(':').map(durationString => parseInt(durationString, 10));
+function convertDurationStringToSeconds(duration) {
+    if (typeof duration === 'string') {
+        //Split the duration string, then convert each split portion into an integer and return a new array of split integer values
+        const _splitDurationIntegers = duration.split(':').map(durationString => parseInt(durationString, 10));
 
-            switch(_splitDurationIntegers.length) {
-                case 1:
-                    return _splitDurationIntegers[0];
-                case 2:
-                    return _splitDurationIntegers[0]*60 + _splitDurationIntegers[1];
-                case 3:
-                    return _splitDurationIntegers[0]*3600 + _splitDurationIntegers[1]*60 + _splitDurationIntegers[2];
-                default:
-                    DebugController.logWarning("Tried to extract a seconds integer value from a duration string, but the duration is not in a supported format (e.g. the duration may be longer than 24 hours).");
-            }
-        }
-        else {
-            DebugController.LogError("ERROR: Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
+        switch(_splitDurationIntegers.length) {
+            case 1:
+                return _splitDurationIntegers[0];
+            case 2:
+                return _splitDurationIntegers[0]*60 + _splitDurationIntegers[1];
+            case 3:
+                return _splitDurationIntegers[0]*3600 + _splitDurationIntegers[1]*60 + _splitDurationIntegers[2];
+            default:
+                DebugController.logWarning("Tried to extract a seconds integer value from a duration string, but the duration is not in a supported format (e.g. the duration may be longer than 24 hours).");
         }
     }
+    else {
+        DebugController.LogError("ERROR: Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
+    }
+}
 
 //TODO this should be a module instead (or move the few different remaining helper functions here into other already-existing modules as applicable)
 window.Utilities = (function() {
@@ -622,6 +626,6 @@ window.Utilities = (function() {
     };
 })();
 
-window.Utilities.FadeIn(document.body, init, 500);
+//window.Utilities.FadeIn(document.body, init, 500);
 
 export {prepareLandingPage, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};
