@@ -3,7 +3,7 @@ import * as UIController from '../AppNavigator.js';
 import firebaseConfig from '../Configuration/Config.js';
 
 //Initialize the app once the DOM content has loaded, and then remove this event listener
-window.document.addEventListener('DOMContentLoaded', init, {once:true}); 
+//window.document.addEventListener('DOMContentLoaded', init, {once:true}); 
 
 /**
  * Sets up the Firebase context and register a listener for the auth state changing
@@ -71,7 +71,7 @@ function startFirebaseUIAuthFlow() {
                 provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
                 scopes: ['https://www.googleapis.com/auth/appstate'],
                 customParameters: {
-                    prompt: 'select_account' //Forces account selection even when one account is available.
+                    prompt: 'select_account' //Forces account selection even when one account is available
                 }
             }]
         };
@@ -79,3 +79,5 @@ function startFirebaseUIAuthFlow() {
 
     _authUI.start('#auth', _uiConfig);
 }
+
+init();

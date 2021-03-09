@@ -9,24 +9,13 @@
 
     <script src='Scripts/TabManager.js'></script>
     <script src='Scripts/popup.js'></script>
-    <script type="module" src='Scripts/Modules/DebugController.js'></script>
-    <script type="module" src='Scripts/Modules/StorageManager.js'></script>
-    <script type="module" src='Scripts/Modules/Model.js'></script>
-    <script type="module" src='Scripts/Modules/ViewBinder.js'></script>
-    <script type="module" src='Scripts/AppNavigator.js'></script>
-    <script type="module" src='Scripts/Modules/MessageController.js'></script>
     <script type="module" src='Scripts/Modules/EventController.js'></script>
     <script type="module" src='Scripts/Modules/AuthController.js'></script>
   </head>
   <body> 
-      
     <div id='title' hidden=true></div>
     <div id='status' class='statusText'>Loading...</div>
-
-    <!--TODO I need a sign out button...-->
-    <div id='auth' hidden='true'>
-    </div>
-
+    <div id='auth' hidden='true'></div>
     <div id='buttons' hidden=true class='menu'>
       <button type='button' id='btnScrape' class='popupButton'>Scrape Current Tracklist</button>
       <button type='button' id='btnStoreScrapedMetadata' class='popupButton' disabled=true>Save Scraped Metadata to Storage</button>
@@ -49,17 +38,15 @@
       <input type="checkbox" id="checkboxTracksNotInLibrary" disabled=true>
       <label for="checkboxTracksNotInLibrary"> Tracks not in Library</label><br><br>
     </div>
+    <div id='tracktables'></div>
 
-    <div id='tracktables'>
-    </div>
+    <!-- TODO clean this up-->
     
     <div id='landingPage' hidden=true>
       <p id='trackCountValue'></p>
       <div id='trackCountSubtext'></div>
       <button id='buttonComparePlaylist' class='popupButton' type='button'>Scrape Current Tracklist</button> 
-    
-      <!-- TODO clean this up
-      -->               
+                  
       <button id='buttonBackup' class='popupButton' type='button'>Revert to Backup</button> 
       
       <button id='buttonExport' class='popupButton' type='button'>Export Local Storage</button> 
