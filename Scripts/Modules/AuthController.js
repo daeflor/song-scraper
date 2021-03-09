@@ -2,9 +2,6 @@ import * as DebugController from './DebugController.js';
 import * as UIController from '../AppNavigator.js';
 import firebaseConfig from '../Configuration/Config.js';
 
-//Initialize the app once the DOM content has loaded, and then remove this event listener
-//window.document.addEventListener('DOMContentLoaded', init, {once:true}); 
-
 /**
  * Sets up the Firebase context and register a listener for the auth state changing
  */
@@ -13,13 +10,7 @@ function init() {
     firebase.initializeApp(firebaseConfig); //Initialize Firebase
 
     //Note: This code will force sign out the user, for testing purposes
-    firebase.auth().signOut().then(function() {
-        DebugController.logInfo("I JUST FORCE SIGNED YOU OUT");
-    }).catch(function(error) {
-        // An error happened.
-        window.DebugController.LogError("An error was encountered when trying to sign the user out. Error (below): ");
-        window.DebugController.LogError(error);
-      });
+    
 
     firebase.auth().onAuthStateChanged(reactToEvent_AuthStateChanged); //Listen for auth state changes
 }
@@ -37,6 +28,8 @@ function reactToEvent_AuthStateChanged(user) {
     } else { //Else, if there is a user signed into the app...
         DebugController.logInfo("AuthController: A user is signed in so the landing page will be displayed.");
         UIController.init();
+        //TODO probably shouldn't be calling an "init" function more than once,
+            //but right now, if you sign out and back in, it will do this (and not all state is re-set properly)
     }
 }
 
@@ -78,6 +71,14 @@ function startFirebaseUIAuthFlow() {
     }
 
     _authUI.start('#auth', _uiConfig);
+}
+
+export default function logOut() {
+    firebase.auth().signOut().then(function() {
+            UIController.triggerUITransition('LogOut');
+        }).catch(function(error) {
+            DebugController.logError(error);
+        });
 }
 
 init();

@@ -25,15 +25,37 @@ input[type='checkbox'] {
 	margin-left: 25px;
 }
 
-#title {
-	font-size: 24px;
-	text-align: center;
+#headerRow {
+	position: relative;
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+	/* text-align: center; */
+
 	background-color: #303030;
 	color: #FFCC66;
 	padding: 10px;
-	/* min-height: 30px; */
 	margin: 0.5%;
+	font-size: 24px;
 }
+
+#btnLogOut {
+	background-color: inherit;
+	border-style: none;
+	outline: none;
+}
+
+#title {
+	display: flex;
+}
+
+.leftAligned {
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+
 
 .statusText {
 	text-align: center;
@@ -179,4 +201,8 @@ td {
 
 .popupButton:disabled {
 	background: gainsboro;
+}
+
+.autoHeight {
+	height:auto;
 }

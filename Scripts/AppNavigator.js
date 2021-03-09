@@ -203,7 +203,7 @@ function validateUrlAndRecordTracklistInfo(url) {
 
 function prepareLandingPage() {
     ViewRenderer.hideElement(ViewRenderer.divs.status);
-    ViewRenderer.showTitle(Model.tracklist.title);
+    ViewRenderer.showHeader(Model.tracklist.title);
 
     ViewRenderer.showLandingPage();
 }
@@ -214,6 +214,29 @@ export function triggerUITransition(transition) {
     }
     else if (transition === 'ShowAuthPrompt') {
         ViewRenderer.hideElement(ViewRenderer.divs.status);
+        ViewRenderer.unhideElement(ViewRenderer.divs.auth);
+    }
+    else if (transition === 'LogOut') {
+        ViewRenderer.hideElement(ViewRenderer.divs.header);
+        ViewRenderer.hideElement(ViewRenderer.divs.buttons);
+        ViewRenderer.hideElement(ViewRenderer.divs.checkboxes);
+        //ViewRenderer.hideElement(ViewRenderer.divs.tracktables);
+
+        resetAllTrackTablesAndCheckboxes();
+
+        //TODO might want a for loop to uncheck all checkboxes and hide all the track tables
+            //If a for loop is used, it could also check for the elements not being undefined.
+        // ViewRenderer.uncheckBox(ViewRenderer.checkboxes.storedTrackTable);
+        // ViewRenderer.uncheckBox(ViewRenderer.checkboxes.scrapedTrackTable);
+        // ViewRenderer.uncheckBox(ViewRenderer.checkboxes.deltaTrackTables);
+        // ViewRenderer.hideElement(ViewRenderer.tracktables.stored);
+        // ViewRenderer.hideElement(ViewRenderer.tracktables.scraped);
+        // ViewRenderer.hideElement(ViewRenderer.tracktables.deltas);
+
+        ViewRenderer.disableElement(ViewRenderer.buttons.exportScrapedMetadata);
+        // ViewRenderer.disableElement(ViewRenderer.checkboxes.scrapedTrackTable);
+        // ViewRenderer.disableElement(ViewRenderer.checkboxes.deltaTrackTables);
+        
         ViewRenderer.unhideElement(ViewRenderer.divs.auth);
     }
     else if (transition === 'StartScrape') {
@@ -238,6 +261,25 @@ export function triggerUITransition(transition) {
     else if (transition === 'ScrapeFailed') {
         ViewRenderer.showStatusMessage('Failed to retrieve track list.');
     }
+}
+
+function resetAllTrackTablesAndCheckboxes() {
+    //For each potential track table...
+    for (const key in ViewRenderer.tracktables) {
+        //If the track table actually exists (i.e. was previously created)...
+        if (typeof ViewRenderer.tracktables[key] === 'object') {
+            //Hide the track table
+            ViewRenderer.hideElement(ViewRenderer.tracktables[key]);
+        } 
+    }
+    //For each track table checkbox...
+    for (const key in ViewRenderer.checkboxes) {
+        //Uncheck the checkbox
+        ViewRenderer.uncheckBox(ViewRenderer.checkboxes[key]);
+    }
+    //Disable the 'scraped' and 'deltas' track table checkboxes
+    ViewRenderer.disableElement(ViewRenderer.checkboxes.scrapedTrackTable);
+    ViewRenderer.disableElement(ViewRenderer.checkboxes.deltaTrackTables);
 }
 
 /**

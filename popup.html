@@ -2,8 +2,11 @@
 <html>
   <head>
     <!--Load the Firebase UI stylesheet-->
-    <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/4.0.0/firebaseui.css" />
-  	<link rel='stylesheet' type='text/css' href='Styles/style.css'>
+    <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/4.0.0/firebaseui.css"/>
+  	<!--Load the Material Icons font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+    <!--Load custom stylesheet-->
+    <link rel='stylesheet' type='text/css' href='Styles/style.css'/>
     
     <title>Song Scraper</title>
 
@@ -13,7 +16,17 @@
     <script type="module" src='Scripts/Modules/AuthController.js'></script>
   </head>
   <body> 
-    <div id='title' hidden=true></div>
+    <div id='header' hidden=true>
+      <ul id='headerRow'>
+        <li class='leftAligned'>
+          <button type='button' id='btnLogOut'>
+            <span class='autoHeight popupButton material-icons-round'>logout</span>
+          </button> 
+        </li>
+        <li id='title'></li>
+      </ul>
+    </div>
+
     <div id='status' class='statusText'>Loading...</div>
     <div id='auth' hidden='true'></div>
     <div id='buttons' hidden=true class='menu'>
