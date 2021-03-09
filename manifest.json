@@ -30,5 +30,6 @@
         "activeTab",
         "downloads",
         "declarativeContent"
-    ]
+    ],
+    "content_security_policy":"script-src 'self' https://www.gstatic.com/ https://apis.google.com; object-src 'self'"
 }

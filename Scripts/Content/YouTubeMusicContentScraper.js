@@ -164,7 +164,7 @@
                 processMessage_GetTracklistMetadata(message.app, _onRequestComplete);
             }
             
-            //Return true to keep the message channel open
+            //Return true to keep the message channel open (so the callbacks can be called asynchronously)
             return true;
         }
     );

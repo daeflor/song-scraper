@@ -1,6 +1,10 @@
+//import * as DebugController from './DebugController.js';
+
 //Should these objects be in the ViewRenderer or elsewhere (e.g. ViewState?)?
 
 export const divs = Object.freeze({
+    auth: document.getElementById('auth'),
+    header: document.getElementById('header'),
     status: document.getElementById('status'),
     buttons: document.getElementById('buttons'),
     checkboxes: document.getElementById('checkboxes'),
@@ -8,6 +12,7 @@ export const divs = Object.freeze({
 });
 
 export const buttons = Object.freeze({
+    logOut: document.getElementById('btnLogOut'),
     scrape: document.getElementById('btnScrape'),
     storeScrapedMetadata: document.getElementById('btnStoreScrapedMetadata'),
     exportScrapedMetadata: document.getElementById('btnExportScrapedMetadata'),
@@ -27,7 +32,12 @@ export const tracktables = {
 };
 
 export function disableElement(element) {
-    element.disabled = true;
+    //TODO it would be better to have a more thorough 'isElement'/'validateElement' check
+    if (typeof element === 'object') {
+        element.disabled = true;
+    } else {
+        throw new Error('Cannot find element.');
+    }
 }
 
 export function enableElement(element) {
@@ -35,11 +45,22 @@ export function enableElement(element) {
 }
 
 export function hideElement(element) {
-    element.hidden = true;
+    //TODO it would be better to have a more thorough 'isElement'/'validateElement' check
+    if (typeof element === 'object') {
+        element.hidden = true;
+    } else {
+        throw new Error('Cannot find element.');
+    }
 }
+
+// function modifyElementProperty(element, property) {}
 
 export function unhideElement(element) {
     element.hidden = false;
+}
+
+export function uncheckBox(element) {
+    element.checked = false;
 }
 
 export function setElementOpacity(element, targetOpacity)
@@ -63,9 +84,9 @@ export function showStatusMessage(text) {
     document.getElementById('status').hidden = false;
 }
 
-export function showTitle(title) {
+export function showHeader(title) {
     document.getElementById('title').textContent = title;
-    document.getElementById('title').hidden = false;
+    document.getElementById('header').hidden = false;
 }
 
 //     // function toggleScreenVisibility(screenName, visible) {

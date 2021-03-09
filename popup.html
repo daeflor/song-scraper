@@ -1,75 +1,94 @@
 <!doctype html>
 <html>
   <head>
-  	<link rel='stylesheet' type='text/css' href='Styles/style.css'>
+    <!--Load the Firebase UI stylesheet-->
+    <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/4.0.0/firebaseui.css"/>
+  	<!--Load the Material Icons font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+    <!--Load custom stylesheet-->
+    <link rel='stylesheet' type='text/css' href='Styles/style.css'/>
+    
     <title>Song Scraper</title>
+
     <script src='Scripts/TabManager.js'></script>
     <script src='Scripts/popup.js'></script>
-    <script type="module" src='Scripts/Modules/DebugController.js'></script>
-    <script type="module" src='Scripts/Modules/StorageManager.js'></script>
-    <script type="module" src='Scripts/Modules/Model.js'></script>
-    <script type="module" src='Scripts/Modules/ViewBinder.js'></script>
-    <script type="module" src='Scripts/AppNavigator.js'></script>
-    <script type="module" src='Scripts/Modules/MessageController.js'></script>
     <script type="module" src='Scripts/Modules/EventController.js'></script>
+    <script type="module" src='Scripts/Modules/AuthController.js'></script>
   </head>
   <body> 
-      
-      <div id='title' hidden=true></div>
-      <div id='status' class='statusText'>Loading...</div>
+    <div id='header' hidden=true>
+      <ul id='headerRow'>
+        <li class='leftAligned'>
+          <button type='button' id='btnLogOut'>
+            <span class='autoHeight popupButton material-icons-round'>logout</span>
+          </button> 
+        </li>
+        <li id='title'></li>
+      </ul>
+    </div>
 
-      <div id='buttons' hidden=true class='menu'>
-        <button type='button' id='btnScrape' class='popupButton'>Scrape Current Tracklist</button>
-        <button type='button' id='btnStoreScrapedMetadata' class='popupButton' disabled=true>Save Scraped Metadata to Storage</button>
-        <button type='button' id='btnRevert' class='popupButton' type='button' disabled=true>Revert Stored Tracklist to Backup</button>
-        <button type='button' id='btnExportStoredMetadataForCurrentTracklist' class='popupButton'>Export Stored GPM Tracklist</button>
-        <button type='button' id='btnExportScrapedMetadata' class='popupButton' disabled=true>Export Scraped Tracklist</button>
-        <button type='button' id='btnExportAllLocalStorage' class='popupButton' disabled=true>Export All Local Storage</button>
-      </div>
-      <div id='checkboxes' hidden=true>
-        <input type="checkbox" id="checkboxStoredGPMTrackTable" disabled=true>
-        <label for="checkboxStoredGPMTrackTable"> Stored GPM Track Table</label><br>
-        <input type="checkbox" id="checkboxStoredTrackTable">
-        <label for="checkboxStoredTrackTable"> Stored YTM Track Table</label><br>
-        <input type="checkbox" id="checkboxScrapedTrackTable" disabled=true>
-        <label for="checkboxScrapedTrackTable"> Scraped Track Table</label><br>
-        <input type="checkbox" id="checkboxDeltaTrackTables" disabled=true>
-        <label for="checkboxDeltaTrackTables"> Delta Track Tables</label><br>
-        <input type="checkbox" id="checkboxTracksNotInPlaylists" disabled=true>
-        <label for="checkboxTracksNotInPlaylists"> Tracks not in Playlists</label><br>
-        <input type="checkbox" id="checkboxTracksNotInLibrary" disabled=true>
-        <label for="checkboxTracksNotInLibrary"> Tracks not in Library</label><br><br>
-      </div>
+    <div id='status' class='statusText'>Loading...</div>
+    <div id='auth' hidden='true'></div>
+    <div id='buttons' hidden=true class='menu'>
+      <button type='button' id='btnScrape' class='popupButton'>Scrape Current Tracklist</button>
+      <button type='button' id='btnStoreScrapedMetadata' class='popupButton' disabled=true>Save Scraped Metadata to Storage</button>
+      <button type='button' id='btnRevert' class='popupButton' type='button' disabled=true>Revert Stored Tracklist to Backup</button>
+      <button type='button' id='btnExportStoredMetadataForCurrentTracklist' class='popupButton'>Export Stored GPM Tracklist</button>
+      <button type='button' id='btnExportScrapedMetadata' class='popupButton' disabled=true>Export Scraped Tracklist</button>
+      <button type='button' id='btnExportAllLocalStorage' class='popupButton' disabled=true>Export All Local Storage</button>
+    </div>
+    <div id='checkboxes' hidden=true>
+      <input type="checkbox" id="checkboxStoredGPMTrackTable" disabled=true>
+      <label for="checkboxStoredGPMTrackTable"> Stored GPM Track Table</label><br>
+      <input type="checkbox" id="checkboxStoredTrackTable">
+      <label for="checkboxStoredTrackTable"> Stored YTM Track Table</label><br>
+      <input type="checkbox" id="checkboxScrapedTrackTable" disabled=true>
+      <label for="checkboxScrapedTrackTable"> Scraped Track Table</label><br>
+      <input type="checkbox" id="checkboxDeltaTrackTables" disabled=true>
+      <label for="checkboxDeltaTrackTables"> Delta Track Tables</label><br>
+      <input type="checkbox" id="checkboxTracksNotInPlaylists" disabled=true>
+      <label for="checkboxTracksNotInPlaylists"> Tracks not in Playlists</label><br>
+      <input type="checkbox" id="checkboxTracksNotInLibrary" disabled=true>
+      <label for="checkboxTracksNotInLibrary"> Tracks not in Library</label><br><br>
+    </div>
+    <div id='tracktables'></div>
 
-      <div id='tracktables'>
-      </div>
+    <!-- TODO clean this up-->
+    
+    <div id='landingPage' hidden=true>
+      <p id='trackCountValue'></p>
+      <div id='trackCountSubtext'></div>
+      <button id='buttonComparePlaylist' class='popupButton' type='button'>Scrape Current Tracklist</button> 
+                  
+      <button id='buttonBackup' class='popupButton' type='button'>Revert to Backup</button> 
       
-      <div id='landingPage' hidden=true>
-        <p id='trackCountValue'></p>
-        <div id='trackCountSubtext'></div>
-        <button id='buttonComparePlaylist' class='popupButton' type='button'>Scrape Current Tracklist</button> 
-      
-        <!-- TODO clean this up
-        -->               
-        <button id='buttonBackup' class='popupButton' type='button'>Revert to Backup</button> 
-        
-        <button id='buttonExport' class='popupButton' type='button'>Export Local Storage</button> 
+      <button id='buttonExport' class='popupButton' type='button'>Export Local Storage</button> 
 
-        <!---
-        -->
-      </div>
-      
-      <div id='comparisonPage' hidden=true>
-              
-        <div id='storageResultText'  class='statusText' hidden=true>
-          First time saving data for this playlist.
-        </div>                
-      </div>
-      
-      <div id='divBack' hidden=true>
-        <button id='buttonBack' class='popupButton' type='button'>Back</button>
-      </div>
-      
+      <!---
+      -->
+    </div>
+    
+    <div id='comparisonPage' hidden=true>
+            
+      <div id='storageResultText'  class='statusText' hidden=true>
+        First time saving data for this playlist.
+      </div>                
+    </div>
+    
+    <div id='divBack' hidden=true>
+      <button id='buttonBack' class='popupButton' type='button'>Back</button>
+    </div>
+
+      <!-- The core Firebase JS SDK is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/8.2.10/firebase-app.js"></script>
+
+    <!-- Load the Firebase Auth & Cloud Firestore libraries
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+    <script src="https://www.gstatic.com/firebasejs/8.2.10/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.10/firebase-firestore.js"></script>
+
+    <!--Load Firebase UI Library-->
+    <script src="https://www.gstatic.com/firebasejs/ui/4.0.0/firebase-ui-auth.js"></script>     
   </body>
 </html>
  

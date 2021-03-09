@@ -3,11 +3,26 @@ import * as Model from './Model.js';
 import * as ViewRenderer from './ViewRenderer.js';
 import * as UIController from '../AppNavigator.js';
 import * as Messenger from './MessageController.js';
+//import sendMessage from './MessageController.js';
+import logOut from './AuthController.js'
+
+//TODO might be good to have an app.js or similar file that is the singular point waiting for the DOM to load,
+    //and which then tells EventController, AuthController, etc. to initiaite / listen for events.
+    //Note that this might not be necessary since module scripts are deferred by default
+
+//Button Pressed: Scrape Current Tracklist
+ViewRenderer.buttons.logOut.addEventListener('click', function() {
+    //AuthController.logOut();
+    //ViewRenderer.uncheckBox(ViewRenderer.checkboxes.storedTrackTable);
+    logOut();
+    // UIController.triggerUITransition('LogOut');
+});
 
 //Button Pressed: Scrape Current Tracklist
 ViewRenderer.buttons.scrape.addEventListener('click', function() {
     UIController.triggerUITransition('StartScrape');
     Messenger.sendMessage('GetTracklistMetadata');
+    //sendMessage('GetTracklistMetadata');
 });
 
 //Button Pressed: Store Scraped Metadata
