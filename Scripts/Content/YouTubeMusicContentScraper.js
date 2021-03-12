@@ -148,44 +148,30 @@
         }
     }
 
-    chrome.runtime.onMessage.addListener(
-        function(message, sender, sendResponse) {
-            console.log(sender.tab ? 'Message received from a content script:' + sender.tab.url : 'Message received from the extension: ' + message.greeting); 
-
-            const _onRequestComplete = function(response) {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.greeting === 'GetTracklistMetadata') {
+            console.info("Content Script: Received request to retrieve tracklist metadata.");
+            processMessage_GetTracklistMetadata(message.app, (response) => {
                 message.response = response;
                 sendResponse(message);
-            }
-
-            if (message.greeting === 'GetTracklistMetadata') {
-                processMessage_GetTracklistMetadata(message.app, _onRequestComplete);
-            }
-            
-            //Return true to keep the message channel open (so the callbacks can be called asynchronously)
-            return true;
+            });
         }
-    );
+        
+        return true; //Return true to keep the message channel open (so the callback can be called asynchronously)
+    });
 
-    chrome.runtime.onMessage.addListener(
-        function(message, sender, sendResponse) {
-            console.log(sender.tab ? 'Message received from a content script:' + sender.tab.url : 'Message received from the extension: ' + message.greeting);
-
-            if (message.greeting === 'GetTracklistTitle') {   
-                message.response = processMessage_GetTracklistName(message.app);
-                sendResponse(message);
-            }
-            else if (message.greeting === 'GetTrackCount') {   
-                //getPlaylistTrackCount(message.app, _onRequestComplete);
-                
-                // getPlaylistTrackCount(message.app, trackCount => {
-                //     message.response = trackCount;
-                //     sendResponse(message);
-                // });
-                message.response = getPlaylistTrackCount(message.app);
-                sendResponse(message);
-            }
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.greeting === 'GetTracklistTitle') {   
+            console.info("Content Script: Received request to retrieve tracklist title.");
+            message.response = processMessage_GetTracklistName(message.app);
+            sendResponse(message);
         }
-    );
+        else if (message.greeting === 'GetTrackCount') {   
+            console.info("Content Script: Received request to retrieve track count.");
+            message.response = getPlaylistTrackCount(message.app);
+            sendResponse(message);
+        }
+    });
 
     // /**
     //  * Sets the current app to the parameter provided and then executes the provided callback function
