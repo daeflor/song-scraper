@@ -13,46 +13,32 @@ const _iconPaths = {
     //disabled: 'Images/icon_disabled.png',
 };
 
-const _rulePageIsValidTracklist = {
-    conditions: [
-        new chrome.declarativeContent.PageStateMatcher({
-            pageUrl: { 
-                hostEquals: 'play.google.com', 
-                schemes: ['https'],
-                pathEquals: '/music/listen'
-            }
-        }),
-        new chrome.declarativeContent.PageStateMatcher({
-            pageUrl: { 
-                hostEquals: 'music.youtube.com', 
-                schemes: ['https'],
-                pathEquals: '/playlist' 
-            }
-        })
-    ],
-    //actions: [ new chrome.declarativeContent.SetIcon({path:{"19" : "./icon.png"}}) ]
-    //actions: [ new chrome.declarativeContent.ShowPageAction() ]
-};
+const _conditionsForValidTracklistPage = [
+    new chrome.declarativeContent.PageStateMatcher({
+        pageUrl: { 
+            hostEquals: 'play.google.com', 
+            schemes: ['https'],
+            pathEquals: '/music/listen'
+        }
+    }),
+    new chrome.declarativeContent.PageStateMatcher({
+        pageUrl: { 
+            hostEquals: 'music.youtube.com', 
+            schemes: ['https'],
+            pathEquals: '/playlist' 
+        }
+    })
+];
 
 //When the extenstion is installed or updated...
 chrome.runtime.onInstalled.addListener(function(details) {
-
-    // //Remove all pre-existing rules to start from a clean slate and then...
-    // chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
-
-    //     //Add the rules defined above
-    //     //chrome.declarativeContent.onPageChanged.addRules([rulePageIsValidTracklist]);
-
-    //     console.log("Rules have been updated.");
-    // });
-
     console.log("Background: Extension installed"); 
-
+    //Remove all pre-existing rules to start from a clean slate and then...
     chrome.declarativeContent.onPageChanged.removeRules(undefined, function () {
         
         //createImageDataFromFile(_iconPaths.default, 96, function(imageData) {
             let _rule = {
-                conditions: _rulePageIsValidTracklist.conditions,
+                conditions: _conditionsForValidTracklistPage,
                 actions: [
                     //new chrome.declarativeContent.SetIcon({imageData: imageData}),
                     new chrome.declarativeContent.ShowPageAction()
