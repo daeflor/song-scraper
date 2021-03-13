@@ -11,8 +11,6 @@
         {
             "matches": [
                 "https://music.youtube.com/playlist*",
-                //"https://music.youtube.com/songs*", //TODO The reason this doesn't work is that navigating within YouTube Music doesn't trigger reloads, so we need to make sure the content script is injected when ANY YTM page is first loaded. OR find a different way to accomplish this
-                //"https://music.youtube.com/uploaded_songs*",
                 "https://play.google.com/music/listen*"],
             "js": ["Scripts/Content/YouTubeMusicContentScraper.js"],
             "run_at": "document_idle"
