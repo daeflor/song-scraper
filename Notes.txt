@@ -24,6 +24,16 @@
 
 ** Upcoming To-Do List **
 
+	2021:
+	- Manifest V3
+	- Cloud Firestore
+	- Maybe change Import names in EventController (and other places?)?
+	- Clean up logic to set up landing page in AppNavigator & consolidate it with other similar logic; then remove deprecated html
+	- Overall cleanup
+	- Element/DOM validation
+	- Clean up CSS
+	
+	Old:
 	- Could add support for and save lists for individual genres, for easier viewing/fixing
 	- Save URLs in one place so that it's easy to update them if needed
 	- 'Soundtracks' playlist includes 'added' songs that are not elsewhere accounted for

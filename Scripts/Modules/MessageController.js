@@ -8,7 +8,7 @@ import * as UIController from '../AppNavigator.js';
  * @param {function} callback The function to execute when a response has been received
  */
 function sendMessageToContentScripts(message, callback) {	
-    chrome.tabs.sendMessage(Model.tab.id, message, (response) => {
+    chrome.tabs.sendMessage(Model.tab.id, message, response => {
         if(chrome.runtime.lastError) { //If an error occurred during the message connection, print an error
             DebugController.logError("ERROR: An error occurred during the message connection: ");
             console.log(chrome.runtime.lastError);

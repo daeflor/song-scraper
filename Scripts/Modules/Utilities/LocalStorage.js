@@ -1,3 +1,5 @@
+//TODO This is actually the Chrome storage API which isn't the same as the generic localStorage API. It might be worth renaming the file for clarity.
+
 /**
  * Gets a value from Local Storage and then executes the provided callback function
  * @param {string} key The key to use to get the value from Local Storage

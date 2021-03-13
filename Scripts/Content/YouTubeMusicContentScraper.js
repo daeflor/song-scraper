@@ -151,7 +151,7 @@
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.greeting === 'GetTracklistMetadata') {
             console.info("Content Script: Received request to retrieve tracklist metadata.");
-            processMessage_GetTracklistMetadata(message.app, (response) => {
+            processMessage_GetTracklistMetadata(message.app, response => {
                 message.response = response;
                 sendResponse(message);
             });

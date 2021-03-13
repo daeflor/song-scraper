@@ -639,12 +639,12 @@ window.Utilities = (function() {
     //TODO this could go in a GPM Utilities file or something like that
         //It doesn't make sense for a general utilities section
     /**
-     * Gets the tracklist key that corresponds to the given tracklist name within the provided array
-     * @param {array} tracklistArray The array within which to search
+     * Gets the tracklist key that corresponds to the given tracklist name within the provided object
+     * @param {object} tracklistsObject The object within which to search
      * @param {string} tracklistName The name of the tracklist to search for
      */
-     function getTracklistKeyFromTracklistName(tracklistArray, tracklistName) {
-        for (let key in tracklistArray) {
+     function getTracklistKeyFromTracklistName(tracklistsObject, tracklistName) {
+        for (const key in tracklistsObject) {
             if (key.includes("'" + tracklistName + "'")) {
                 return key;
             }
@@ -656,7 +656,7 @@ window.Utilities = (function() {
         //This one could maybe go into the storage manager?
     function sendRequest_LoadGooglePlayMusicExportData(callback) {
         const _filepath = "ExportedData/LocalStorageExport_2020-10-12-10-30PM_ThumbsUpDuplicatedAsYourLikes.txt";
-        IO.loadTextFileViaXMLHttpRequest(_filepath, callback, true)
+        IO.loadTextFileViaXMLHttpRequest(_filepath, callback, true);
     }
 
     return {
