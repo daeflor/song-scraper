@@ -9,8 +9,8 @@ console.log("Background: Running Background script.");
 //TODO the fact that these variables are still accessible much later on is indication that the background script isn't getting properly unloaded.
 const _iconPaths = {
     default: 'Images/icon.png',
-    exclamation: 'Images/icon_exclamation_black.png'
-    //disabled: 'Images/icon_disabled.png',
+    exclamation: 'Images/icon_exclamation_black.png',
+    disabled: 'Images/icon_disabled.png',
 };
 
 //TODO this won't work for the 'All Songs' lists
@@ -31,21 +31,6 @@ const _conditionsForValidTracklistPage = [
     })
 ];
 
-// const regexNot = /^((?!https:\/\/music.youtube.com).)*$/;
-// console.log(regexNot);
-
-// //TODO A likely better way to do this would be to have the default icon be a greyed out / disabled version, and then only apply an enabled one (default or exclamation) when navigating to a valid tracklist
-//     //This would solve two problems, because it provides a disabled icon for most pages AND we already need to set the default or exclamation icon anyway when opening a tracklist page
-       //HOWEVER, there would still be the wrong icon showing for pages within YTM that aren't valid tracklists, but that could also be handled separately
-//     //OR switch to using tabs permission instead of activeTab, and find a way to have the scripts run on the "correct" YTM pages (i.e. valid tracklists)
-// const _conditionsForInvalidTracklistPage = [
-//     new chrome.declarativeContent.PageStateMatcher({
-//         pageUrl: { 
-//             urlMatches: '^((?!https:\/\/music.youtube.com).)*$'
-//         }
-//     })
-// ];
-
 //When the extenstion is installed or updated...
 chrome.runtime.onInstalled.addListener(function(details) {
     console.log("Background: Extension installed"); 
@@ -60,15 +45,8 @@ chrome.runtime.onInstalled.addListener(function(details) {
                     new chrome.declarativeContent.ShowPageAction()
                 ] 
             };
-            // let _ruleDisabled = {
-            //     conditions: _conditionsForInvalidTracklistPage,
-            //     actions: [
-            //         new chrome.declarativeContent.SetIcon({imageData: imageData})
-            //         //new chrome.declarativeContent.ShowPageAction()
-            //     ] 
-            // };
 
-            chrome.declarativeContent.onPageChanged.addRules([_rule/*, _ruleDisabled*/]); 
+            chrome.declarativeContent.onPageChanged.addRules([_rule]); 
             console.log("Background: Rules have been updated.");     
         //});
     });
@@ -99,70 +77,71 @@ chrome.runtime.onInstalled.addListener(function(details) {
         // Programmatic injection of code to get track count. 
             //Then maybe save it in local storage for popup to grab later.
         // OR setTimeout before sending the message to the content script.
-chrome.webNavigation.onHistoryStateUpdated.addListener(function(details) {
+chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
     // alert("This is my favorite website!");
-    // console.log("WebNavigation Completed")
+    // console.log("WebNavigation Completed");
     //console.log(details.transitionQualifiers);
     // console.log("ICON PATH: ");
     // console.log(_iconPath);
 
-    setTimeout(() => {
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-            chrome.tabs.sendMessage(tabs[0].id, {greeting: 'GetTrackCount', app:'ytm'}, function(message) {
-                let tracklist = {
-                    type: 'playlist',
-                    title: undefined,
-                    currentTrackCount: message.response
-                    //storedTrackCount: undefined
-                };
-                                
-                console.log("Background: Retrieved the track count from the content script (from the DOM):" + tracklist.currentTrackCount);
+    chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+        const _currentTabId = tabs[0].id;
+        if (details.url.includes('list=PL')) {
+            console.info("Background: Navigated to a valid tracklist page within YouTube Music. The extension icon will be enabled.");
+            setTimeout(() => {
+                chrome.tabs.sendMessage(_currentTabId, {greeting: 'GetTrackCount', app:'ytm'}, message => {
+                    let tracklist = {
+                        type: 'playlist',
+                        title: undefined,
+                        currentTrackCount: message.response
+                        //storedTrackCount: undefined
+                    };
 
-                chrome.tabs.sendMessage(tabs[0].id, {greeting: 'GetTracklistTitle', app:'ytm'}, (message) => {
+                    console.log("Background: Retrieved the track count from the content script (from the DOM):" + tracklist.currentTrackCount);
 
-                    tracklist.title = message.response;
+                    chrome.tabs.sendMessage(_currentTabId, {greeting: 'GetTracklistTitle', app:'ytm'}, message => {
 
-                    const _filepath = "ExportedData/LocalStorageExport_2020-10-12-10-30PM_ThumbsUpDuplicatedAsYourLikes.txt";
-                    IO.loadTextFileViaXMLHttpRequest(_filepath, gpmLibraryObject => {
-                        console.log("Background: Retrieved GPM exported data from local file.");
-                        for (const key in gpmLibraryObject) {
-                            if (key.includes("'" + tracklist.title + "'")) {
-                                console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryObject[key].length);
-                                gpmLibraryObject[key];
+                        tracklist.title = message.response;
 
-                                if (tracklist.currentTrackCount !== gpmLibraryObject[key].length) {
-                                    console.log("Background: The current track count (from the DOM) is different from the stored track count.");
-                                    chrome.pageAction.setIcon({path: _iconPaths.exclamation, tabId:tabs[0].id});
-                                    // createImageDataFromFile(_iconPath, 96, (imageData) => {
-                                    //     chrome.pageAction.setIcon({imageData: imageData});  
-                                    //     //chrome.pag  
-                                    // });
-                                } else {
-                                    console.log("Background: The current track count (from the DOM) is the same as the stored track count.");
-                                    chrome.pageAction.setIcon({path: _iconPaths.default, tabId:tabs[0].id});
+                        const _filepath = "ExportedData/LocalStorageExport_2020-10-12-10-30PM_ThumbsUpDuplicatedAsYourLikes.txt";
+                        IO.loadTextFileViaXMLHttpRequest(_filepath, gpmLibraryObject => {
+                            console.log("Background: Retrieved GPM exported data from local file.");
+                            for (const key in gpmLibraryObject) {
+                                if (key.includes("'" + tracklist.title + "'")) {
+                                    console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryObject[key].length);
+                                    gpmLibraryObject[key];
+
+                                    if (tracklist.currentTrackCount !== gpmLibraryObject[key].length) {
+                                        console.log("Background: The current track count (from the DOM) is different from the stored track count.");
+                                        chrome.pageAction.setIcon({path: _iconPaths.exclamation, tabId:_currentTabId});
+                                        // createImageDataFromFile(_iconPath, 96, (imageData) => {
+                                        //     chrome.pageAction.setIcon({imageData: imageData});  
+                                        //     //chrome.pag  
+                                        // });
+                                    } else {
+                                        console.log("Background: The current track count (from the DOM) is the same as the stored track count.");
+                                        chrome.pageAction.setIcon({path: _iconPaths.default, tabId:_currentTabId});
+                                    }
                                 }
                             }
-                        }
+                        });
+
+                        // Storage.retrieveTracklistMetadata(tracklist.type, tracklist.title, (metadataArray) => {
+                        //     console.log("Background: Retrieved tracklist metadata from storage. Track count: " + metadataArray.length);
+
+                        //     if (tracklist.currentTrackCount !== metadataArray.length) {
+                        //         console.log("The current track count (from the DOM) is different from the stored track count.");
+                        //     }
+                        // });
                     });
-
-                    // Storage.retrieveTracklistMetadata(tracklist.type, tracklist.title, (metadataArray) => {
-                    //     console.log("Background: Retrieved tracklist metadata from storage. Track count: " + metadataArray.length);
-
-                    //     if (tracklist.currentTrackCount !== metadataArray.length) {
-                    //         console.log("The current track count (from the DOM) is different from the stored track count.");
-                    //     }
-                    // });
                 });
-            });
-        });
-    }, 1000); //TODO this timeout is just temporary until a better solution can be found. On a slow device or connection, this isn't reliable. 
-}, {url: [{hostEquals : 'music.youtube.com', pathEquals: '/playlist'}]});
-
-
-// chrome.webNavigation.onCommitted.addListener(function() {
-//     alert("This is my favorite website!");
-//     console.log("WebNavigation Completed")
-// }, {url: [{urlMatches : 'https://music.youtube.com/'}]});
+            }, 1000); //TODO this timeout is just temporary until a better solution can be found. On a slow device or connection, this isn't reliable. 
+        } else {
+            console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");
+            chrome.pageAction.setIcon({path: _iconPaths.disabled, tabId:_currentTabId});
+        }
+    });
+}, {url: [{hostEquals : 'music.youtube.com'/*, pathEquals: '/playlist'*/}]});
 
 /**
  * Creates a canvas element, loads an image from a file, and returns the image data
