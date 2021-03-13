@@ -4,12 +4,14 @@
     "description": "This extension allows you to view which tracks have been added or removed from the current YouTube Music or Google Play Music playlist.",
     "version": "0.2",
     "background": {
-        "scripts": ["Scripts/background.js"],
+        "page": "background.html",
         "persistent": false
     },
     "content_scripts": [
         {
-            "matches": ["https://music.youtube.com/*","https://play.google.com/music/listen*"],
+            "matches": [
+                "https://music.youtube.com/playlist*",
+                "https://play.google.com/music/listen*"],
             "js": ["Scripts/Content/YouTubeMusicContentScraper.js"],
             "run_at": "document_idle"
         }
@@ -18,18 +20,19 @@
     {
         "default_popup": "popup.html",
         "default_icon": {
-            "96": "Images/icon.png"
+            "96": "Images/icon_disabled.png"
           }
     },
     "icons": {
-        "96": "Images/icon.png"
+        "96": "Images/icon_disabled.png"
       },
     "permissions": 
     [
         "storage",
         "activeTab",
         "downloads",
-        "declarativeContent"
+        "declarativeContent",
+        "webNavigation"
     ],
     "content_security_policy":"script-src 'self' https://www.gstatic.com/ https://apis.google.com; object-src 'self'"
 }

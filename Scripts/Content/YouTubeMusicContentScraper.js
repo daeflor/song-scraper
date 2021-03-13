@@ -148,26 +148,30 @@
         }
     }
 
-    chrome.runtime.onMessage.addListener(
-        function(message, sender, sendResponse) {
-            console.log(sender.tab ? 'Message received from a content script:' + sender.tab.url : 'Message received from the extension: ' + message.greeting); 
-
-            const _onRequestComplete = function(response) {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.greeting === 'GetTracklistMetadata') {
+            console.info("Content Script: Received request to retrieve tracklist metadata.");
+            processMessage_GetTracklistMetadata(message.app, response => {
                 message.response = response;
                 sendResponse(message);
-            }
-
-            if (message.greeting == 'GetTracklistTitle') {   
-                processMessage_GetTracklistName(message.app, _onRequestComplete);
-            }
-            else if (message.greeting == 'GetTracklistMetadata') {
-                processMessage_GetTracklistMetadata(message.app, _onRequestComplete);
-            }
-            
-            //Return true to keep the message channel open (so the callbacks can be called asynchronously)
-            return true;
+            });
         }
-    );
+        
+        return true; //Return true to keep the message channel open (so the callback can be called asynchronously)
+    });
+
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.greeting === 'GetTracklistTitle') {   
+            console.info("Content Script: Received request to retrieve tracklist title.");
+            message.response = processMessage_GetTracklistName(message.app);
+            sendResponse(message);
+        }
+        else if (message.greeting === 'GetTrackCount') {   
+            console.info("Content Script: Received request to retrieve track count.");
+            message.response = getPlaylistTrackCount(message.app);
+            sendResponse(message);
+        }
+    });
 
     // /**
     //  * Sets the current app to the parameter provided and then executes the provided callback function
@@ -184,16 +188,16 @@
     // }
 
     /**
-     * Gets the current tracklist name from the DOM and then executes the provided callback function
+     * Returns the current tracklist name from the DOM
      * @param {string} app the current app that the extension is running on
-     * @param {function} sendResponse The function to execute once the tracklist name has been retrieved
+     * @returns {string} the tracklist name
      */
-    function processMessage_GetTracklistName(app, callback) {
+    function processMessage_GetTracklistName(app) {
         const _tracklistNameElement = elementsInDOM.playlistName[app]();
         
-        if (_tracklistNameElement != null) {
+        if (_tracklistNameElement != null) { //TODO use a better isElement check
             console.log("Tracklist name is: " + _tracklistNameElement.textContent)
-            callback(_tracklistNameElement.textContent); //TODO this could be a return instead of a callback
+            return _tracklistNameElement.textContent;
         }
         else {
             console.log("ERROR: Received request to get the tracklist name, but it failed to be retrieved from the DOM.");
@@ -333,7 +337,7 @@
         let _scrollingTimeout = null; //Variable tracking the timeout to end the scroll & scrape process, in case no changes to the track row container element are observed for a while
         let _scrapeStartingIndex = (app == 'gpm') ? 1 : 0; //Variable to track the row index to begin each scrape with. Starts at 1 for GPM, 0 for other sites. 
         const _scrapeEndingIndexModifier = (app == 'gpm') ? -1 : 0; //Variable to track the modifier to the index to end each scrape with. Typically 0, but -1 for GPM due to how the DOM is laid out.
-
+        
         //Set up the callback function to execute once the scraped has either been successfully completed or timed out
         const _endScrape = function() {
             //Allow the user to scroll manually again

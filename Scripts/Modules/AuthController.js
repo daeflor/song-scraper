@@ -6,12 +6,7 @@ import firebaseConfig from '../Configuration/Config.js';
  * Sets up the Firebase context and register a listener for the auth state changing
  */
 function init() {
-    
     firebase.initializeApp(firebaseConfig); //Initialize Firebase
-
-    //Note: This code will force sign out the user, for testing purposes
-    
-
     firebase.auth().onAuthStateChanged(reactToEvent_AuthStateChanged); //Listen for auth state changes
 }
 
