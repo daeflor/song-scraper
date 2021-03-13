@@ -13,7 +13,7 @@ const _iconPaths = {
     disabled: 'Images/icon_disabled.png',
 };
 
-//TODO this won't work for the 'All Songs' lists
+//TODO this won't work for the 'All Songs' lists, which is fine for me because they aren't supported yet anyway
 const _conditionsForValidTracklistPage = [
     new chrome.declarativeContent.PageStateMatcher({
         pageUrl: { 
@@ -78,12 +78,7 @@ chrome.runtime.onInstalled.addListener(function(details) {
             //Then maybe save it in local storage for popup to grab later.
         // OR setTimeout before sending the message to the content script.
 chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
-    // alert("This is my favorite website!");
     // console.log("WebNavigation Completed");
-    //console.log(details.transitionQualifiers);
-    // console.log("ICON PATH: ");
-    // console.log(_iconPath);
-
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
         const _currentTabId = tabs[0].id;
         if (details.url.includes('list=PL')) {
@@ -142,21 +137,3 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
         }
     });
 }, {url: [{hostEquals : 'music.youtube.com'/*, pathEquals: '/playlist'*/}]});
-
-/**
- * Creates a canvas element, loads an image from a file, and returns the image data
- * @param {string} path The path of the file to load
- * @param {number} size The size of the image file (i.e. width/height in pixels). A square image is assumed.  
- * @param {function} callback The function to execute once the image has been loaded
- */
-function createImageDataFromFile(path, size, callback) {
-    const _canvas = document.createElement("canvas");
-    const _canvasContext = _canvas.getContext("2d");
-    const _image = new Image();
-    _image.onload = function() {
-        _canvasContext.drawImage(_image,0,0,size,size);
-        const _imageData = _canvasContext.getImageData(0,0,size,size);
-        callback(_imageData);
-    }
-    _image.src = chrome.runtime.getURL(path);
-}
