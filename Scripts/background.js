@@ -13,6 +13,7 @@ const _iconPaths = {
     //disabled: 'Images/icon_disabled.png',
 };
 
+//TODO this won't work for the 'All Songs' lists
 const _conditionsForValidTracklistPage = [
     new chrome.declarativeContent.PageStateMatcher({
         pageUrl: { 
@@ -30,13 +31,28 @@ const _conditionsForValidTracklistPage = [
     })
 ];
 
+// const regexNot = /^((?!https:\/\/music.youtube.com).)*$/;
+// console.log(regexNot);
+
+// //TODO A likely better way to do this would be to have the default icon be a greyed out / disabled version, and then only apply an enabled one (default or exclamation) when navigating to a valid tracklist
+//     //This would solve two problems, because it provides a disabled icon for most pages AND we already need to set the default or exclamation icon anyway when opening a tracklist page
+       //HOWEVER, there would still be the wrong icon showing for pages within YTM that aren't valid tracklists, but that could also be handled separately
+//     //OR switch to using tabs permission instead of activeTab, and find a way to have the scripts run on the "correct" YTM pages (i.e. valid tracklists)
+// const _conditionsForInvalidTracklistPage = [
+//     new chrome.declarativeContent.PageStateMatcher({
+//         pageUrl: { 
+//             urlMatches: '^((?!https:\/\/music.youtube.com).)*$'
+//         }
+//     })
+// ];
+
 //When the extenstion is installed or updated...
 chrome.runtime.onInstalled.addListener(function(details) {
     console.log("Background: Extension installed"); 
     //Remove all pre-existing rules to start from a clean slate and then...
     chrome.declarativeContent.onPageChanged.removeRules(undefined, function () {
         
-        //createImageDataFromFile(_iconPaths.default, 96, function(imageData) {
+        //createImageDataFromFile(_iconPaths.disabled, 96, function(imageData) {
             let _rule = {
                 conditions: _conditionsForValidTracklistPage,
                 actions: [
@@ -44,8 +60,15 @@ chrome.runtime.onInstalled.addListener(function(details) {
                     new chrome.declarativeContent.ShowPageAction()
                 ] 
             };
+            // let _ruleDisabled = {
+            //     conditions: _conditionsForInvalidTracklistPage,
+            //     actions: [
+            //         new chrome.declarativeContent.SetIcon({imageData: imageData})
+            //         //new chrome.declarativeContent.ShowPageAction()
+            //     ] 
+            // };
 
-            chrome.declarativeContent.onPageChanged.addRules([_rule]); 
+            chrome.declarativeContent.onPageChanged.addRules([_rule/*, _ruleDisabled*/]); 
             console.log("Background: Rules have been updated.");     
         //});
     });
