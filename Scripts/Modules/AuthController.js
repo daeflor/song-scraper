@@ -2,10 +2,23 @@ import * as DebugController from './DebugController.js';
 import * as UIController from '../AppNavigator.js';
 import firebaseConfig from '../Configuration/Config.js';
 
+// import firebase from "firebase/app";
+// import "firebase/auth";
+
+// import firebase from '/node_modules/@firebase/app';
+// import '/node_modules/@firebase/auth';
+
+// import firebase from '/node_modules/firebase/firebase-app.js'; // Firebase App (the core Firebase SDK) is always required and must be listed first
+// import '/node_modules/firebase/firebase-auth.js'; // Add the Firebase products that you want to use
+
+import '/node_modules/firebase/firebase-app.js'; // Firebase App (the core Firebase SDK) is always required and must be listed first
+import '/node_modules/firebase/firebase-auth.js';
+
 /**
  * Sets up the Firebase context and register a listener for the auth state changing
  */
 function init() {
+    //TODO I don't know if initializing Firebase twice is bad (in background & extension) is bad. It works fine, but seems wrong.
     firebase.initializeApp(firebaseConfig); //Initialize Firebase
     firebase.auth().onAuthStateChanged(reactToEvent_AuthStateChanged); //Listen for auth state changes
 }

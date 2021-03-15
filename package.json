@@ -1,0 +1,22 @@
+{
+  "name": "song-scraper",
+  "version": "1.0.0",
+  "description": "A Chrome extension that allows you to view changes made to the current YouTube Music tracklist",
+  "main": "AppNavigator.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daeflor/song-scraper.git"
+  },
+  "author": "daeflor",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/daeflor/song-scraper/issues"
+  },
+  "homepage": "https://github.com/daeflor/song-scraper#readme",
+  "dependencies": {
+    "firebase": "^8.3.0"
+  }
+}
