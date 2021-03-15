@@ -13,6 +13,7 @@ import firebaseConfig from '../Configuration/Config.js';
 
 import '/node_modules/firebase/firebase-app.js'; // Firebase App (the core Firebase SDK) is always required and must be listed first
 import '/node_modules/firebase/firebase-auth.js';
+import '/node_modules/firebaseui/dist/firebaseui.js';
 
 /**
  * Sets up the Firebase context and register a listener for the auth state changing

@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/daeflor/song-scraper#readme",
   "dependencies": {
-    "firebase": "^8.3.0"
+    "firebase": "^8.3.0",
+    "firebaseui": "^4.8.0"
   }
 }
