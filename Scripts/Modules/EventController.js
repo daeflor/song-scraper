@@ -4,18 +4,25 @@ import * as ViewRenderer from './ViewRenderer.js';
 import * as UIController from '../AppNavigator.js';
 import * as Messenger from './MessageController.js';
 //import sendMessage from './MessageController.js';
-import logOut from './AuthController.js'
+//import logOut from './AuthController.js'
+import * as auth from '../auth/firebase-manual-auth.js'
 
 //TODO might be good to have an app.js or similar file that is the singular point waiting for the DOM to load,
     //and which then tells EventController, AuthController, etc. to initiaite / listen for events.
     //Note that this might not be necessary since module scripts are deferred by default
 
-//Button Pressed: Scrape Current Tracklist
+//Button Pressed: Log In
+ViewRenderer.buttons.logIn.addEventListener('click', function() {
+    auth.logIn();
+});
+
+//Button Pressed: Log Out
 ViewRenderer.buttons.logOut.addEventListener('click', function() {
     //AuthController.logOut();
     //ViewRenderer.uncheckBox(ViewRenderer.checkboxes.storedTrackTable);
-    logOut();
     // UIController.triggerUITransition('LogOut');
+
+    auth.logOut();
 });
 
 //Button Pressed: Scrape Current Tracklist
@@ -28,7 +35,10 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
 //Button Pressed: Store Scraped Metadata
 ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
     //TODO is it right to call Storage functions from here?
-    Storage.storeTracklistMetadata(Model.tracklist.type, Model.tracklist.title, Model.tracklist.metadataScraped);
+    //Storage.storeTracklistMetadata(Model.tracklist.type, Model.tracklist.title, Model.tracklist.metadataScraped);
+    
+    //TODO For now, commented this out and do nothing when the button is pressed.
+    //Storage.storeData(Model.tracklist.metadataScraped);
 });
 
 //Button Pressed: Export Scraped Tracklist 

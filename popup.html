@@ -13,13 +13,13 @@
     <script src='Scripts/TabManager.js'></script>
     <script src='Scripts/popup.js'></script>
     <script type="module" src='Scripts/Modules/EventController.js'></script>
-    <script type="module" src='Scripts/Modules/AuthController.js'></script>
+    <script type="module" src='Scripts/auth/firebase-manual-auth.js'></script>
   </head>
   <body> 
     <div id='header' hidden=true>
       <ul id='headerRow'>
         <li class='leftAligned'>
-          <button type='button' id='btnLogOut'>
+          <button type='button' id='btnLogOut' class='btnAuth'>
             <span class='autoHeight popupButton material-icons-round'>logout</span>
           </button> 
         </li>
@@ -28,7 +28,11 @@
     </div>
 
     <div id='status' class='statusText'>Loading...</div>
-    <div id='auth' hidden='true'></div>
+    <div id='auth' hidden='true'>
+      <button type='button' id='btnLogIn' class='btnAuth'>
+        <span class='autoHeight popupButton material-icons-round'>login</span>
+      </button> 
+    </div>
     <div id='buttons' hidden=true class='menu'>
       <button type='button' id='btnScrape' class='popupButton'>Scrape Current Tracklist</button>
       <button type='button' id='btnStoreScrapedMetadata' class='popupButton' disabled=true>Save Scraped Metadata to Storage</button>
