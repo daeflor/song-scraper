@@ -1,4 +1,4 @@
-import * as DebugController from './DebugController.js';
+import * as DebugController from '../Modules/DebugController.js';
 import * as UIController from '../AppNavigator.js';
 import firebaseConfig from '../Configuration/Config.js';
 
