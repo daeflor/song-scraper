@@ -11,15 +11,14 @@ import firebaseConfig from '../Configuration/Config.js';
 // import firebase from '/node_modules/firebase/firebase-app.js'; // Firebase App (the core Firebase SDK) is always required and must be listed first
 // import '/node_modules/firebase/firebase-auth.js'; // Add the Firebase products that you want to use
 
-import '/node_modules/firebase/firebase-app.js'; // Firebase App (the core Firebase SDK) is always required and must be listed first
-import '/node_modules/firebase/firebase-auth.js';
+import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
+import '/node_modules/firebase/firebase-auth.js'; //Import the Firebase Auth library
 import '/node_modules/firebaseui/dist/firebaseui.js';
 
 /**
  * Sets up the Firebase context and register a listener for the auth state changing
  */
 function init() {
-    //TODO I don't know if initializing Firebase twice is bad (in background & extension) is bad. It works fine, but seems wrong.
     firebase.initializeApp(firebaseConfig); //Initialize Firebase
     firebase.auth().onAuthStateChanged(reactToEvent_AuthStateChanged); //Listen for auth state changes
 }
@@ -82,7 +81,7 @@ function startFirebaseUIAuthFlow() {
     _authUI.start('#auth', _uiConfig);
 }
 
-export default function logOut() {
+export function logOut() {
     firebase.auth().signOut().then(function() {
             UIController.triggerUITransition('LogOut');
         }).catch(function(error) {
