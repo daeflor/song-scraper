@@ -29,6 +29,7 @@ function reactToEvent_AuthStateChanged(user) {
 }
 
 export function logIn() {
+//TODO when the button gets clicked once, it should get disabled, to ensure it doesn't accidentally get clicked again
     chrome.identity.getAuthToken({interactive: true}, token => {
         //console.log("Retrieved cached token: " + token);
         //Generating a firebase auth credential takes either an id token (1st param) or access token (2nd param)
@@ -41,6 +42,7 @@ export function logIn() {
 export function logOut() {
     //TODO perhaps replace this with removeCachedAuthToken
         //This will require a secure way of storing the auth token.
+            //For the purposes of this local app, it may also be sufficient to sign out of firebase but not clear the auth token
     firebase.auth().signOut().then(function() {
         chrome.identity.clearAllCachedAuthTokens(() => {
             UIController.triggerUITransition('LogOut');

@@ -46,9 +46,9 @@ input[type='checkbox'] {
 	outline: none;
 }
 
-#auth {
+/* #auth {
 	text-align: center;
-}
+} */
 
 #title {
 	display: flex;
