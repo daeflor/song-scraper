@@ -1,5 +1,3 @@
-import * as DebugController from '../DebugController.js';
-
 //** Private Helper Functions **//
 
 /**
@@ -29,7 +27,7 @@ function createCommaSeparatedStringFromArray(array) {
         return _string;
     }
     else {
-        DebugController.logError("ERROR: Request received to create a comma-separated string but an array of values was not provided.");
+        console.error("Request received to create a comma-separated string but an array of values was not provided.");
     }
 }
 
@@ -86,7 +84,7 @@ export function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=
         _link.remove(); //Remove the temporary link element from the DOM
     }
     else {
-        DebugController.logWarning("The generated CSV was blank, so no file will be downloaded.");
+        console.warn("The generated CSV was blank, so no file will be downloaded.");
     }
 }
 
