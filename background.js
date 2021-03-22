@@ -1,5 +1,3 @@
-//import * as Storage from './Modules/StorageManager.js';
-import * as IO from './Modules/Utilities/IO.js';
 
 //TODO could switch to using browser_action and use badge on icon to indicate if the trackcount is different than what is stored.
     //Alternatively, could leave it as a page_action and use SetIcon to change the icon as needed
@@ -70,10 +68,10 @@ chrome.runtime.onInstalled.addListener(function(details) {
 
 //Note that this works because YouTube Music appears to use the History API to navigate between pages on the site
 //TODO this doesn't work when first loading the youtube site 
-   // (or refreshing the page, because this triggers before the content script can load),
-   // but it does seem to work for future site navigations.
-   // Except it doesn't work when going 'back' for some reason. Could also be a timing issue.
-   // Two possible work-arounds:
+// (or refreshing the page, because this triggers before the content script can load),
+// but it does seem to work for future site navigations.
+// Except it doesn't work when going 'back' for some reason. Could also be a timing issue.
+// Two possible work-arounds:
         // Programmatic injection of code to get track count. 
             //Then maybe save it in local storage for popup to grab later.
         // OR setTimeout before sending the message to the content script.
@@ -98,24 +96,24 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
 
                         tracklist.title = message.response;
 
-                        const _filepath = "ExportedData/LocalStorageExport_2020-10-12-10-30PM_ThumbsUpDuplicatedAsYourLikes.txt";
-                        IO.loadTextFileViaXMLHttpRequest(_filepath, gpmLibraryObject => {
+                        const _fileName = 'LocalStorageExport_2020-10-12-10-30PM_ThumbsUpDuplicatedAsYourLikes.txt';
+                        //TODO This works but is wasteful because everytime you navigate to a new tracklist page, the GPM data gets reloaded from the local text file. 
+                            //Saving to and loading from local chrome storage is *probably* better. Either way, this should be temporary.
+                            //In the future, the data will need to be loaded from firestore instead
+                        chrome.tabs.sendMessage(_currentTabId, {greeting: 'GetGPMData', fileName: _fileName}, message => {
+                            const gpmLibraryObject = message.response;
+
                             console.log("Background: Retrieved GPM exported data from local file.");
                             for (const key in gpmLibraryObject) {
                                 if (key.includes("'" + tracklist.title + "'")) {
                                     console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryObject[key].length);
-                                    gpmLibraryObject[key];
 
                                     if (tracklist.currentTrackCount !== gpmLibraryObject[key].length) {
                                         console.log("Background: The current track count (from the DOM) is different from the stored track count.");
-                                        chrome.pageAction.setIcon({path: _iconPaths.exclamation, tabId:_currentTabId});
-                                        // createImageDataFromFile(_iconPath, 96, (imageData) => {
-                                        //     chrome.pageAction.setIcon({imageData: imageData});  
-                                        //     //chrome.pag  
-                                        // });
+                                        chrome.action.setIcon({path: _iconPaths.exclamation, tabId:_currentTabId});
                                     } else {
                                         console.log("Background: The current track count (from the DOM) is the same as the stored track count.");
-                                        chrome.pageAction.setIcon({path: _iconPaths.default, tabId:_currentTabId});
+                                        chrome.action.setIcon({path: _iconPaths.default, tabId:_currentTabId});
                                     }
                                 }
                             }
@@ -133,7 +131,9 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
             }, 1000); //TODO this timeout is just temporary until a better solution can be found. On a slow device or connection, this isn't reliable. 
         } else {
             console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");
-            chrome.pageAction.setIcon({path: _iconPaths.disabled, tabId:_currentTabId});
+            chrome.action.setIcon({path: _iconPaths.disabled, tabId:_currentTabId});
         }
     });
-}, {url: [{hostEquals : 'music.youtube.com'/*, pathEquals: '/playlist'*/}]});
+}, 
+{url: [{hostEquals : 'music.youtube.com'/*, pathEquals: '/playlist'*/}]}
+);
