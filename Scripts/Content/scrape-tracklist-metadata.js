@@ -1,15 +1,3 @@
-
-//window.document.body.onload = scrapeAndStoreBasicTracklistData;//function() {console.log('onload works for some reason');};
-
-// window.addEventListener('DOMContentLoaded', events => {
-//     console.log('DOM fully loaded and parsed');
-// });
-
-// window.document.body.addEventListener('load', event => {
-//     console.log('something loaded: ' + event);
-//     scrapeAndStoreBasicTracklistData();
-// });
-
 // const tracklistElements = Object.freeze({
 //     tracklistTitle: {
 //         ytm: function() {return document.querySelector('#header .metadata yt-formatted-string.title');},
@@ -41,9 +29,6 @@ function getTracklistMetadataElements(callback) {
     if (_ytmMetadataElement !== null) { //TODO would a more thorough isElement check be good here?
         console.log("YouTube Music tracklist metadata header element already loaded.");
 
-        // console.log(_ytmMetadataElement);
-        // console.log(typeof _ytmMetadataElement);
-
         const _ytmTitleElement = _ytmMetadataElement.querySelector('yt-formatted-string.title');
         console.log("Title is: " + _ytmTitleElement.textContent);
 
@@ -56,42 +41,6 @@ function getTracklistMetadataElements(callback) {
         console.log("YouTube Music tracklist metadata header element not yet loaded.");
         //Wait for the tracklist metadata elements to load and then execute the callbcak function to extract and store the metadata
         getYtmElementsOnceLoaded(_ytmHeaderElement, callback);
-       
-        
-//         scrapeYtmElementsOnceLoaded((title, trackCount) => {
-
-//             callback(_ytmTitleElement, _ytmTrackCountElement);
-// /*
-//             console.log("Retrieved title and track count from mutation obs:");
-//             console.log(title);
-//             console.log(trackCount);
-
-//             const _message = Object.freeze({
-//                 greeting: 'BasicTracklistDataUpdated',
-//                 tracklistTitle: title,
-//                 trackCount: trackCount
-//             });
-
-//             const _storageObject = Object.freeze({
-//                 songScraperSessionStorage: {
-//                     tracklistTitle: title,
-//                     trackCount: trackCount
-//                 }
-//             });
-
-//             chrome.storage.local.set (_storageObject, () => {
-//                 if (chrome.runtime.lastError != null) {
-//                     console.error("ERROR: " + chrome.runtime.lastError.message);
-//                 } else {
-//                     chrome.runtime.sendMessage(_message);
-                        
-//                     // chrome.storage.local.get(null, result => {
-//                     //     console.log(result);
-//                     // });
-//                 }
-//             });
-//             */
-//         });
     }
 }
 
@@ -102,27 +51,10 @@ function getTrackCountNumberFromString(trackCountString) {
 }
 
 function extractAndStoreTracklistMetadata(tracklistTitleElement, trackCountElement) {
-    // const _tracklistTitle = tracklistTitleElement.textContent;
 
-    // let _trackCountString = trackCountElement.textContent; //Get the track count string from the node's text content
-    // _trackCountString = _trackCountString.split(" ")[0]; //Split off any trailing text after the actual number
-    // _trackCountString = _trackCountString.replace(/,/g, ""); //Remove any commas from the string (e.g. for counts > 999)
-    // const _trackCount = parseInt(_trackCountString); //Parse the string to get the track count value as an integer
-           
-    // const _message = Object.freeze({
-    //     greeting: 'BasicTracklistDataUpdated',
-    //     tracklistTitle: title,
-    //     trackCount: trackCount
-    // });
-
-    // const _storageObject = Object.freeze({
-    //     songScraperSessionStorage: {
-    //         tracklistTitle: title,
-    //         trackCount: trackCount
-    //     }
-    // });
-
-
+    if (typeof tracklistTitleElement === 'undefined' || typeof trackCountElement === 'undefined') {
+        console.error("Invalid parameters provided. Tracklist Title Element: " + tracklistTitleElement + "; Track Count Element: " + trackCountElement);
+    }
 
     const _tracklistMetadata = {
         title: tracklistTitleElement.textContent,
@@ -146,76 +78,24 @@ function extractAndStoreTracklistMetadata(tracklistTitleElement, trackCountEleme
     });
 }
 
-
-// /**
-//      * Returns the current tracklist title from the DOM
-//      * @param {string} [app] The current app that the extension is running on. Default to 'ytm' (for YouTube Music).
-//      * @returns {string} The tracklist title
-//      */
-//  function scrapeTracklistTitle(app='ytm') {
-
-//     console.log(document.readyState);
-//     console.log(document.body);
-
-//     console.log(tracklistElements.tracklistTitle[app]);
-
-//     const _tracklistTitleElement = tracklistElements.tracklistTitle[app]();
-    
-//     if (_tracklistTitleElement != null) { //TODO use a better isElement check
-//         console.log("Tracklist name is: " + _tracklistTitleElement.textContent)
-//         return _tracklistTitleElement.textContent;
-//     } else {
-//         console.error("ERROR: Received request to get the tracklist name, but it failed to be retrieved from the DOM.");
-//     }
-// }
-
-//scrapeTracklistTitle();
-
-// const _titleElement = Object.freeze({
-//     auth: document.getElementById('auth'),
-//     header: document.getElementById('header'),
-//     status: document.getElementById('status'),
-//     buttons: document.getElementById('buttons'),
-//     checkboxes: document.getElementById('checkboxes'),
-//     tracktables: document.getElementById('tracktables')
-// });
-
-// function getTracklistElement(element, app='ytm') {
-//     switch(element) {
-//         case 'tracklistTitle':
-//             return _splitDurationIntegers[0];
-//         case 'playlistTrackCount':
-//             return _splitDurationIntegers[0]*60 + _splitDurationIntegers[1];
-//         case 'yourLikesTrackCount':
-//             return _splitDurationIntegers[0]*3600 + _splitDurationIntegers[1]*60 + _splitDurationIntegers[2];
-//         default:
-//             DebugController.logWarning("Tried to extract a seconds integer value from a duration string, but the duration is not in a supported format (e.g. the duration may be longer than 24 hours).");
-//     }
-// }
-
 function getYtmElementsOnceLoaded(rootElement, callback) {
     //const _rootElement = document.querySelector('#header');
     const _observerConfig = {childList: true, subtree: true}; //Set up the configuration options for the Mutation Observer
 
-    let _title = undefined;
-    let _trackCount = undefined;
+    let _titleElement = undefined;
+    let _trackCountElement = undefined;
 
-    //Set up the callback function to execute once the scraped has either been successfully completed or timed out
+    //Set up the callback function to execute once the metadata elements have been loaded
     const _endObservation = () => {
         _observer.disconnect(); //Disconnect the mutation observer
-        callback(_title, _trackCount); //Execute the provided callback function, passing the title and track count
+        callback(_titleElement, _trackCountElement); //Execute the provided callback function, passing the title and track count elements
     }
 
-    //Set up the callback to execute whenever a mutation of the pre-specified type is observed. //the childList is modified for any element in the root element's subtree
+    //Set up the callback to execute whenever a mutation of the pre-specified type is observed (i.e. the childList is modified for any element in the root element's subtree)
     const _onMutationObserved = (mutationsList, observer) => {
         //For each mutation observed on the target DOM element...
         for (const mutation of mutationsList) {
-            //If the observed mutation is that the element's childList was modified...
-            //if (mutation.type === 'childList') {
-
             const _addedNode = mutation.addedNodes[0];
-
-            //console.log(mutation);
 
             // //If the mutation was adding a node to the element's childList...
             // if (typeof _addedNode === 'object') {
@@ -246,8 +126,8 @@ function getYtmElementsOnceLoaded(rootElement, callback) {
                 if (_addedNode.nodeType === 3) {
                     //console.log(_addedNode.textContent);
                     //_title = _addedNode.textContent; //Get the tracklist title from the Text Node's text content
-                    _title = _addedNode;
-                    if (typeof _trackCount === 'object') _endObservation(); //If the track count has already been determined, end the observation
+                    _titleElement = _addedNode;
+                    if (typeof _trackCountElement === 'object') _endObservation(); //If the track count has already been determined, end the observation
                 }
             }
             //Else, if mutated element has the "second-subtitle" class and the mutation was adding a node to it's childList...
@@ -270,8 +150,8 @@ function getYtmElementsOnceLoaded(rootElement, callback) {
                     // _trackCount = parseInt(_trackCountString); //Parse the string to get the track count value as an integer
                     
 
-                    _trackCount = _addedGrandchild;
-                    if (typeof _title === 'object') _endObservation(); //If the tracklist title has already been determined, end the observation
+                    _trackCountElement = _addedGrandchild;
+                    if (typeof _titleElement === 'object') _endObservation(); //If the tracklist title has already been determined, end the observation
                 }
             }
 
@@ -306,7 +186,7 @@ function getYtmElementsOnceLoaded(rootElement, callback) {
     //Create a new mutation observer instance linked to the callback function defined above
     const _observer = new MutationObserver(_onMutationObserved);
 
-    //Start observing the track row container element for configured mutations (i.e. for any changes to its childList)
+    //Start observing the root element for configured mutations (i.e. for any changes to its childList)
     console.log("Basic Data Scraper: Observing YTM header element for DOM changes.");
     _observer.observe(rootElement, _observerConfig);
 }
@@ -315,3 +195,6 @@ function getYtmElementsOnceLoaded(rootElement, callback) {
 getTracklistMetadataElements(extractAndStoreTracklistMetadata);
 
 //TODO Should this whole file be wrapped in an IIFE?
+//TODO Also there might be a way to only declare these functions once and then, 
+    //on future page navigations (i.e. history changes), check if they are already defined. 
+    //As opposed to always reloading this whole file.
