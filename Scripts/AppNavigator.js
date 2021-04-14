@@ -74,7 +74,7 @@ const supportedTracklistTypes = Object.freeze({
     uploadsList: 'uploads'
 });
 
-export function init() {
+function init() {
     //Query for the Active Tab...
     chrome.tabs.query( 
         { active: true, currentWindow: true}, 
@@ -206,6 +206,7 @@ function prepareLandingPage() {
     ViewRenderer.showHeader(Model.tracklist.title);
 
     ViewRenderer.showLandingPage();
+    ViewRenderer.hideElement(ViewRenderer.divs.auth);
 }
 
 export function triggerUITransition(transition) {
@@ -254,12 +255,16 @@ export function triggerUITransition(transition) {
         ViewRenderer.unhideElement(ViewRenderer.divs.checkboxes);
         ViewRenderer.unhideElement(ViewRenderer.divs.tracktables);
         ViewRenderer.enableElement(ViewRenderer.buttons.scrape);
+        ViewRenderer.enableElement(ViewRenderer.buttons.storeScrapedMetadata);
         ViewRenderer.enableElement(ViewRenderer.buttons.exportScrapedMetadata);
         ViewRenderer.enableElement(ViewRenderer.checkboxes.scrapedTrackTable);
         ViewRenderer.enableElement(ViewRenderer.checkboxes.deltaTrackTables);
     }
     else if (transition === 'ScrapeFailed') {
         ViewRenderer.showStatusMessage('Failed to retrieve track list.');
+    }
+    else if (transition === 'ScrapedMetadataStored') {
+        ViewRenderer.disableElement(ViewRenderer.buttons.storeScrapedMetadata);
     }
 }
 
@@ -670,4 +675,4 @@ window.Utilities = (function() {
 
 //window.Utilities.FadeIn(document.body, init, 500);
 
-export {prepareLandingPage, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};
+export {init, prepareLandingPage, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};

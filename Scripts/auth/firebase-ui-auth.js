@@ -1,6 +1,10 @@
-import * as DebugController from './DebugController.js';
+import * as DebugController from '../Modules/DebugController.js';
 import * as UIController from '../AppNavigator.js';
 import firebaseConfig from '../Configuration/Config.js';
+
+import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
+import '/node_modules/firebase/firebase-auth.js'; //Import the Firebase Auth library
+import '/node_modules/firebaseui/dist/firebaseui.js'; //Import the Firebase Auth UI library
 
 /**
  * Sets up the Firebase context and register a listener for the auth state changing
@@ -68,7 +72,7 @@ function startFirebaseUIAuthFlow() {
     _authUI.start('#auth', _uiConfig);
 }
 
-export default function logOut() {
+export function logOut() {
     firebase.auth().signOut().then(function() {
             UIController.triggerUITransition('LogOut');
         }).catch(function(error) {

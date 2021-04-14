@@ -40,11 +40,15 @@ input[type='checkbox'] {
 	font-size: 24px;
 }
 
-#btnLogOut {
+.btnAuth {
 	background-color: inherit;
 	border-style: none;
 	outline: none;
 }
+
+/* #auth {
+	text-align: center;
+} */
 
 #title {
 	display: flex;

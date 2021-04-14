@@ -210,6 +210,7 @@
         let _trackCountElement = null;
 
         //TODO this logic is overly convoluted
+            //Maybe instead, determine the 'tracklist type' once and store it in local storage for future reference across any scripts (extension, content, background, etc.)
         //If the url matches those of standard playlists for the current app, use the corresponding track count element
         if (window.location[urlProperties[app].urlPart].includes(urlProperties[app].playlistUrlCondition) == true) {
             _trackCountElement = elementsInDOM.playlistTrackCount[app]();
