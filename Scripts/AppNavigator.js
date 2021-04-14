@@ -641,22 +641,6 @@ window.Utilities = (function() {
         }
     }
 
-    //TODO this could go in a GPM Utilities file or something like that
-        //It doesn't make sense for a general utilities section
-    /**
-     * Gets the tracklist key that corresponds to the given tracklist name within the provided object
-     * @param {object} tracklistsObject The object within which to search
-     * @param {string} tracklistName The name of the tracklist to search for
-     */
-     function getTracklistKeyFromTracklistName(tracklistsObject, tracklistName) {
-        for (const key in tracklistsObject) {
-            if (key.includes("'" + tracklistName + "'")) {
-                return key;
-            }
-        }
-        DebugController.logWarning("Tried to get a tracklist key from its name, but no matching key could be found.");
-    }
-
     //TODO Move this out of the general Utilities section and into somewhere more applicable
         //This one could maybe go into the storage manager?
     function sendRequest_LoadGooglePlayMusicExportData(callback) {
@@ -668,7 +652,6 @@ window.Utilities = (function() {
         FadeIn: fadeIn,
         GetElement: getElement,
         CreateNewElement: createNewElement,
-        GetTracklistKeyFromTracklistName: getTracklistKeyFromTracklistName,
         SendRequest_LoadGooglePlayMusicExportData: sendRequest_LoadGooglePlayMusicExportData
     };
 })();

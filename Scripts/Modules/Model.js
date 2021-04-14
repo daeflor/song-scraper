@@ -54,38 +54,19 @@ export function getStoredMetadata(callback) {
 }
 
 export function getStoredMetadataGPM(callback) {
-
     //If the GPM metadata in storage for the current tracklist has previously been fetched, pass that as the parameter in the provided callback function
     if (Array.isArray(tracklist.metadataFromStorageGPM) === true) {
         callback(tracklist.metadataFromStorageGPM);
-        //TODO but this property never actually gets set
     }
     //Otherwise, fetch the GPM data from a local file and extract the current tracklist metadata from that
     else {
-        //Once the exported Google Play Music tracklist data has been loaded from a local file, convert it to a CSV file
-        const _onGooglePlayMusicDataLoaded = function(gpmLibraryObject) {
-            //TODO If I'm searching for the key based on the title, I could just get the array by using the title instead of going through the extra step
-                //Although generally I dislike the idea of relying on the title, it seems the only way in this case anyway.
-            const _gpmTracklistKey = window.Utilities.GetTracklistKeyFromTracklistName(gpmLibraryObject, tracklist.title);
-            // console.log('GPM Tracklist Key: ' + _gpmTracklistKey);
-            // console.log("TracklistArray:");
-            // console.log(gpmLibraryObject);
-            // console.log(typeof gpmLibraryObject);
-            // console.log("Item at the extracted key in TracklistArray:");
-            // console.log(gpmLibraryObject[_gpmTracklistKey]);
-            // console.log(typeof gpmLibraryObject[_gpmTracklistKey]);
-
-            if (typeof _gpmTracklistKey === 'string') {
-                callback(gpmLibraryObject[_gpmTracklistKey]);
-            }
-            else {
-                DebugController.logError("Request received to fetch a tracklist array from an exported GPM data file, but a matching key couldn't be found for the current tracklist.");
-            }
-        };
-
-        //TODO Can now switch to loading GPM from local storage instead
-        //Send an XMLHttpRequest to load the exported GPM tracklist data from a local file, and then execute the callback
-        window.Utilities.SendRequest_LoadGooglePlayMusicExportData(_onGooglePlayMusicDataLoaded);
+        //Retrieve the GPM tracklist from chrome local storage and then store it in a local variable and execute the callback function
+        Storage.retrieveGPMTracklistFromLocalStorage(tracklist.title, tracksArray => {
+            //console.log("Model: Retrieved a GPM tracklist array from chrome local storage: ");
+            //console.table(tracksArray);
+            tracklist.metadataFromStorageGPM = tracksArray; //TODO is this really necessary / helpful?
+            callback(tracksArray);
+        });
     }    
 }
 

@@ -66,6 +66,11 @@ function storeTracklistMetadata(tracklistType, tracklistTitle, tracklistMetadata
     LocalStorage.set(_objectToStore); //TODO currently overwriting test data each time, instead of loading it from storage
 }
 
+/**
+ * Stores the provided tracklist data in Firestore and then executes the provided callback
+ * @param {object} tracklistData An object containing data about the tracklist. Must include at least title, type, and metadataScraped fields.
+ * @param {function} callback The function to execute once the data has been successfully stored
+ */
 export function storeTracklistInFirestore(tracklistData, callback) {
     //Initialize an instance of Cloud Firestore if it hasn't already been initialized
     if(typeof _firestoreDatabase !== 'object') {
@@ -95,6 +100,11 @@ export function storeTracklistInFirestore(tracklistData, callback) {
         //Maybe only enable the "store" button after doing a comparison of the scraped and stored data, and only if they differ
 }
 
+/**
+ * Retrieves tracklist data from Firestore that corresponds to the provided tracklist title
+ * @param {string} tracklistTitle The title of the tracklist to retrieve
+ * @param {function} callback The function to execute once the data has been successfully retrieved
+ */
 export function retrieveTracklistFromFirestore(tracklistTitle, callback) {
     //Initialize an instance of Cloud Firestore if it hasn't already been initialized
     if(typeof _firestoreDatabase !== 'object') {
@@ -110,9 +120,30 @@ export function retrieveTracklistFromFirestore(tracklistTitle, callback) {
         if (doc.exists) {
             callback(doc.data().tracks);
         } else {
-            console.warn("Tried retrieving tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + title);
+            console.warn("Tried retrieving tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
         }
     }).catch((error) => {
         console.error("Error getting document:", error);
+    });
+}
+
+/**
+ * Retrieves GPM tracklist data from chrome local storage that corresponds to the provided tracklist title
+ * @param {string} tracklistTitle The title of the tracklist to retrieve
+ * @param {function} callback The function to execute once the data has been successfully retrieved
+ */
+export function retrieveGPMTracklistFromLocalStorage(tracklistTitle, callback){
+    const _storagekey = 'gpmLibraryData';
+    chrome.storage.local.get(_storagekey, storageResult => {
+        const _gpmLibraryData = storageResult[_storagekey];
+
+        for (const _tracklistKey in _gpmLibraryData) {
+            if (_tracklistKey.includes("'" + tracklistTitle + "'")) {
+                console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + _gpmLibraryData[_tracklistKey].length);
+                callback(_gpmLibraryData[_tracklistKey]);
+                return;
+            }
+        }
+        console.warn("Tried retrieving tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
     });
 }
