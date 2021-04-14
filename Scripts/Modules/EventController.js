@@ -35,10 +35,10 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
 //Button Pressed: Store Scraped Metadata
 ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
     //TODO is it right to call Storage functions from here?
-    //Storage.storeTracklistMetadata(Model.tracklist.type, Model.tracklist.title, Model.tracklist.metadataScraped);
-    
-    //TODO For now, commented this out and do nothing when the button is pressed.
-    //Storage.storeData(Model.tracklist.metadataScraped);
+    Storage.storeTracklistInFirestore(Model.tracklist, () => {
+        UIController.triggerUITransition('ScrapedMetadataStored');
+        //TODO Store trackcount in chrome sync storage here too
+    });
 });
 
 //Button Pressed: Export Scraped Tracklist 

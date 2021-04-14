@@ -255,13 +255,16 @@ export function triggerUITransition(transition) {
         ViewRenderer.unhideElement(ViewRenderer.divs.checkboxes);
         ViewRenderer.unhideElement(ViewRenderer.divs.tracktables);
         ViewRenderer.enableElement(ViewRenderer.buttons.scrape);
-        //ViewRenderer.enableElement(ViewRenderer.buttons.storeScrapedMetadata);
+        ViewRenderer.enableElement(ViewRenderer.buttons.storeScrapedMetadata);
         ViewRenderer.enableElement(ViewRenderer.buttons.exportScrapedMetadata);
         ViewRenderer.enableElement(ViewRenderer.checkboxes.scrapedTrackTable);
         ViewRenderer.enableElement(ViewRenderer.checkboxes.deltaTrackTables);
     }
     else if (transition === 'ScrapeFailed') {
         ViewRenderer.showStatusMessage('Failed to retrieve track list.');
+    }
+    else if (transition === 'ScrapedMetadataStored') {
+        ViewRenderer.disableElement(ViewRenderer.buttons.storeScrapedMetadata);
     }
 }
 

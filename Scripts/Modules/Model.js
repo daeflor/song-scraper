@@ -18,7 +18,7 @@ let tab = {
 let tracklist = { //TODO maybe rename to currentTracklist?
     type: null,
     title: null,
-    metadataScraped: null,
+    metadataScraped: null, //TODO Rename to scrapedTrackMetadata?
     metadataFromStorage: null,
     metadataFromStorageGPM: null,
 }; //TODO why are these let instead of const?
@@ -46,12 +46,10 @@ export function getStoredMetadata(callback) {
         callback(tracklist.metadataFromStorage);
     }
     else { //Else, retrieve the metadata from storage and then pass it as a parameter in the provided callback function
-        const _onMetadataRetrieved = function(metadata) {
-            tracklist.metadataFromStorage = metadata; //TODO is there any point doing this? Is it ever referenced again? Is there no way for the cached data to become out-of-date (i.e. from another tracklist)?
-            callback(metadata);
-        }
-    
-        Storage.retrieveTracklistMetadata(tracklist.type, tracklist.title, _onMetadataRetrieved);
+        Storage.retrieveTracklistFromFirestore(tracklist.title, tracksArray => {
+            tracklist.metadataFromStorage = tracksArray; //TODO is there any point doing this? Is it ever referenced again? Is there no way for the cached data to become out-of-date (i.e. from another tracklist)?
+            callback(tracksArray);
+        });
     }
 }
 
@@ -60,6 +58,7 @@ export function getStoredMetadataGPM(callback) {
     //If the GPM metadata in storage for the current tracklist has previously been fetched, pass that as the parameter in the provided callback function
     if (Array.isArray(tracklist.metadataFromStorageGPM) === true) {
         callback(tracklist.metadataFromStorageGPM);
+        //TODO but this property never actually gets set
     }
     //Otherwise, fetch the GPM data from a local file and extract the current tracklist metadata from that
     else {
@@ -84,6 +83,7 @@ export function getStoredMetadataGPM(callback) {
             }
         };
 
+        //TODO Can now switch to loading GPM from local storage instead
         //Send an XMLHttpRequest to load the exported GPM tracklist data from a local file, and then execute the callback
         window.Utilities.SendRequest_LoadGooglePlayMusicExportData(_onGooglePlayMusicDataLoaded);
     }    
