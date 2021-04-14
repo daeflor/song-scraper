@@ -139,11 +139,38 @@ export function retrieveGPMTracklistFromLocalStorage(tracklistTitle, callback){
 
         for (const _tracklistKey in _gpmLibraryData) {
             if (_tracklistKey.includes("'" + tracklistTitle + "'")) {
-                console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + _gpmLibraryData[_tracklistKey].length);
+                //console.log("Retrieved tracklist metadata from GPM exported data. Track count: " + _gpmLibraryData[_tracklistKey].length);
                 callback(_gpmLibraryData[_tracklistKey]);
                 return;
             }
         }
         console.warn("Tried retrieving tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
+    });
+}
+
+/**
+ * Stores the provided track count for the given tracklist in chrome sync storage
+ * @param {string} tracklistTitle The title of the tracklist
+ * @param {number} trackCount The latest track count of the tracklist
+ */
+export function storeTrackCountInSyncStorage(tracklistTitle, trackCount) {
+    const _storagekey = 'trackCounts';
+    chrome.storage.sync.get(_storagekey, storageResult => {
+        //Get the track counts object from storage or create a new empty object if one doesn't exist
+        const _trackCountsObject = storageResult[_storagekey] || {}; 
+
+        // console.log("Retrieved track counts object from sync storage: ");
+        // console.table(_trackCountsObject);
+        _trackCountsObject[tracklistTitle] = trackCount;
+        // console.log("Updated track counts object with latest track count for tracklist: " + tracklistTitle);
+        // console.table(_trackCountsObject);
+
+        chrome.storage.sync.set ({trackCounts: _trackCountsObject}, () => {
+            if (chrome.runtime.lastError != null) {
+                console.error("ERROR: " + chrome.runtime.lastError.message);
+            } else {
+                console.info("StorageManager: Successfully updated track count in chrome sync storage for tracklist: " + tracklistTitle);
+            }
+        });
     });
 }
