@@ -57,85 +57,16 @@ chrome.runtime.onInstalled.addListener(function(details) {
 //     //chrome.browserAction.setBadgeText({text: ""});
 // });
 
-// chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-//     //console.log(changeInfo.url);
-//     //if (changeInfo.url.includes('https://music.youtube.com/playlist')) {
-//     if (changeInfo.status === 'complete') {
-//         console.log("Tab was updated: ");
-//         console.log(tabId);
-//         console.log(changeInfo);
-//         console.log(tab);
-//     }
-// });
-
 //Note that this works because YouTube Music appears to use the History API to navigate between pages on the site
 chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
-    // console.log("WebNavigation Completed");
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
         const _currentTabId = tabs[0].id;
         if (details.url.includes('list=PL')) {
-
+            console.info("Background: Navigated to a YouTube Music page that is a valid playlist.");
             chrome.scripting.executeScript({
                 target: {tabId: _currentTabId}, 
                 files: ['/Scripts/Content/scrape-tracklist-metadata.js'],}
-            );
-
-
-            // console.info("Background: Navigated to a valid tracklist page within YouTube Music. The extension icon will be enabled.");
-            // setTimeout(() => {
-            //     // chrome.tabs.sendMessage(_currentTabId, {greeting: 'GetTrackCount', app:'ytm'}, message => {
-            //     //     let tracklist = {
-            //     //         type: 'playlist',
-            //     //         title: undefined,
-            //     //         currentTrackCount: message.response
-            //     //         //storedTrackCount: undefined
-            //     //     };
-
-            //     //     console.log("Background: Retrieved the track count from the content script (from the DOM):" + tracklist.currentTrackCount);
-
-                    
-                    
-                    
-                    
-            //         // chrome.tabs.sendMessage(_currentTabId, {greeting: 'GetTracklistTitle', app:'ytm'}, message => {
-
-            //         //     tracklist.title = message.response;
-
-            //             // const _fileName = 'LocalStorageExport_2020-10-12-10-30PM_ThumbsUpDuplicatedAsYourLikes.txt';
-            //             // //TODO This works but is wasteful because everytime you navigate to a new tracklist page, the GPM data gets reloaded from the local text file. 
-            //             //     //Saving to and loading from local chrome storage is *probably* better. Either way, this should be temporary.
-            //             //     //In the future, the data will need to be loaded from firestore instead
-            //             // chrome.tabs.sendMessage(_currentTabId, {greeting: 'GetGPMData', fileName: _fileName}, message => {
-            //             //     const gpmLibraryObject = message.response;
-
-            //             //     console.log("Background: Retrieved GPM exported data from local file.");
-            //             //     console.log(gpmLibraryObject);
-
-            //             //     for (const key in gpmLibraryObject) {
-            //             //         if (key.includes("'" + tracklist.title + "'")) {
-            //             //             console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryObject[key].length);
-
-            //             //             if (tracklist.currentTrackCount !== gpmLibraryObject[key].length) {
-            //             //                 console.log("Background: The current track count (from the DOM) is different from the stored track count.");
-            //             //                 chrome.action.setIcon({path: _iconPaths.exclamation, tabId:_currentTabId});
-            //             //             } else {
-            //             //                 console.log("Background: The current track count (from the DOM) is the same as the stored track count.");
-            //             //                 chrome.action.setIcon({path: _iconPaths.default, tabId:_currentTabId});
-            //             //             }
-            //             //         }
-            //             //     }
-            //             // });
-
-            //             // Storage.retrieveTracklistMetadata(tracklist.type, tracklist.title, (metadataArray) => {
-            //             //     console.log("Background: Retrieved tracklist metadata from storage. Track count: " + metadataArray.length);
-
-            //             //     if (tracklist.currentTrackCount !== metadataArray.length) {
-            //             //         console.log("The current track count (from the DOM) is different from the stored track count.");
-            //             //     }
-            //             // });
-            //         //});
-            //     //});
-            // }, 1000); //TODO this timeout is just temporary until a better solution can be found. On a slow device or connection, this isn't reliable. 
+            ); 
         } else {
             console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");
             chrome.action.setIcon({path: _iconPaths.disabled/*, tabId:_currentTabId*/});

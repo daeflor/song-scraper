@@ -2,18 +2,9 @@ import * as DebugController from '../Modules/DebugController.js';
 import * as UIController from '../AppNavigator.js';
 import firebaseConfig from '../Configuration/Config.js';
 
-// import firebase from "firebase/app";
-// import "firebase/auth";
-
-// import firebase from '/node_modules/@firebase/app';
-// import '/node_modules/@firebase/auth';
-
-// import firebase from '/node_modules/firebase/firebase-app.js'; // Firebase App (the core Firebase SDK) is always required and must be listed first
-// import '/node_modules/firebase/firebase-auth.js'; // Add the Firebase products that you want to use
-
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 import '/node_modules/firebase/firebase-auth.js'; //Import the Firebase Auth library
-import '/node_modules/firebaseui/dist/firebaseui.js';
+import '/node_modules/firebaseui/dist/firebaseui.js'; //Import the Firebase Auth UI library
 
 /**
  * Sets up the Firebase context and register a listener for the auth state changing
