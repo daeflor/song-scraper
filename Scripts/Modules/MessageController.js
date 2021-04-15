@@ -34,14 +34,7 @@ function sendMessage(messageGreeting) {
  * @param {object} message An object containing message data, including the greeting and response
  */
 function handleMessageResponse(message) {
-	if (message.greeting === 'GetTracklistTitle') {         
-		if (typeof message.response === 'string') { //If the response received is a string...
-            Model.tracklist.title = message.response; //Update the tracklist title in the Model
-            UIController.prepareLandingPage(); //Display the popup landing page
-        } else {
-            DebugController.logError("Requested tracklist title from content script, but response was not a valid string.");
-        }
-	} else if (message.greeting === 'GetTracklistMetadata') { 
+	if (message.greeting === 'GetTracklistMetadata') { 
         if (Array.isArray(message.response) === true) { //If the response received is an array...
             Model.setScrapedTracksArray(message.response); //TODO not sure about this naming //Update the scraped tracklist metadata in the Model
             UIController.triggerUITransition('ScrapeSuccessful'); //Transition the UI accordingly

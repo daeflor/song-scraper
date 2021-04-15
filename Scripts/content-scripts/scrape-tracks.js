@@ -1,5 +1,3 @@
-//TODO should rename this file to remove YouTubeMusic from it
-
 'use strict';
 (function() {
     //let currentApp = null; //TODO maybe just pass this as a param after all
@@ -151,7 +149,7 @@
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.greeting === 'GetTracklistMetadata') {
             console.info("Content Script: Received request to retrieve tracklist metadata.");
-            processMessage_GetTracklistMetadata(message.app, response => {
+            processMessage_GetTracklistMetadata(message.app, response => { //TODO rename to GetTracks or something like that
                 message.response = response;
                 sendResponse(message);
             });
@@ -161,12 +159,7 @@
     });
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.greeting === 'GetTracklistTitle') {   
-            console.info("Content Script: Received request to retrieve tracklist title.");
-            message.response = processMessage_GetTracklistName(message.app);
-            sendResponse(message);
-        }
-        else if (message.greeting === 'GetTrackCount') {   
+        if (message.greeting === 'GetTrackCount') {   
             console.info("Content Script: Received request to retrieve track count.");
             message.response = getPlaylistTrackCount(message.app);
             sendResponse(message);
@@ -174,35 +167,21 @@
     });
 
     // /**
-    //  * Sets the current app to the parameter provided and then executes the provided callback function
-    //  * @param {string} app The reference string for the current app being used
-    //  * @param {function} sendResponse The function to execute once the current app has been recorded
+    //  * Returns the current tracklist name from the DOM
+    //  * @param {string} app the current app that the extension is running on
+    //  * @returns {string} the tracklist name
     //  */
-    // function processMessage_RecordCurrentApp(app) {
-    //     if (app != null) {
-    //         currentApp = app;
+    // function processMessage_GetTracklistName(app) {
+    //     const _tracklistNameElement = elementsInDOM.playlistName[app]();
+        
+    //     if (_tracklistNameElement != null) { //TODO use a better isElement check
+    //         console.log("Tracklist name is: " + _tracklistNameElement.textContent)
+    //         return _tracklistNameElement.textContent;
     //     }
     //     else {
-    //         console.log("ERROR: Received request to record the current app, but no valid app parameter was provided.");
+    //         console.log("ERROR: Received request to get the tracklist name, but it failed to be retrieved from the DOM.");
     //     }
     // }
-
-    /**
-     * Returns the current tracklist name from the DOM
-     * @param {string} app the current app that the extension is running on
-     * @returns {string} the tracklist name
-     */
-    function processMessage_GetTracklistName(app) {
-        const _tracklistNameElement = elementsInDOM.playlistName[app]();
-        
-        if (_tracklistNameElement != null) { //TODO use a better isElement check
-            console.log("Tracklist name is: " + _tracklistNameElement.textContent)
-            return _tracklistNameElement.textContent;
-        }
-        else {
-            console.log("ERROR: Received request to get the tracklist name, but it failed to be retrieved from the DOM.");
-        }
-    }
 
     //TODO could check if YouTube API reports correct track count value for "Your Likes"
         //Could even consider ONLY using the API to get track counts, though it does seem like a lot of extra work that shouldn't be necessary

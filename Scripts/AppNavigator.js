@@ -85,19 +85,19 @@ function init() {
 
             validateUrlAndRecordTracklistInfo(tabs[0].url);
 
-            //Send a message to the content script to make a record of the current app for future reference
-            //sendMessage_RecordCurrentApp(Model.tab.app);
-
             //If the current app and tracklist type have been set...
             if (typeof Model.tab.app === 'string' && typeof Model.tracklist.type === 'string') {
                 //If the tracklist title has also already been set, proceed to prepare the extension's landing page
                 if (typeof Model.tracklist.title === 'string') { 
                     prepareLandingPage();
-                }
-                //Else, if the tracklist title has not yet been set, retrieve it from the content script before displaying the extension's landing page
-                else {
-                    //Send a message to the content script to fetch the name of the current tracklist
-                    Messenger.sendMessage('GetTracklistTitle');
+                } else { //Else, if the tracklist title has not yet been set, retrieve it from local storage before displaying the extension's landing page
+                    const _storagekey = 'currentTracklistMetadata';
+                    chrome.storage.local.get(_storagekey, storageResult => {
+                        const _tracklistMetadata = storageResult[_storagekey];
+                        Model.tracklist.title = _tracklistMetadata.title; //Update the title in the Model
+                        console.info("Retrieved the tracklist title from local storage cache: " + Model.tracklist.title);
+                        prepareLandingPage(); //Display the popup landing page
+                    });
                 }
             }
         }
