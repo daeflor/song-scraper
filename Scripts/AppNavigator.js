@@ -2,7 +2,6 @@ import * as DebugController from './Modules/DebugController.js';
 import * as ViewRenderer from './Modules/ViewRenderer.js';
 import * as Model from './Modules/Model.js';
 import * as IO from './Modules/Utilities/IO.js';
-import * as Messenger from './Modules/MessageController.js';
 
 // window.Model = (function() {
 //     // //TODO might want to freeze this once the values have been set
@@ -59,93 +58,49 @@ import * as Messenger from './Modules/MessageController.js';
 // })();
 
 
-//window.AppController = (function() {
-const supportedApps = Object.freeze({
-    youTubeMusic: 'ytm',
-    googlePlayMusic: 'gpm'
-});
-
-//TODO This isn't being used as much as it could be
-const supportedTracklistTypes = Object.freeze({
-    playlist: 'playlist',
-    autoPlaylist: 'auto',
-    genreList: 'genre',
-    allSongsList: 'all',
-    uploadsList: 'uploads'
-});
-
 function init() {
-    //Query for the Active Tab...
-    chrome.tabs.query( 
-        { active: true, currentWindow: true}, 
-        function(tabs) {	
-            //Make a record of the current/active tab for future reference
-            //window.Model.SetTabId(tabs[0].id);
-            Model.tab.id = tabs[0].id;
+    chrome.tabs.query( { active: true, currentWindow: true}, tabs => { //Query for the Active Tab...
+        Model.tab.id = tabs[0].id; //Make a record of the current/active tab for future reference
+        //window.Model.SetTabId(tabs[0].id);
 
-            validateUrlAndRecordTracklistInfo(tabs[0].url);
+        const _storagekey = 'currentTracklistMetadata';
+        chrome.storage.local.get(_storagekey, storageResult => { //Get the cached metadata for the current tracklist from local storage
+            const _tracklistMetadata = storageResult[_storagekey];
 
-            //If the current app and tracklist type have been set...
-            if (typeof Model.tab.app === 'string' && typeof Model.tracklist.type === 'string') {
-                //If the tracklist title has also already been set, proceed to prepare the extension's landing page
-                if (typeof Model.tracklist.title === 'string') { 
-                    prepareLandingPage();
-                } else { //Else, if the tracklist title has not yet been set, retrieve it from local storage before displaying the extension's landing page
-                    const _storagekey = 'currentTracklistMetadata';
-                    chrome.storage.local.get(_storagekey, storageResult => {
-                        const _tracklistMetadata = storageResult[_storagekey];
-                        Model.tracklist.title = _tracklistMetadata.title; //Update the title in the Model
-                        console.info("Retrieved the tracklist title from local storage cache: " + Model.tracklist.title);
-                        prepareLandingPage(); //Display the popup landing page
-                    });
-                }
+            if (typeof _tracklistMetadata.app === 'string') { //If the app which the tracklist belongs to has been set correctly, update it in the Model
+                Model.tab.app = _tracklistMetadata.app;
+            } else {
+                console.error("The current app could not be determined from the URL.");
+                //TODO might be better to call TriggerUITransition here instead, to keep all ViewRenderer calls in one place
+                ViewRenderer.showStatusMessage('The current app could not be determined from the URL.');
+                return;
             }
-        }
-    );
-}
 
-function validateUrlAndRecordTracklistInfo(url) {
-    console.assert(typeof url == 'string', 'url should be a string');
+            if (typeof _tracklistMetadata.type === 'string') { //If the tracklist type has been set correctly, update it in the Model
+                Model.tracklist.type = _tracklistMetadata.type;
+            } else {
+                console.error("The tracklist type could not be determined from the URL.");
+                ViewRenderer.showStatusMessage('The tracklist type could not be determined from the URL.');
+                return;
+            }
 
-    //If the URL indicates the current app/site is YouTube Music...
-    if (url != null && url.includes('music.youtube.com') == true) {
-        //Make a record of the current app for future reference
-        Model.tab.app = supportedApps.youTubeMusic;
+            if (typeof _tracklistMetadata.title === 'string') { //If the tracklist title has been set correctly, update it in the Model
+                Model.tracklist.title = _tracklistMetadata.title;
+            } else {
+                console.error("The tracklist type could not be determined from the URL.");
+                ViewRenderer.showStatusMessage('The tracklist type could not be determined from the URL.');
+                return;
+            }
 
-        //Make a record of the current tracklist type based on certain URL conditions
-        if (url.includes('list=PL')) {
-            Model.tracklist.type = supportedTracklistTypes.playlist;
-        } else if (url.includes('list=LM')) {
-            Model.tracklist.type = supportedTracklistTypes.autoPlaylist;
-            Model.tracklist.title = 'Your Likes';
-        } else if (url.includes('library/songs')) { //TODO the options below are currently not supported due to how the manifest is setup
-            Model.tracklist.type = supportedTracklistTypes.allSongsList;
-            Model.tracklist.title = 'Added from YouTube Music';
-        } else if (url.includes('library/uploaded_songs')) {
-            Model.tracklist.type = supportedTracklistTypes.allSongsList;
-            Model.tracklist.title = 'Uploaded Songs';
-            //Model.tracklist.type = supportedTracklistTypes.uploadsList;
-        }
-    } else if (url != null && url.includes('play.google.com/music') == true) { //Else, if the URL indicates the current app/site is Google Play Music...
-        //Make a record of the current app for future reference
-        Model.tab.app = supportedApps.googlePlayMusic;
+            //TODO There is a problem here that the metadata being accessed could be out-dated cached data from the previous playlist
+                //For example, right now, if you navigate to Your Likes, it will think everything is working fine 
+                //because it finds metadata in the cache, but this metadata is no longer accurate. Need a way to clear the cache perhaps. 
 
-        //Make a record of the current tracklist type based on certain URL conditions
-        if (url.includes('#/pl')) {
-            Model.tracklist.type = supportedTracklistTypes.playlist;
-        } else if (url.includes('#/ap')) {
-            Model.tracklist.type = supportedTracklistTypes.autoPlaylist;
-        } else if (url.includes('#/tgs')) {
-            Model.tracklist.type = supportedTracklistTypes.genreList;
-            const _splitUrl = url.split("/");
-            const _genre = _splitUrl[_splitUrl.length-1];
-            Model.tracklist.title = _genre; //Make a record of the tracklist title
-        } else if (url.includes('#/all')) {
-            Model.tracklist.type = supportedTracklistTypes.allSongsList;
-        }
-    } else {
-        triggerUITransition('UrlInvalid');
-    }
+            console.info("Retrieved tracklist metadata from local storage cache:");
+            console.info(Model.tracklist);
+            prepareLandingPage(); //If all the required metadata have been set correctly, show the extension landing page
+        });
+    });
 }
 
     // function initializeFlow(url) {

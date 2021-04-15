@@ -1,3 +1,59 @@
+'use strict';
+const supportedApps = Object.freeze({
+    youTubeMusic: 'ytm',
+    googlePlayMusic: 'gpm'
+});
+
+//TODO This isn't being used as much as it could be
+const supportedTracklistTypes = Object.freeze({
+    playlist: 'playlist',
+    autoPlaylist: 'auto',
+    genreList: 'genre',
+    allSongsList: 'all',
+    uploadsList: 'uploads'
+});
+
+let app = undefined;
+let type = undefined;
+let title = undefined;
+let trackCount = undefined;
+
+function scrapeUrl() {
+    if (window.location.host === 'music.youtube.com') { //If the host matches YouTube Music...
+        app = supportedApps.youTubeMusic; //Make a record of the current app for future reference
+
+        //Make a record of the current tracklist type based on certain URL conditions
+        if (window.location.search.includes('list=PL')) {
+            type = supportedTracklistTypes.playlist;
+        } else if (window.location.search.includes('list=LM')) {
+            type = supportedTracklistTypes.autoPlaylist;
+            title = 'Your Likes';
+        } else if (window.location.pathname === '/library/songs') { //TODO the options below are currently not supported due to how the manifest is setup
+            type = supportedTracklistTypes.allSongsList;
+            title = 'Added from YouTube Music';
+        } else if (window.location.pathname === '/library/uploaded_songs') {
+            type = supportedTracklistTypes.allSongsList;
+            title = 'Uploaded Songs';
+        }
+    } else if (window.location.includes('play.google.com/music') == true) { //Else, if the URL indicates the current app/site is Google Play Music...
+        app = supportedApps.googlePlayMusic; //Make a record of the current app for future reference
+
+        //Make a record of the current tracklist type based on certain URL conditions
+        if (window.location.hash.includes('#/pl')) {
+            type = supportedTracklistTypes.playlist;
+        } else if (window.location.hash.includes('#/ap')) {
+            type = supportedTracklistTypes.autoPlaylist;
+        } else if (window.location.hash.includes('#/tgs')) {
+            type = supportedTracklistTypes.genreList;
+            const _splitUrl = url.split("/");
+            const _genre = _splitUrl[_splitUrl.length-1];
+            title = _genre; //Make a record of the tracklist title
+        } else if (window.location.hash.includes('#/all')) {
+            type = supportedTracklistTypes.allSongsList;
+        }
+    }
+}
+
 // const tracklistElements = Object.freeze({
 //     tracklistTitle: {
 //         ytm: function() {return document.querySelector('#header .metadata yt-formatted-string.title');},
@@ -57,7 +113,9 @@ function extractAndStoreTracklistMetadata(tracklistTitleElement, trackCountEleme
     }
 
     const _tracklistMetadata = {
-        title: tracklistTitleElement.textContent,
+        app: app,
+        type: type,
+        title: title || tracklistTitleElement.textContent, //Use the title derived from the URL if available, otherwise use the title scraped from the DOM
         trackCount: getTrackCountNumberFromString(trackCountElement.textContent)
     };
 
@@ -191,6 +249,7 @@ function getYtmElementsOnceLoaded(rootElement, callback) {
     _observer.observe(rootElement, _observerConfig);
 }
 
+scrapeUrl();
 //Get the tracklist metadata elements and then extract and store the metadata itself
 getTracklistMetadataElements(extractAndStoreTracklistMetadata);
 
