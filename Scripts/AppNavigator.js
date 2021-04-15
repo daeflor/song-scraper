@@ -264,7 +264,12 @@ export function triggerUITransition(transition) {
         ViewRenderer.showStatusMessage('Failed to retrieve track list.');
     }
     else if (transition === 'ScrapedMetadataStored') {
-        ViewRenderer.disableElement(ViewRenderer.buttons.storeScrapedMetadata);
+        ViewRenderer.disableElement(ViewRenderer.buttons.storeScrapedMetadata); //Disable the button to store the scraped data
+        if (typeof ViewRenderer.tracktables.stored === 'object') { //If the track table for the stored tracklist exists...
+            ViewRenderer.removeElement(ViewRenderer.tracktables.stored); //Remove the tracktable element from the DOM (since it may be out-of-date)
+            ViewRenderer.tracktables.stored = undefined; //Clear the saved reference to the old track table
+            ViewRenderer.uncheckBox(ViewRenderer.checkboxes.storedTrackTable); //Uncheck the checkbox
+        }
     }
 }
 

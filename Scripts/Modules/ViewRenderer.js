@@ -26,6 +26,8 @@ export const checkboxes = Object.freeze({
     deltaTrackTables: document.getElementById('checkboxDeltaTrackTables')
 });
 
+//TODO It could be a bit confusing that these are all also divs, not actual 'tables'
+    //It might be easier to follow to nest these under the divs object above, and add a divs.tracktables.root field, or something to that effect.
 export const tracktables = {
     stored: undefined,
     scraped: undefined,
@@ -88,6 +90,14 @@ export function showStatusMessage(text) {
 export function showHeader(title) {
     document.getElementById('title').textContent = title;
     document.getElementById('header').hidden = false;
+}
+
+export function removeElement(element) {
+    if (typeof element === 'object') { //TODO better isElement check preferred 
+        element.parentNode.removeChild(element);
+    } else {
+        console.error("ViewRenderer: Tried to remove an element but the element provided does not exist.");
+    }
 }
 
 //     // function toggleScreenVisibility(screenName, visible) {

@@ -59,12 +59,10 @@ ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', function() {
         }
         //Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
         else {
-            const _onMetadataRetrieved = function(metadata) {
-                ViewRenderer.tracktables.stored = UIController.createTrackTable(metadata, 'Stored YTM Tracklist');
+            Model.getStoredMetadata(tracksArray => {
+                ViewRenderer.tracktables.stored = UIController.createTrackTable(tracksArray, 'Stored YTM Tracklist');
                 //TODO this interaction with ViewRenderer is WIP
-            }
-        
-            Model.getStoredMetadata(_onMetadataRetrieved);
+            });
         }
     }
     else { //Else, if the checkbox is unchecked, hide the track table element
