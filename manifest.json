@@ -10,7 +10,7 @@
             "matches": [
                 "https://music.youtube.com/playlist*",
                 "https://play.google.com/music/listen*"],
-            "js": ["Scripts/Content/YouTubeMusicContentScraper.js"],
+            "js": ["Scripts/content-scripts/scrape-tracks.js"],
             "run_at": "document_idle"
     }],
     "action": {

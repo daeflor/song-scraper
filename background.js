@@ -27,6 +27,8 @@ const _conditionsForValidTracklistPage = [
     })
 ];
 
+//TODO it seems that the page action is being shown on all pages now for some reason.
+    //Could be related to the move to manifest V3. Needs investigation.
 //When the extenstion is installed or updated...
 chrome.runtime.onInstalled.addListener(function(details) {
     console.log("Background: Extension installed"); 
@@ -65,7 +67,7 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
             console.info("Background: Navigated to a YouTube Music page that is a valid playlist.");
             chrome.scripting.executeScript({
                 target: {tabId: _currentTabId}, 
-                files: ['/Scripts/Content/scrape-tracklist-metadata.js'],}
+                files: ['/Scripts/content-scripts/scrape-tracklist-metadata.js'],}
             ); 
         } else {
             console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");

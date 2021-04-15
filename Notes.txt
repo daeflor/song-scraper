@@ -25,8 +25,6 @@
 ** Upcoming To-Do List **
 
 	2021:
-	- Manifest V3
-	- Cloud Firestore
 	- Maybe change Import names in EventController (and other places?)?
 	- Clean up logic to set up landing page in AppNavigator & consolidate it with other similar logic; then remove deprecated html
 	- Overall cleanup
