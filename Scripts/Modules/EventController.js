@@ -1,4 +1,3 @@
-import * as Storage from './StorageManager.js';
 import * as Model from './Model.js';
 import * as ViewRenderer from './ViewRenderer.js';
 import * as UIController from '../AppNavigator.js';
@@ -34,17 +33,15 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
 
 //Button Pressed: Store Scraped Metadata
 ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
-    //TODO is it right to call Storage functions from here?
-        //And should I pass the whole tracklist or just the necessary fields/values?
-    Storage.storeTracklistInFirestore(Model.tracklist, Model.tracklist.metadataScraped, () => {
+    //Store the scraped tracklist and then update the UI accordingly
+    Model.storeScrapedTracklist(() => {
         UIController.triggerUITransition('ScrapedMetadataStored');
-        Storage.storeTrackCountInSyncStorage(Model.tracklist.title, Model.tracklist.metadataScraped.length);
     });
 });
 
 //Button Pressed: Export Scraped Tracklist 
 ViewRenderer.buttons.exportScrapedMetadata.addEventListener('click', function() {
-    UIController.downloadCurrentTracklistAsCSV(Model.tracklist.metadataScraped);
+    UIController.downloadCurrentTracklistAsCSV(Model.getScrapedTracksArray());
 });
 
 //Button Pressed: Export Stored GPM Tracklist 
@@ -87,7 +84,7 @@ ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() 
         }
         //Else, if a track table element doesn't exist yet, create a new one using the scraped metadata and add it to the DOM
         else {
-            ViewRenderer.tracktables.scraped = UIController.createTrackTable(Model.tracklist.metadataScraped, 'Scraped Tracklist');
+            ViewRenderer.tracktables.scraped = UIController.createTrackTable(Model.getScrapedTracksArray(), 'Scraped Tracklist');
             //TODO this interaction with ViewRenderer is WIP
         }
     }
@@ -111,7 +108,7 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', function() {
         }
         else { //Else, if the track table elements dont exist yet...
             //Create new track tables based on the scraped and stored metadata and add them to the DOM
-            UIController.createDeltaTracklistsGPM(Model.tracklist.metadataScraped);
+            UIController.createDeltaTracklistsGPM(Model.getScrapedTracksArray());
         }
     }
     else { //Else, if the checkbox is unchecked, hide the track table elements
@@ -122,5 +119,5 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', function() {
 });
 
 // function react_PrintScrapedMetadata() {
-//     console.log(Model.tracklist.metadataScraped);
+//     console.log(Model.getScrapedTracksArray());
 // }
