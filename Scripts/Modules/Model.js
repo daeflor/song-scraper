@@ -2,7 +2,7 @@ import * as Storage from './StorageManager.js';
 
 //TODO should this be inside of or consolidated with TabManager?
 
-let localStorageKey = null;
+//let localStorageKey = null;
 //const localStorageBackupKey = chrome.runtime.id + '_Backup';
 
 //TODO might want to freeze these once the values have been set
