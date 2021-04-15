@@ -43,7 +43,7 @@ function handleMessageResponse(message) {
         }
 	} else if (message.greeting === 'GetTracklistMetadata') { 
         if (Array.isArray(message.response) === true) { //If the response received is an array...
-            Model.tracklist.metadataScraped = message.response; //Update the scraped tracklist metadata in the Model
+            Model.setScrapedTracksArray(message.response); //TODO not sure about this naming //Update the scraped tracklist metadata in the Model
             UIController.triggerUITransition('ScrapeSuccessful'); //Transition the UI accordingly
         } else {
             UIController.triggerUITransition('ScrapeFailed');
