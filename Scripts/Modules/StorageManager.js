@@ -68,10 +68,11 @@ function storeTracklistMetadata(tracklistType, tracklistTitle, tracklistMetadata
 
 /**
  * Stores the provided tracklist data in Firestore and then executes the provided callback
- * @param {object} tracklistData An object containing data about the tracklist. Must include at least title, type, and metadataScraped fields.
+ * @param {object} tracklistMetadata An object containing metaata about the tracklist. Must include at least title and type fields.
+ * @param {array} tracksArray The array of tracks to store with the tracklist
  * @param {function} callback The function to execute once the data has been successfully stored
  */
-export function storeTracklistInFirestore(tracklistData, callback) {
+export function storeTracklistInFirestore(tracklistMetadata, tracksArray, callback) {
     //Initialize an instance of Cloud Firestore if it hasn't already been initialized
     if(typeof _firestoreDatabase !== 'object') {
         _firestoreDatabase = firebase.firestore();
@@ -81,12 +82,12 @@ export function storeTracklistInFirestore(tracklistData, callback) {
     //console.log("The Firebasue UID for the user currently signed in is: " + _userId);
     const _tracklistCollection = _firestoreDatabase.collection('users').doc(_userId).collection('tracklists');
     //const _tracklistKey = tracklistData.type + "_'" + tracklistData.title + "'";
-    const _currentTracklistDocument = _tracklistCollection.doc(tracklistData.title);
+    const _currentTracklistDocument = _tracklistCollection.doc(tracklistMetadata.title);
 
     const _documentData = {
-        title: tracklistData.title,
-        type: tracklistData.type,
-        tracks: tracklistData.metadataScraped
+        title: tracklistMetadata.title,
+        type: tracklistMetadata.type,
+        tracks: tracksArray
     };
 
     //Add or update the document for the current tracklist, merging it with any existing data if the document already exists

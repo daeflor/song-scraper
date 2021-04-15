@@ -36,7 +36,7 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
 ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
     //TODO is it right to call Storage functions from here?
         //And should I pass the whole tracklist or just the necessary fields/values?
-    Storage.storeTracklistInFirestore(Model.tracklist, () => {
+    Storage.storeTracklistInFirestore(Model.tracklist, Model.tracklist.metadataScraped, () => {
         UIController.triggerUITransition('ScrapedMetadataStored');
         Storage.storeTrackCountInSyncStorage(Model.tracklist.title, Model.tracklist.metadataScraped.length);
     });
