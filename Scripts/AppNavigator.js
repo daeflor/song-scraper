@@ -115,45 +115,35 @@ function validateUrlAndRecordTracklistInfo(url) {
         //Make a record of the current tracklist type based on certain URL conditions
         if (url.includes('list=PL')) {
             Model.tracklist.type = supportedTracklistTypes.playlist;
-        } 
-        else if (url.includes('list=LM')) {
+        } else if (url.includes('list=LM')) {
             Model.tracklist.type = supportedTracklistTypes.autoPlaylist;
-            Model.tracklist.title = 'Liked Songs';
-        }
-        //TODO the options below are currently not supported due to how the manifest is setup
-        else if (url.includes('library/songs')) {
+            Model.tracklist.title = 'Your Likes';
+        } else if (url.includes('library/songs')) { //TODO the options below are currently not supported due to how the manifest is setup
             Model.tracklist.type = supportedTracklistTypes.allSongsList;
             Model.tracklist.title = 'Added from YouTube Music';
-        }
-        else if (url.includes('library/uploaded_songs')) {
+        } else if (url.includes('library/uploaded_songs')) {
             Model.tracklist.type = supportedTracklistTypes.allSongsList;
             Model.tracklist.title = 'Uploaded Songs';
             //Model.tracklist.type = supportedTracklistTypes.uploadsList;
         }
-    }
-    //Else, if the URL indicates the current app/site is Google Play Music...
-    else if (url != null && url.includes('play.google.com/music') == true) {
+    } else if (url != null && url.includes('play.google.com/music') == true) { //Else, if the URL indicates the current app/site is Google Play Music...
         //Make a record of the current app for future reference
         Model.tab.app = supportedApps.googlePlayMusic;
 
         //Make a record of the current tracklist type based on certain URL conditions
         if (url.includes('#/pl')) {
             Model.tracklist.type = supportedTracklistTypes.playlist;
-        } 
-        else if (url.includes('#/ap')) {
+        } else if (url.includes('#/ap')) {
             Model.tracklist.type = supportedTracklistTypes.autoPlaylist;
-        }
-        else if (url.includes('#/tgs')) {
+        } else if (url.includes('#/tgs')) {
             Model.tracklist.type = supportedTracklistTypes.genreList;
             const _splitUrl = url.split("/");
             const _genre = _splitUrl[_splitUrl.length-1];
             Model.tracklist.title = _genre; //Make a record of the tracklist title
-        }
-        else if (url.includes('#/all')) {
+        } else if (url.includes('#/all')) {
             Model.tracklist.type = supportedTracklistTypes.allSongsList;
         }
-    }
-    else {
+    } else {
         triggerUITransition('UrlInvalid');
     }
 }
