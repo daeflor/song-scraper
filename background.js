@@ -72,6 +72,7 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
         } else {
             console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");
             chrome.action.setIcon({path: _iconPaths.disabled/*, tabId:_currentTabId*/});
+            clearCachedTracklistMetadata();
         }
     });
 }, 
@@ -102,14 +103,24 @@ function getTrackCountFromGPMTracklistData(tracklistTitle, callback){
     const _storagekey = 'gpmLibraryData';
     chrome.storage.local.get(_storagekey, storageResult => {
         const _gpmLibraryData = storageResult[_storagekey];
-        //console.log(_gpmLibraryData);
-
         for (const tracklistKey in _gpmLibraryData) {
             if (tracklistKey.includes("'" + tracklistTitle + "'")) {
                 console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + _gpmLibraryData[tracklistKey].length);
                 callback(_gpmLibraryData[tracklistKey].length);
             }
         }
+    });
+}
+
+/**
+ * Clears the tracklist metadata which is cached in chrome local storage
+ */
+function clearCachedTracklistMetadata() {
+    chrome.storage.local.set ({currentTracklistMetadata: {}}, () => {
+        if (chrome.runtime.lastError != null) 
+            console.error("ERROR: " + chrome.runtime.lastError.message);
+        else
+            console.info("Background: Cleared cached tracklist metadata.");
     });
 }
 

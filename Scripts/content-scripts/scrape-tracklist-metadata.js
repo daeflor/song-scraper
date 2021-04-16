@@ -1,22 +1,25 @@
 'use strict';
-const supportedApps = Object.freeze({
+//TODO these can't be const or frozen because the content script gets injected multiple times. Would be good to find a better solution than always re-declaring these variables.
+    //I could consider a static content script where these vars and fncs are declared once, 
+    //and then injecting a separate one that just calls the necessary functions (which would be global or exposed somehow)
+        //However, I don't know if a static content script would be injected early enough for the background script to make use of it
+            //Tested it and it would work if the static script is set to run at document_start
+            //Going with the above approach, I could have the static script either declare vars globally, export vars (as a module), or just use message passing
+var supportedApps = { 
     youTubeMusic: 'ytm',
     googlePlayMusic: 'gpm'
-});
+};
 
 //TODO This isn't being used as much as it could be
-const supportedTracklistTypes = Object.freeze({
+var supportedTracklistTypes = {
     playlist: 'playlist',
     autoPlaylist: 'auto',
     genreList: 'genre',
     allSongsList: 'all',
     uploadsList: 'uploads'
-});
+};
 
-let app = undefined;
-let type = undefined;
-let title = undefined;
-let trackCount = undefined;
+var app, type, title, trackCount = undefined;
 
 function scrapeUrl() {
     if (window.location.host === 'music.youtube.com') { //If the host matches YouTube Music...
@@ -107,7 +110,6 @@ function getTrackCountNumberFromString(trackCountString) {
 }
 
 function extractAndStoreTracklistMetadata(tracklistTitleElement, trackCountElement) {
-
     if (typeof tracklistTitleElement === 'undefined' || typeof trackCountElement === 'undefined') {
         console.error("Invalid parameters provided. Tracklist Title Element: " + tracklistTitleElement + "; Track Count Element: " + trackCountElement);
     }
