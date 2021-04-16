@@ -216,11 +216,11 @@
             //Remove any commas from the track count string (e.g. for counts > 999), and then get the count value as an integer
             const _trackCountValue = parseInt(_trackCountString.replace(/,/g, ""));
             
-            console.log('Current playlist\'s track count is %s.', _trackCountValue);
+            console.info('Current playlist\'s track count is %s.', _trackCountValue);
             return _trackCountValue;
         }
         else {
-            console.log('ERROR: Could not find the Track Count DOM element.');
+            console.error('Could not find the Track Count DOM element.');
         }
     }
 
@@ -229,13 +229,10 @@
      * @param {object} element The DOM element to scroll into view
      */
     function scrollToElement(element) {
-        if (typeof element === 'object') {
+        if (typeof element === 'object')
             element.scrollIntoView(true);
-        }
-        else {
-            //TODO would be good to set up a DebugController to better handle warnings, errors, asserts, etc.
-            console.log('There is no element to scroll to');
-        }
+        else
+            console.error('There is no valid element to scroll to');
     }
 
     /**
@@ -309,38 +306,29 @@
      */
     function processMessage_GetTracklistMetadata(app, callback) {
         const _trackRowContainer = elementsInDOM.trackRowContainer[app](); //Fetch the DOM element that contains all the track row elements
-        const _trackCount = getPlaylistTrackCount(app); //Fetch the official track count of the tracklist, if one exists
+        const _expectedTrackCount = getPlaylistTrackCount(app); //Fetch the official track count of the tracklist, if one exists
         const _observerConfig = {childList: true}; //Set up the configuration options for the Mutation Observer
 
         let _trackMetadataArray = []; //Create an array to store the metadata for each scraped track in the tracklist
         let _lastScrapedElement = null; //Variable to track the last track row element from the most recent scrape
-        let _scrollingTimeout = null; //Variable tracking the timeout to end the scroll & scrape process, in case no changes to the track row container element are observed for a while
+        let _scrollingTimeoutID = undefined; //Variable tracking the timeout to end the scroll & scrape process, in case no changes to the track row container element are observed for a while
         let _scrapeStartingIndex = (app == 'gpm') ? 1 : 0; //Variable to track the row index to begin each scrape with. Starts at 1 for GPM, 0 for other sites. 
         const _scrapeEndingIndexModifier = (app == 'gpm') ? -1 : 0; //Variable to track the modifier to the index to end each scrape with. Typically 0, but -1 for GPM due to how the DOM is laid out.
         
         //Set up the callback function to execute once the scraped has either been successfully completed or timed out
-        const _endScrape = function() {
-            //Allow the user to scroll manually again
-            allowManualScrolling(app, true);
-
-            //Disconnect the mutation observer
-            _observer.disconnect();
-
-            //Execute the provided callback function, passing the track metadata array as a parameter
-            callback(_trackMetadataArray);
+        const _endScrape = function() {  
+            allowManualScrolling(app, true); //Allow the user to scroll manually again
+            _observer.disconnect(); //Disconnect the mutation observer
+            callback(_trackMetadataArray); //Execute the callback function, passing the tracks array as a parameter
         }
 
         const _scrapeTrackMetadataFromNodeList = function() {
-            //If the scrolling timeout has been set...
-            if (_scrollingTimeout != null) {
-                //Clear the timeout. If the scrape is not yet complete after the current iteration, a new timeout will be set for the next one later.
-                clearTimeout(_scrollingTimeout);
-            }
+            clearTimeout(_scrollingTimeoutID); //Clear the scrolling timeout. It will be reset if the scrape isn't complete after the upcoming scrape
 
             //If a previous scrape has been completed, set the starting index for the next scrape accordingly
             if (_lastScrapedElement != null) {
                 //'Array.prototype.indexOf.call' is used here because '_trackRowContainer.children' is a NodeList, not an Array, and so it doesn't have the 'indexOf' function, but is set up similarly enough that calling it works
-                //The starting index for the next scrape should be one greater than then index of the last child element from the previous scrape
+                //The starting index for the next scrape should be one greater than the index of the last child element from the previous scrape
                 _scrapeStartingIndex = Array.prototype.indexOf.call(_trackRowContainer.children, _lastScrapedElement) + 1 ;
             }
             
@@ -350,8 +338,8 @@
                 _trackMetadataArray.push(new TrackMetadata(app, _trackRowContainer.children[i])); 
             }
 
-            //If a valid target track count was provided and it matches the length of the metadata array, end the scrape
-            if (_trackCount != null && _trackCount == _trackMetadataArray.length) {
+            //If there is an expected track count and it matches the length of the metadata array, end the scrape
+            if (_expectedTrackCount === _trackMetadataArray.length) {
                 _endScrape();
             }
             else {
@@ -362,7 +350,7 @@
                 scrollToElement(_lastScrapedElement);
 
                 //Set a timeout to end the scrolling if no new changes to the container element have been observed for a while, to avoid infinite scrolling in edge cases
-                _scrollingTimeout = setTimeout(_endScrape, 4000);
+                _scrollingTimeoutID = setTimeout(_endScrape, 4000);
             }
         }
 
