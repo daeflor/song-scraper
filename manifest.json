@@ -8,9 +8,11 @@
     },
     "content_scripts": [{
             "matches": [
-                "https://music.youtube.com/playlist*",
+                "https://music.youtube.com/playlist?*",
+                "https://music.youtube.com/library/songs",
+                "https://music.youtube.com/library/uploaded_songs",
                 "https://play.google.com/music/listen*"],
-            "js": ["Scripts/content-scripts/scrape-tracks.js"],
+            "js": ["Scripts/content-scripts/content-scraper.js"],
             "run_at": "document_idle"
     }],
     "action": {
