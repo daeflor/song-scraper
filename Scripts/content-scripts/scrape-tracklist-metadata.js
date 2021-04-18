@@ -86,7 +86,11 @@ function getTracklistMetadataElements(callback) {
     const _ytmMetadataElement = _ytmHeaderElement.querySelector('.metadata');
 
     if (_ytmMetadataElement !== null) { //TODO would a more thorough isElement check be good here?
-        console.log("YouTube Music tracklist metadata header element already loaded.");
+        console.log("YouTube Music tracklist metadata header element already loaded:");
+        console.log(_ytmMetadataElement);
+        //TODO note that this can fail when navigating BACK from an album to a playlist. 
+        //Albums also have a metadata section, so when this querySelector is ran, it's still picking up the old element from the album. 
+        //At this point, when it tries to get the title element's text content, it fails, because there is no title element.
 
         const _ytmTitleElement = _ytmMetadataElement.querySelector('yt-formatted-string.title');
         console.log("Title is: " + _ytmTitleElement.textContent);
@@ -145,17 +149,30 @@ function getYtmElementsOnceLoaded(rootElement, callback) {
     let _titleElement = undefined;
     let _trackCountElement = undefined;
 
+    //let count = 0;
+    //let instanceCount = 0;
+
     //Set up the callback function to execute once the metadata elements have been loaded
     const _endObservation = () => {
         _observer.disconnect(); //Disconnect the mutation observer
+        //console.log("Mutation Instance COUNT: " + instanceCount);
+        //console.log("Total mutations recorded: " + count);
         callback(_titleElement, _trackCountElement); //Execute the provided callback function, passing the title and track count elements
     }
 
     //Set up the callback to execute whenever a mutation of the pre-specified type is observed (i.e. the childList is modified for any element in the root element's subtree)
     const _onMutationObserved = (mutationsList, observer) => {
         //For each mutation observed on the target DOM element...
+        //instanceCount++;
         for (const mutation of mutationsList) {
+            //count++;
             const _addedNode = mutation.addedNodes[0];
+
+            // if (mutation.target.id === 'header') {
+            //     console.log("Observation ending because HEADER is having a mutation.");
+            //     console.log(mutation.target);
+            //     _endObservation(mutationsList.length);
+            // }
 
             // //If the mutation was adding a node to the element's childList...
             // if (typeof _addedNode === 'object') {
