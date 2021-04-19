@@ -10,8 +10,7 @@
             "matches": [
                 "https://music.youtube.com/playlist?*",
                 "https://music.youtube.com/library/songs",
-                "https://music.youtube.com/library/uploaded_songs",
-                "https://play.google.com/music/listen*"],
+                "https://music.youtube.com/library/uploaded_songs"],
             "js": ["Scripts/content-scripts/content-scraper.js"],
             "run_at": "document_idle"
     }],
@@ -30,11 +29,7 @@
         "downloads",
         "declarativeContent",
         "webNavigation",
-        "scripting",
         "unlimitedStorage"
-    ],
-    "host_permissions": [
-        "https://music.youtube.com/*"
     ],
     "content_security_policy":{
         "extension_pages": "default-src 'none'; script-src 'self'; connect-src https://*.googleapis.com; style-src-elem https://cdn.firebase.com https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https://www.gstatic.com; style-src 'unsafe-inline'; script-src-elem 'self' https://apis.google.com/; frame-src https://song-scraper.firebaseapp.com/"
