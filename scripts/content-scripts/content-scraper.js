@@ -192,24 +192,6 @@
     //         sendResponse(message);
     //     }
     // });
-
-    // /**
-    //  * Returns the current tracklist name from the DOM
-    //  * @param {string} app the current app that the extension is running on
-    //  * @returns {string} the tracklist name
-    //  */
-    // function processMessage_GetTracklistName(app) {
-    //     const _tracklistNameElement = elementsInDOM.playlistName[app]();
-        
-    //     if (_tracklistNameElement != null) { //TODO use a better isElement check
-    //         console.log("Tracklist name is: " + _tracklistNameElement.textContent)
-    //         return _tracklistNameElement.textContent;
-    //     }
-    //     else {
-    //         console.log("ERROR: Received request to get the tracklist name, but it failed to be retrieved from the DOM.");
-    //     }
-    // }
-
     //TODO could check if YouTube API reports correct track count value for "Your Likes"
         //Could even consider ONLY using the API to get track counts, though it does seem like a lot of extra work that shouldn't be necessary
     function getPlaylistTrackCount(app) {
@@ -410,7 +392,19 @@
         setTimeout(_scrapeTrackMetadataFromNodeList, 1000);
     }
 
-    //
+    //TODO something that hasn't been considered is that a tracklist could change in the time between...
+        //...when the page is loaded and the extension is opened. i.e. a track could be added/removed manually to the list
+        //This means the track count cached in storage could be out of date when the popup is opened
+        //There should be something to account for this. Some examples:
+            //A) Listen/Watch for DOM changes that indicate the track count has changed. 
+                //Could watch for the metadata subtitle element (if available) or the track rows container perhaps. 
+            //B) Check the track count again when the popup is opened. Maybe don't even cache it, only send it to background.js to update the icon
+        //In any case, it's likely that the icon wouldn't be updated properly after such a change, but that's less important.
+        //The more important part is that the 'expected' track count used for scraping tracks is accurate.
+
+        //A possible approach is to only store the tracklist type when the mutation is observed...
+            //...and then only fetch the tracklist title & track count on demand later (i.e. when the popup is opened)...
+            //...using the pre-set type to dictate how and whether or not to try to get that info
 
     function observeHeaderElementMutations() {
         const _elementToObserve = document.getElementById('header'); //Note: there are typically at least two elements with ID 'header' in YTM pages, but the one containing tracklist metadata seems to consistently be the first one in the DOM, so this is the easiest/fastest way to fetch it.
@@ -418,8 +412,14 @@
         //Set up the callback to execute whenever a mutation of the pre-specified type is observed (i.e. the observed element's childList is modified)
         const _onMutationObserved = (mutationsList, observer) => {    
             console.info("The header element's childList was modified. Looking for metadata:");
-            const _metadataElement = _elementToObserve.getElementsByClassName('metadata')[0];
-            console.log(_metadataElement);
+            //TODO it's actually not technically necessary to get this element, except for the sake of ensuring that it was added to the DOM 
+                //...which supports the assumption that the title and track count elements were added to the DOM
+                //But we could just as well have a check to ensure the title and track count elements exist in the DOM when we try to access them.
+                //(And we actually do already do this)
+                //The other reason for this was to distinguish between pages which had the metadata added vs removed (e.g. potentially non-tracklist pages)...
+                //...but now that we're checking the URL anyway, that doesn't really help
+            //const _metadataElement = _elementToObserve.getElementsByClassName('metadata')[0];
+            //console.log(_metadataElement);
 
             if (currentApp === supportedApps.youTubeMusic) {
                 //Create an object to store and transmit the current tracklist metadata so it can be easily accessed across the extension
@@ -438,15 +438,14 @@
                 } else if (window.location.pathname === '/library/uploaded_songs') {
                     _tracklistMetadata.type = supportedTracklistTypes.allSongsList;
                     _tracklistMetadata.title = 'Uploaded Songs';
-                //} else if (window.location.search.startsWith('?list=LM') || window.location.search.startsWith('?list=PL')) {
-                } else if (window.location.search.startsWith('?list=LM') && typeof _metadataElement === 'object') {
+                } else if (window.location.search.startsWith('?list=LM')) {
                     _tracklistMetadata.type = supportedTracklistTypes.autoPlaylist;
                     _tracklistMetadata.title = 'Your Likes';
-                    _tracklistMetadata.trackCount = getTrackCountFromElement(_metadataElement.getElementsByClassName('second-subtitle')[0]);
-                } else if (window.location.search.startsWith('?list=PL') && typeof _metadataElement === 'object') {
+                    _tracklistMetadata.trackCount = getTrackCountFromElement(_elementToObserve.getElementsByClassName('second-subtitle')[0]);
+                } else if (window.location.search.startsWith('?list=PL')) {
                     _tracklistMetadata.type = supportedTracklistTypes.playlist;
-                    _tracklistMetadata.title = getTracklistTitleFromElement(_metadataElement.getElementsByClassName('title')[0]);
-                    _tracklistMetadata.trackCount = getTrackCountFromElement(_metadataElement.getElementsByClassName('second-subtitle')[0]);
+                    _tracklistMetadata.title = getTracklistTitleFromElement(_elementToObserve.getElementsByClassName('title')[0]);
+                    _tracklistMetadata.trackCount = getTrackCountFromElement(_elementToObserve.getElementsByClassName('second-subtitle')[0]);
                 }
 
                 if (typeof _tracklistMetadata.type === 'string') { //If a valid tracklist type was set (i.e. the current page is a valid tracklist)...
@@ -464,7 +463,7 @@
     
         const _observer = new MutationObserver(_onMutationObserved); //Create a new mutation observer instance linked to the callback function defined above
         const _observerConfig = {childList: true, subtree: false}; //Set up the configuration options for the Mutation Observer
-        if (typeof _elementToObserve == 'object') { //If the element to observe actually exists in the DOM...
+        if (typeof _elementToObserve === 'object') { //If the element to observe actually exists in the DOM...
             _observer.observe(_elementToObserve, _observerConfig); //Start observing the specified element for configured mutations (i.e. for any changes to its childList)
         } else console.error("Tried observing the YTM header element for DOM mutations, but the element doesn't exist.");
     }
@@ -479,6 +478,12 @@
             return element.textContent;
         } else console.error("Tried to extract the tracklist title string from the title element, but no valid element was provided.");
     }
+
+    // function getTrackCount() {
+    //     if (currentApp === supportedApps.youTubeMusic && typeof headerElement === 'object') {
+    //         return getTrackCountFromElement(headerElement.getElementsByClassName('second-subtitle')[0]);
+    //     } else console.error("Tried to get the track count element, but the app or header element are not valid.");
+    // }
 
     /**
      * Extracts the track count string from the track count element and then returns the track count number
