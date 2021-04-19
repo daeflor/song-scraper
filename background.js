@@ -59,18 +59,20 @@ chrome.runtime.onInstalled.addListener(function(details) {
 //     //chrome.browserAction.setBadgeText({text: ""});
 // });
 
-//Note that this works because YouTube Music appears to use the History API to navigate between pages on the site
+//Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
 chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
-    if (details.url.includes('list=PL') === false) {
+    //Set up an array of substrings that can be found in valid YTM tracklist URLs
+    const _validUrlSubstrings = ['list=PL', 'list=LM', '/library/songs', '/library/uploaded_songs'];
+    
+    //Function returns true iff the provided substring parameter is included in the current page's URL string.
+    const _urlIncludesSubstring = (substring) => details.url.includes(substring);
+    
+    //If the page's URL contains any of the valid tracklist substrings, set the disabled icon and clear the cached metadata
+    if (_validUrlSubstrings.some(_urlIncludesSubstring) === false) {
         console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");
-        chrome.action.setIcon({path: _iconPaths.disabled/*, tabId:_currentTabId*/});
+        chrome.action.setIcon({path: _iconPaths.disabled});
         clearCachedTracklistMetadata();
     }
-    //TODO update this so it checks/omits other URLs, not just 'list=PL'
-    //TODO could also technically do no check and just always set the disabled icon, which would then get overwritten when the metadata gets updated/sent
-        //But I don't like that approach so much
-
-        
 }, 
 /*{url: [ {hostEquals : 'music.youtube.com', queryPrefix: '?list=PL'},
         {hostEquals : 'music.youtube.com', queryPrefix: '?list=LM'}]}*/
@@ -83,7 +85,7 @@ chrome.runtime.onMessage.addListener(
             console.log('The current tracklist metadata was updated. New track title is "%s" and new track count is "%s".',
                 request.currentTracklistMetadata.title, request.currentTracklistMetadata.trackCount);
 
-            //TODO I could technically just put all this logic in the content script, if that helps at all 
+            //TODO I could technically just put almost all this logic (except action API calls) in the content script, if that helps at all 
             getTrackCountFromGPMTracklistData(request.currentTracklistMetadata.title, gpmTrackCount => {
                 if (request.currentTracklistMetadata.trackCount === gpmTrackCount) {
                     console.log("Background: The current track count (from the DOM) is the same as the stored track count.");
