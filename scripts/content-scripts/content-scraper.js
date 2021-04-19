@@ -429,20 +429,6 @@
                     trackCount: undefined
                 };
 
-                //Extracts and returns the tracklist title string from the title element
-                const _getTracklistTitle = (element) => {
-                    if (typeof element === 'object') {
-                        return element.textContent;
-                    } else console.error("Tried to extract the tracklist title string from the title element, but no valid element was provided.");
-                };
-
-                //Extracts the track count string from the track count element and then returns the track count number
-                const _getTrackCount = (element) => {
-                    if (typeof element === 'object') {
-                        return getTrackCountNumberFromString(element.textContent);
-                    } else console.error("Tried to extract the track count string from the track count element, but no valid element was provided.");
-                };
-
                 //TODO it would be possible to scrape the URL from the background script instead
                 //TODO it may also be possible to get some of this data (e.g. for playlists) from the metadata element instead of the URL, but that isn't necessarily easier/better
                 //Scrape and record the current tracklist metadata based on specific URL conditions and/or the metadata element
@@ -456,11 +442,11 @@
                 } else if (window.location.search.startsWith('?list=LM') && typeof _metadataElement === 'object') {
                     _tracklistMetadata.type = supportedTracklistTypes.autoPlaylist;
                     _tracklistMetadata.title = 'Your Likes';
-                    _tracklistMetadata.trackCount = _getTrackCount(_metadataElement.getElementsByClassName('second-subtitle')[0]);
+                    _tracklistMetadata.trackCount = getTrackCountFromElement(_metadataElement.getElementsByClassName('second-subtitle')[0]);
                 } else if (window.location.search.startsWith('?list=PL') && typeof _metadataElement === 'object') {
                     _tracklistMetadata.type = supportedTracklistTypes.playlist;
-                    _tracklistMetadata.title = _getTracklistTitle(_metadataElement.getElementsByClassName('title')[0]);
-                    _tracklistMetadata.trackCount = _getTrackCount(_metadataElement.getElementsByClassName('second-subtitle')[0]);
+                    _tracklistMetadata.title = getTracklistTitleFromElement(_metadataElement.getElementsByClassName('title')[0]);
+                    _tracklistMetadata.trackCount = getTrackCountFromElement(_metadataElement.getElementsByClassName('second-subtitle')[0]);
                 }
 
                 if (typeof _tracklistMetadata.type === 'string') { //If a valid tracklist type was set (i.e. the current page is a valid tracklist)...
@@ -483,18 +469,32 @@
         } else console.error("Tried observing the YTM header element for DOM mutations, but the element doesn't exist.");
     }
 
-    // function getTracklistTitleFromElement(element) {
-
-    // }
-
-    // function getTrackCountFromElement(element) {
-
-    // }
+    /**
+     * Extracts and returns the tracklist title string from the title element
+     * @param {object} element The DOM element containing the tracklist title
+     * @returns {string} The tracklist title as a string
+     */
+    function getTracklistTitleFromElement(element) {
+        if (typeof element === 'object') {
+            return element.textContent;
+        } else console.error("Tried to extract the tracklist title string from the title element, but no valid element was provided.");
+    }
 
     /**
-     * Parse a track count string and returns an integer value
+     * Extracts the track count string from the track count element and then returns the track count number
+     * @param {object} element The DOM element containing the track count string
+     * @returns {number} The tracklist's track count, as a number
+     */
+    function getTrackCountFromElement(element) {
+        if (typeof element === 'object') {
+            return getTrackCountNumberFromString(element.textContent);
+        } else console.error("Tried to extract the track count string from the track count element, but no valid element was provided.");
+    }
+
+    /**
+     * Parses a track count string and returns an integer value
      * @param {string} trackCountString The string containing the track count information
-     * @returns {number} the track count as an integer
+     * @returns {number} The track count as an integer
      */
     function getTrackCountNumberFromString(trackCountString) {
         if (typeof trackCountString === 'string') {
