@@ -1,7 +1,7 @@
 'use strict';
 (function() {
-    //let currentApp = null; //TODO maybe just pass this as a param after all
-
+    console.info("Content Scraper script initializing");
+    
     const supportedApps = Object.freeze({ 
         youTubeMusic: 'ytm',
         googlePlayMusic: 'gpm'
@@ -19,7 +19,7 @@
     //TODO would it be better to store these as a single object?
     //let app, type, title, trackCount = undefined;
     const tracklistMetadata = {
-        app: undefined,
+        //app: undefined,
         type: undefined,
         title: undefined,
         trackCount: undefined
@@ -62,6 +62,19 @@
             yourLikesUrlCondition: '#/ap/'
         }
     }
+
+    /**
+     * Records the current app based on the URL, and begins observing the YTM header element for DOM mutations
+     */
+    function init() {
+        if (window.location.host === 'music.youtube.com') {
+            var currentApp = supportedApps.youTubeMusic; //Record the current app being used for future reference
+        } else console.error("Tried to set the current app being used, but the host was not recognized.");    
+    
+        observeHeaderElementMutations(); //Begin observing the YTM Header element for DOM mutations
+    }
+
+    
 
     // const urlProperties = {
     //     playlistUrlParameters: {
@@ -172,7 +185,7 @@
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.greeting === 'GetTracklistMetadata') {
             console.info("Content Script: Received request to retrieve tracklist metadata.");
-            processMessage_GetTracklistMetadata(message.app, response => { //TODO rename to GetTracks or something like that
+            processMessage_GetTracklistMetadata(currentApp, response => { //TODO rename to GetTracks or something like that
                 message.response = response;
                 sendResponse(message);
             });
@@ -181,13 +194,13 @@
         return true; //Return true to keep the message channel open (so the callback can be called asynchronously)
     });
 
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.greeting === 'GetTrackCount') {   
-            console.info("Content Script: Received request to retrieve track count.");
-            message.response = getPlaylistTrackCount(message.app);
-            sendResponse(message);
-        }
-    });
+    // chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    //     if (message.greeting === 'GetTrackCount') {   
+    //         console.info("Content Script: Received request to retrieve track count.");
+    //         message.response = getPlaylistTrackCount(message.app);
+    //         sendResponse(message);
+    //     }
+    // });
 
     // /**
     //  * Returns the current tracklist name from the DOM
@@ -410,14 +423,15 @@
 
     function observeHeaderElementMutations() {
         const _elementToObserve = document.getElementById('header'); //Note: there are typically at least two elements with ID 'header' in YTM pages, but the one containing tracklist metadata seems to consistently be the first one in the DOM, so this is the easiest/fastest way to fetch it.
-    
+
         //Set up the callback to execute whenever a mutation of the pre-specified type is observed (i.e. the observed element's childList is modified)
         const _onMutationObserved = (mutationsList, observer) => {    
             console.info("The header element's childList was modified. Looking for metadata:");
             const _metadataElement = _elementToObserve.getElementsByClassName('metadata')[0];
             console.log(_metadataElement);
 
-            if (typeof _metadataElement === 'object') {
+            //If the metadata element exists, scrape, store, and send the tracklist metadata (app, tracklist type, title, & track count)
+            if (typeof _metadataElement === 'object') { 
                 scrapeUrl(); //Scrape various metadata from the URL, including the app, tracklist type, and possibly title. 
 
                 //If the title hasn't already been set, get the title element and use its text content as the title
@@ -427,6 +441,10 @@
                         tracklistMetadata.title = _titleElement.textContent;
                     }
                 }
+
+                //TODO currently, this observation is happening when navigating to an Album tracklist, which should probably be excluded
+                    //One way to do this would be to look at the URL (?list=OL)
+                    //Another would be to look at the metadata itself, since it says 'Album' in the first subtitle
 
                 //Get the track count string element, then extract the track count and convert it to a number 
                 const _trackCountElement = _metadataElement.getElementsByClassName('second-subtitle')[0];
@@ -456,14 +474,22 @@
     
         const _observer = new MutationObserver(_onMutationObserved); //Create a new mutation observer instance linked to the callback function defined above
         const _observerConfig = {childList: true, subtree: false}; //Set up the configuration options for the Mutation Observer
-        _observer.observe(_elementToObserve, _observerConfig); //Start observing the specified element for configured mutations (i.e. for any changes to its childList)
+        if (typeof _elementToObserve == 'object') { //If the element to observe actually exists in the DOM...
+            _observer.observe(_elementToObserve, _observerConfig); //Start observing the specified element for configured mutations (i.e. for any changes to its childList)
+        } else console.error("Tried observing the YTM header element for DOM mutations, but the element doesn't exist.");
     }
 
     //TODO it would be possible to scrape the URL from the background script instead
     //TODO it may also be possible to get some of this data (e.g. for playlists) from the metadata element instead of the URL, but that isn't necessarily easier/better
     function scrapeUrl() {
+        //TODO move this into the function above so that we don't need to keep a global tracklist metadata
+            //That way, we don't have to worry about 'clearing' the values after storing and sending the object
+            //ALSO, that way I can remove the check for title === undefined way above, and instead...
+                //... only look for the title in metadata in the case of 'list=PL'
         if (window.location.host === 'music.youtube.com') { //If the host matches YouTube Music...
-            tracklistMetadata.app = supportedApps.youTubeMusic; //Make a record of the current app for future reference
+            //tracklistMetadata.app = supportedApps.youTubeMusic; //Make a record of the current app for future reference
+            //TODO is it really necessary to store current app in storage? Does any other file need to know which app is currently in use, other than this content script?
+                //I don't think so. Could just do a single window.location check when this script is initialized and record the app here once and that's it.
 
             //Make a record of the current tracklist type based on certain URL conditions
             if (window.location.search.includes('list=PL')) {
@@ -471,7 +497,7 @@
             } else if (window.location.search.includes('list=LM')) {
                 tracklistMetadata.type = supportedTracklistTypes.autoPlaylist;
                 tracklistMetadata.title = 'Your Likes';
-            } else if (window.location.pathname === '/library/songs') { //TODO the options below are currently not supported due to how the manifest is setup
+            } else if (window.location.pathname === '/library/songs') {
                 tracklistMetadata.type = supportedTracklistTypes.allSongsList;
                 tracklistMetadata.title = 'Added from YouTube Music';
             } else if (window.location.pathname === '/library/uploaded_songs') {
@@ -494,5 +520,5 @@
         } else console.error("Tried to convert a track count string to a number, but the value provided was not a string.");
     }
 
-    observeHeaderElementMutations(); //As soon as this content script has been loaded, begin observing for DOM mutations in the Header element
+    init();
 })();
