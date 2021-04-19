@@ -15,6 +15,11 @@
         allSongsList: 'all',
         uploadsList: 'uploads'
     });
+
+    const metadataNames = Object.freeze({
+        title: 'tracklistTitle',
+        trackCount: 'trackCount'
+    });
     
     const elementsInDOM = {
         scrollContainer: {
@@ -55,6 +60,10 @@
     }
 
     let currentApp = undefined;
+    //TODO might rather have these (below) in an object with the other elements that need to be tracked (e.g track row container and scroll container)
+    let headerElement = undefined; 
+    let tracksContainer = undefined;
+    let scrollContainer = undefined;
 
     /**
      * Records the current app based on the URL, and begins observing the YTM header element for DOM mutations
@@ -62,9 +71,11 @@
     function init() {
         if (window.location.host === 'music.youtube.com') {
             currentApp = supportedApps.youTubeMusic; //Record the current app being used for future reference
-        } else console.error("Tried to set the current app being used, but the host was not recognized.");    
-    
-        observeHeaderElementMutations(); //Begin observing the YTM Header element for DOM mutations
+            headerElement = document.getElementById('header'); //Note: there are typically at least two elements with ID 'header' in YTM pages, but the one containing tracklist metadata seems to consistently be the first one in the DOM, so this is the easiest/fastest way to fetch it.
+            tracksContainer = document.body.getElementsByTagName('ytmusic-section-list-renderer');
+            scrollContainer = document.body;
+            observeHeaderElementMutations(); //Begin observing the YTM Header element for DOM mutations
+        } else console.error("Tried to initialize data in the content scraper script, but the host was not recognized.");        
     }
 
     // const urlProperties = {
@@ -407,19 +418,11 @@
             //...using the pre-set type to dictate how and whether or not to try to get that info
 
     function observeHeaderElementMutations() {
-        const _elementToObserve = document.getElementById('header'); //Note: there are typically at least two elements with ID 'header' in YTM pages, but the one containing tracklist metadata seems to consistently be the first one in the DOM, so this is the easiest/fastest way to fetch it.
+        //const _elementToObserve = document.getElementById('header'); //Note: there are typically at least two elements with ID 'header' in YTM pages, but the one containing tracklist metadata seems to consistently be the first one in the DOM, so this is the easiest/fastest way to fetch it.
 
         //Set up the callback to execute whenever a mutation of the pre-specified type is observed (i.e. the observed element's childList is modified)
         const _onMutationObserved = (mutationsList, observer) => {    
-            console.info("The header element's childList was modified. Looking for metadata:");
-            //TODO it's actually not technically necessary to get this element, except for the sake of ensuring that it was added to the DOM 
-                //...which supports the assumption that the title and track count elements were added to the DOM
-                //But we could just as well have a check to ensure the title and track count elements exist in the DOM when we try to access them.
-                //(And we actually do already do this)
-                //The other reason for this was to distinguish between pages which had the metadata added vs removed (e.g. potentially non-tracklist pages)...
-                //...but now that we're checking the URL anyway, that doesn't really help
-            //const _metadataElement = _elementToObserve.getElementsByClassName('metadata')[0];
-            //console.log(_metadataElement);
+            console.info("The header element's childList was modified. Looking for metadata.");
 
             if (currentApp === supportedApps.youTubeMusic) {
                 //Create an object to store and transmit the current tracklist metadata so it can be easily accessed across the extension
@@ -441,11 +444,14 @@
                 } else if (window.location.search.startsWith('?list=LM')) {
                     _tracklistMetadata.type = supportedTracklistTypes.autoPlaylist;
                     _tracklistMetadata.title = 'Your Likes';
-                    _tracklistMetadata.trackCount = getTrackCountFromElement(_elementToObserve.getElementsByClassName('second-subtitle')[0]);
+                    _tracklistMetadata.trackCount = getMetadatum(metadataNames.trackCount);
+                    //_tracklistMetadata.trackCount = getTrackCountFromElement(headerElement.getElementsByClassName('second-subtitle')[0]);
                 } else if (window.location.search.startsWith('?list=PL')) {
                     _tracklistMetadata.type = supportedTracklistTypes.playlist;
-                    _tracklistMetadata.title = getTracklistTitleFromElement(_elementToObserve.getElementsByClassName('title')[0]);
-                    _tracklistMetadata.trackCount = getTrackCountFromElement(_elementToObserve.getElementsByClassName('second-subtitle')[0]);
+                    _tracklistMetadata.title = getMetadatum(metadataNames.title);
+                    _tracklistMetadata.trackCount = getMetadatum(metadataNames.trackCount); 
+                    //_tracklistMetadata.title = getTracklistTitleFromElement(headerElement.getElementsByClassName('title')[0]);
+                    //_tracklistMetadata.trackCount = getTrackCountFromElement(headerElement.getElementsByClassName('second-subtitle')[0]);
                 }
 
                 if (typeof _tracklistMetadata.type === 'string') { //If a valid tracklist type was set (i.e. the current page is a valid tracklist)...
@@ -463,17 +469,57 @@
     
         const _observer = new MutationObserver(_onMutationObserved); //Create a new mutation observer instance linked to the callback function defined above
         const _observerConfig = {childList: true, subtree: false}; //Set up the configuration options for the Mutation Observer
-        if (typeof _elementToObserve === 'object') { //If the element to observe actually exists in the DOM...
-            _observer.observe(_elementToObserve, _observerConfig); //Start observing the specified element for configured mutations (i.e. for any changes to its childList)
+        if (typeof headerElement === 'object') { //If the element to observe actually exists in the DOM...
+            _observer.observe(headerElement, _observerConfig); //Start observing the specified element for configured mutations (i.e. for any changes to its childList)
         } else console.error("Tried observing the YTM header element for DOM mutations, but the element doesn't exist.");
     }
+
+    //TODO I'm not convinced it's more readable having this be a single function rather than two dedicated functions
+    /**
+     * Gets a piece of metadata based on the name provided
+     * @param {string} name The name of the metadatum to look for. Supported names are included in the 'metadataNames' object.
+     * @returns {*} The value of the piece of metadata requested 
+     */
+    function getMetadatum(name) {
+        if (currentApp === supportedApps.youTubeMusic) {
+            //const _element = getElement(name); //Get the DOM element based on the name provided
+            switch(name) {
+                case metadataNames.title: 
+                    return getTracklistTitleFromElement(headerElement.getElementsByClassName('title')[0]);//(_element);
+                case metadataNames.trackCount: 
+                    return getTrackCountFromElement(headerElement.getElementsByClassName('second-subtitle')[0]);//getTrackCountFromElement(_element);
+                default:
+                    console.error("Tried to get a piece of metadata but an invalid metadatum name was provided. Name provided: " + name);
+            }
+        }
+    }
+
+    //TODO this extra step seems unnecessary now, since the other elements are 'static'
+        //...(i.e. header, tracksContainer, & scrollContainer don't change, so we can just fetch then once on script load)
+    // /**
+    //  * Gets a DOM element from the name provided
+    //  * @param {string} name The name of the DOM element to look for. Supported names are included in the 'metadataNames' object.
+    //  * @returns {object} The element matching the name provided
+    //  */
+    // function getElement(name) {
+    //     if (currentApp === supportedApps.youTubeMusic) {
+    //         switch(name) {
+    //             case metadataNames.title: 
+    //                 return headerElement.getElementsByClassName('title')[0];
+    //             case metadataNames.trackCount: 
+    //                 return headerElement.getElementsByClassName('second-subtitle')[0];
+    //             default:
+    //                 console.error("Tried to get a DOM element but an invalid element name was provided. Name provided: " + name);
+    //         }
+    //     }
+    // }
 
     /**
      * Extracts and returns the tracklist title string from the title element
      * @param {object} element The DOM element containing the tracklist title
      * @returns {string} The tracklist title as a string
      */
-    function getTracklistTitleFromElement(element) {
+     function getTracklistTitleFromElement(element) {
         if (typeof element === 'object') {
             return element.textContent;
         } else console.error("Tried to extract the tracklist title string from the title element, but no valid element was provided.");
