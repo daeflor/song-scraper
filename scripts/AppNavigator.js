@@ -67,19 +67,11 @@ function init() {
         chrome.storage.local.get(_storagekey, storageResult => { //Get the cached metadata for the current tracklist from local storage
             const _tracklistMetadata = storageResult[_storagekey];
 
-            if (typeof _tracklistMetadata.app === 'string') { //If the app which the tracklist belongs to has been set correctly, update it in the Model
-                Model.tab.app = _tracklistMetadata.app;
-            } else {
-                console.error("The current app could not be determined from the URL.");
-                //TODO might be better to call TriggerUITransition here instead, to keep all ViewRenderer calls in one place
-                ViewRenderer.showStatusMessage('The current app could not be determined from the URL.');
-                return;
-            }
-
             if (typeof _tracklistMetadata.type === 'string') { //If the tracklist type has been set correctly, update it in the Model
                 Model.tracklist.type = _tracklistMetadata.type;
             } else {
                 console.error("The tracklist type could not be determined from the URL.");
+                //TODO might be better to call TriggerUITransition here instead, to keep all ViewRenderer calls in one place
                 ViewRenderer.showStatusMessage('The tracklist type could not be determined from the URL.');
                 return;
             }
