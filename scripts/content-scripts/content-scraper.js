@@ -467,14 +467,10 @@
                     //TODO would it be better to store each piece of metadata individually instead of in a single object?
                         //That way, if we want to just update partial data (e.g. type in background script) we can do that with just a set, without needing an initial get.            
                     chrome.storage.local.set ({currentTracklistMetadata: _tracklistMetadata}, () => { //Cache the metadata in local storage
-                        console.log("Printing runtime error")
-                        console.log(chrome.runtime.error);
-                        if (chrome.runtime.lastError != null) {
-                            console.error("ERROR: " + chrome.runtime.lastError.message);
-                        } else { //Send the metadata to the extension's service worker so it can update the icon accordingly
+                        if (typeof chrome.runtime.error === 'undefined') {
                             const _message = { greeting: 'TracklistMetadataUpdated', currentTracklistMetadata: _tracklistMetadata };
-                            chrome.runtime.sendMessage(_message);
-                        }
+                            chrome.runtime.sendMessage(_message); //Send the metadata to the extension's service worker so it can update the icon accordingly
+                        } else console.error("Error encountered while attempting to store metadata in local storage: " + chrome.runtime.lastError.message);
                     });
                 }
             }
