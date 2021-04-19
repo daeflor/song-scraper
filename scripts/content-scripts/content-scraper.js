@@ -16,15 +16,6 @@
         uploadsList: 'uploads'
     });
     
-    //TODO would it be better to store these as a single object?
-    //let app, type, title, trackCount = undefined;
-    const tracklistMetadata = {
-        //app: undefined,
-        type: undefined,
-        title: undefined,
-        trackCount: undefined
-    };
-
     const elementsInDOM = {
         scrollContainer: {
             ytm: function() {return document.body;},
@@ -63,18 +54,18 @@
         }
     }
 
+    let currentApp = undefined;
+
     /**
      * Records the current app based on the URL, and begins observing the YTM header element for DOM mutations
      */
     function init() {
         if (window.location.host === 'music.youtube.com') {
-            var currentApp = supportedApps.youTubeMusic; //Record the current app being used for future reference
+            currentApp = supportedApps.youTubeMusic; //Record the current app being used for future reference
         } else console.error("Tried to set the current app being used, but the host was not recognized.");    
     
         observeHeaderElementMutations(); //Begin observing the YTM Header element for DOM mutations
     }
-
-    
 
     // const urlProperties = {
     //     playlistUrlParameters: {
@@ -430,45 +421,62 @@
             const _metadataElement = _elementToObserve.getElementsByClassName('metadata')[0];
             console.log(_metadataElement);
 
-            //If the metadata element exists, scrape, store, and send the tracklist metadata (app, tracklist type, title, & track count)
-            if (typeof _metadataElement === 'object') { 
-                scrapeUrl(); //Scrape various metadata from the URL, including the app, tracklist type, and possibly title. 
+            if (currentApp === supportedApps.youTubeMusic) {
+                //Create an object to store and transmit the current tracklist metadata so it can be easily accessed across the extension
+                const _tracklistMetadata = {
+                    type: undefined,
+                    title: undefined,
+                    trackCount: undefined
+                };
 
-                //If the title hasn't already been set, get the title element and use its text content as the title
-                if (typeof tracklistMetadata.title === 'undefined') { 
-                    const _titleElement = _metadataElement.getElementsByClassName('title')[0];
-                    if (typeof _titleElement === 'object') { //I
-                        tracklistMetadata.title = _titleElement.textContent;
-                    }
+                //Extracts and returns the tracklist title string from the title element
+                const _getTracklistTitle = (element) => {
+                    if (typeof element === 'object') {
+                        return element.textContent;
+                    } else console.error("Tried to extract the tracklist title string from the title element, but no valid element was provided.");
+                };
+
+                //Extracts the track count string from the track count element and then returns the track count number
+                const _getTrackCount = (element) => {
+                    if (typeof element === 'object') {
+                        return getTrackCountNumberFromString(element.textContent);
+                    } else console.error("Tried to extract the track count string from the track count element, but no valid element was provided.");
+                };
+
+                //TODO it would be possible to scrape the URL from the background script instead
+                //TODO it may also be possible to get some of this data (e.g. for playlists) from the metadata element instead of the URL, but that isn't necessarily easier/better
+                //Scrape and record the current tracklist metadata based on specific URL conditions and/or the metadata element
+                if (window.location.pathname === '/library/songs') {
+                    _tracklistMetadata.type = supportedTracklistTypes.allSongsList;
+                    _tracklistMetadata.title = 'Added from YouTube Music';
+                } else if (window.location.pathname === '/library/uploaded_songs') {
+                    _tracklistMetadata.type = supportedTracklistTypes.allSongsList;
+                    _tracklistMetadata.title = 'Uploaded Songs';
+                //} else if (window.location.search.startsWith('?list=LM') || window.location.search.startsWith('?list=PL')) {
+                } else if (window.location.search.startsWith('?list=LM') && typeof _metadataElement === 'object') {
+                    _tracklistMetadata.type = supportedTracklistTypes.autoPlaylist;
+                    _tracklistMetadata.title = 'Your Likes';
+                    _tracklistMetadata.trackCount = _getTrackCount(_metadataElement.getElementsByClassName('second-subtitle')[0]);
+                } else if (window.location.search.startsWith('?list=PL') && typeof _metadataElement === 'object') {
+                    _tracklistMetadata.type = supportedTracklistTypes.playlist;
+                    _tracklistMetadata.title = _getTracklistTitle(_metadataElement.getElementsByClassName('title')[0]);
+                    _tracklistMetadata.trackCount = _getTrackCount(_metadataElement.getElementsByClassName('second-subtitle')[0]);
                 }
 
-                //TODO currently, this observation is happening when navigating to an Album tracklist, which should probably be excluded
-                    //One way to do this would be to look at the URL (?list=OL)
-                    //Another would be to look at the metadata itself, since it says 'Album' in the first subtitle
-
-                //Get the track count string element, then extract the track count and convert it to a number 
-                const _trackCountElement = _metadataElement.getElementsByClassName('second-subtitle')[0];
-                if (typeof _trackCountElement === 'object') {
-                    tracklistMetadata.trackCount = getTrackCountNumberFromString(_trackCountElement.textContent);
+                if (typeof _tracklistMetadata.type === 'string') { //If a valid tracklist type was set (i.e. the current page is a valid tracklist)...
+                    //TODO would it be better to store each piece of metadata individually instead of in a single object?
+                        //That way, if we want to just update partial data (e.g. type in background script) we can do that with just a set, without needing an initial get.            
+                    chrome.storage.local.set ({currentTracklistMetadata: _tracklistMetadata}, () => { //Cache the metadata in local storage
+                        console.log("Printing runtime error")
+                        console.log(chrome.runtime.error);
+                        if (chrome.runtime.lastError != null) {
+                            console.error("ERROR: " + chrome.runtime.lastError.message);
+                        } else { //Send the metadata to the extension's service worker so it can update the icon accordingly
+                            const _message = { greeting: 'TracklistMetadataUpdated', currentTracklistMetadata: _tracklistMetadata };
+                            chrome.runtime.sendMessage(_message);
+                        }
+                    });
                 }
-
-                //TODO would it be better to store each piece of metadata individually instead of in a single object?
-                    //That way, if we want to just update partial data (e.g. app and type in background script) we can do that with just a set, without needing an initial get.            
-                chrome.storage.local.set ({currentTracklistMetadata: tracklistMetadata}, () => {
-                    if (chrome.runtime.lastError != null) {
-                        console.error("ERROR: " + chrome.runtime.lastError.message);
-                    } else {
-                        const _message = { greeting: 'TracklistMetadataUpdated', currentTracklistMetadata: tracklistMetadata };
-                        chrome.runtime.sendMessage(_message);
-
-                        //TODO there is likely a better way to accomplish this
-                        //Once the metadata has been stored and sent, clear it so that there is no cached data on future mutations
-                        //tracklistMetadata = {};
-                        tracklistMetadata.type = undefined;
-                        tracklistMetadata.title = undefined;
-                        tracklistMetadata.trackCount = undefined;
-                    }
-                });
             }
         };
     
@@ -479,33 +487,13 @@
         } else console.error("Tried observing the YTM header element for DOM mutations, but the element doesn't exist.");
     }
 
-    //TODO it would be possible to scrape the URL from the background script instead
-    //TODO it may also be possible to get some of this data (e.g. for playlists) from the metadata element instead of the URL, but that isn't necessarily easier/better
-    function scrapeUrl() {
-        //TODO move this into the function above so that we don't need to keep a global tracklist metadata
-            //That way, we don't have to worry about 'clearing' the values after storing and sending the object
-            //ALSO, that way I can remove the check for title === undefined way above, and instead...
-                //... only look for the title in metadata in the case of 'list=PL'
-        if (window.location.host === 'music.youtube.com') { //If the host matches YouTube Music...
-            //tracklistMetadata.app = supportedApps.youTubeMusic; //Make a record of the current app for future reference
-            //TODO is it really necessary to store current app in storage? Does any other file need to know which app is currently in use, other than this content script?
-                //I don't think so. Could just do a single window.location check when this script is initialized and record the app here once and that's it.
+    // function getTracklistTitleFromElement(element) {
 
-            //Make a record of the current tracklist type based on certain URL conditions
-            if (window.location.search.includes('list=PL')) {
-                tracklistMetadata.type = supportedTracklistTypes.playlist;
-            } else if (window.location.search.includes('list=LM')) {
-                tracklistMetadata.type = supportedTracklistTypes.autoPlaylist;
-                tracklistMetadata.title = 'Your Likes';
-            } else if (window.location.pathname === '/library/songs') {
-                tracklistMetadata.type = supportedTracklistTypes.allSongsList;
-                tracklistMetadata.title = 'Added from YouTube Music';
-            } else if (window.location.pathname === '/library/uploaded_songs') {
-                tracklistMetadata.type = supportedTracklistTypes.allSongsList;
-                tracklistMetadata.title = 'Uploaded Songs';
-            }
-        }
-    }
+    // }
+
+    // function getTrackCountFromElement(element) {
+
+    // }
 
     /**
      * Parse a track count string and returns an integer value
