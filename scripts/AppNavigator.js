@@ -477,11 +477,11 @@ function convertDurationStringToSeconds(duration) {
         const _splitDurationIntegers = duration.split(':').map(durationString => parseInt(durationString, 10));
 
         switch(_splitDurationIntegers.length) {
-            case 1:
+            case 1: //Track is less than a minute long
                 return _splitDurationIntegers[0];
-            case 2:
+            case 2: //Track is more than a minute but less than an hour long
                 return _splitDurationIntegers[0]*60 + _splitDurationIntegers[1];
-            case 3:
+            case 3: //Track is more than an hour but less than a day long
                 return _splitDurationIntegers[0]*3600 + _splitDurationIntegers[1]*60 + _splitDurationIntegers[2];
             default:
                 DebugController.logWarning("Tried to extract a seconds integer value from a duration string, but the duration is not in a supported format (e.g. the duration may be longer than 24 hours).");

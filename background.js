@@ -59,22 +59,51 @@ chrome.runtime.onInstalled.addListener(function(details) {
 //     //chrome.browserAction.setBadgeText({text: ""});
 // });
 
+// let ignoreHistoryChange = false;
+
+// chrome.webNavigation.onCommitted.addListener(details => {
+//     console.log("On Committed Fired");
+//     console.log(details.transitionType);
+//     console.log(details.transitionQualifiers);
+//     ignoreHistoryChange = true;
+// });
+
 //Note that this works because YouTube Music appears to use the History API to navigate between pages on the site
 chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
-    chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-        const _currentTabId = tabs[0].id;
-        if (details.url.includes('list=PL')) {
-            console.info("Background: Navigated to a YouTube Music page that is a valid playlist.");
-            chrome.scripting.executeScript({
-                target: {tabId: _currentTabId}, 
-                files: ['/Scripts/content-scripts/scrape-tracklist-metadata.js'],}
-            ); 
-        } else {
-            console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");
-            chrome.action.setIcon({path: _iconPaths.disabled/*, tabId:_currentTabId*/});
-            clearCachedTracklistMetadata();
-        }
-    });
+    // if (ignoreHistoryChange === true) {
+    //     ignoreHistoryChange = false;
+    //     console.log("On History Updated Fired but it will be IGNORED THIS TIME");
+    //     console.log(details.transitionType);
+    //     console.log(details.transitionQualifiers);
+    // } else {
+        // console.log("On History Updated Fired");
+        // console.log(details.transitionType);
+        // console.log(details.transitionQualifiers);
+
+        chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+            const _currentTabId = tabs[0].id;
+            if (details.url.includes('list=PL')) {
+                console.info("Background: Navigated to a YouTube Music page that is a valid playlist.");
+                // chrome.scripting.executeScript({
+                //     target: {tabId: _currentTabId}, 
+                //     files: ['/Scripts/content-scripts/scrape-tracklist-metadata.js'],}
+                // ); 
+
+                ////
+
+                // chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+                //     chrome.tabs.sendMessage(tabs[0].id, {greeting: 'TestMessage'}, message => {
+                //         console.log("Background: Received message back from content script after test message was sent. Response: " + message.response);
+                //     });
+                // });
+
+            } else {
+                console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");
+                chrome.action.setIcon({path: _iconPaths.disabled/*, tabId:_currentTabId*/});
+                clearCachedTracklistMetadata();
+            }
+        });
+    //}
 }, 
 {url: [{hostEquals : 'music.youtube.com'/*, pathEquals: '/playlist'*/}]}
 );

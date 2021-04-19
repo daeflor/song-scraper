@@ -2,6 +2,29 @@
 (function() {
     //let currentApp = null; //TODO maybe just pass this as a param after all
 
+    const supportedApps = Object.freeze({ 
+        youTubeMusic: 'ytm',
+        googlePlayMusic: 'gpm'
+    });
+    
+    //TODO This isn't being used as much as it could be
+    const supportedTracklistTypes = Object.freeze({
+        playlist: 'playlist',
+        autoPlaylist: 'auto',
+        genreList: 'genre',
+        allSongsList: 'all',
+        uploadsList: 'uploads'
+    });
+    
+    //TODO would it be better to store these as a single object?
+    //let app, type, title, trackCount = undefined;
+    const tracklistMetadata = {
+        app: undefined,
+        type: undefined,
+        title: undefined,
+        trackCount: undefined
+    };
+
     const elementsInDOM = {
         scrollContainer: {
             ytm: function() {return document.body;},
@@ -382,4 +405,94 @@
         //Wait a short amount of time to allow the page to scroll to the top of the tracklist, and then begin the scroll & scrape process
         setTimeout(_scrapeTrackMetadataFromNodeList, 1000);
     }
+
+    //
+
+    function observeHeaderElementMutations() {
+        const _elementToObserve = document.getElementById('header'); //Note: there are typically at least two elements with ID 'header' in YTM pages, but the one containing tracklist metadata seems to consistently be the first one in the DOM, so this is the easiest/fastest way to fetch it.
+    
+        //Set up the callback to execute whenever a mutation of the pre-specified type is observed (i.e. the observed element's childList is modified)
+        const _onMutationObserved = (mutationsList, observer) => {    
+            console.info("The header element's childList was modified. Looking for metadata:");
+            const _metadataElement = _elementToObserve.getElementsByClassName('metadata')[0];
+            console.log(_metadataElement);
+
+            if (typeof _metadataElement === 'object') {
+                scrapeUrl(); //Scrape various metadata from the URL, including the app, tracklist type, and possibly title. 
+
+                //If the title hasn't already been set, get the title element and use its text content as the title
+                if (typeof tracklistMetadata.title === 'undefined') { 
+                    const _titleElement = _metadataElement.getElementsByClassName('title')[0];
+                    if (typeof _titleElement === 'object') { //I
+                        tracklistMetadata.title = _titleElement.textContent;
+                    }
+                }
+
+                //Get the track count string element, then extract the track count and convert it to a number 
+                const _trackCountElement = _metadataElement.getElementsByClassName('second-subtitle')[0];
+                if (typeof _trackCountElement === 'object') {
+                    tracklistMetadata.trackCount = getTrackCountNumberFromString(_trackCountElement.textContent);
+                }
+
+                //TODO would it be better to store each piece of metadata individually instead of in a single object?
+                    //That way, if we want to just update partial data (e.g. app and type in background script) we can do that with just a set, without needing an initial get.            
+                chrome.storage.local.set ({currentTracklistMetadata: tracklistMetadata}, () => {
+                    if (chrome.runtime.lastError != null) {
+                        console.error("ERROR: " + chrome.runtime.lastError.message);
+                    } else {
+                        const _message = { greeting: 'TracklistMetadataUpdated', currentTracklistMetadata: tracklistMetadata };
+                        chrome.runtime.sendMessage(_message);
+
+                        //TODO there is likely a better way to accomplish this
+                        //Once the metadata has been stored and sent, clear it so that there is no cached data on future mutations
+                        //tracklistMetadata = {};
+                        tracklistMetadata.type = undefined;
+                        tracklistMetadata.title = undefined;
+                        tracklistMetadata.trackCount = undefined;
+                    }
+                });
+            }
+        };
+    
+        const _observer = new MutationObserver(_onMutationObserved); //Create a new mutation observer instance linked to the callback function defined above
+        const _observerConfig = {childList: true, subtree: false}; //Set up the configuration options for the Mutation Observer
+        _observer.observe(_elementToObserve, _observerConfig); //Start observing the specified element for configured mutations (i.e. for any changes to its childList)
+    }
+
+    //TODO it would be possible to scrape the URL from the background script instead
+    //TODO it may also be possible to get some of this data (e.g. for playlists) from the metadata element instead of the URL, but that isn't necessarily easier/better
+    function scrapeUrl() {
+        if (window.location.host === 'music.youtube.com') { //If the host matches YouTube Music...
+            tracklistMetadata.app = supportedApps.youTubeMusic; //Make a record of the current app for future reference
+
+            //Make a record of the current tracklist type based on certain URL conditions
+            if (window.location.search.includes('list=PL')) {
+                tracklistMetadata.type = supportedTracklistTypes.playlist;
+            } else if (window.location.search.includes('list=LM')) {
+                tracklistMetadata.type = supportedTracklistTypes.autoPlaylist;
+                tracklistMetadata.title = 'Your Likes';
+            } else if (window.location.pathname === '/library/songs') { //TODO the options below are currently not supported due to how the manifest is setup
+                tracklistMetadata.type = supportedTracklistTypes.allSongsList;
+                tracklistMetadata.title = 'Added from YouTube Music';
+            } else if (window.location.pathname === '/library/uploaded_songs') {
+                tracklistMetadata.type = supportedTracklistTypes.allSongsList;
+                tracklistMetadata.title = 'Uploaded Songs';
+            }
+        }
+    }
+
+    /**
+     * Parse a track count string and returns an integer value
+     * @param {string} trackCountString The string containing the track count information
+     * @returns {number} the track count as an integer
+     */
+    function getTrackCountNumberFromString(trackCountString) {
+        if (typeof trackCountString === 'string') {
+            trackCountString = trackCountString.split(" ")[0]; //Split off any trailing text after the actual number
+            trackCountString = trackCountString.replace(/,/g, ""); //Remove any commas from the string (e.g. for counts > 999)
+            return parseInt(trackCountString, 10); //Parse the string to get the track count value as an integer and return it
+        } else console.error("Tried to convert a track count string to a number, but the value provided was not a string.");
+    }
+
+    observeHeaderElementMutations(); //As soon as this content script has been loaded, begin observing for DOM mutations in the Header element
 })();
