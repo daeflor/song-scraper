@@ -33,6 +33,10 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
 
 //Button Pressed: Store Scraped Metadata
 ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
+    //TODO would be better to disable the Storenbutton here, as soon as it's pressed, instead of after the storage process has succeeded. Because for long tracklists that can take a while.
+        //...May help to have an intermediate state (e.g. StorageInProgress)
+        //Actually all of the UI changes done below could be done before the storage has complete, so just need to rename the transition and move the call outside of the storage callback
+
     //Store the scraped tracklist and then update the UI accordingly
     Model.storeScrapedTracklist(() => {
         UIController.triggerUITransition('ScrapedMetadataStored');
