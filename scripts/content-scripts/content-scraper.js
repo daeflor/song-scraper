@@ -216,34 +216,29 @@
      * @param {object} element The DOM element to scroll into view
      */
     function scrollToElement(element) {
-        if (typeof element === 'object')
+        if (typeof element === 'object') {
             element.scrollIntoView(true);
-        else
-            console.error('There is no valid element to scroll to');
+        }
+        else console.error('There is no valid element to scroll to');
     }
 
     /**
-     * Scrolls to the top of the current tracklist
-     * @param {string} app The current app being used (e.g. YouTube Music, Google Play Music, etc.)
+     * Scrolls to the top of the provided container element
+     * @param {object} container The container element to scroll to the top of
      */
-    function scrollToTopOfTracklist(app) {
-        //console.assert(typeof app == 'string', 'Parameter [app] should be a string');
-        //console.assert(typeof scrollContainer == 'object', 'Parameter [scrollContainer] should be an object');
-
-        //Get the scroll container element for the current app being used
-        const _container = elementsInDOM.scrollContainer[app]();
-
-        //If the current app is YouTube Music, trigger a scroll such that the scroll container is in view...
-        if (app == 'ytm') {
-            scrollToElement(_container);
-        }
-        //Else if the app is Google Play Music, modify the scrollTop property to scroll to the top of the scroll container
-        else if (app == 'gpm' && typeof _container === 'object') {
-            _container.scrollTop = 0;
-        }
-        else {
-            console.log("ERROR: Tried to scroll to the top of the tracklist, but the given inputs were invalid. app: " + app + ". scroll container: " + _container);
-        }
+    function scrollToTopOfContainer(container) {
+        if (typeof container === 'object') {
+            switch(currentApp) {
+                case supportedApps.youTubeMusic: 
+                    scrollToElement(container); //Trigger a scroll such that the scroll container is in view...
+                    break;
+                case supportedApps.googlePlayMusic: 
+                    container.scrollTop = 0; //Modify the scrollTop property to scroll to the top of the scroll container
+                    break;
+                default:
+                    console.error("Tried to scroll to the top of a container element but the current app was not recognized as valid.");
+            }
+        } else console.error("Tried to scroll to the top of a container element but element provided is invalid.");
     }
 
     /**
@@ -341,7 +336,7 @@
         allowManualScrolling(scrollContainer, false);
 
         //Scroll to the top of the tracklist, as an extra safety measure just to be certain that no tracks are missed in the scrape
-        scrollToTopOfTracklist(app);
+        scrollToTopOfContainer(scrollContainer); //Note: This step likely isn't necessary in YTM since it appears the track row elements never get removed from the DOM no matter how far down a list you scroll
 
         //Start observing the track row container element for configured mutations (i.e. for any changes to its childList)
         _observer.observe(_trackRowContainer, _observerConfig);
