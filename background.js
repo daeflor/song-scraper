@@ -60,9 +60,6 @@ const _iconPaths = {
 //     //chrome.browserAction.setBadgeText({text: ""});
 // });
 
-//TODO a problem with setting the icon based on the tracklist metadata is that the default 'disabled' icon gets overriden, even when you naviagate away to a different tab
-//...I don't think this was a problem before moving to mv3, but now the page action is shown and clickable for all tabs
-
 //Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
 chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
     console.log("Main web nav event fired");
@@ -123,20 +120,17 @@ chrome.runtime.onMessage.addListener(
 //TODO I could technically just put almost all this logic (except action API calls) in the content script, if that helps at all 
 function compareTrackCountsAndUpdateIcon(tracklistTitle, currentTrackCount) {
     getTrackCountFromGPMTracklistData(tracklistTitle, gpmTrackCount => {
+        //(currentTrackCount === gpmTrackCount) ? updateIcon(_iconPaths.default) : updateIcon(_iconPaths.exclamation);
 
-        (currentTrackCount === gpmTrackCount) ? updateIcon(_iconPaths.default) : updateIcon(_iconPaths.exclamation);
-
-        // if (currentTrackCount === gpmTrackCount) {
-        //     console.info("Background: The current track count (from the DOM) is the same as the stored track count.");
-        //     updateIcon(_iconPaths.default);
-        // } else {
-        //     console.info("Background: The current track count (from the DOM) is different from the stored track count.");
-        //     updateIcon(_iconPaths.exclamation);
-
-        //     chrome.action.setIcon({path: _iconPaths.exclamation});
-        //     //TODO if some of the setIcon calls use the tabId, then they all will need to
-        //         //Otherwise, these 'global' setIcon calls won't apply to the YTM tab because tab-specific settings take priority.
-        // }
+        if (currentTrackCount === gpmTrackCount) {
+            console.info("Background: The current track count (from the DOM) is the same as the stored track count.");
+            updateIcon(_iconPaths.default);
+        } else {
+            console.info("Background: The current track count (from the DOM) is different from the stored track count.");
+            updateIcon(_iconPaths.exclamation);
+            const _diff = currentTrackCount - gpmTrackCount;
+            //chrome.action.setBadgeText({text: _diff.toString()});
+        }
     });
 }
 
@@ -179,28 +173,3 @@ function clearCachedTracklistMetadata() {
             console.info("Background: Cleared cached tracklist metadata.");
     });
 }
-
-// //TODO This won't trigger on the initial load of YTM if the data previously stored hasn't changed at all
-//     //There are various way we could work around this:
-//         //1) basic-data-scraper could scrap any of the basic data in storage first, then store the latest data
-//         //2) when background.js loads, delete the sessionStorage kvp from storage
-//             //However, it will still be a problem with the following flow: valid tracklist -> invalid YTM page -> back to same tracklist
-//                 //May have to use message passing after all, and have basic-data-scraper also do a comparison between latest data and storage
-//                 //Could also have background reset/re-store session storage on every history change
-// chrome.storage.onChanged.addListener((changes, namespace) => {
-//     for (var key in changes) {
-
-//         if (key === 'songScraperSessionStorage') { //TODO should avoid this hard-coding
-//             console.log('Session storage was updated. New track title is "%s" and new track count is "%s".',
-//                 changes[key].newValue.tracklistTitle, changes[key].newValue.trackCount);
-//         }
-
-//     //   var storageChange = changes[key];
-//     //   console.log('Storage key "%s" in namespace "%s" changed. ' +
-//     //               'Old value was "%s", new value is "%s".',
-//     //               key,
-//     //               namespace,
-//     //               storageChange.oldValue,
-//     //               storageChange.newValue);
-//     }
-// });
