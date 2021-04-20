@@ -246,20 +246,6 @@
         }
     }
 
-    /*
-    function zoomOut(enabled) {
-        //TODO style.zoom is deprecated (but still works). Could switch to using style.transform = 'scale(.x,.x)', but this actually seems to work less well.
-        if (enabled == true) {
-            document.body.style.zoom= '.25';
-            //toggleScrolling(false);
-        }
-        else {
-            document.body.style.zoom= '1';
-            //toggleScrolling(true);
-        }
-    }
-    */
-
     /**
      * Sets whether or not the user should be able to scroll manually within the container element provided
      * @param {boolean} enabled Indicates whether or not manual scrolling should be allowed. Defaults to true, meaning the user can scroll manually.
