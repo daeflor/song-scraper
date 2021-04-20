@@ -86,6 +86,7 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
     else if (_validUrlSubstrings.some(_urlIncludesSubstring) === false) { //If the URL doesn't include any of the other valid tracklist substrings, clear the metadata cached in storage
         console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");
         updateIcon(_iconPaths.disabled, details.tabId);
+        updateBadgeText("", details.tabId);
         clearCachedTracklistMetadata();
     }
 }, {url: [{hostEquals : 'music.youtube.com'}]});
@@ -122,22 +123,23 @@ function compareTrackCountsAndUpdateIcon(tracklistTitle, currentTrackCount) {
     getTrackCountFromGPMTracklistData(tracklistTitle, gpmTrackCount => {
         //(currentTrackCount === gpmTrackCount) ? updateIcon(_iconPaths.default) : updateIcon(_iconPaths.exclamation);
 
-        if (currentTrackCount === gpmTrackCount) {
+        const _trackCountDelta = currentTrackCount - gpmTrackCount;
+        if (_trackCountDelta === 0) {
             console.info("Background: The current track count (from the DOM) is the same as the stored track count.");
             updateIcon(_iconPaths.default);
         } else {
             console.info("Background: The current track count (from the DOM) is different from the stored track count.");
             updateIcon(_iconPaths.exclamation);
-            const _diff = currentTrackCount - gpmTrackCount;
-            //chrome.action.setBadgeText({text: _diff.toString()});
+            const _badgeText = (_trackCountDelta > 0) ? "+" + _trackCountDelta.toString() : _trackCountDelta.toString();
+            updateBadgeText(_badgeText);
         }
     });
 }
 
 /**
- * Updates the extension using the image at the given path for the specified tab or the active tab, if none is specified
+ * Updates the extension icon using the image at the given path for the specified tab or the active tab, if none is specified
  * @param {string} path The path to the image file to use to update the icon
- * @param {number} [tabId] An optional ID to indicate the tab which should have its icon update. If none is specified, only the active tab has its icon updated.
+ * @param {number} [tabId] An optional ID to indicate the tab which should have its icon updated. If none is specified, only the active tab has its icon updated.
  */
 function updateIcon(path, tabId) {
     if (typeof tabId === 'number') {
@@ -145,6 +147,21 @@ function updateIcon(path, tabId) {
     } else {
         chrome.tabs.query( { active: true, currentWindow: true}, tabs => { 
             chrome.action.setIcon({path: path, tabId: tabs[0].id});
+        });
+    }
+}
+
+/**
+ * Updates the icon badge text with the given text for the specified tab or, if none is specified, the active tab 
+ * @param {string} text The text to display on the icon badge
+ * @param {number} [tabId] An optional ID to indicate the tab which should have its icon updated. If none is specified, only the active tab has its icon updated.
+ */
+function updateBadgeText(text, tabId) {
+    if (typeof tabId === 'number') {
+        chrome.action.setBadgeText({text: text, tabId:tabId});
+    } else {
+        chrome.tabs.query( { active: true, currentWindow: true}, tabs => { 
+            chrome.action.setBadgeText({text: text, tabId: tabs[0].id});
         });
     }
 }
