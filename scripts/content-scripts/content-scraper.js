@@ -64,7 +64,6 @@
     //TODO might rather have these (below) in an object with the other elements that need to be tracked (e.g track row container and scroll container)
     //...something like persistentElements {}
     let headerElement = undefined; 
-    let tracksContainer = undefined;
     let scrollContainer = undefined;
 
     /**
@@ -74,13 +73,7 @@
         if (window.location.host === 'music.youtube.com') {
             currentApp = supportedApps.youTubeMusic; //Record the current app being used for future reference
             headerElement = document.getElementById('header'); //Note: there are typically at least two elements with ID 'header' in YTM pages, but the one containing tracklist metadata seems to consistently be the first one in the DOM, so this is the easiest/fastest way to fetch it.
-            //TODO this isn't the tracks container...
-            //tracksContainer = document.body.getElementsByTagName('ytmusic-section-list-renderer');
-            scrollContainer = document.body;
-
-            //let firstTrack = document.querySelector("ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]");
-            //tracksContainer = firstTrack.parentElement;
-
+            scrollContainer = document.body; //Set the scroll container element as applicable, for future reference
             observeHeaderElementMutations(); //Begin observing the YTM Header element for DOM mutations
         } else console.error("Tried to initialize data in the content scraper script, but the host was not recognized.");        
     }
@@ -274,7 +267,7 @@
     function processMessage_GetTracklistMetadata(app, callback) {
 
         const firstTrack = document.querySelector("ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]");
-        const _trackRowContainer = firstTrack.parentElement; //TODO rename to _tracksContainer? meh
+        const _trackRowContainer = firstTrack.parentElement;
         let _scrapeStartingIndex = getIndexOfElement(firstTrack); //Get the index of the first track element at which to begin the scrape, since it isn't always necessarily the first element in the track row container (i.e. can't assume it's 0)
         const _scrapeEndingIndexModifier = 0 - _scrapeStartingIndex; //Variable to track the modifier to the index to end each scrape with, since the number of children in the track row container isn't necessarily equal to the number of tracks
         //const _trackRowContainer = elementsInDOM.trackRowContainer[app](); //Fetch the DOM element that contains all the track row elements
@@ -305,8 +298,6 @@
                 _scrapeStartingIndex = getIndexOfElement(_lastScrapedElement) + 1 ;
             }
             
-            //TODO the reason we can't use _scrapeStartingIndex here (at least without some modification) is that...
-                //...the starting index changes throughout a long scrape.
             //For each new track row loaded in the DOM...
             for (let i = _scrapeStartingIndex; i < (_trackRowContainer.childElementCount + _scrapeEndingIndexModifier); i++) {
                 //Scrape the track metadata from the track row and add it to the metadata array
@@ -374,12 +365,6 @@
 
     function observeHeaderElementMutations() {
         //const _elementToObserve = document.getElementById('header'); //Note: there are typically at least two elements with ID 'header' in YTM pages, but the one containing tracklist metadata seems to consistently be the first one in the DOM, so this is the easiest/fastest way to fetch it.
-
-        //TODO the header element doesn't get modified when navigating between 'Library', 'Added from YTM', & 'Uploaded' pages...
-            //background.js will need a history check to set the icon accordingly in these cases
-            //And will probably have to set the tracklist type (and title maybe) itself too...
-            //Either that, or I come up with a new approach to detect changes, but the All Songs lists use different elements than playlists,...
-            //...so mutation observer may not be an option for that.
 
         //Set up the callback to execute whenever a mutation of the pre-specified type is observed (i.e. the observed element's childList is modified)
         const _onMutationObserved = (mutationsList, observer) => {    
