@@ -275,7 +275,7 @@
         let _lastScrapedElement = null; //Variable to track the last track row element from the most recent scrape
         let _scrollingTimeoutID = undefined; //Variable tracking the timeout to end the scroll & scrape process, in case no changes to the track row container element are observed for a while
         let _scrapeStartingIndex = (app === 'gpm') ? 1 : 0; //Variable to track the row index to begin each scrape with. Starts at 1 for GPM, 0 for other sites. 
-        const _scrapeEndingIndexModifier = (app == 'gpm') ? -1 : 0; //Variable to track the modifier to the index to end each scrape with. Typically 0, but -1 for GPM due to how the DOM is laid out.
+        //const _scrapeEndingIndexModifier = (app == 'gpm') ? -1 : 0; //Variable to track the modifier to the index to end each scrape with. Typically 0, but -1 for GPM due to how the DOM is laid out.
         
         //Set up the callback function to execute once the scraped has either been successfully completed or timed out
         const _endScrape = function() {  
@@ -295,7 +295,7 @@
             }
             
             //For each new track row loaded in the DOM...
-            for (let i = _scrapeStartingIndex; i < (_trackRowContainer.childElementCount + _scrapeEndingIndexModifier); i++) {
+            for (let i = _scrapeStartingIndex; i < (_trackRowContainer.childElementCount - _scrapeStartingIndex); i++) {
                 //Scrape the track metadata from the track row and add it to the metadata array
                 _trackMetadataArray.push(new TrackMetadata(app, _trackRowContainer.children[i])); 
             }
