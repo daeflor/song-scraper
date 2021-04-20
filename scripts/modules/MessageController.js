@@ -25,7 +25,7 @@ function sendMessageToContentScripts(message, callback) {
  * @param {string} messageGreeting The greeting string used to identify the message
  */
 function sendMessage(messageGreeting) {
-    const _message = {greeting:messageGreeting, app:Model.tab.app}; //Create the message object to pass to the content script
+    const _message = {greeting:messageGreeting}; //Create the message object to pass to the content script
     sendMessageToContentScripts(_message, handleMessageResponse); //Send the message
 }
 
