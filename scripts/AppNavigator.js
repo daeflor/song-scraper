@@ -67,6 +67,9 @@ function init() {
         chrome.storage.local.get(_storagekey, storageResult => { //Get the cached metadata for the current tracklist from local storage
             const _tracklistMetadata = storageResult[_storagekey];
 
+            //TODO because all we're checking for now is that the metadata has been set...
+            //...AND because for some reason declarative content rules aren't working correctly now and the app can be opened on any tab...
+            //...it's possible to open the extension on another tab and it shows the data/info for the YouTube Music tab, instead of not opening at all or showing an error message
             if (typeof _tracklistMetadata.type === 'string') { //If the tracklist type has been set correctly, update it in the Model
                 Model.tracklist.type = _tracklistMetadata.type;
             } else {

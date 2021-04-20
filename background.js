@@ -9,7 +9,7 @@ const _iconPaths = {
     disabled: 'Images/icon_disabled.png',
 };
 
-//TODO this won't work for the 'All Songs' lists, which is fine for now because they aren't supported yet anyway
+//TODO this won't work for the 'All Songs' lists
 const _conditionsForValidTracklistPage = [
     new chrome.declarativeContent.PageStateMatcher({
         pageUrl: { 
@@ -58,6 +58,9 @@ chrome.runtime.onInstalled.addListener(function(details) {
 //     console.log("Unloading.");
 //     //chrome.browserAction.setBadgeText({text: ""});
 // });
+
+//TODO a problem with setting the icon based on the tracklist metadata is that the default 'disabled' icon gets overriden, even when you naviagate away to a different tab
+//...I don't think this was a problem before moving to mv3, but now the page action is shown and clickable for all tabs
 
 //Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
 chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
