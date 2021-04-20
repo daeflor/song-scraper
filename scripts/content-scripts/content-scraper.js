@@ -252,6 +252,16 @@
         } else console.error('Tried to toggle scrolling but the specified container element does not exist.');
     }
 
+    /**
+     * Gets the index of the provided element within it's parent element's list of children
+     * @param {object} element The element for which to get an index
+     * @returns {number} The index of the position of the given element within it's parent's list of children
+     */
+    function getIndexOfElement(element) {
+        //Note: 'Array.prototype.indexOf.call' is used here because an element's children property returns an HTMLCollection, not an Array, and so it doesn't have the 'indexOf' function, but is set up similarly enough that calling it works
+        return Array.prototype.indexOf.call(element.parentElement.children, element);
+    }
+
     //TODO maybe take the bulk of the logic outside of the processMessage function, for better readability?
 
     //TODO NEW - Some of this logic (and the TrackMetadata constructor) could be handled in a logic script instead of in the content script
@@ -265,17 +275,19 @@
 
         const firstTrack = document.querySelector("ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]");
         const _trackRowContainer = firstTrack.parentElement; //TODO rename to _tracksContainer? meh
-
-
+        let _scrapeStartingIndex = getIndexOfElement(firstTrack); //Get the index of the first track element at which to begin the scrape, since it isn't always necessarily the first element in the track row container (i.e. can't assume it's 0)
+        const _scrapeEndingIndexModifier = 0 - _scrapeStartingIndex; //Variable to track the modifier to the index to end each scrape with, since the number of children in the track row container isn't necessarily equal to the number of tracks
         //const _trackRowContainer = elementsInDOM.trackRowContainer[app](); //Fetch the DOM element that contains all the track row elements
+        
+        //TODO a problem is that this returns an error even in cases where we expect there not to be a track count...
+            //...maybe don't try to get a track count unless we know to expect one. Could check type from tracklist metadata.
+            //...or don't log an error if it fails...
         const _expectedTrackCount = getMetadatum(metadataNames.trackCount); //Fetch the official track count of the tracklist, if one exists
         const _observerConfig = {childList: true}; //Set up the configuration options for the Mutation Observer
 
         let _trackMetadataArray = []; //Create an array to store the metadata for each scraped track in the tracklist
-        let _lastScrapedElement = null; //Variable to track the last track row element from the most recent scrape
+        let _lastScrapedElement = undefined; //Variable to track the last track row element from the most recent scrape
         let _scrollingTimeoutID = undefined; //Variable tracking the timeout to end the scroll & scrape process, in case no changes to the track row container element are observed for a while
-        let _scrapeStartingIndex = (app === 'gpm') ? 1 : 0; //Variable to track the row index to begin each scrape with. Starts at 1 for GPM, 0 for other sites. 
-        //const _scrapeEndingIndexModifier = (app == 'gpm') ? -1 : 0; //Variable to track the modifier to the index to end each scrape with. Typically 0, but -1 for GPM due to how the DOM is laid out.
         
         //Set up the callback function to execute once the scraped has either been successfully completed or timed out
         const _endScrape = function() {  
@@ -288,14 +300,15 @@
             clearTimeout(_scrollingTimeoutID); //Clear the scrolling timeout. It will be reset if the scrape isn't complete after the upcoming scrape
 
             //If a previous scrape has been completed, set the starting index for the next scrape accordingly
-            if (_lastScrapedElement != null) {
-                //'Array.prototype.indexOf.call' is used here because '_trackRowContainer.children' is a NodeList, not an Array, and so it doesn't have the 'indexOf' function, but is set up similarly enough that calling it works
+            if (typeof _lastScrapedElement === 'object') {
                 //The starting index for the next scrape should be one greater than the index of the last child element from the previous scrape
-                _scrapeStartingIndex = Array.prototype.indexOf.call(_trackRowContainer.children, _lastScrapedElement) + 1 ;
+                _scrapeStartingIndex = getIndexOfElement(_lastScrapedElement) + 1 ;
             }
             
+            //TODO the reason we can't use _scrapeStartingIndex here (at least without some modification) is that...
+                //...the starting index changes throughout a long scrape.
             //For each new track row loaded in the DOM...
-            for (let i = _scrapeStartingIndex; i < (_trackRowContainer.childElementCount - _scrapeStartingIndex); i++) {
+            for (let i = _scrapeStartingIndex; i < (_trackRowContainer.childElementCount + _scrapeEndingIndexModifier); i++) {
                 //Scrape the track metadata from the track row and add it to the metadata array
                 _trackMetadataArray.push(new TrackMetadata(app, _trackRowContainer.children[i])); 
             }
