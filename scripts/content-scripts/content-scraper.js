@@ -16,6 +16,7 @@
         uploadsList: 'uploads'
     });
 
+    //TODO I don't really like this... at some point it just makes it less readable
     const metadataNames = Object.freeze({
         title: 'tracklistTitle',
         trackCount: 'trackCount'
@@ -61,6 +62,7 @@
 
     let currentApp = undefined;
     //TODO might rather have these (below) in an object with the other elements that need to be tracked (e.g track row container and scroll container)
+    //...something like persistentElements {}
     let headerElement = undefined; 
     let tracksContainer = undefined;
     let scrollContainer = undefined;
@@ -259,25 +261,14 @@
     */
 
     /**
-     * Sets whether or not the user should be able to scroll manually in the page
+     * Sets whether or not the user should be able to scroll manually within the container element provided
      * @param {boolean} enabled Indicates whether or not manual scrolling should be allowed. Defaults to true, meaning the user can scroll manually.
      */
-    function allowManualScrolling(app, enabled=true) {
-        const _container = elementsInDOM.scrollContainer[app]();
-
-        //If a valid container element was found...
-        if (_container != null) {
-            //If manual scrolling should be enabled (which is the default), set to 'auto', otherwise set to 'hidden'
-            if (enabled == true) {
-                _container.style.overflowY = 'auto';
-            }
-            else {
-                _container.style.overflowY = 'hidden';
-            }
-        }
-        else {
-            console.log('Error: The scroll container for the page could not be found.');
-        }
+    function allowManualScrolling(container, enabled=true) {
+        if (typeof container === 'object') { //If a valid container element was provided...
+            //If manual scrolling should be enabled (which is the default), set overflowY to 'auto', otherwise set to 'hidden'
+            container.style.overflowY = (enabled === true) ? 'auto' : 'hidden';
+        } else console.error('Tried to toggle scrolling but the specified container element does not exist.');
     }
 
     //TODO maybe take the bulk of the logic outside of the processMessage function, for better readability?
@@ -290,7 +281,12 @@
      * @param {function} callback The function to execute once the scrape process has ended, either due to successful completion or timeout. Expects an object with a 'tracklist' key as a parameter
      */
     function processMessage_GetTracklistMetadata(app, callback) {
-        const _trackRowContainer = elementsInDOM.trackRowContainer[app](); //Fetch the DOM element that contains all the track row elements
+
+        const firstTrack = document.querySelector("ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]");
+        const _trackRowContainer = firstTrack.parentElement; //TODO rename to _tracksContainer? meh
+
+
+        //const _trackRowContainer = elementsInDOM.trackRowContainer[app](); //Fetch the DOM element that contains all the track row elements
         const _expectedTrackCount = getMetadatum(metadataNames.trackCount); //Fetch the official track count of the tracklist, if one exists
         const _observerConfig = {childList: true}; //Set up the configuration options for the Mutation Observer
 
@@ -302,7 +298,7 @@
         
         //Set up the callback function to execute once the scraped has either been successfully completed or timed out
         const _endScrape = function() {  
-            allowManualScrolling(app, true); //Allow the user to scroll manually again
+            allowManualScrolling(scrollContainer, true); //Allow the user to scroll manually again
             _observer.disconnect(); //Disconnect the mutation observer
             callback(_trackMetadataArray); //Execute the callback function, passing the tracks array as a parameter
         }
@@ -356,7 +352,7 @@
         const _observer = new MutationObserver(_onTrackRowContainerChildListModified);
 
         //Temporarily disable manual scrolling to avoid any interference from the user during the scrape process
-        allowManualScrolling(app, false);
+        allowManualScrolling(scrollContainer, false);
 
         //Scroll to the top of the tracklist, as an extra safety measure just to be certain that no tracks are missed in the scrape
         scrollToTopOfTracklist(app);
@@ -403,26 +399,15 @@
                     trackCount: undefined
                 };
 
-                //TODO it would be possible to scrape the URL from the background script instead
-                //TODO it may also be possible to get some of this data (e.g. for playlists) from the metadata element instead of the URL, but that isn't necessarily easier/better
-                //Scrape and record the current tracklist metadata based on specific URL conditions and/or the metadata element
-                /*if (window.location.pathname === '/library/songs') {
-                    _tracklistMetadata.type = supportedTracklistTypes.allSongsList;
-                    _tracklistMetadata.title = 'Added from YouTube Music';
-                } else if (window.location.pathname === '/library/uploaded_songs') {
-                    _tracklistMetadata.type = supportedTracklistTypes.uploadsList;
-                    _tracklistMetadata.title = 'Uploaded Songs';
-                } else*/ if (window.location.search.startsWith('?list=LM')) {
+                //Scrape and record the current tracklist metadata based on specific URL conditions and the metadata element
+                if (window.location.search.startsWith('?list=LM')) {
                     _tracklistMetadata.type = supportedTracklistTypes.autoPlaylist;
                     _tracklistMetadata.title = 'Your Likes';
                     _tracklistMetadata.trackCount = getMetadatum(metadataNames.trackCount);
-                    //_tracklistMetadata.trackCount = getTrackCountFromElement(headerElement.getElementsByClassName('second-subtitle')[0]);
                 } else if (window.location.search.startsWith('?list=PL')) {
                     _tracklistMetadata.type = supportedTracklistTypes.playlist;
                     _tracklistMetadata.title = getMetadatum(metadataNames.title);
                     _tracklistMetadata.trackCount = getMetadatum(metadataNames.trackCount); 
-                    //_tracklistMetadata.title = getTracklistTitleFromElement(headerElement.getElementsByClassName('title')[0]);
-                    //_tracklistMetadata.trackCount = getTrackCountFromElement(headerElement.getElementsByClassName('second-subtitle')[0]);
                 }
 
                 if (typeof _tracklistMetadata.type === 'string') { //If a valid tracklist type was set (i.e. the current page is a valid tracklist)...
