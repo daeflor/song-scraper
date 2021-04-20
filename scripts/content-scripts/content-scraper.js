@@ -72,8 +72,13 @@
         if (window.location.host === 'music.youtube.com') {
             currentApp = supportedApps.youTubeMusic; //Record the current app being used for future reference
             headerElement = document.getElementById('header'); //Note: there are typically at least two elements with ID 'header' in YTM pages, but the one containing tracklist metadata seems to consistently be the first one in the DOM, so this is the easiest/fastest way to fetch it.
-            tracksContainer = document.body.getElementsByTagName('ytmusic-section-list-renderer');
+            //TODO this isn't the tracks container...
+            //tracksContainer = document.body.getElementsByTagName('ytmusic-section-list-renderer');
             scrollContainer = document.body;
+
+            //let firstTrack = document.querySelector("ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]");
+            //tracksContainer = firstTrack.parentElement;
+
             observeHeaderElementMutations(); //Begin observing the YTM Header element for DOM mutations
         } else console.error("Tried to initialize data in the content scraper script, but the host was not recognized.");        
     }
@@ -203,46 +208,6 @@
     //         sendResponse(message);
     //     }
     // });
-    //TODO could check if YouTube API reports correct track count value for "Your Likes"
-        //Could even consider ONLY using the API to get track counts, though it does seem like a lot of extra work that shouldn't be necessary
-    function getPlaylistTrackCount(app) {
-        let _trackCountElement = null;
-
-        //TODO this logic is overly convoluted
-            //Maybe instead, determine the 'tracklist type' once and store it in local storage for future reference across any scripts (extension, content, background, etc.)
-        //If the url matches those of standard playlists for the current app, use the corresponding track count element
-        if (window.location[urlProperties[app].urlPart].includes(urlProperties[app].playlistUrlCondition) == true) {
-            _trackCountElement = elementsInDOM.playlistTrackCount[app]();
-        }
-        //Else, if the url matches the 'Your Likes' list for the current app, use the corresponding track count element
-        else if (window.location[urlProperties[app].urlPart].includes(urlProperties[app].yourLikesUrlCondition) == true) {
-            _trackCountElement = elementsInDOM.yourLikesTrackCount[app]();
-        }
-
-
-        // //If the url parameters exactly match those of the "Your Likes" list, use the corresponding track count element
-        // if (window.location.search == urlParts.yourLikesUrlParameters[currentApp]) {
-        //     _trackCountElement = elementsInDOM.yourLikesTrackCount[currentApp]();
-        // }
-        // //Else, if the url parameters match those for standard playists, use the corresponding track count element
-        // else if (window.location.search.includes(urlParts.playlistUrlParameters[currentApp])) {
-        //     _trackCountElement = elementsInDOM.playlistTrackCount[currentApp]();
-        // }
-
-        if (_trackCountElement != null) {
-            //Get the track count string from the DOM element and split off the trailing text after the actual number
-            const _trackCountString = _trackCountElement.textContent.split(" ")[0];
-
-            //Remove any commas from the track count string (e.g. for counts > 999), and then get the count value as an integer
-            const _trackCountValue = parseInt(_trackCountString.replace(/,/g, ""));
-            
-            console.info('Current playlist\'s track count is %s.', _trackCountValue);
-            return _trackCountValue;
-        }
-        else {
-            console.error('Could not find the Track Count DOM element.');
-        }
-    }
 
     /**
      * Scrolls the page such that the given element is in view
@@ -326,13 +291,13 @@
      */
     function processMessage_GetTracklistMetadata(app, callback) {
         const _trackRowContainer = elementsInDOM.trackRowContainer[app](); //Fetch the DOM element that contains all the track row elements
-        const _expectedTrackCount = getPlaylistTrackCount(app); //Fetch the official track count of the tracklist, if one exists
+        const _expectedTrackCount = getMetadatum(metadataNames.trackCount); //Fetch the official track count of the tracklist, if one exists
         const _observerConfig = {childList: true}; //Set up the configuration options for the Mutation Observer
 
         let _trackMetadataArray = []; //Create an array to store the metadata for each scraped track in the tracklist
         let _lastScrapedElement = null; //Variable to track the last track row element from the most recent scrape
         let _scrollingTimeoutID = undefined; //Variable tracking the timeout to end the scroll & scrape process, in case no changes to the track row container element are observed for a while
-        let _scrapeStartingIndex = (app == 'gpm') ? 1 : 0; //Variable to track the row index to begin each scrape with. Starts at 1 for GPM, 0 for other sites. 
+        let _scrapeStartingIndex = (app === 'gpm') ? 1 : 0; //Variable to track the row index to begin each scrape with. Starts at 1 for GPM, 0 for other sites. 
         const _scrapeEndingIndexModifier = (app == 'gpm') ? -1 : 0; //Variable to track the modifier to the index to end each scrape with. Typically 0, but -1 for GPM due to how the DOM is laid out.
         
         //Set up the callback function to execute once the scraped has either been successfully completed or timed out
@@ -420,6 +385,12 @@
     function observeHeaderElementMutations() {
         //const _elementToObserve = document.getElementById('header'); //Note: there are typically at least two elements with ID 'header' in YTM pages, but the one containing tracklist metadata seems to consistently be the first one in the DOM, so this is the easiest/fastest way to fetch it.
 
+        //TODO the header element doesn't get modified when navigating between 'Library', 'Added from YTM', & 'Uploaded' pages...
+            //background.js will need a history check to set the icon accordingly in these cases
+            //And will probably have to set the tracklist type (and title maybe) itself too...
+            //Either that, or I come up with a new approach to detect changes, but the All Songs lists use different elements than playlists,...
+            //...so mutation observer may not be an option for that.
+
         //Set up the callback to execute whenever a mutation of the pre-specified type is observed (i.e. the observed element's childList is modified)
         const _onMutationObserved = (mutationsList, observer) => {    
             console.info("The header element's childList was modified. Looking for metadata.");
@@ -435,13 +406,13 @@
                 //TODO it would be possible to scrape the URL from the background script instead
                 //TODO it may also be possible to get some of this data (e.g. for playlists) from the metadata element instead of the URL, but that isn't necessarily easier/better
                 //Scrape and record the current tracklist metadata based on specific URL conditions and/or the metadata element
-                if (window.location.pathname === '/library/songs') {
+                /*if (window.location.pathname === '/library/songs') {
                     _tracklistMetadata.type = supportedTracklistTypes.allSongsList;
                     _tracklistMetadata.title = 'Added from YouTube Music';
                 } else if (window.location.pathname === '/library/uploaded_songs') {
-                    _tracklistMetadata.type = supportedTracklistTypes.allSongsList;
+                    _tracklistMetadata.type = supportedTracklistTypes.uploadsList;
                     _tracklistMetadata.title = 'Uploaded Songs';
-                } else if (window.location.search.startsWith('?list=LM')) {
+                } else*/ if (window.location.search.startsWith('?list=LM')) {
                     _tracklistMetadata.type = supportedTracklistTypes.autoPlaylist;
                     _tracklistMetadata.title = 'Your Likes';
                     _tracklistMetadata.trackCount = getMetadatum(metadataNames.trackCount);
@@ -514,6 +485,12 @@
     //     }
     // }
 
+    // function getTracklistTitle() {
+    //     if (currentApp === supportedApps.youTubeMusic) {
+    //         return getTracklistTitleFromElement(headerElement.getElementsByClassName('title')[0]);
+    //     } else console.error("Tried to get the tracklist title element, but the current app isn't valid.");
+    // }
+
     /**
      * Extracts and returns the tracklist title string from the title element
      * @param {object} element The DOM element containing the tracklist title
@@ -526,11 +503,13 @@
     }
 
     // function getTrackCount() {
-    //     if (currentApp === supportedApps.youTubeMusic && typeof headerElement === 'object') {
+    //     if (currentApp === supportedApps.youTubeMusic) {
     //         return getTrackCountFromElement(headerElement.getElementsByClassName('second-subtitle')[0]);
-    //     } else console.error("Tried to get the track count element, but the app or header element are not valid.");
+    //     } else console.error("Tried to get the track count element, but the current app isn't valid.");
     // }
 
+    //TODO could check if YouTube API reports correct track count value for "Your Likes"
+        //Could even consider ONLY using the API to get track counts, though it does seem like a lot of extra work that shouldn't be necessary
     /**
      * Extracts the track count string from the track count element and then returns the track count number
      * @param {object} element The DOM element containing the track count string

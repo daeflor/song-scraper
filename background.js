@@ -61,14 +61,46 @@ chrome.runtime.onInstalled.addListener(function(details) {
 
 //Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
 chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
+    console.log("Main web nav event fired");
+    
     //Set up an array of substrings that can be found in valid YTM tracklist URLs
-    const _validUrlSubstrings = ['list=PL', 'list=LM', '/library/songs', '/library/uploaded_songs'];
+    const _validUrlSubstrings = ['list=PL', 'list=LM'/*, '/library/songs', '/library/uploaded_songs'*/];
     
     //Function returns true iff the provided substring parameter is included in the current page's URL string.
     const _urlIncludesSubstring = (substring) => details.url.includes(substring);
     
-    //If the page's URL contains any of the valid tracklist substrings, set the disabled icon and clear the cached metadata
-    if (_validUrlSubstrings.some(_urlIncludesSubstring) === false) {
+    // //If the page's URL contains any of the valid tracklist substrings, set the disabled icon and clear the cached metadata
+    // if (_validUrlSubstrings.some(_urlIncludesSubstring) === false) {
+    //     console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");
+    //     chrome.action.setIcon({path: _iconPaths.disabled});
+    //     clearCachedTracklistMetadata();
+    // }
+
+
+    // const _tracklistMetadata = {
+    //     type: undefined,
+    //     title: undefined
+    // };
+
+    if (details.url.includes('/library/songs') === true) {
+        //_tracklistMetadata.type = supportedTracklistTypes.allSongsList;
+        //_tracklistMetadata.title = 'Added from YouTube Music';
+        cacheTracklistMetadata('all', 'Added from YouTube Music');
+        //TODO decide what icon should be shown here. Perhaps just default.
+        chrome.action.setIcon({path: _iconPaths.exclamation});
+    } else if (details.url.includes('/library/uploaded_songs') === true) {
+        //_tracklistMetadata.type = supportedTracklistTypes.uploadsList;
+        //_tracklistMetadata.title = 'Uploaded Songs';
+        cacheTracklistMetadata('uploads', 'Uploaded Songs');
+        //TODO decide what icon should be shown here. Perhaps just default.
+        chrome.action.setIcon({path: _iconPaths.exclamation});
+    } /*else if (details.url.includes('list=LM') === true) {
+        _tracklistMetadata.type = supportedTracklistTypes.autoPlaylist;
+        _tracklistMetadata.title = 'Your Likes';
+    }*/ //TODO Since the track count reported in the YTM UI for the 'Your Likes' list seems to be way off...
+        //...it may be acceptable to just not bother getting the track count to update the icon...
+        //...since it's likely to be incorrect anyway. Instead, we could just always display the regular icon, or a special one.
+    else if (_validUrlSubstrings.some(_urlIncludesSubstring) === false) {
         console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");
         chrome.action.setIcon({path: _iconPaths.disabled});
         clearCachedTracklistMetadata();
@@ -79,25 +111,56 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
 {url: [{hostEquals : 'music.youtube.com'/*, pathEquals: '/playlist'*/}]}
 );
 
+function cacheTracklistMetadata(tracklistType, tracklistTitle) {
+    const _tracklistMetadata = {
+        type: tracklistType,
+        title: tracklistTitle //TODO it may turn out that there's no point in storing the title at this point
+    };
+    chrome.storage.local.set ({currentTracklistMetadata: _tracklistMetadata}, () => { //Cache the metadata in local storage
+        if (typeof chrome.runtime.error !== 'undefined') {
+            console.error("Error encountered while attempting to store metadata in local storage: " + chrome.runtime.lastError.message);
+        }
+    });
+}
+
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (request.greeting === 'TracklistMetadataUpdated') {
             console.log('The current tracklist metadata was updated. New track title is "%s" and new track count is "%s".',
                 request.currentTracklistMetadata.title, request.currentTracklistMetadata.trackCount);
 
-            //TODO I could technically just put almost all this logic (except action API calls) in the content script, if that helps at all 
-            getTrackCountFromGPMTracklistData(request.currentTracklistMetadata.title, gpmTrackCount => {
-                if (request.currentTracklistMetadata.trackCount === gpmTrackCount) {
-                    console.log("Background: The current track count (from the DOM) is the same as the stored track count.");
-                    chrome.action.setIcon({path: _iconPaths.default});
-                } else {
-                    console.log("Background: The current track count (from the DOM) is different from the stored track count.");
-                    chrome.action.setIcon({path: _iconPaths.exclamation});
-                }
-            });
+            compareTrackCountsAndUpdateIcon(request.currentTracklistMetadata.title, request.currentTracklistMetadata.trackCount);
+            // //TODO I could technically just put almost all this logic (except action API calls) in the content script, if that helps at all 
+            // getTrackCountFromGPMTracklistData(request.currentTracklistMetadata.title, gpmTrackCount => {
+            //     if (request.currentTracklistMetadata.trackCount === gpmTrackCount) {
+            //         console.log("Background: The current track count (from the DOM) is the same as the stored track count.");
+            //         chrome.action.setIcon({path: _iconPaths.default});
+            //     } else {
+            //         console.log("Background: The current track count (from the DOM) is different from the stored track count.");
+            //         chrome.action.setIcon({path: _iconPaths.exclamation});
+            //     }
+            // });
         }
     }
 );
+
+/**
+ * Compares the current and stored track counts for the current tracklist, and then updates the extension icon accordingly
+ * @param {string} tracklistTitle The title of the tracklist, used to fetch the track count from storage
+ * @param {number} currentTrackCount The tracklist's current track count
+ */
+//TODO I could technically just put almost all this logic (except action API calls) in the content script, if that helps at all 
+function compareTrackCountsAndUpdateIcon(tracklistTitle, currentTrackCount) {
+    getTrackCountFromGPMTracklistData(tracklistTitle, gpmTrackCount => {
+        if (currentTrackCount === gpmTrackCount) {
+            console.log("Background: The current track count (from the DOM) is the same as the stored track count.");
+            chrome.action.setIcon({path: _iconPaths.default});
+        } else {
+            console.log("Background: The current track count (from the DOM) is different from the stored track count.");
+            chrome.action.setIcon({path: _iconPaths.exclamation});
+        }
+    });
+}
 
 function getTrackCountFromGPMTracklistData(tracklistTitle, callback){
     const _storagekey = 'gpmLibraryData';
