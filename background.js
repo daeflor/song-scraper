@@ -9,7 +9,7 @@ const _iconPaths = {
     disabled: 'Images/icon_disabled.png',
 };
 
-//TODO this won't work for the 'All Songs' lists, which is fine for now because they aren't supported yet anyway
+//TODO this won't work for the 'All Songs' lists
 const _conditionsForValidTracklistPage = [
     new chrome.declarativeContent.PageStateMatcher({
         pageUrl: { 
@@ -27,6 +27,8 @@ const _conditionsForValidTracklistPage = [
     })
 ];
 
+//TODO it seems that the page action is being shown on all pages now for some reason.
+    //Could be related to the move to manifest V3. Needs investigation.
 //When the extenstion is installed or updated...
 chrome.runtime.onInstalled.addListener(function(details) {
     console.log("Background: Extension installed"); 
@@ -57,57 +59,101 @@ chrome.runtime.onInstalled.addListener(function(details) {
 //     //chrome.browserAction.setBadgeText({text: ""});
 // });
 
-//Note that this works because YouTube Music appears to use the History API to navigate between pages on the site
+//TODO a problem with setting the icon based on the tracklist metadata is that the default 'disabled' icon gets overriden, even when you naviagate away to a different tab
+//...I don't think this was a problem before moving to mv3, but now the page action is shown and clickable for all tabs
+
+//Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
 chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
-    chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-        const _currentTabId = tabs[0].id;
-        if (details.url.includes('list=PL')) {
-            console.info("Background: Navigated to a YouTube Music page that is a valid playlist.");
-            chrome.scripting.executeScript({
-                target: {tabId: _currentTabId}, 
-                files: ['/Scripts/Content/scrape-tracklist-metadata.js'],}
-            ); 
-        } else {
-            console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");
-            chrome.action.setIcon({path: _iconPaths.disabled/*, tabId:_currentTabId*/});
+    console.log("Main web nav event fired");
+    
+    //Set up an array of substrings that can be found in valid YTM tracklist URLs
+    const _validUrlSubstrings = ['list=PL', 'list=LM'/*, '/library/songs', '/library/uploaded_songs'*/];
+    
+    //Function returns true iff the provided substring parameter is included in the current page's URL string.
+    const _urlIncludesSubstring = (substring) => details.url.includes(substring);
+
+    //Update the tracklist metadata in the cache depending on the current URL
+    if (details.url.includes('/library/songs') === true) {
+        cacheTracklistMetadata('all', 'Added from YouTube Music');
+        chrome.action.setIcon({path: _iconPaths.exclamation}); //Note: since the track count isn't known prior to a complete scrape, the 'exclamation' icon is shown by default
+    } else if (details.url.includes('/library/uploaded_songs') === true) {
+        cacheTracklistMetadata('uploads', 'Uploaded Songs');
+        chrome.action.setIcon({path: _iconPaths.exclamation}); //Note: since the track count isn't known prior to a complete scrape, the 'exclamation' icon is shown by default
+    } /*else if (details.url.includes('list=LM') === true) {
+        cacheTracklistMetadata('auto', 'Your Likes');
+        chrome.action.setIcon({path: _iconPaths.exclamation});
+    }*/ //TODO Since the track count reported in the YTM UI for the 'Your Likes' list seems to be way off...
+        //...it may be acceptable to just not bother getting the track count to update the icon...
+        //...since it's likely to be incorrect anyway. Instead, we could just always display the regular icon, or a special one.
+    else if (_validUrlSubstrings.some(_urlIncludesSubstring) === false) { //If the URL doesn't include any of the other valid tracklist substrings, clear the metadata cached in storage
+        console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");
+        chrome.action.setIcon({path: _iconPaths.disabled});
+        clearCachedTracklistMetadata();
+    }
+}, {url: [{hostEquals : 'music.youtube.com'}]});
+
+function cacheTracklistMetadata(tracklistType, tracklistTitle) {
+    const _tracklistMetadata = {
+        type: tracklistType,
+        title: tracklistTitle //TODO it may turn out that there's no point in storing the title at this point (i.e. we may always want to fetch it when loading the popup just in case it has changed since the page first loaded - unlikely but possible)
+    };
+    chrome.storage.local.set ({currentTracklistMetadata: _tracklistMetadata}, () => { //Cache the metadata in local storage
+        if (typeof chrome.runtime.error !== 'undefined') {
+            console.error("Error encountered while attempting to store metadata in local storage: " + chrome.runtime.lastError.message);
         }
     });
-}, 
-{url: [{hostEquals : 'music.youtube.com'/*, pathEquals: '/playlist'*/}]}
-);
+}
 
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (request.greeting === 'TracklistMetadataUpdated') {
             console.log('The current tracklist metadata was updated. New track title is "%s" and new track count is "%s".',
                 request.currentTracklistMetadata.title, request.currentTracklistMetadata.trackCount);
-
-            getTrackCountFromGPMTracklistData(request.currentTracklistMetadata.title, gpmTrackCount => {
-                if (request.currentTracklistMetadata.trackCount === gpmTrackCount) {
-                    console.log("Background: The current track count (from the DOM) is the same as the stored track count.");
-                    console.log(_iconPaths);
-                    chrome.action.setIcon({path: _iconPaths.default});
-                } else {
-                    console.log("Background: The current track count (from the DOM) is different from the stored track count.");
-                    chrome.action.setIcon({path: _iconPaths.exclamation});
-                }
-            });
+            compareTrackCountsAndUpdateIcon(request.currentTracklistMetadata.title, request.currentTracklistMetadata.trackCount);
         }
     }
 );
+
+/**
+ * Compares the current and stored track counts for the current tracklist, and then updates the extension icon accordingly
+ * @param {string} tracklistTitle The title of the tracklist, used to fetch the track count from storage
+ * @param {number} currentTrackCount The tracklist's current track count
+ */
+//TODO I could technically just put almost all this logic (except action API calls) in the content script, if that helps at all 
+function compareTrackCountsAndUpdateIcon(tracklistTitle, currentTrackCount) {
+    getTrackCountFromGPMTracklistData(tracklistTitle, gpmTrackCount => {
+        if (currentTrackCount === gpmTrackCount) {
+            console.log("Background: The current track count (from the DOM) is the same as the stored track count.");
+            chrome.action.setIcon({path: _iconPaths.default});
+        } else {
+            console.log("Background: The current track count (from the DOM) is different from the stored track count.");
+            chrome.action.setIcon({path: _iconPaths.exclamation});
+        }
+    });
+}
 
 function getTrackCountFromGPMTracklistData(tracklistTitle, callback){
     const _storagekey = 'gpmLibraryData';
     chrome.storage.local.get(_storagekey, storageResult => {
         const _gpmLibraryData = storageResult[_storagekey];
-        //console.log(_gpmLibraryData);
-
         for (const tracklistKey in _gpmLibraryData) {
             if (tracklistKey.includes("'" + tracklistTitle + "'")) {
                 console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + _gpmLibraryData[tracklistKey].length);
                 callback(_gpmLibraryData[tracklistKey].length);
             }
         }
+    });
+}
+
+/**
+ * Clears the tracklist metadata which is cached in chrome local storage
+ */
+function clearCachedTracklistMetadata() {
+    chrome.storage.local.set ({currentTracklistMetadata: {}}, () => {
+        if (chrome.runtime.lastError != null) 
+            console.error("ERROR: " + chrome.runtime.lastError.message);
+        else
+            console.info("Background: Cleared cached tracklist metadata.");
     });
 }
 
