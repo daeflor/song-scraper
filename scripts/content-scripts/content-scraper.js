@@ -45,21 +45,6 @@
         }
     };
 
-    //TODO this seems duplicated with the tracklist.type in AppNavigator. They seem reduntant.
-    //TODO the urlPart could probably be omitted without issue
-    const urlProperties = {
-        ytm: {
-            urlPart: 'search',
-            playlistUrlCondition: '?list=PL',
-            yourLikesUrlCondition: '?list=LM'
-        },
-        gpm: {
-            urlPart: 'hash',
-            playlistUrlCondition: '#/pl/',
-            yourLikesUrlCondition: '#/ap/'
-        }
-    }
-
     let currentApp = undefined;
     //TODO might rather have these (below) in an object with the other elements that need to be tracked (e.g track row container and scroll container)
     //...something like persistentElements {}
@@ -77,32 +62,6 @@
             observeHeaderElementMutations(); //Begin observing the YTM Header element for DOM mutations
         } else console.error("Tried to initialize data in the content scraper script, but the host was not recognized.");        
     }
-
-    // const urlProperties = {
-    //     playlistUrlParameters: {
-    //         ytm: {
-    //             urlPart: 'search',
-    //             condition: '?list=PL'
-    //         }
-    //     },
-    //     yourLikesUrlParameters: {
-    //         ytm: {
-    //             urlPart: 'search',
-    //             condition: '?list=LM'
-    //         }
-    //     }
-    // }
-
-    // const urlParts = {
-    //     playlistUrlParameters: {
-    //         ytm: '?list=PL',
-    //         gpm: 'music/listen?u=0#/pl/'
-    //     },
-    //     yourLikesUrlParameters: { //TODO Maybe this should be renamed to autoPlaylistUrlParameters
-    //         ytm: '?list=LM',
-    //         gpm: 'music/listen?u=0#/ap/'
-    //     }
-    // }
 
     /**
      * Creates a track object that contains properties for each piece of metadata scraped from the DOM
@@ -129,86 +88,6 @@
                     console.info("Encountered an unplayable track with title: " + this.title);
                 }
             }
-        }
-    }
-      
-//TODO perhaps individual scrapeTrackMetadatum_XX functions
-
-    //TODO could/should probably just make this return an object
-    //TODO should think of a more concise or clearer way of doing this while supporting multiple apps
-    function TrackMetadata(app, trackRowElement) { //TODO maybe split this up into multiple TrackMetaData classes per app, and possibly move to a separate module?
-        if (app === 'ytm') {
-            const _trackTitleElement = trackRowElement.querySelector('div.title-column yt-formatted-string.title');
-            if (_trackTitleElement != null) {
-                this.title = _trackTitleElement.title;
-            }
-            else {
-                console.log("ERROR: Track title could not be retrieved from DOM.");
-            }
-
-            const _trackArtistElement = trackRowElement.querySelectorAll('div.secondary-flex-columns yt-formatted-string')[0];
-            if (_trackArtistElement != null) {
-                this.artist = _trackArtistElement.title;
-            }
-            else {
-                console.log("ERROR: Track artist could not be retrieved from DOM.");
-            }
-
-            const _trackAlbumElement = trackRowElement.querySelectorAll('div.secondary-flex-columns yt-formatted-string')[1];
-            if (_trackAlbumElement != null) {
-                this.album = _trackAlbumElement.title;
-            }
-            else {
-                console.log("ERROR: Track album could not be retrieved from DOM.");
-            }
-
-            //TODO for some reason this isn't working (the error message is printing), although it looks like it should work
-            const _trackDurationElement = trackRowElement.querySelector('div.fixed-columns yt-formatted-string');
-            if (_trackDurationElement != null) {
-                this.duration = _trackDurationElement.title;
-            }
-            else {
-                console.log("ERROR: Track duration could not be retrieved from DOM.");
-            }
-
-            //If the track row element has an unplayable flag, record the track as being unplayable
-            if (trackRowElement.attributes.unplayable_ != undefined) { //Note: <if (trackRowElement.unplayable_ == true)> should work but it doesn't for some reason
-                this.unplayable = true;
-                console.log("Found an unplayable track called: " + this.title);
-            }
-        }
-        else if (app === 'gpm') {
-            const _trackTitleElement = trackRowElement.querySelector('td[data-col="title"] span');
-            if (_trackTitleElement != null) {
-                this.title = _trackTitleElement.textContent;
-            }
-            else {
-                console.log("ERROR: Track title could not be retrieved from DOM.");
-            }
-
-            const _trackArtistElement = trackRowElement.querySelector('td[data-col="artist"] .text');
-            if (_trackArtistElement != null) {
-                this.artist = _trackArtistElement.textContent;
-            }
-            else {
-                console.log("ERROR: Track artist could not be retrieved from DOM.");
-            }
-
-            const _trackAlbumElement = trackRowElement.querySelector('td[data-col="album"] .text');
-            if (_trackAlbumElement != null) {
-                this.album = _trackAlbumElement.textContent;
-            }
-            else {
-                console.log("ERROR: Track album could not be retrieved from DOM.");
-            }
-
-            const _trackDurationElement = trackRowElement.querySelector('td[data-col="duration"]');
-            if (_trackDurationElement != null) {
-                this.duration = _trackDurationElement.textContent;
-            }
-            else {
-                console.log("ERROR: Track duration could not be retrieved from DOM.");
-            } 
         }
     }
 
