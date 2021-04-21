@@ -17,7 +17,7 @@
 	- The comparison can be wrong about which specific track was removed from a playlist. This happens when there were duplicates and only the earlier (lower index) of the two tracks was removed. 
 	- Getting playlist name currently doesn't work if there's a hyphen in the name 
 	- Border around track tables isn't perfect (when scrolling)
-	- Open the queue, change the playlist, run the comparison -> it gets stuck in an infinite loop (thinks there are more songs than there are)
+	- GPM: Open the queue, change the playlist, run the comparison -> it gets stuck in an infinite loop (thinks there are more songs than there are)
 	- When you press 'Back' it shows the 'Loading...' text flickering. (Might not need to show it at all).
 	- The music page does not always refresh after adding a song, so the displayed trackcount is less than the actual count. Popup returns an error so no user-facing harm.
 
@@ -30,6 +30,8 @@
 	- Overall cleanup
 	- Element/DOM validation
 	- Clean up CSS
+
+	- Would it be possible somehow to use an extension context menu to select multiple tracks and edit their info in Firestore (e.g. assign their genre)?
 	
 	Old:
 	- Could add support for and save lists for individual genres, for easier viewing/fixing
