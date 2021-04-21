@@ -104,6 +104,51 @@
     //     }
     // }
 
+    class Track {
+        constructor(app, trackContainerElement) {
+            if (app === supportedApps.youTubeMusic) {
+                const _trackTitleElement = trackContainerElement.querySelector('div.title-column yt-formatted-string.title');
+                if (_trackTitleElement != null) {
+                    this.title = _trackTitleElement.title;
+                }
+                else {
+                    console.log("ERROR: Track title could not be retrieved from DOM.");
+                }
+
+                const _trackArtistElement = trackContainerElement.querySelectorAll('div.secondary-flex-columns yt-formatted-string')[0];
+                if (_trackArtistElement != null) {
+                    this.artist = _trackArtistElement.title;
+                }
+                else {
+                    console.log("ERROR: Track artist could not be retrieved from DOM.");
+                }
+
+                const _trackAlbumElement = trackContainerElement.querySelectorAll('div.secondary-flex-columns yt-formatted-string')[1];
+                if (_trackAlbumElement != null) {
+                    this.album = _trackAlbumElement.title;
+                }
+                else {
+                    console.log("ERROR: Track album could not be retrieved from DOM.");
+                }
+
+                //TODO for some reason this isn't working (the error message is printing), although it looks like it should work
+                const _trackDurationElement = trackContainerElement.querySelector('div.fixed-columns yt-formatted-string');
+                if (_trackDurationElement != null) {
+                    this.duration = _trackDurationElement.title;
+                }
+                else {
+                    console.log("ERROR: Track duration could not be retrieved from DOM.");
+                }
+
+                //If the track row element has an unplayable flag, record the track as being unplayable
+                if (trackContainerElement.attributes.unplayable_ != undefined) { //Note: <if (trackRowElement.unplayable_ == true)> should work but it doesn't for some reason
+                    this.unplayable = true;
+                    console.log("Found an unplayable track called: " + this.title);
+                }
+            }
+        }
+      }
+      
 //TODO perhaps individual scrapeTrackMetadatum_XX functions
 
     //TODO could/should probably just make this return an object
@@ -278,6 +323,9 @@
         
         //TODO a problem is that this returns an error even in cases where we expect there not to be a track count...
             //...maybe don't try to get a track count unless we know to expect one. Could check type from tracklist metadata.
+                //Does the extension even need to know the tracklist type? Does it need to be stored in the cache
+                //...Instead, is it not enough for this content script to just keep track of the tracklist type?
+                    //No, this isn't really an option because the background script helps in determining the type.
             //...or don't log an error if it fails...
         const _expectedTrackCount = getMetadatum(metadataNames.trackCount); //Fetch the official track count of the tracklist, if one exists
 
@@ -304,7 +352,8 @@
             //For each new track row loaded in the DOM...
             for (let i = _scrapeStartingIndex; i < (_trackRowContainer.childElementCount); i++) {
                 //Scrape the track metadata from the track row and add it to the metadata array
-                _trackMetadataArray.push(new TrackMetadata(app, _trackRowContainer.children[i])); 
+                //_trackMetadataArray.push(new TrackMetadata(app, _trackRowContainer.children[i]));
+                _trackMetadataArray.push(new Track(app, _trackRowContainer.children[i]));
             }
 
             //If there is an expected track count and it matches the length of the metadata array, end the scrape
@@ -355,9 +404,13 @@
         //There should be something to account for this. Some examples:
             //A) Listen/Watch for DOM changes that indicate the track count has changed. 
                 //Could watch for the metadata subtitle element (if available) or the track rows container perhaps. 
+                //It appears that in YTM, when you remove a track both the track count metadata & the track row container are updated right away...
+                    //...But when adding a track, only the track count metadata is updated right away (w/out a refresh). So that would be the preferred element to observe.
             //B) Check the track count again when the popup is opened. Maybe don't even cache it, only send it to background.js to update the icon
+                    //There's no real reason to do this though, unless I'm going to show the track count in the popup, which I currently do not. 
         //In any case, it's likely that the icon wouldn't be updated properly after such a change, but that's less important.
         //The more important part is that the 'expected' track count used for scraping tracks is accurate.
+            //...And currently it is, because we're not using the cached track count at all.
 
         //A possible approach is to only store the tracklist type when the mutation is observed...
             //...and then only fetch the tracklist title & track count on demand later (i.e. when the popup is opened)...
@@ -482,7 +535,7 @@
     function getTrackCountFromElement(element) {
         if (typeof element === 'object') {
             return getTrackCountNumberFromString(element.textContent);
-        } else console.error("Tried to extract the track count string from the track count element, but no valid element was provided.");
+        } else console.warn("Tried to extract the track count string from the track count element, but no valid element was provided.");
     }
 
     /**
