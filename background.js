@@ -51,10 +51,6 @@ const _iconPaths = {
 //     });
 // });
 
-// chrome.action.setBadgeText({text: "3"});
-// chrome.action.setBadgeBackgroundColor({color: [0, 255, 0, 0]});//green
-
-
 // chrome.runtime.onSuspend.addListener(function() {
 //     console.log("Unloading.");
 //     //chrome.browserAction.setBadgeText({text: ""});
@@ -67,27 +63,27 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
     if (details.url.includes('/library/songs') === true) {
         cacheTracklistMetadata('all', 'Added from YouTube Music'); //Cache the tracklist type and title in chrome local storage
         updateIcon(_iconPaths.exclamation, details.tabId); //Note: since the track count isn't known prior to a complete scrape, the 'exclamation' icon is shown by default
-        chrome.action.setPopup({popup: 'popup.html', tabId:details.tabId}); //Allow the popup to be opened if the icon is clicked on
+        chrome.action.setPopup({popup: 'popup.html', tabId: details.tabId}); //Allow the popup to be opened if the icon is clicked on
         //chrome.action.enable();
     } else if (details.url.includes('/library/uploaded_songs') === true) {
         cacheTracklistMetadata('uploads', 'Uploaded Songs'); //Cache the tracklist type and title in chrome local storage
         updateIcon(_iconPaths.exclamation, details.tabId); //Note: since the track count isn't known prior to a complete scrape, the 'exclamation' icon is shown by default
-        chrome.action.setPopup({popup: 'popup.html', tabId:details.tabId}); //Allow the popup to be opened if the icon is clicked on
+        chrome.action.setPopup({popup: 'popup.html', tabId: details.tabId}); //Allow the popup to be opened if the icon is clicked on
     } else if (details.url.includes('list=LM') === true) {
         //cacheTracklistMetadata('auto', 'Your Likes');
         //chrome.action.setIcon({path: _iconPaths.exclamation});
-        chrome.action.setPopup({popup: 'popup.html', tabId:details.tabId}); //Allow the popup to be opened if the icon is clicked on
+        chrome.action.setPopup({popup: 'popup.html', tabId: details.tabId}); //Allow the popup to be opened if the icon is clicked on
     } //TODO Since the track count reported in the YTM UI for the 'Your Likes' list seems to be way off...
         //...it may be acceptable to just not bother getting the track count to update the icon...
         //...since it's likely to be incorrect anyway. Instead, we could just always display the regular icon, or a special one.
       else if (details.url.includes('list=PL') === true) {
-        chrome.action.setPopup({popup: 'popup.html', tabId:details.tabId}); //Allow the popup to be opened if the icon is clicked on
+        chrome.action.setPopup({popup: 'popup.html', tabId: details.tabId}); //Allow the popup to be opened if the icon is clicked on
     } else { //Else, if the URL doesn't include any valid tracklist substrings...
         console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");
         clearCachedTracklistMetadata(); //Clear the metadata cached in storage
         updateIcon(_iconPaths.disabled, details.tabId); //Disable the extension icon
         updateBadgeText("", details.tabId); //Clear any badge text on the icon
-        chrome.action.setPopup({popup: '', tabId:details.tabId}); //Prevent the popup from being able to be opened
+        chrome.action.setPopup({popup: '', tabId: details.tabId}); //Prevent the popup from being able to be opened
     }
 }, {url: [{hostEquals : 'music.youtube.com'}]});
 
@@ -140,8 +136,10 @@ function compareTrackCountsAndUpdateIcon(tracklistTitle, currentTrackCount) {
         } else {
             console.info("Background: The current track count (from the DOM) is different from the stored track count.");
             updateIcon(_iconPaths.exclamation);
-            const _badgeText = (_trackCountDelta > 0) ? "+" + _trackCountDelta.toString() : _trackCountDelta.toString();
+            const _badgeText = (_trackCountDelta > 0) ? "+" + _trackCountDelta.toString() : _trackCountDelta.toString(); //Prefix the badge text with a "+" if the delta is positive
+            const _badgeColor = (_trackCountDelta > 0) ? [255, 127, 0, 255] : [255, 0, 0, 255]; //Set to badge color to yellow if the delta is positive, red if negative
             updateBadgeText(_badgeText);
+            chrome.action.setBadgeBackgroundColor({color: _badgeColor});
         }
     });
 }
@@ -153,7 +151,7 @@ function compareTrackCountsAndUpdateIcon(tracklistTitle, currentTrackCount) {
  */
 function updateIcon(path, tabId) {
     if (typeof tabId === 'number') {
-        chrome.action.setIcon({path: path, tabId:tabId});
+        chrome.action.setIcon({path: path, tabId: tabId});
     } else {
         chrome.tabs.query( { active: true, currentWindow: true}, tabs => { 
             chrome.action.setIcon({path: path, tabId: tabs[0].id});
