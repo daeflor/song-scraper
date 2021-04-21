@@ -265,9 +265,14 @@
      * @param {function} callback The function to execute once the scrape process has ended, either due to successful completion or timeout. Expects an object with a 'tracklist' key as a parameter
      */
     function processMessage_GetTracklistMetadata(app, callback) {
-        const firstTrack = document.querySelector("ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]");
-        const _trackRowContainer = firstTrack.parentElement;
-        let _scrapeStartingIndex = getIndexOfElement(firstTrack); //Get the index of the first track element at which to begin the scrape, since it isn't always necessarily the first element in the track row container (i.e. can't assume it's 0)
+        //TODO could probably pull this initial logic out into a separate function and then pass this one the 'track row container'
+        const _firstTrack = document.querySelector("ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]");
+        if (typeof _firstTrack !== 'object') {
+            console.error("Tried to get scrape the tracks in the current tracklist, but the first track in the list couldn't be identified.");
+            return;
+        }
+        const _trackRowContainer = _firstTrack.parentElement;
+        let _scrapeStartingIndex = getIndexOfElement(_firstTrack); //Get the index of the first track element at which to begin the scrape, since it isn't always necessarily the first element in the track row container (i.e. can't assume it's 0)
         //const _scrapeEndingIndexModifier = (app === 'gpm') ? -1 : 0; //Variable to track the modifier to the index to end each scrape with. Typically 0, but -1 for GPM due to how the DOM is laid out.
         //const _trackRowContainer = elementsInDOM.trackRowContainer[app](); //Fetch the DOM element that contains all the track row elements
         
