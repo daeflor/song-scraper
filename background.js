@@ -62,50 +62,32 @@ const _iconPaths = {
 
 //Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
 chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
-    console.log("Main web nav event fired");
-    
-    // //Set up an array of substrings that can be found in valid YTM tracklist URLs
-    // const _validUrlSubstrings = ['list=PL', 'list=LM'/*, '/library/songs', '/library/uploaded_songs'*/];
-    
-    // //Function returns true iff the provided substring parameter is included in the current page's URL string.
-    // const _urlIncludesSubstring = (substring) => details.url.includes(substring);
-
-    // chrome.action.getPopup({tabId:details.tabId}, result => {
-    //     console.log(result)
-    // });
-
-    // //console.log(chrome.action.TabDetails);
-    // if (_validUrlSubstrings.some(_urlIncludesSubstring) === true) {
-    //     chrome.action.setPopup({popup: 'popup.html', tabId:details.tabId});
-    // }
-
+    //console.log("Main web nav event fired");
     //Update the tracklist metadata in the cache depending on the current URL
     if (details.url.includes('/library/songs') === true) {
-        cacheTracklistMetadata('all', 'Added from YouTube Music');
+        cacheTracklistMetadata('all', 'Added from YouTube Music'); //Cache the tracklist type and title in chrome local storage
         updateIcon(_iconPaths.exclamation, details.tabId); //Note: since the track count isn't known prior to a complete scrape, the 'exclamation' icon is shown by default
-        chrome.action.setPopup({popup: 'popup.html', tabId:details.tabId});
+        chrome.action.setPopup({popup: 'popup.html', tabId:details.tabId}); //Allow the popup to be opened if the icon is clicked on
         //chrome.action.enable();
     } else if (details.url.includes('/library/uploaded_songs') === true) {
-        cacheTracklistMetadata('uploads', 'Uploaded Songs');
+        cacheTracklistMetadata('uploads', 'Uploaded Songs'); //Cache the tracklist type and title in chrome local storage
         updateIcon(_iconPaths.exclamation, details.tabId); //Note: since the track count isn't known prior to a complete scrape, the 'exclamation' icon is shown by default
-        chrome.action.setPopup({popup: 'popup.html', tabId:details.tabId});
-        //chrome.action.enable();
+        chrome.action.setPopup({popup: 'popup.html', tabId:details.tabId}); //Allow the popup to be opened if the icon is clicked on
     } else if (details.url.includes('list=LM') === true) {
         //cacheTracklistMetadata('auto', 'Your Likes');
         //chrome.action.setIcon({path: _iconPaths.exclamation});
-        chrome.action.setPopup({popup: 'popup.html', tabId:details.tabId});
+        chrome.action.setPopup({popup: 'popup.html', tabId:details.tabId}); //Allow the popup to be opened if the icon is clicked on
     } //TODO Since the track count reported in the YTM UI for the 'Your Likes' list seems to be way off...
         //...it may be acceptable to just not bother getting the track count to update the icon...
         //...since it's likely to be incorrect anyway. Instead, we could just always display the regular icon, or a special one.
       else if (details.url.includes('list=PL') === true) {
-        chrome.action.setPopup({popup: 'popup.html', tabId:details.tabId});
-    } else /*if (_validUrlSubstrings.some(_urlIncludesSubstring) === false)*/ { //If the URL doesn't include any of the other valid tracklist substrings, clear the metadata cached in storage
+        chrome.action.setPopup({popup: 'popup.html', tabId:details.tabId}); //Allow the popup to be opened if the icon is clicked on
+    } else { //Else, if the URL doesn't include any valid tracklist substrings...
         console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");
-        updateIcon(_iconPaths.disabled, details.tabId);
-        updateBadgeText("", details.tabId);
-        clearCachedTracklistMetadata();
-        chrome.action.setPopup({popup: '', tabId:details.tabId});
-        //chrome.action.disable();
+        clearCachedTracklistMetadata(); //Clear the metadata cached in storage
+        updateIcon(_iconPaths.disabled, details.tabId); //Disable the extension icon
+        updateBadgeText("", details.tabId); //Clear any badge text on the icon
+        chrome.action.setPopup({popup: '', tabId:details.tabId}); //Prevent the popup from being able to be opened
     }
 }, {url: [{hostEquals : 'music.youtube.com'}]});
 
@@ -163,24 +145,6 @@ function compareTrackCountsAndUpdateIcon(tracklistTitle, currentTrackCount) {
         }
     });
 }
-
-//disableIconOnAllTabs();
-
-// function disableIconOnAllTabs() {
-//     chrome.tabs.query( {}, tabs => { 
-//         for (let i = 0; i < tabs.length; i++) {
-//             chrome.action.disable(tabs[i].id);
-//         }
-//     });
-// }
-
-// function disableIconOnInactiveTabs() {
-//     chrome.tabs.query( {active: false}, tabs => { 
-//         for (let i = 0; i < tabs.length; i++) {
-//             chrome.action.disable(tabs[i].id);
-//         }
-//     });
-// }
 
 /**
  * Updates the extension icon using the image at the given path for the specified tab or the active tab, if none is specified
