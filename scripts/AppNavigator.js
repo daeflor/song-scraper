@@ -59,35 +59,30 @@ import * as IO from './Modules/Utilities/IO.js';
 
 
 function init() {
-    chrome.tabs.query( { active: true, currentWindow: true}, tabs => { //Query for the Active Tab...
-        Model.tab.id = tabs[0].id; //Make a record of the current/active tab for future reference
-        //window.Model.SetTabId(tabs[0].id);
+    const _storagekey = 'currentTracklistMetadata';
+    chrome.storage.local.get(_storagekey, storageResult => { //Get the cached metadata for the current tracklist from local storage
+        const _tracklistMetadata = storageResult[_storagekey];
 
-        const _storagekey = 'currentTracklistMetadata';
-        chrome.storage.local.get(_storagekey, storageResult => { //Get the cached metadata for the current tracklist from local storage
-            const _tracklistMetadata = storageResult[_storagekey];
+        if (typeof _tracklistMetadata.type === 'string') { //If the tracklist type has been set correctly, update it in the Model
+            Model.tracklist.type = _tracklistMetadata.type;
+        } else {
+            console.error("The tracklist type could not be determined from the URL.");
+            //TODO might be better to call TriggerUITransition here instead, to keep all ViewRenderer calls in one place
+            ViewRenderer.showStatusMessage('The tracklist type could not be determined from the URL.');
+            return;
+        }
 
-            if (typeof _tracklistMetadata.type === 'string') { //If the tracklist type has been set correctly, update it in the Model
-                Model.tracklist.type = _tracklistMetadata.type;
-            } else {
-                console.error("The tracklist type could not be determined from the URL.");
-                //TODO might be better to call TriggerUITransition here instead, to keep all ViewRenderer calls in one place
-                ViewRenderer.showStatusMessage('The tracklist type could not be determined from the URL.');
-                return;
-            }
+        if (typeof _tracklistMetadata.title === 'string') { //If the tracklist title has been set correctly, update it in the Model
+            Model.tracklist.title = _tracklistMetadata.title;
+        } else {
+            console.error("The tracklist type could not be determined from the URL.");
+            ViewRenderer.showStatusMessage('The tracklist type could not be determined from the URL.');
+            return;
+        }
 
-            if (typeof _tracklistMetadata.title === 'string') { //If the tracklist title has been set correctly, update it in the Model
-                Model.tracklist.title = _tracklistMetadata.title;
-            } else {
-                console.error("The tracklist type could not be determined from the URL.");
-                ViewRenderer.showStatusMessage('The tracklist type could not be determined from the URL.');
-                return;
-            }
-
-            console.info("Retrieved tracklist metadata from local storage cache:");
-            console.info(Model.tracklist);
-            prepareLandingPage(); //If all the required metadata have been set correctly, show the extension landing page
-        });
+        console.info("Retrieved tracklist metadata from local storage cache:");
+        console.info(Model.tracklist);
+        prepareLandingPage(); //If all the required metadata have been set correctly, show the extension landing page
     });
 }
 
