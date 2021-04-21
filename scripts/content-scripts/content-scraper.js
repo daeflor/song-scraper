@@ -104,10 +104,12 @@
     //     }
     // }
 
+    /**
+     * Creates a track object that contains properties for each piece of metadata scraped from the DOM
+     */
     class Track {
         constructor(app, trackContainerElement) {
             if (app === supportedApps.youTubeMusic) {
-
                 const _metadataElements = trackContainerElement.getElementsByTagName('yt-formatted-string');
 
                 if (typeof _metadataElements[0] === 'object') {
@@ -122,15 +124,13 @@
                 if (typeof _metadataElements[3] === 'object') {
                     this.duration = _metadataElements[3].title;
                 } else console.error("Duration could not be retrieved from DOM.");
-
-                //If the track row element has an unplayable flag, record the track as being unplayable
-                if (trackContainerElement.attributes.unplayable_ != undefined) { //Note: <if (trackRowElement.unplayable_ == true)> should work but it doesn't for some reason
+                if (trackContainerElement.hasAttribute('unplayable_')) { //Note: <if (trackContainerElement.unplayable_ === true)> should work but it doesn't for some reason
                     this.unplayable = true;
-                    console.log("Found an unplayable track called: " + this.title);
+                    console.info("Encountered an unplayable track with title: " + this.title);
                 }
             }
         }
-      }
+    }
       
 //TODO perhaps individual scrapeTrackMetadatum_XX functions
 
