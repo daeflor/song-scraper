@@ -71,6 +71,12 @@ export function setElementOpacity(element, targetOpacity)
     element.style.opacity = targetOpacity;
 }
 
+export function updateElementTextContent(element, text) {
+    if (typeof element === 'object') { //TODO better isElement check would be good here
+        element.textContent = text;
+    } else console.error("Tried to set an element's text content, but a valid element was not provided.");
+}
+
 export function showLandingPage() {
     document.getElementById('buttons').hidden = false;
     document.getElementById('checkboxes').hidden = false;

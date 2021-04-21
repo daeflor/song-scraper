@@ -158,19 +158,9 @@ export function triggerUITransition(transition) {
 
         resetAllTrackTablesAndCheckboxes();
 
-        //TODO might want a for loop to uncheck all checkboxes and hide all the track tables
-            //If a for loop is used, it could also check for the elements not being undefined.
-        // ViewRenderer.uncheckBox(ViewRenderer.checkboxes.storedTrackTable);
-        // ViewRenderer.uncheckBox(ViewRenderer.checkboxes.scrapedTrackTable);
-        // ViewRenderer.uncheckBox(ViewRenderer.checkboxes.deltaTrackTables);
-        // ViewRenderer.hideElement(ViewRenderer.tracktables.stored);
-        // ViewRenderer.hideElement(ViewRenderer.tracktables.scraped);
-        // ViewRenderer.hideElement(ViewRenderer.tracktables.deltas);
-
         ViewRenderer.disableElement(ViewRenderer.buttons.exportScrapedMetadata);
-        // ViewRenderer.disableElement(ViewRenderer.checkboxes.scrapedTrackTable);
-        // ViewRenderer.disableElement(ViewRenderer.checkboxes.deltaTrackTables);
-        
+        ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Save Scraped Metadata to Storage');
+
         ViewRenderer.unhideElement(ViewRenderer.divs.auth);
     }
     else if (transition === 'StartScrape') {
@@ -192,17 +182,21 @@ export function triggerUITransition(transition) {
         ViewRenderer.enableElement(ViewRenderer.buttons.exportScrapedMetadata);
         ViewRenderer.enableElement(ViewRenderer.checkboxes.scrapedTrackTable);
         ViewRenderer.enableElement(ViewRenderer.checkboxes.deltaTrackTables);
+        ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Save Scraped Metadata to Storage');
     }
     else if (transition === 'ScrapeFailed') {
         ViewRenderer.showStatusMessage('Failed to retrieve track list.');
     }
-    else if (transition === 'ScrapedMetadataStored') {
+    else if (transition === 'StorageInProgress') {
         ViewRenderer.disableElement(ViewRenderer.buttons.storeScrapedMetadata); //Disable the button to store the scraped data
         if (typeof ViewRenderer.tracktables.stored === 'object') { //If the track table for the stored tracklist exists...
             ViewRenderer.removeElement(ViewRenderer.tracktables.stored); //Remove the tracktable element from the DOM (since it may be out-of-date)
             ViewRenderer.tracktables.stored = undefined; //Clear the saved reference to the old track table
             ViewRenderer.uncheckBox(ViewRenderer.checkboxes.storedTrackTable); //Uncheck the checkbox
         }
+    }
+    else if (transition === 'ScrapedMetadataStored') {
+        ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Data successfully stored!');
     }
 }
 
