@@ -92,10 +92,10 @@
     }
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.greeting === 'GetTracklistMetadata') {
+        if (message.greeting === 'GetTracks') {
             console.info("Content Script: Received request to retrieve tracklist metadata.");
-            processMessage_GetTracklistMetadata(currentApp, response => { //TODO rename to GetTracks or something like that
-                message.response = response;
+            GetTracks(currentApp, message.tracklistType, tracksArray => {
+                message.response = tracksArray;
                 sendResponse(message);
             });
         }
@@ -171,7 +171,7 @@
      * @param {string} app the current app that the extension is running on
      * @param {function} callback The function to execute once the scrape process has ended, either due to successful completion or timeout. Expects an object with a 'tracklist' key as a parameter
      */
-    function processMessage_GetTracklistMetadata(app, callback) {
+    function GetTracks(app, tracklistType, callback) {
         //TODO could probably pull this initial logic out into a separate function and then pass this one the 'track row container'
         const _firstTrack = document.querySelector("ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]");
         if (typeof _firstTrack !== 'object') {
