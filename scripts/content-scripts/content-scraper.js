@@ -107,34 +107,21 @@
     class Track {
         constructor(app, trackContainerElement) {
             if (app === supportedApps.youTubeMusic) {
-                const _trackTitleElement = trackContainerElement.getElementsByClassName('title')[0];
-                if (typeof _trackTitleElement === 'object') {
-                    this.title = _trackTitleElement.title;
+
+                const _metadataElements = trackContainerElement.getElementsByTagName('yt-formatted-string');
+
+                if (typeof _metadataElements[0] === 'object') {
+                    this.title = _metadataElements[0].title;
                 } else console.error("Track title could not be retrieved from DOM.");
-
-                const _secondaryRowElement = trackContainerElement.getElementsByClassName('secondary-flex-columns')[0];
-                if (typeof _secondaryRowElement === 'object') {
-                    const _artistElement = _secondaryRowElement.children[0];
-                    if (typeof _artistElement === 'object') {
-                        this.artist = _artistElement.title;
-                        
-                    } else console.error("Artist could not be retrieved from DOM.");
-
-                    const _albumElement = _secondaryRowElement.children[1];
-                    if (typeof _albumElement === 'object') {
-                        this.album = _albumElement.title;
-                        
-                    } else console.error("Album could not be retrieved from DOM.");
-                } else console.error("Secondary metadata row could not be retrieved from DOM.");
-
-                //TODO for some reason this isn't working (the error message is printing), although it looks like it should work
-                const _trackDurationElement = trackContainerElement.querySelector('div.fixed-columns yt-formatted-string');
-                if (_trackDurationElement != null) {
-                    this.duration = _trackDurationElement.title;
-                }
-                else {
-                    console.log("ERROR: Track duration could not be retrieved from DOM.");
-                }
+                if (typeof _metadataElements[1] === 'object') {
+                    this.artist = _metadataElements[1].title;
+                } else console.error("Artist could not be retrieved from DOM.");
+                if (typeof _metadataElements[2] === 'object') {
+                    this.album = _metadataElements[2].title;
+                } else console.error("Album could not be retrieved from DOM.");
+                if (typeof _metadataElements[3] === 'object') {
+                    this.duration = _metadataElements[3].title;
+                } else console.error("Duration could not be retrieved from DOM.");
 
                 //If the track row element has an unplayable flag, record the track as being unplayable
                 if (trackContainerElement.attributes.unplayable_ != undefined) { //Note: <if (trackRowElement.unplayable_ == true)> should work but it doesn't for some reason
