@@ -107,29 +107,25 @@
     class Track {
         constructor(app, trackContainerElement) {
             if (app === supportedApps.youTubeMusic) {
-                const _trackTitleElement = trackContainerElement.querySelector('div.title-column yt-formatted-string.title');
-                if (_trackTitleElement != null) {
+                const _trackTitleElement = trackContainerElement.getElementsByClassName('title')[0];
+                if (typeof _trackTitleElement === 'object') {
                     this.title = _trackTitleElement.title;
-                }
-                else {
-                    console.log("ERROR: Track title could not be retrieved from DOM.");
-                }
+                } else console.error("Track title could not be retrieved from DOM.");
 
-                const _trackArtistElement = trackContainerElement.querySelectorAll('div.secondary-flex-columns yt-formatted-string')[0];
-                if (_trackArtistElement != null) {
-                    this.artist = _trackArtistElement.title;
-                }
-                else {
-                    console.log("ERROR: Track artist could not be retrieved from DOM.");
-                }
+                const _secondaryRowElement = trackContainerElement.getElementsByClassName('secondary-flex-columns')[0];
+                if (typeof _secondaryRowElement === 'object') {
+                    const _artistElement = _secondaryRowElement.children[0];
+                    if (typeof _artistElement === 'object') {
+                        this.artist = _artistElement.title;
+                        
+                    } else console.error("Artist could not be retrieved from DOM.");
 
-                const _trackAlbumElement = trackContainerElement.querySelectorAll('div.secondary-flex-columns yt-formatted-string')[1];
-                if (_trackAlbumElement != null) {
-                    this.album = _trackAlbumElement.title;
-                }
-                else {
-                    console.log("ERROR: Track album could not be retrieved from DOM.");
-                }
+                    const _albumElement = _secondaryRowElement.children[1];
+                    if (typeof _albumElement === 'object') {
+                        this.album = _albumElement.title;
+                        
+                    } else console.error("Album could not be retrieved from DOM.");
+                } else console.error("Secondary metadata row could not be retrieved from DOM.");
 
                 //TODO for some reason this isn't working (the error message is printing), although it looks like it should work
                 const _trackDurationElement = trackContainerElement.querySelector('div.fixed-columns yt-formatted-string');
