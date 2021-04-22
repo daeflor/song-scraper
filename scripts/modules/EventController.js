@@ -44,7 +44,19 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
 
     //
 
-    Messenger.sendMessageToContentScripts({greeting: 'GetTracks', tracklistType:Model.tracklist.type}, tracksArray => {
+    // Messenger.sendMessageToContentScripts({greeting: 'GetTracks', tracklistType:Model.tracklist.type}, tracksArray => {
+    //     if (Array.isArray(tracksArray) === true) { //If the response received is an array...
+    //         Model.setScrapedTracksArray(tracksArray); //TODO not sure about this naming //Update the scraped tracklist metadata in the Model
+    //         UIController.triggerUITransition('ScrapeSuccessful'); //Transition the UI accordingly
+    //     } else {
+    //         UIController.triggerUITransition('ScrapeFailed');
+    //         console.error("Requested tracklist metadata from content script, but response was not a valid array.");
+    //     }
+    // });
+
+    //
+
+    Messenger.sendMessageToContentScripts('GetTracks', {tracklistType: Model.tracklist.type}, tracksArray => {
         if (Array.isArray(tracksArray) === true) { //If the response received is an array...
             Model.setScrapedTracksArray(tracksArray); //TODO not sure about this naming //Update the scraped tracklist metadata in the Model
             UIController.triggerUITransition('ScrapeSuccessful'); //Transition the UI accordingly

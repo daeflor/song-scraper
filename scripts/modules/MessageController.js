@@ -1,7 +1,3 @@
-// import * as DebugController from './DebugController.js';
-// import * as Model from './Model.js';
-// import * as UIController from '../AppNavigator.js';
-
 let tabId = undefined;
 
 function init() {
@@ -10,18 +6,39 @@ function init() {
     });
 }
 
+// /**
+//  * Sends a message to content scripts and then executes the provided callback once a response has been received
+//  * @param {object} messageToSend A JSON-ifiable object to send as a message
+//  * @param {function} callback The function to execute when a response has been received
+//  */
+// export function sendMessageToContentScripts(messageToSend, callback) {	
+//     chrome.tabs.sendMessage(tabId, messageToSend, messageReceived => {
+//         if (typeof chrome.runtime.lastError === 'undefined') {
+//             callback(messageReceived.response);
+//         } else console.error("Error encountered while attempting to send a message to content scripts: " + chrome.runtime.lastError.message);
+//     });
+// }
+
+
+//
+
 /**
  * Sends a message to content scripts and then executes the provided callback once a response has been received
- * @param {object} messageToSend A JSON-ifiable object to send as a message
+ * @param {string} messageGreeting The greeting to use to identify the message
+ * @param {object} [options] An optional object containing additional options to pass along with the message
  * @param {function} callback The function to execute when a response has been received
  */
-export function sendMessageToContentScripts(messageToSend, callback) {	
-    chrome.tabs.sendMessage(tabId, messageToSend, messageReceived => {
+ export function sendMessageToContentScripts(messageGreeting, options={}, callback) {	
+    const _messageToSend = {greeting:messageGreeting}; //Create the message object to pass to the content script
+    for (const key in options) _messageToSend[key] = options[key]; //Add any provided option values to the message object 
+    chrome.tabs.sendMessage(tabId, _messageToSend, messageReceived => {
         if (typeof chrome.runtime.lastError === 'undefined') {
             callback(messageReceived.response);
         } else console.error("Error encountered while attempting to send a message to content scripts: " + chrome.runtime.lastError.message);
     });
 }
+
+//
 
 // /**
 //  * Sends a message to content scripts with the provided greeting string
@@ -48,10 +65,4 @@ export function sendMessageToContentScripts(messageToSend, callback) {
 // 	}
 // }
 
-//TODO may want to restructure this similarly to new EventController
-//TODO I'm not convinced it makes a lot of sense for the MessageController to also own the logic for how to handle the response
-    //If this file were simpler and more contained, it could be a utility module (i.e. not specific to this app) that the background script could also import and leverage (e.g. to get the track count)
-        //Although the value of a simple helper for message passing is questionable since it's not that involved.
-
 init();
-//export {sendMessage};
