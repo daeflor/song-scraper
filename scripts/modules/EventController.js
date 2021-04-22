@@ -23,35 +23,6 @@ ViewRenderer.buttons.logOut.addEventListener('click', function() {
 //Button Pressed: Scrape Current Tracklist
 ViewRenderer.buttons.scrape.addEventListener('click', function() {
     UIController.triggerUITransition('StartScrape');
-    
-    //Messenger.sendMessage('GetTracklistMetadata');
-    
-    // chrome.tabs.sendMessage(Model.tab.id, {greeting: 'GetTracks', tracklistType:Model.tracklist.type}, message => {
-    //     if (typeof chrome.runtime.lastError === 'undefined') {
-    //         if (Array.isArray(message.response) === true) { //If the response received is an array...
-    //             Model.setScrapedTracksArray(message.response); //TODO not sure about this naming //Update the scraped tracklist metadata in the Model
-    //             UIController.triggerUITransition('ScrapeSuccessful'); //Transition the UI accordingly
-    //         } else {
-    //             UIController.triggerUITransition('ScrapeFailed');
-    //             console.error("Requested tracklist metadata from content script, but response was not a valid array.");
-    //         }
-    //     } else console.error("Error encountered while attempting to send a message to content scripts: " + chrome.runtime.lastError.message);
-    // });
-
-    //
-
-    // Messenger.sendMessageToContentScripts({greeting: 'GetTracks', tracklistType:Model.tracklist.type}, tracksArray => {
-    //     if (Array.isArray(tracksArray) === true) { //If the response received is an array...
-    //         Model.setScrapedTracksArray(tracksArray); //TODO not sure about this naming //Update the scraped tracklist metadata in the Model
-    //         UIController.triggerUITransition('ScrapeSuccessful'); //Transition the UI accordingly
-    //     } else {
-    //         UIController.triggerUITransition('ScrapeFailed');
-    //         console.error("Requested tracklist metadata from content script, but response was not a valid array.");
-    //     }
-    // });
-
-    //
-
     Messenger.sendMessageToContentScripts('GetTracks', {tracklistType: Model.tracklist.type}, tracksArray => {
         if (Array.isArray(tracksArray) === true) { //If the response received is an array...
             Model.setScrapedTracksArray(tracksArray); //TODO not sure about this naming //Update the scraped tracklist metadata in the Model
@@ -61,7 +32,6 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
             console.error("Requested tracklist metadata from content script, but response was not a valid array.");
         }
     });
-    
 });
 
 //Button Pressed: Store Scraped Metadata
