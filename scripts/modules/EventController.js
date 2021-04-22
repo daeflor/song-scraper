@@ -1,7 +1,7 @@
 import * as Model from './Model.js';
 import * as ViewRenderer from './ViewRenderer.js';
 import * as UIController from '../AppNavigator.js';
-import * as Messenger from './MessageController.js';
+import * as Messenger from './utilities/messenger.js';
 //import sendMessage from './MessageController.js';
 //import logOut from './AuthController.js' //TODO use or remove this, as desired
 import * as Auth from '../auth/firebase-ui-auth.js'
