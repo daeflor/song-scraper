@@ -6,10 +6,6 @@ import * as Messenger from './utilities/messenger.js';
 //import logOut from './AuthController.js' //TODO use or remove this, as desired
 import * as Auth from '../auth/firebase-ui-auth.js'
 
-//TODO might be good to have an app.js or similar file that is the singular point waiting for the DOM to load,
-    //and which then tells EventController, AuthController, etc. to initiaite / listen for events.
-    //Note that this might not be necessary since module scripts are deferred by default
-
 //Button Pressed: Log In
 // ViewRenderer.buttons.logIn.addEventListener('click', function() {
 //     auth.logIn();

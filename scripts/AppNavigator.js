@@ -328,7 +328,7 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
 function checkIfDurationValuesMatch(durationA, durationB) {
     if (typeof durationA === 'number' && typeof durationB === 'number') {
         const _differenceInSeconds = durationA - durationB;
-        return (_differenceInSeconds > -2 && _differenceInSeconds < 2) ? true : false;
+        return (_differenceInSeconds >= -2 && _differenceInSeconds <= 2) ? true : false;
     }
     else {
         DebugController.logError("Error: Expected two parameters of type 'number' but instead received a) " + durationA + "; b) " + durationB);
