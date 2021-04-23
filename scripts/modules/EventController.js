@@ -11,6 +11,10 @@ import * as Auth from '../auth/firebase-ui-auth.js'
 //     auth.logIn();
 // });
 
+//TODO could consider adding to and/or removing from EventController so that it's the central place for all event-driven logic
+    //i.e. EventController should dictate & be aware of all events & reactions throughout the app (not sure about auth...)
+    //But it shouldn't necessarily handle any in-depth / area-specific logic. It should hand that off to the scripts designated specifically for that and then just get back the results and act on them.
+
 //Button Pressed: Log Out
 ViewRenderer.buttons.logOut.addEventListener('click', function() {
     //AuthController.logOut();
@@ -23,7 +27,7 @@ ViewRenderer.buttons.logOut.addEventListener('click', function() {
 //Button Pressed: Scrape Current Tracklist
 ViewRenderer.buttons.scrape.addEventListener('click', function() {
     UIController.triggerUITransition('StartScrape');
-    Messenger.sendMessageToContentScripts('GetTracks', {tracklistType: Model.tracklist.type}, tracksArray => {
+    Messenger.sendMessageToContentScripts('GetTracks', tracksArray => {
         if (Array.isArray(tracksArray) === true) { //If the response received is an array...
             Model.setScrapedTracksArray(tracksArray); //TODO not sure about this naming //Update the scraped tracklist metadata in the Model
             UIController.triggerUITransition('ScrapeSuccessful'); //Transition the UI accordingly
@@ -60,9 +64,7 @@ ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', function() {
         //If a track table DOM element has previously been created, just show the existing element
         if (typeof ViewRenderer.tracktables.stored === 'object') {
             ViewRenderer.unhideElement(ViewRenderer.tracktables.stored);
-        }
-        //Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
-        else {
+        } else { //Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
             Model.getStoredMetadata(tracksArray => {
                 ViewRenderer.tracktables.stored = UIController.createTrackTable(tracksArray, 'Stored YTM Tracklist');
                 //TODO this interaction with ViewRenderer is WIP
