@@ -311,8 +311,7 @@
                 case metadataNames.title: 
                     return getTracklistTitleFromElement(headerElement.getElementsByClassName('title')[0]);//(_element);
                 case metadataNames.trackCount: 
-                    //TODO Could do a URL check here, and only call getTrackCountFromElement if it includes PL/LM
-                    return getTrackCountFromElement(headerElement.getElementsByClassName('second-subtitle')[0]);//getTrackCountFromElement(_element);
+                    return (window.location.pathname === '/playlist') ? getTrackCountFromElement(headerElement.getElementsByClassName('second-subtitle')[0]) : undefined;
                 default:
                     console.error("Tried to get a piece of metadata but an invalid metadatum name was provided. Name provided: " + name);
             }
