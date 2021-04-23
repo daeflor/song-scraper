@@ -187,26 +187,22 @@
         } else console.error("Tried to get scrape the tracks in the current tracklist, but the first track in the list couldn't be identified.");
     }
 
+    //TODO - Some of this logic (and the Track class) could be handled in an extension script instead of in the content script. That might make more sense, to limit the content script to really just extracting the raw data required
+
+    /**
+     * Runs through a process that scrolls through the current tracklist and scrapes the metadata out of all the track rows
+     * @param {object} tracksContainer The element containing all the rows of track elements
+     * @param {number} scrapeStartingIndex The index within the tracks container at which to begin the initial scrape
+     * @param {function} callback The function to execute once the scrape process has ended, either due to successful completion or timeout
+     * @param {number} [expectedTrackCount] An optional parameter indicating the expected track count for the tracklist, if available
+     */
     function scrapeTracks(tracksContainer, scrapeStartingIndex, callback, expectedTrackCount) {
         const _trackElementCollection = tracksContainer.children;
-        
         const _trackMetadataArray = []; //Create an array to store the metadata for each scraped track in the tracklist
-        //let _lastScrapedElement = undefined; //Variable to track the last track row element from the most recent scrape
         let _scrollingTimeoutID = undefined; //Variable tracking the timeout to end the scroll & scrape process, in case no changes to the track row container element are observed for a while
-        
-        //Set up the callback function to execute once the scraped has either been successfully completed or timed out
-        const _endScrape = function() {  
-            allowManualScrolling(scrollContainer, true); //Allow the user to scroll manually again
-            _observer.disconnect(); //Disconnect the mutation observer
-            callback(_trackMetadataArray); //Execute the callback function, passing the tracks array as a parameter
-        }
-
-        const _scrapeLoadedTracks = function() {
-            clearTimeout(_scrollingTimeoutID); //Since new track elements were loaded into the DOM, clear the timeout that would otherwise end the scrolling process after a few seconds. The timeout will be reset if the scrape isn't complete after the upcoming scrape.        
-
-            // if (typeof _lastScrapedElement === 'object') { //If a previous scrape has been completed (i.e. this is not the first scrape)...
-            //     scrapeStartingIndex = getIndexOfElement(_lastScrapedElement) + 1 ; //Set the starting index for the next scrape to be one greater than the index of the last child element from the previous scrape
-            // }
+    
+        const _scrapeLoadedTracks = function() { //Set up the function to scrape the set of tracks most recently loaded in the DOM
+            clearTimeout(_scrollingTimeoutID); //Since there are still track elements available to scrape, clear the timeout that would otherwise end the scrolling process after a few seconds. The timeout will be reset if the scrape isn't complete after the upcoming scrape.        
             
             for (let i = scrapeStartingIndex; i < (_trackElementCollection.length); i++) { //For each new track row loaded in the DOM...
                 _trackMetadataArray.push(new Track(_trackElementCollection[i])); //Scrape the metadata from the track element and add it to the metadata array
@@ -215,124 +211,27 @@
             if (expectedTrackCount === _trackMetadataArray.length) { //If there is an expected track count and it matches the length of the metadata array...
                 _endScrape(); //End the scrape
             } else { //Else, if the scrape isn't complete or the expected track count is unknown...
-                //const _lastScrapedElement = _trackElementCollection[_trackElementCollection.length-1]; //Get the last available child element in the tracks container 
                 scrollToElement(_trackElementCollection[_trackElementCollection.length-1]); //Scroll to the last available child element in the tracks container
                 scrapeStartingIndex = _trackElementCollection.length; //Set the starting index for the next scrape to be one greater than the index of the last child element from the previous scrape
                 _scrollingTimeoutID = setTimeout(_endScrape, 4000); //Set a timeout to end the scrolling if no new changes to the container element have been observed for a while. This avoids infinite scrolling when the expected track count is unknown, or if an unexpected issue is encountered.
             }
         }
 
-        //Set up the callback to execute whenever the track row container DOM element has its childList modified
-        const _onTrackElementsLoaded = (mutationsList, observer) => {
-            setTimeout(_scrapeLoadedTracks, 100); //Wait a short amount of time to allow all the elements in the DOM to load (e.g. the 'duration', which can take longer), and then scrape the track metadata from the next set of track elements.
-        };
-
-        allowManualScrolling(scrollContainer, false); //Temporarily disable manual scrolling to avoid any interference from the user during the scrape process
-        scrollToTopOfContainer(scrollContainer); //Scroll to the top of the tracklist, as an extra safety measure just to be certain that no tracks are missed in the scrape. (Note: This step likely isn't necessary in YTM since it appears the track row elements never get removed from the DOM no matter how far down a list you scroll).
-
-        const _observer = new MutationObserver(_onTrackElementsLoaded); //Create a new mutation observer instance linked to the callback function defined above
-        const _observerConfig = {childList: true}; //Set up the configuration options for the Mutation Observer to watch for changes to the element's childList
-        _observer.observe(tracksContainer, _observerConfig); //Start observing the tracks container element for configured mutations (i.e. for any changes to its childList)
-        
-        setTimeout(_scrapeLoadedTracks, 100); //Wait a short amount of time to allow the page to scroll to the top of the tracklist, and then begin the scrape & scroll process
-    }
-
-    //TODO maybe take the bulk of the logic outside of the processMessage function, for better readability?
-
-    //TODO NEW - Some of this logic (and the TrackMetadata constructor) could be handled in a logic script instead of in the content script
-        //That mightmake more sense, to limit the content script to really just extracting the raw data required
-    /**
-     * Runs through a process that scrolls through the current tracklist and scrapes the metadata out of all the track rows
-     * @param {string} app the current app that the extension is running on
-     * @param {function} callback The function to execute once the scrape process has ended, either due to successful completion or timeout. Expects an object with a 'tracklist' key as a parameter
-     */
-    function GetTracksOLD(app, tracklistType, callback) {
-        //TODO could probably pull this initial logic out into a separate function and then pass this one the 'track row container'
-        const _firstTrack = document.querySelector("ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]");
-        if (typeof _firstTrack !== 'object') {
-            console.error("Tried to get scrape the tracks in the current tracklist, but the first track in the list couldn't be identified.");
-            return;
-        }
-        const _trackRowContainer = _firstTrack.parentElement;
-        let _scrapeStartingIndex = getIndexOfElement(_firstTrack); //Get the index of the first track element at which to begin the scrape, since it isn't always necessarily the first element in the track row container (i.e. can't assume it's 0)
-        //const _scrapeEndingIndexModifier = (app === 'gpm') ? -1 : 0; //Variable to track the modifier to the index to end each scrape with. Typically 0, but -1 for GPM due to how the DOM is laid out.
-        //const _trackRowContainer = elementsInDOM.trackRowContainer[app](); //Fetch the DOM element that contains all the track row elements
-        
-        //TODO a problem is that this returns an error even in cases where we expect there not to be a track count...
-            //...maybe don't try to get a track count unless we know to expect one. Could check type from tracklist metadata.
-                //Does the extension even need to know the tracklist type? Does it need to be stored in the cache
-                //...Instead, is it not enough for this content script to just keep track of the tracklist type?
-                    //No, this isn't really an option because the background script helps in determining the type.
-            //...or don't log an error if it fails...
-        const _expectedTrackCount = getMetadatum(metadataNames.trackCount); //Fetch the official track count of the tracklist, if one exists
-
-        const _trackMetadataArray = []; //Create an array to store the metadata for each scraped track in the tracklist
-        let _lastScrapedElement = undefined; //Variable to track the last track row element from the most recent scrape
-        let _scrollingTimeoutID = undefined; //Variable tracking the timeout to end the scroll & scrape process, in case no changes to the track row container element are observed for a while
-        
-        //Set up the callback function to execute once the scraped has either been successfully completed or timed out
-        const _endScrape = function() {  
+        const _endScrape = function() { //Set up the function to execute once the scrape & scroll process has either been successfully completed or timed out
             allowManualScrolling(scrollContainer, true); //Allow the user to scroll manually again
             _observer.disconnect(); //Disconnect the mutation observer
             callback(_trackMetadataArray); //Execute the callback function, passing the tracks array as a parameter
         }
 
-        const _scrapeTrackMetadataFromNodeList = function() {
-            clearTimeout(_scrollingTimeoutID); //Clear the scrolling timeout. It will be reset if the scrape isn't complete after the upcoming scrape
+        allowManualScrolling(scrollContainer, false); //Temporarily disable manual scrolling to avoid any interference from the user during the scrape process
+        scrollToTopOfContainer(scrollContainer); //Scroll to the top of the tracklist, as an extra safety measure just to be certain that no tracks are missed in the scrape. (Note: This step likely isn't necessary in YTM since it appears the track row elements never get removed from the DOM no matter how far down a list you scroll).
 
-            //If a previous scrape has been completed, set the starting index for the next scrape accordingly
-            if (typeof _lastScrapedElement === 'object') {
-                //The starting index for the next scrape should be one greater than the index of the last child element from the previous scrape
-                _scrapeStartingIndex = getIndexOfElement(_lastScrapedElement) + 1 ;
-            }
-            
-            //For each new track row loaded in the DOM...
-            for (let i = _scrapeStartingIndex; i < (_trackRowContainer.childElementCount); i++) {
-                //Scrape the track metadata from the track row and add it to the metadata array
-                //_trackMetadataArray.push(new TrackMetadata(app, _trackRowContainer.children[i]));
-                _trackMetadataArray.push(new Track(app, _trackRowContainer.children[i]));
-            }
-
-            //If there is an expected track count and it matches the length of the metadata array, end the scrape
-            if (_expectedTrackCount === _trackMetadataArray.length) {
-                _endScrape();
-            } else {
-                //Record the last available child element in the track row container for future reference
-                _lastScrapedElement = _trackRowContainer.children[_trackRowContainer.childElementCount-1];
-                
-                //Scroll to the last available child element in the track row container
-                scrollToElement(_lastScrapedElement);
-
-                //Set a timeout to end the scrolling if no new changes to the container element have been observed for a while, to avoid infinite scrolling in edge cases
-                _scrollingTimeoutID = setTimeout(_endScrape, 4000);
-            }
-        }
-
-        //Set up the callback to execute whenever the track row container DOM element has its childList modified
-        const _onTrackRowContainerChildListModified = function (mutationsList, observer) {
-            //For each mutation observed on the target DOM element...
-            for (const mutation of mutationsList) {
-                //If the observed mutation is that the element's childList was modified...
-                if (mutation.type === 'childList') {
-                    //Wait a very short amount of time to allow all the elements in the DOM to load (e.g. the 'duration', which can take longer)
-                        //And then scrape the track metadata from the next set of track rows, and continue with the process accordingly
-                    setTimeout(_scrapeTrackMetadataFromNodeList, 100);
-                }
-            }
-        };
-
-        //Temporarily disable manual scrolling to avoid any interference from the user during the scrape process
-        allowManualScrolling(scrollContainer, false);
-
-        //Scroll to the top of the tracklist, as an extra safety measure just to be certain that no tracks are missed in the scrape
-        scrollToTopOfContainer(scrollContainer); //Note: This step likely isn't necessary in YTM since it appears the track row elements never get removed from the DOM no matter how far down a list you scroll
-
-        const _observer = new MutationObserver(_onTrackRowContainerChildListModified); //Create a new mutation observer instance linked to the callback function defined above
-        const _observerConfig = {childList: true}; //Set up the configuration options for the Mutation Observer
-        _observer.observe(_trackRowContainer, _observerConfig); //Start observing the track row container element for configured mutations (i.e. for any changes to its childList)
-
-        //Wait a short amount of time to allow the page to scroll to the top of the tracklist, and then begin the scroll & scrape process
-        setTimeout(_scrapeTrackMetadataFromNodeList, 1000);
+        //const _observer = new MutationObserver(_onTrackElementsLoaded); //Create a new mutation observer instance linked to the callback function defined above
+        const _observer = new MutationObserver(setTimeout.bind(null, _scrapeLoadedTracks, 100)); //Create a new mutation observer instance which triggers a scrape of the loaded track elements after a brief delay (which allows time all the elements (e.g. 'duration' metadata) in the DOM to load).
+        const _observerConfig = {childList: true}; //Set up the configuration options for the Mutation Observer to watch for changes to the element's childList
+        _observer.observe(tracksContainer, _observerConfig); //Start observing the tracks container element for configured mutations (i.e. for any changes to its childList)
+        
+        setTimeout(_scrapeLoadedTracks, 100); //Wait a short amount of time to allow the page to scroll to the top of the tracklist, and then begin the scrape & scroll process
     }
 
     //TODO something that hasn't been considered is that a tracklist could change in the time between...
