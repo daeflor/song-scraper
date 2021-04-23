@@ -163,8 +163,10 @@ function getTrackCountFromGPMTracklistData(tracklistTitle, callback){
             if (tracklistKey.includes("'" + tracklistTitle + "'")) {
                 console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + _gpmLibraryData[tracklistKey].length);
                 callback(_gpmLibraryData[tracklistKey].length);
+                return;
             }
         }
+        console.warn("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
     });
 }
 
