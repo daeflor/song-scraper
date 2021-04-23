@@ -94,7 +94,7 @@
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.greeting === 'GetTracks') {
             console.info("Content Script: Received request to retrieve tracklist metadata.");
-            GetTracks(/*currentApp, message.tracklistType, */tracksArray => {
+            GetTracks(tracksArray => {
                 message.response = tracksArray;
                 sendResponse(message);
             });
@@ -102,14 +102,6 @@
         
         return true; //Return true to keep the message channel open (so the callback can be called asynchronously)
     });
-
-    // chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    //     if (message.greeting === 'GetTrackCount') {   
-    //         console.info("Content Script: Received request to retrieve track count.");
-    //         message.response = getPlaylistTrackCount(message.app);
-    //         sendResponse(message);
-    //     }
-    // });
 
     /**
      * Scrolls the page such that the given element is in view
@@ -163,27 +155,12 @@
     }
 
     function GetTracks(callback) {
-        const _firstTrack = document.querySelector("ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]");
+        const _firstTrack = document.querySelector("ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]"); //Find the first track element using query selector. This selector is used because it currently works across all valid tracklists.
         if (typeof _firstTrack === 'object') {
-            const _trackRowContainer = _firstTrack.parentElement;
-            let _scrapeStartingIndex = getIndexOfElement(_firstTrack); //Get the index of the first track element at which to begin the scrape, since it isn't always necessarily the first element in the track row container (i.e. can't assume it's 0)
-            //const _scrapeEndingIndexModifier = (app === 'gpm') ? -1 : 0; //Variable to track the modifier to the index to end each scrape with. Typically 0, but -1 for GPM due to how the DOM is laid out.
-            
-            //TODO a problem is that this returns an error even in cases where we expect there not to be a track count...
-                //...maybe don't try to get a track count unless we know to expect one. Could check type from tracklist metadata.
-                    //Does the extension even need to know the tracklist type? Does it need to be stored in the cache
-                //...or don't log an error if it fails...
-                //TODO OR at THIS time in the process, get the tracklist type. The content script can figure that out from the URL.
-                    //As it stands right now, there is no reason to cache the tracklist type because it isn't ever used after it's grabbed from storage
-                    //The background script does scrape the URL to determine icon/popup display, so it's a bit silly to then do that again here...
-                    //...but that isn't necessarily worse than fetching the cached data from storage once the popup is open.
-                //Actually there is a reason to cache the tracklist type. This gets set when the tracklist get stored in Firestore. It isn't strictly necessary but could help for organization.
-
-            const _expectedTrackCount = getMetadatum(metadataNames.trackCount); //Fetch the official track count of the tracklist, if one exists
-        
-            scrapeTracks(_trackRowContainer, _scrapeStartingIndex, callback, _expectedTrackCount);
-        
-            
+            const _tracksContainer = _firstTrack.parentElement; //Get the tracks container element
+            const _expectedTrackCount = getMetadatum(metadataNames.trackCount); //Fetch the official track count of the tracklist, if one exists. This will be undefined otherwise. 
+            let _scrapeStartingIndex = getIndexOfElement(_firstTrack); //Get the index of the first track element at which to begin the scrape, since it isn't always necessarily the first element in the track row container (i.e. can't assume it's 0)  
+            scrapeTracks(_tracksContainer, _scrapeStartingIndex, callback, _expectedTrackCount); //Initiate the scrape & scroll process
         } else console.error("Tried to get scrape the tracks in the current tracklist, but the first track in the list couldn't be identified.");
     }
 
