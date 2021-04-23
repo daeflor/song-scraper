@@ -1,19 +1,19 @@
 import * as Model from './Model.js';
 import * as ViewRenderer from './ViewRenderer.js';
 import * as UIController from '../AppNavigator.js';
-import * as Messenger from './MessageController.js';
+import * as Messenger from './utilities/messenger.js';
 //import sendMessage from './MessageController.js';
 //import logOut from './AuthController.js' //TODO use or remove this, as desired
 import * as Auth from '../auth/firebase-ui-auth.js'
-
-//TODO might be good to have an app.js or similar file that is the singular point waiting for the DOM to load,
-    //and which then tells EventController, AuthController, etc. to initiaite / listen for events.
-    //Note that this might not be necessary since module scripts are deferred by default
 
 //Button Pressed: Log In
 // ViewRenderer.buttons.logIn.addEventListener('click', function() {
 //     auth.logIn();
 // });
+
+//TODO could consider adding to and/or removing from EventController so that it's the central place for all event-driven logic
+    //i.e. EventController should dictate & be aware of all events & reactions throughout the app (not sure about auth...)
+    //But it shouldn't necessarily handle any in-depth / area-specific logic. It should hand that off to the scripts designated specifically for that and then just get back the results and act on them.
 
 //Button Pressed: Log Out
 ViewRenderer.buttons.logOut.addEventListener('click', function() {
@@ -27,18 +27,22 @@ ViewRenderer.buttons.logOut.addEventListener('click', function() {
 //Button Pressed: Scrape Current Tracklist
 ViewRenderer.buttons.scrape.addEventListener('click', function() {
     UIController.triggerUITransition('StartScrape');
-    Messenger.sendMessage('GetTracklistMetadata');
-    //sendMessage('GetTracklistMetadata');
+    Messenger.sendMessageToContentScripts('GetTracks', tracksArray => {
+        if (Array.isArray(tracksArray) === true) { //If the response received is an array...
+            Model.setScrapedTracksArray(tracksArray); //TODO not sure about this naming //Update the scraped tracklist metadata in the Model
+            UIController.triggerUITransition('ScrapeSuccessful'); //Transition the UI accordingly
+        } else {
+            UIController.triggerUITransition('ScrapeFailed');
+            console.error("Requested tracklist metadata from content script, but response was not a valid array.");
+        }
+    });
 });
 
 //Button Pressed: Store Scraped Metadata
 ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
-    //TODO would be better to disable the Store button here, as soon as it's pressed, instead of after the storage process has succeeded. Because for long tracklists that can take a while.
-        //...May help to have an intermediate state (e.g. StorageInProgress)
-        //Actually all of the UI changes done below could be done before the storage has complete, so just need to rename the transition and move the call outside of the storage callback
+    UIController.triggerUITransition('StorageInProgress'); //Update the UI while the data is being stored (e.g. disable the 'store' button)
 
-    //Store the scraped tracklist and then update the UI accordingly
-    Model.storeScrapedTracklist(() => {
+    Model.storeScrapedTracklist(() => { //Store the scraped tracklist and then update the UI accordingly once the storage process is complete
         UIController.triggerUITransition('ScrapedMetadataStored');
     });
 });
@@ -60,9 +64,7 @@ ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', function() {
         //If a track table DOM element has previously been created, just show the existing element
         if (typeof ViewRenderer.tracktables.stored === 'object') {
             ViewRenderer.unhideElement(ViewRenderer.tracktables.stored);
-        }
-        //Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
-        else {
+        } else { //Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
             Model.getStoredMetadata(tracksArray => {
                 ViewRenderer.tracktables.stored = UIController.createTrackTable(tracksArray, 'Stored YTM Tracklist');
                 //TODO this interaction with ViewRenderer is WIP

@@ -103,17 +103,22 @@ function compareTrackCountsAndUpdateIcon(tracklistTitle, currentTrackCount) {
     getTrackCountFromGPMTracklistData(tracklistTitle, gpmTrackCount => {
         //(currentTrackCount === gpmTrackCount) ? updateIcon(_iconPaths.default) : updateIcon(_iconPaths.exclamation);
 
-        const _trackCountDelta = currentTrackCount - gpmTrackCount;
-        if (_trackCountDelta === 0) {
-            console.info("Background: The current track count (from the DOM) is the same as the stored track count.");
+        if (gpmTrackCount === undefined) {
+            console.info("Background: The stored track count could not be determined.");
             updateIcon('default');
         } else {
-            console.info("Background: The current track count (from the DOM) is different from the stored track count.");
-            updateIcon('exclamation');
-            const _badgeText = (_trackCountDelta > 0) ? "+" + _trackCountDelta.toString() : _trackCountDelta.toString(); //Prefix the badge text with a "+" if the delta is positive
-            const _badgeColor = (_trackCountDelta > 0) ? [255, 127, 0, 255] : [255, 0, 0, 255]; //Set to badge color to orange if the delta is positive, red if negative
-            updateBadgeText(_badgeText);
-            chrome.action.setBadgeBackgroundColor({color: _badgeColor});
+            const _trackCountDelta = currentTrackCount - gpmTrackCount;
+            if (_trackCountDelta === 0) {
+                console.info("Background: The current track count (from the DOM) is the same as the stored track count.");
+                updateIcon('default');
+            } else {
+                console.info("Background: The current track count (from the DOM) is different from the stored track count.");
+                updateIcon('exclamation');
+                const _badgeText = (_trackCountDelta > 0) ? "+" + _trackCountDelta.toString() : _trackCountDelta.toString(); //Prefix the badge text with a "+" if the delta is positive
+                const _badgeColor = (_trackCountDelta > 0) ? [255, 127, 0, 255] : [255, 0, 0, 255]; //Set to badge color to orange if the delta is positive, red if negative
+                updateBadgeText(_badgeText);
+                chrome.action.setBadgeBackgroundColor({color: _badgeColor});
+            }
         }
     });
 }
@@ -163,8 +168,11 @@ function getTrackCountFromGPMTracklistData(tracklistTitle, callback){
             if (tracklistKey.includes("'" + tracklistTitle + "'")) {
                 console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + _gpmLibraryData[tracklistKey].length);
                 callback(_gpmLibraryData[tracklistKey].length);
+                return;
             }
         }
+        console.warn("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
+        callback(undefined);
     });
 }
 

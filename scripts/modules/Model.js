@@ -7,10 +7,6 @@ import * as Storage from './StorageManager.js';
 
 //TODO might want to freeze these once the values have been set
 
-export const tab = {
-    id: null
-};
-
 export const tracklist = { //TODO maybe rename to currentTracklist?
     type: undefined,
     title: undefined,

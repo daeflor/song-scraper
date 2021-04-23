@@ -59,98 +59,43 @@ import * as IO from './Modules/Utilities/IO.js';
 
 
 function init() {
-    chrome.tabs.query( { active: true, currentWindow: true}, tabs => { //Query for the Active Tab...
-        Model.tab.id = tabs[0].id; //Make a record of the current/active tab for future reference
-        //window.Model.SetTabId(tabs[0].id);
+    const _storagekey = 'currentTracklistMetadata';
+    chrome.storage.local.get(_storagekey, storageResult => { //Get the cached metadata for the current tracklist from local storage
+        const _tracklistMetadata = storageResult[_storagekey];
 
-        const _storagekey = 'currentTracklistMetadata';
-        chrome.storage.local.get(_storagekey, storageResult => { //Get the cached metadata for the current tracklist from local storage
-            const _tracklistMetadata = storageResult[_storagekey];
+        //TODO Maybe Model should just grab these values itself, although it would need to be able to call ShowLandingPage or equivalent afterwards
+        //TODO Or instead, maybe only the files that need certain variables should track those.
 
-            if (typeof _tracklistMetadata.type === 'string') { //If the tracklist type has been set correctly, update it in the Model
-                Model.tracklist.type = _tracklistMetadata.type;
-            } else {
-                console.error("The tracklist type could not be determined from the URL.");
-                //TODO might be better to call TriggerUITransition here instead, to keep all ViewRenderer calls in one place
-                ViewRenderer.showStatusMessage('The tracklist type could not be determined from the URL.');
-                return;
-            }
+        if (typeof _tracklistMetadata.type === 'string') { //If the tracklist type has been set correctly, update it in the Model
+            Model.tracklist.type = _tracklistMetadata.type;
+        } else {
+            console.error("The tracklist type could not be determined from the URL.");
+            //TODO might be better to call TriggerUITransition here instead, to keep all ViewRenderer calls in one place
+            ViewRenderer.showStatusMessage('The tracklist type could not be determined from the URL.');
+            return;
+        }
 
-            if (typeof _tracklistMetadata.title === 'string') { //If the tracklist title has been set correctly, update it in the Model
-                Model.tracklist.title = _tracklistMetadata.title;
-            } else {
-                console.error("The tracklist type could not be determined from the URL.");
-                ViewRenderer.showStatusMessage('The tracklist type could not be determined from the URL.');
-                return;
-            }
+        if (typeof _tracklistMetadata.title === 'string') { //If the tracklist title has been set correctly, update it in the Model
+            Model.tracklist.title = _tracklistMetadata.title;
+        } else {
+            console.error("The tracklist type could not be determined from the URL.");
+            ViewRenderer.showStatusMessage('The tracklist type could not be determined from the URL.');
+            return;
+        }
 
-            console.info("Retrieved tracklist metadata from local storage cache:");
-            console.info(Model.tracklist);
-            prepareLandingPage(); //If all the required metadata have been set correctly, show the extension landing page
-        });
+        console.info("Retrieved tracklist metadata from local storage cache:");
+        console.info(Model.tracklist);
+        triggerUITransition('ShowLandingPage'); //If all the required metadata have been set correctly, show the extension landing page
     });
-}
-
-    // function initializeFlow(url) {
-    //     //TODO could use some more error handling here to ensure the parameters are passed correclty, since the error is quite hard to track down if, for example, the tab isn't actually passed.
-    //     console.assert(typeof url == 'string', 'url should be a string');
-        
-    //     validateUrlAndRecordTracklistInfo(url);
-
-    //     //Send a message to the content script to make a record of the current app for future reference
-    //     sendMessage_RecordCurrentApp(window.Model.GetApp());
-
-    //     //If the current app and tracklist type have been set...
-    //     if (window.Model.GetApp() != null && window.Model.GetTracklistType() != null) {
-    //         //If the tracklist title has also already been set, proceed to prepare the extension's landing page
-    //         if (window.Model.GetTracklistTitle() != null) {
-    //             prepareLandingPage(); 
-    //         }
-    //         //Else, if the tracklist title has not yet been set, retrieve it from the content script before displaying the extension's landing page
-    //         else {
-    //             //Set up a callback function so that when the tracklist title is fetched, the popup landing page gets prepared and displayed
-    //             const _onTracklistTitleReceived = function(response) {
-    //                 window.Model.SetTracklistTitle(response.tracklistName); //Make a record of the tracklist title
-    //                 //updateTracklistTitle(response.tracklistName); //Make a record of the tracklist title
-    //                 prepareLandingPage(); //Prepare the extension' landing page
-    //             }
-
-    //             //Send a message to the content script to fetch the name of the current tracklist
-    //             sendMessage_GetTracklistName(_onTracklistTitleReceived);
-    //         }
-    //     }
-    // }
-
-    // function sendMessage_RecordCurrentApp(currentApp) {
-    //     //Send a message to the content script to make a record of the current app
-    //     const _message = {greeting:'RecordCurrentApp', app:currentApp};
-    //     window.Utilities.SendMessageToContentScripts(_message);
-    //     //TODO pretty sure this results in an error because no response is sent, but not certain
-    // }
-
-    // function sendMessage_GetTracklistName(callback) {
-    //     //Send a message to the content script to get the tracklist name
-    //     const _message = {greeting:'GetTracklistName'};
-    //     window.Utilities.SendMessageToContentScripts(_message, callback);
-    // }
-
-function prepareLandingPage() {
-    ViewRenderer.hideElement(ViewRenderer.divs.status);
-    ViewRenderer.showHeader(Model.tracklist.title);
-
-    ViewRenderer.showLandingPage();
-    ViewRenderer.hideElement(ViewRenderer.divs.auth);
 }
 
 export function triggerUITransition(transition) {
     if (transition === 'UrlInvalid') {
         ViewRenderer.showStatusMessage('The current URL is not supported by this extension.');
-    }
-    else if (transition === 'ShowAuthPrompt') {
+    } else if (transition === 'ShowAuthPrompt') {
         ViewRenderer.hideElement(ViewRenderer.divs.status);
         ViewRenderer.unhideElement(ViewRenderer.divs.auth);
-    }
-    else if (transition === 'LogOut') {
+    } else if (transition === 'LogOut') {
         ViewRenderer.hideElement(ViewRenderer.divs.header);
         ViewRenderer.hideElement(ViewRenderer.divs.buttons);
         ViewRenderer.hideElement(ViewRenderer.divs.checkboxes);
@@ -158,22 +103,16 @@ export function triggerUITransition(transition) {
 
         resetAllTrackTablesAndCheckboxes();
 
-        //TODO might want a for loop to uncheck all checkboxes and hide all the track tables
-            //If a for loop is used, it could also check for the elements not being undefined.
-        // ViewRenderer.uncheckBox(ViewRenderer.checkboxes.storedTrackTable);
-        // ViewRenderer.uncheckBox(ViewRenderer.checkboxes.scrapedTrackTable);
-        // ViewRenderer.uncheckBox(ViewRenderer.checkboxes.deltaTrackTables);
-        // ViewRenderer.hideElement(ViewRenderer.tracktables.stored);
-        // ViewRenderer.hideElement(ViewRenderer.tracktables.scraped);
-        // ViewRenderer.hideElement(ViewRenderer.tracktables.deltas);
-
         ViewRenderer.disableElement(ViewRenderer.buttons.exportScrapedMetadata);
-        // ViewRenderer.disableElement(ViewRenderer.checkboxes.scrapedTrackTable);
-        // ViewRenderer.disableElement(ViewRenderer.checkboxes.deltaTrackTables);
-        
+        ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Save Scraped Metadata to Storage');
+
         ViewRenderer.unhideElement(ViewRenderer.divs.auth);
-    }
-    else if (transition === 'StartScrape') {
+    } else if (transition === 'ShowLandingPage') {
+        ViewRenderer.hideElement(ViewRenderer.divs.status);
+        ViewRenderer.hideElement(ViewRenderer.divs.auth);
+        ViewRenderer.showHeader(Model.tracklist.title);
+        ViewRenderer.showLandingPage();
+    } else if (transition === 'StartScrape') {
         ViewRenderer.disableElement(ViewRenderer.buttons.scrape);
         ViewRenderer.hideElement(ViewRenderer.divs.buttons);
         ViewRenderer.hideElement(ViewRenderer.divs.checkboxes);
@@ -181,8 +120,7 @@ export function triggerUITransition(transition) {
         //ViewRenderer.hideLandingPage();
 
         ViewRenderer.showStatusMessage('Song list comparison in progress.');
-    } 
-    else if (transition === 'ScrapeSuccessful') {
+    } else if (transition === 'ScrapeSuccessful') {
         ViewRenderer.hideElement(ViewRenderer.divs.status);
         ViewRenderer.unhideElement(ViewRenderer.divs.buttons);
         ViewRenderer.unhideElement(ViewRenderer.divs.checkboxes);
@@ -192,17 +130,18 @@ export function triggerUITransition(transition) {
         ViewRenderer.enableElement(ViewRenderer.buttons.exportScrapedMetadata);
         ViewRenderer.enableElement(ViewRenderer.checkboxes.scrapedTrackTable);
         ViewRenderer.enableElement(ViewRenderer.checkboxes.deltaTrackTables);
-    }
-    else if (transition === 'ScrapeFailed') {
+        ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Save Scraped Metadata to Storage');
+    } else if (transition === 'ScrapeFailed') {
         ViewRenderer.showStatusMessage('Failed to retrieve track list.');
-    }
-    else if (transition === 'ScrapedMetadataStored') {
+    } else if (transition === 'StorageInProgress') {
         ViewRenderer.disableElement(ViewRenderer.buttons.storeScrapedMetadata); //Disable the button to store the scraped data
         if (typeof ViewRenderer.tracktables.stored === 'object') { //If the track table for the stored tracklist exists...
             ViewRenderer.removeElement(ViewRenderer.tracktables.stored); //Remove the tracktable element from the DOM (since it may be out-of-date)
             ViewRenderer.tracktables.stored = undefined; //Clear the saved reference to the old track table
             ViewRenderer.uncheckBox(ViewRenderer.checkboxes.storedTrackTable); //Uncheck the checkbox
         }
+    } else if (transition === 'ScrapedMetadataStored') {
+        ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Data successfully stored!');
     }
 }
 
@@ -339,7 +278,7 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
 function checkIfDurationValuesMatch(durationA, durationB) {
     if (typeof durationA === 'number' && typeof durationB === 'number') {
         const _differenceInSeconds = durationA - durationB;
-        return (_differenceInSeconds > -2 && _differenceInSeconds < 2) ? true : false;
+        return (_differenceInSeconds >= -2 && _differenceInSeconds <= 2) ? true : false;
     }
     else {
         DebugController.logError("Error: Expected two parameters of type 'number' but instead received a) " + durationA + "; b) " + durationB);
@@ -587,13 +526,13 @@ window.Utilities = (function() {
     }
 
     return {
-        FadeIn: fadeIn,
-        GetElement: getElement,
-        CreateNewElement: createNewElement,
-        SendRequest_LoadGooglePlayMusicExportData: sendRequest_LoadGooglePlayMusicExportData
+        // FadeIn: fadeIn,
+        // GetElement: getElement,
+        CreateNewElement: createNewElement
+        //SendRequest_LoadGooglePlayMusicExportData: sendRequest_LoadGooglePlayMusicExportData
     };
 })();
 
 //window.Utilities.FadeIn(document.body, init, 500);
 
-export {init, prepareLandingPage, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};
+export {init, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};
