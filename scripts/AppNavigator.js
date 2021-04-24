@@ -286,34 +286,22 @@ function checkIfDurationValuesMatch(durationA, durationB) {
 }
 
 function markMatchingTracks(tracklistCurrent, tracklistPrevious) {
-    for (let i = 0; i < tracklistCurrent.length; i++) {
-        const _scrapedTrack = tracklistCurrent[i];
-        
-        for (let j = 0; j < tracklistPrevious.length; j++) {
-            const _storedTrack = tracklistPrevious[j];
+    const _collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); //Set up a collator to look for string differences, ignoring capitalization
 
-            //If both the scraped and stored tracks have valid values...
-            if (_scrapedTrack != null && _storedTrack != null) {
-                //If the stored track hasn't already been marked as 'matched'...
-                if (_storedTrack.matched !== true) {
-                    //If the scraped and stored tracks match...
-                    if (_scrapedTrack.title === _storedTrack.title && _scrapedTrack.artist === _storedTrack.artist &&
-                        _scrapedTrack.album === _storedTrack.album && checkIfDurationValuesMatch(_scrapedTrack.seconds, _storedTrack.seconds) === true ) {
-                        
-                            //Mark the scraped and stored tracks both as 'matched' and move onto the next scraped track
-                            _scrapedTrack.matched = true;
-                            _storedTrack.matched = true;
-                            break;
-                    }
-                }
-            } //TODO OLD - removed track index wrong if there were duplicates
-
-            //TODO would it work to start at the same j position that was last matched + 1, as opposed to always starting at j=0?
-                //Probably more hassle and room for error than it's worth
-
-            else {
-                DebugController.logError("Attempted to compare two tracks but at least one of them was null.");
-            }  
+    for (const _scrapedTrack of tracklistCurrent) { //For every scraped track...
+        for (const _storedTrack of tracklistPrevious) { //For every stored track...
+            if (_storedTrack.matched !== true) { //If the stored track hasn't already been marked as 'matched'...
+                //If the scraped and stored tracks match...
+                if (_collator.compare(_scrapedTrack.title, _storedTrack.title) === 0 &&
+                _collator.compare(_scrapedTrack.artist, _storedTrack.artist) === 0 &&
+                _collator.compare(_scrapedTrack.album, _storedTrack.album) === 0 &&
+                checkIfDurationValuesMatch(_scrapedTrack.seconds, _storedTrack.seconds) === true) {
+                    //Mark the scraped and stored tracks both as 'matched' and move onto the next scraped track
+                    _scrapedTrack.matched = true;
+                    _storedTrack.matched = true;
+                    break;
+                } //TODO Note that the removed track index wrong if there were duplicate copies of the track in the tracklist
+            }
         }
     }
 }
