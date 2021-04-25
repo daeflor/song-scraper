@@ -237,9 +237,9 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
                     if (typeof _columnsToIncludeInTrackTable[j] === 'string') {  
                         //Force the column name string to lower case and use that value to extract the corresponding metadatum value for the track
                         const _trackMetadatum = tracklist[i][_columnsToIncludeInTrackTable[j].toLowerCase()];
-                        //If the track's metadatum for the current column is a valid string or has a value of true
                         //if (typeof _trackMetadatum === 'string' || _trackMetadatum === true || typeof _trackMetadatum === 'number') {
-                        if (typeof _trackMetadatum !== 'undefined' && _trackMetadatum != false) {
+                        // If the track's metadatum for the current column exists and is not 'false'
+                        if (typeof _trackMetadatum !== 'undefined' && _trackMetadatum !== false) {
                             //Create a new data cell for the track's metadatum
                             _td = document.createElement('td');
                             _td.textContent = _trackMetadatum;
@@ -395,35 +395,32 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
             scrapedTracklist[i].seconds = convertDurationStringToSeconds(scrapedTracklist[i].duration);
         }
 
-        //deltaTracklists = getDeltaTracklists(scrapedTracklist, storedTracklist);
+        const deltaTracklists = getDeltaTracklists(scrapedTracklist, storedTracklist);
 
-        markMatchingTracks(scrapedTracklist, storedTracklist);
+        //markMatchingTracks(scrapedTracklist, storedTracklist);
 
-        //Create a new container div element for all the track tables used to show the deltas (e.g. Added, Removed, Disabled)
-        ViewRenderer.tracktables.deltas = window.Utilities.CreateNewElement('div');
-        
-        //Create a header element and track table for the list of 'Added Tracks'
-        let _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
-        createTrackTable(scrapedTracklist, 'Added Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement, skipMatchedTracks:true});
-        
-        //Create a header element and track table for the list of 'Removed Tracks'
-        _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
-        createTrackTable(storedTracklist, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement, skipMatchedTracks:true});
+        if (typeof deltaTracklists === 'object') {
+            // Create a new container div element for all the track tables used to show the deltas (e.g. Added, Removed, Disabled)
+            ViewRenderer.tracktables.deltas = window.Utilities.CreateNewElement('div'); //TODO why isn't this created in advance? Or just in the html file already. Is there a reason to create it here?
+            
+            // Create a header element and track table for the list of 'Added Tracks'
+            let _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
+            createTrackTable(deltaTracklists.added, 'Added Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement,});
+            
+            // Create a header element and track table for the list of 'Removed Tracks'
+            _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
+            createTrackTable(deltaTracklists.removed, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement});
 
-        //Add the new container div for all the delta track tables to the DOM, within the general track tables div
-        ViewRenderer.divs.tracktables.appendChild(ViewRenderer.tracktables.deltas);
+            // Add the new container div for all the delta track tables to the DOM, within the general track tables div
+            ViewRenderer.divs.tracktables.appendChild(ViewRenderer.tracktables.deltas);
 
-        console.log("printing scraped list")
-        console.log(scrapedTracklist);
-        console.log(Model.getScrapedTracksArray());
-        //TODO The matched & seconds fields will get set in storage iff the delta track lists/tables are created before storing the data.
-            //Does it make any sense for storagemanager to keep a separate copy of the scrapedarray?
-                //For example, in event-controller, when the tracks are returned call:
-                    //StorageManager.setScrapedTracks();
-                    //self.setScrapedTracks()
-                    //?? I think that might not even work cause both variables would get set to the same array reference afaik.
-                        //Is it the same problem if the strorage manager immediately makes a new 'storage object' containing the array?
-                            //I think it *still* would have the same problem but not 100%
+            // console.log("printing scraped list")
+            // console.log(scrapedTracklist);
+            // console.log(Model.getScrapedTracksArray());
+            //TODO The matched & seconds fields will get set in storage iff the delta track lists/tables are created before storing the data.
+                //Would it work if the storage manager immediately makes a new 'storage object' containing the array once it's returned from the content script?
+                    //Or would that still be referencing the same copy of the array that gets sent to AppNavigator?
+        }
     });
 }
 
