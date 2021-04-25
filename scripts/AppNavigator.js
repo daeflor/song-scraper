@@ -1,7 +1,7 @@
-import * as DebugController from './Modules/DebugController.js';
-import * as ViewRenderer from './Modules/ViewRenderer.js';
-import * as Model from './Modules/Model.js';
-import * as IO from './Modules/Utilities/IO.js';
+import * as DebugController from './modules/DebugController.js';
+import * as ViewRenderer from './modules/ViewRenderer.js';
+import * as Model from './modules/Model.js';
+import * as IO from './modules/Utilities/IO.js';
 
 // window.Model = (function() {
 //     // //TODO might want to freeze this once the values have been set
@@ -247,6 +247,7 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
                             _tr.appendChild(_td);
                         }
                         else {
+                            // TODO This log is annoying. Is it possible to omit it if the column is 'unplayable'?
                             DebugController.logInfo("A piece of track metadata was encountered that is blank, false, or undefined, and so it was skipped over. This is typical in the case of the 'Unplayable' column, but otherwise could indicate that an issue was encountered. Current column is: " + _columnsToIncludeInTrackTable[j]);
                         }
                     }
@@ -285,41 +286,118 @@ function checkIfDurationValuesMatch(durationA, durationB) {
     }
 }
 
-function markMatchingTracks(tracklistCurrent, tracklistPrevious) {
-    const _collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); //Set up a collator to look for string differences, ignoring capitalization
+// /**
+//  * Checks if the given track is included in the provided array of tracks
+//  * @param {object} trackToSeek The track to look for
+//  * @param {array} tracksArray The array of tracks in which to look
+//  */
+// function isTrackInTracklist(trackToSeek, tracksArray, collator) {
+//     for (const trackToCompare of tracksArray) { // For every stored track...
+//         if (trackToCompare.matched !== true) { // If the stored track hasn't already been marked as 'matched'...
+//             // If the two tracks match...
+//             if (collator.compare(trackToSeek.title, trackToCompare.title) === 0 &&
+//             collator.compare(trackToSeek.artist, trackToCompare.artist) === 0 &&
+//             collator.compare(trackToSeek.album, trackToCompare.album) === 0 &&
+//             checkIfDurationValuesMatch(trackToSeek.seconds, trackToCompare.seconds) === true) {
+//                 trackToCompare.matched = true;
+//                 return true;
+//             }
+//         } //TODO a reason the 'matched' system may be better is that if there are multiple/duplicate tracks in the array that contains trackToSeek, but tracksArray only has one copy, it will still return true for all cases.
+//     }   //... Not sure how much to care about this case, since I can't think of any instances where I purposefully have duplicate tracks
+//     return false;
+// }
 
-    for (const _scrapedTrack of tracklistCurrent) { //For every scraped track...
-        for (const _storedTrack of tracklistPrevious) { //For every stored track...
-            if (_storedTrack.matched !== true) { //If the stored track hasn't already been marked as 'matched'...
-                //If the scraped and stored tracks match...
+function markMatchingTracks(tracklistCurrent, tracklistPrevious) {
+    const _collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
+
+    for (const _scrapedTrack of tracklistCurrent) { // For every scraped track...
+        for (const _storedTrack of tracklistPrevious) { // For every stored track...
+            if (_storedTrack.matched !== true) { // If the stored track hasn't already been marked as 'matched'...
+                // If the scraped and stored tracks match...
                 if (_collator.compare(_scrapedTrack.title, _storedTrack.title) === 0 &&
                 _collator.compare(_scrapedTrack.artist, _storedTrack.artist) === 0 &&
                 _collator.compare(_scrapedTrack.album, _storedTrack.album) === 0 &&
                 checkIfDurationValuesMatch(_scrapedTrack.seconds, _storedTrack.seconds) === true) {
-                    //Mark the scraped and stored tracks both as 'matched' and move onto the next scraped track
+                    // Mark the scraped and stored tracks both as 'matched' and move onto the next scraped track
                     _scrapedTrack.matched = true;
                     _storedTrack.matched = true;
                     break;
-                } //TODO Note that the removed track index wrong if there were duplicate copies of the track in the tracklist
-            }
+                } // TODO Note that the removed track index may be wrong if there were duplicate copies of the track in the tracklist
+            }       
         }
     }
 }
 
+function compareTracks(track1, track2, collator) {
+    if (typeof(track1) === 'object' && typeof(track2) === 'object' && typeof collator === 'object') {
+        return (collator.compare(track1.title, track2.title) === 0 &&
+        collator.compare(track1.artist, track2.artist) === 0 &&
+        collator.compare(track1.album, track2.album) === 0 &&
+        checkIfDurationValuesMatch(track1.seconds, track2.seconds) === true)
+            ? true : false;
+    } else console.error("Tried to compare two tracks but the parameters provided are not valid.");
+}
+
+function getDeltaTracklists(scrapedTracklist, storedTracklist) {
+
+    if (Array.isArray(scrapedTracklist) === true && Array.isArray(storedTracklist) === true) {
+        let unplayableTracks = [];
+        const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
+        const addedTracks = scrapedTracklist.filter(scrapedTrack => {
+            let trackAdded = true;
+            //console.debug("LOOKING AT A NEW SCRAPED TRACK ---------- Title: " + scrapedTrack.title + " -----------------");
+            for (const storedTrack of storedTracklist) {
+                //console.debug("Comparing stored track. Title: " + storedTrack.title + ". Matched value: " + storedTrack.matched);
+
+                if (storedTrack.matched !== true && compareTracks(scrapedTrack, storedTrack, collator) === true) {
+                    //console.debug("Found a matching track.");
+                    //scrapedTrack.matched = true;
+                    storedTrack.matched = true; //TODO think of clean way of doing this without using matched, perhaps. Actually, using matched should be fine, because the stored tracklist does not get re-stored ever again.
+                    trackAdded = false;
+
+                    if (scrapedTrack.unplayable === true && storedTrack.unplayable !== true) {
+                        unplayableTracks.push(scrapedTrack);
+                    }
+
+                    break;
+                }
+            }
+            //console.debug("Found a Track Added.");
+            return trackAdded;
+        });
+
+        const removedTracks = storedTracklist.filter(storedTrack => (storedTrack.matched !== true));
+
+        // console.log("Added Tracks:")
+        // console.table(addedTracks);
+        // console.log("Removed Tracks:")
+        // console.table(removedTracks);
+        // console.log("unplayable Tracks:")
+        // console.table(unplayableTracks);
+
+        return {added:addedTracks, removed:removedTracks, unplayable:unplayableTracks};
+    }
+}
+
+// TODO why pass the parameter, when we can get the scraped tracklist from the Model right here?
 export function createDeltaTracklistsGPM(scrapedTracklist) {
-    //TODO why pass the parameter, when we can get the scraped tracklist from the Model right here?
-
-    //Once the Google Play Music metadata for the current tracklist has been fetched...
-    const _onGooglePlayMusicMetadataRetrieved = function(gpmTracklist) {
-
-        for (let i = 0; i < gpmTracklist.length; i++) { 
-            gpmTracklist[i].seconds = convertDurationStringToSeconds(gpmTracklist[i].duration);
+    Model.getStoredMetadataGPM(storedTracklist => { // Fetch the stored version of the current tracklist...
+        //TODO can this be merged with the other for loops / for...ofs (inside markMatchingTracks)
+        for (let i = 0; i < storedTracklist.length; i++) { 
+            storedTracklist[i].seconds = convertDurationStringToSeconds(storedTracklist[i].duration);
+            //TODO couldn't this be done more intelligently so that the stored tracklist already has the seconds field set for every track?
+                // That is, assuming we even need to store it. An alternative could be to just convert the duration string to number on the fly when the comparison is triggered, rather than setting a new field in advance here.
+                // However, storing it *may* be useful and would then remove the need to (re)convert the value for the stored tracklist.
+                // But storing the "matched" field would be bad...
+                //Note that, if the delta tables are created prior to storage, the seconds field *is* currently getting stored. Fix it so it's at least consistent. Either always store it or never store it.
         }
         for (let i = 0; i < scrapedTracklist.length; i++) { 
             scrapedTracklist[i].seconds = convertDurationStringToSeconds(scrapedTracklist[i].duration);
         }
 
-        markMatchingTracks(scrapedTracklist, gpmTracklist);
+        //deltaTracklists = getDeltaTracklists(scrapedTracklist, storedTracklist);
+
+        markMatchingTracks(scrapedTracklist, storedTracklist);
 
         //Create a new container div element for all the track tables used to show the deltas (e.g. Added, Removed, Disabled)
         ViewRenderer.tracktables.deltas = window.Utilities.CreateNewElement('div');
@@ -330,14 +408,23 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
         
         //Create a header element and track table for the list of 'Removed Tracks'
         _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
-        createTrackTable(gpmTracklist, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement, skipMatchedTracks:true});
+        createTrackTable(storedTracklist, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement, skipMatchedTracks:true});
 
         //Add the new container div for all the delta track tables to the DOM, within the general track tables div
         ViewRenderer.divs.tracktables.appendChild(ViewRenderer.tracktables.deltas);
-    };
 
-    //Fetch the Google Play Music tracklist metadata from the Model and then execute the callback
-    Model.getStoredMetadataGPM(_onGooglePlayMusicMetadataRetrieved);
+        console.log("printing scraped list")
+        console.log(scrapedTracklist);
+        console.log(Model.getScrapedTracksArray());
+        //TODO The matched & seconds fields will get set in storage iff the delta track lists/tables are created before storing the data.
+            //Does it make any sense for storagemanager to keep a separate copy of the scrapedarray?
+                //For example, in event-controller, when the tracks are returned call:
+                    //StorageManager.setScrapedTracks();
+                    //self.setScrapedTracks()
+                    //?? I think that might not even work cause both variables would get set to the same array reference afaik.
+                        //Is it the same problem if the strorage manager immediately makes a new 'storage object' containing the array?
+                            //I think it *still* would have the same problem but not 100%
+    });
 }
 
 function downloadCurrentTracklistAsCSV(tracklist) {
@@ -390,6 +477,9 @@ function convertDurationStringToSeconds(duration) {
     if (typeof duration === 'string') {
         //Split the duration string, then convert each split portion into an integer and return a new array of split integer values
         const _splitDurationIntegers = duration.split(':').map(durationString => parseInt(durationString, 10));
+        //TODO technically I don't think it's necessary to convert these to numbers because I think JS supports arithmatic with 'string versions' of numbers
+            //maybe NVM. The multiplication does work, but the addition does not
+            //A way around this would be to always multiply the last array index by 1, but at that point, is it worth it?
 
         switch(_splitDurationIntegers.length) {
             case 1: //Track is less than a minute long
