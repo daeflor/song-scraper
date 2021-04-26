@@ -208,46 +208,24 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
     //Create a new table element, with the header row as a child
     const _table = window.Utilities.CreateNewElement('table', {attributes:{class:'trackTable'}, children:[_tr]});
 
-    //If the tracklist parameter provided is a valid array...
-    if (Array.isArray(tracklist) === true) {
-        //For each track in the tracklist...
-        for (let i = 0; i < tracklist.length; i++) {
-            //If the current value in the array is a valid object...
-            if (typeof tracklist[i] === 'object') {
+    if (Array.isArray(tracklist) === true) { // If the tracklist parameter provided is a valid array...       
+        for (let i = 0; i < tracklist.length; i++) { // For each track in the tracklist...
+            let _td = document.createElement('td'); // Create a new data cell for the track's index
+            _td.textContent = i+1; // Set the index value of the track
+            _tr = window.Utilities.CreateNewElement('tr', {children:[_td]}); // Create a new row for the track, adding the index cell to the new row     
+            _table.appendChild(_tr); // Add the new row to the table
 
-                //Create a new data cell for the track's index
-                let _td = document.createElement('td'); 
-                _td.textContent = i+1; 
-                //Create a new row for the track, adding the index cell to the new row
-                _tr = window.Utilities.CreateNewElement('tr', {children:[_td]}); 
-                //Add the new row to the table
-                _table.appendChild(_tr);
-
-                //For each additional column in the Track Table...
-                for (let j = 0; j < _columnsToIncludeInTrackTable.length; j++) { 
-                    //If the current column's name is a valid string...
-                    if (typeof _columnsToIncludeInTrackTable[j] === 'string') {  
-                        //Force the column name string to lower case and use that value to extract the corresponding metadatum value for the track
-                        const _trackMetadatum = tracklist[i][_columnsToIncludeInTrackTable[j].toLowerCase()];
-                        //if (typeof _trackMetadatum === 'string' || _trackMetadatum === true || typeof _trackMetadatum === 'number') {
-                        // If the track's metadatum for the current column exists and is not 'false'
-                        if (typeof _trackMetadatum !== 'undefined' && _trackMetadatum !== false) {
-                            //Create a new data cell for the track's metadatum
-                            _td = document.createElement('td');
-                            _td.textContent = _trackMetadatum;
-                            //Add the new cell to the track's row
-                            _tr.appendChild(_td);
-                        }
-                        else {
-                            // TODO This log is annoying. Is it possible to omit it if the column is 'unplayable'?
-                            DebugController.logInfo("A piece of track metadata was encountered that is blank, false, or undefined, and so it was skipped over. This is typical in the case of the 'Unplayable' column, but otherwise could indicate that an issue was encountered. Current column is: " + _columnsToIncludeInTrackTable[j]);
-                        }
+            for (const column of _columnsToIncludeInTrackTable) { // For each additional column in the Track Table...
+                if (typeof column === 'string') { // If the current column's name is a valid string...
+                    const _trackMetadatum = tracklist[i][column.toLowerCase()]; // Convert the column name string to lower case and use that value to extract the corresponding metadatum value for the track
+                    if (typeof _trackMetadatum !== 'undefined') { // If the track's metadatum for the current column exists
+                        _td = document.createElement('td'); // Create a new data cell for the track's metadatum
+                        _td.textContent = _trackMetadatum; // Set the cell's text content equal to the metadatum value
+                        _tr.appendChild(_td); // Add the new cell to the track's row
+                    } else if (column !== 'Unplayable') { //Print a warning log if the metadata is undefined, except for the 'Unplayable' value, where this is expected.
+                        console.warn("A piece of track metadata was encountered that is blank, false, or undefined, and so it was skipped over. This does not include the 'Unplayable' column. This likley indicates that an issue was encountered. Current column is: " + column);
                     }
                 }
-            }
-            else {
-                DebugController.logError("Expected an object containing track metadata or null. Instead found: " + tracklist[i] + ". Current index in array: " + i + ". Tracklist: ");
-                console.table(tracklist);
             }
         }
     } //TODO could probably separate creating the track table itself from all the various other elements (e.g. header, description) that go along with it, to have smaller and easier-to-read functions
@@ -368,6 +346,8 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
             if (Array.isArray(deltaTracklists.unplayable) === true && deltaTracklists.unplayable.length > 0) {
                 _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'orangeFont noVerticalMargins'}});
                 createTrackTable(deltaTracklists.unplayable, 'Unplayable Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement});
+            
+                //TODO maybe put a flag here indicating whether or not the 'Unplayable' column should be include, and then send that when creating the 'Added' & 'Removed' track tables.
             }
 
             // Add the new container div for all the delta track tables to the DOM, within the general track tables div
