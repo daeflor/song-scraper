@@ -208,16 +208,16 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
     //Create a new table element, with the header row as a child
     const _table = window.Utilities.CreateNewElement('table', {attributes:{class:'trackTable'}, children:[_tr]});
 
-    if (Array.isArray(tracklist) === true) { // If the tracklist parameter provided is a valid array...       
-        for (let i = 0; i < tracklist.length; i++) { // For each track in the tracklist...
-            let _td = window.Utilities.CreateNewElement('td', {textContent:i+1}); // Create a new data cell for the track's index
+    if (typeof tracklist === 'object') { // If the tracklist parameter provided is a valid object...       
+        for (const [index, track] of tracklist) { // For each track in the tracklist...
+            let _td = window.Utilities.CreateNewElement('td', {textContent:index}); // Create a new data cell for the track's index
             _tr = window.Utilities.CreateNewElement('tr', {children:[_td]}); // Create a new row for the track, adding the index cell to the new row     
             
             _table.appendChild(_tr); // Add the new row to the table
 
             for (const column of _columnsToIncludeInTrackTable) { // For each additional column in the Track Table...
                 if (typeof column === 'string') { // If the current column's name is a valid string...
-                    const trackMetadatum = tracklist[i][column.toLowerCase()]; // Convert the column name string to lower case and use that value to extract the corresponding metadatum value for the track
+                    const trackMetadatum = track[column.toLowerCase()]; // Convert the column name string to lower case and use that value to extract the corresponding metadatum value for the track
                     if (typeof trackMetadatum !== 'undefined') { // If the track's metadatum for the current column exists
                         _tr.append(window.Utilities.CreateNewElement('td', {textContent:trackMetadatum})); // Append to the row a new cell containing the metadatum value
                     } else if (column !== 'Unplayable') { //Print a warning log if the metadata is undefined, except for the 'Unplayable' value, where this is expected.
@@ -226,7 +226,8 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
                 }
             }
         }
-    } //TODO could probably separate creating the track table itself from all the various other elements (e.g. header, description) that go along with it, to have smaller and easier-to-read functions
+    } else console.error("Tried to create a track table but a valid tracklist object was not provided.");
+    //TODO could probably separate creating the track table itself from all the various other elements (e.g. header, description) that go along with it, to have smaller and easier-to-read functions
 
     let _tableBody = undefined;
     if (_table.childElementCount === 1) //If the table has no tracks in it (i.e. the child count is 1, because of the header row)...
@@ -287,26 +288,131 @@ function compareTracks(track1, track2, collator) {
 
 function getDeltaTracklists(scrapedTracklist, storedTracklist) {
     if (Array.isArray(scrapedTracklist) === true && Array.isArray(storedTracklist) === true) {
-        let unplayableTracks = [];
+        //let unplayableTracks = [];
         const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
-        const addedTracks = scrapedTracklist.filter(scrapedTrack => {
-            let trackAdded = true;
-            for (const storedTrack of storedTracklist) {
-                if (storedTrack.matched !== true && compareTracks(scrapedTrack, storedTrack, collator) === true) {
-                    storedTrack.matched = true; //TODO think of clean way of doing this without using matched, perhaps. Actually, using matched should be fine, because the stored tracklist does not get re-stored ever again.
-                    trackAdded = false;
-                    if (scrapedTrack.unplayable === true && storedTrack.unplayable !== true) {
-                        unplayableTracks.push(scrapedTrack);
+        
+        //TODO Doesn't seem like a good idea (for readability and other reasons) but what if we just started creating td elements right here, and adding *those* to the added/removed arrays/maps?
+
+        /////
+
+        //TODO in Firebase's UI, storing tracklists as maps instead of arrays would be almost identical, so it may be worth looking into.
+            //Note however, that the scraped tracklist (even if it is saved originally as a map instead of array)...
+            //...can't be altered (i.e. have elements removed) because it is still needed in other parts of the app.
+            //Cloning a map is very easy though
+        //TODO a more obvious solution that doesn't need maps is to just store the index as a property along with the rest of the track metadata.
+            //Then could continue to use arrays instead of maps. Unsure if this is actually better though, especially since we're removing elements from the lists below.
+
+        const unmatchedScrapedTracks = new Map();
+        const unmatchedStoredTracks = new Map();
+        const unplayableTracks = new Map();
+        for (let i = 0; i < scrapedTracklist.length; i++) { // For each scraped track...
+            unmatchedScrapedTracks.set(i+1, scrapedTracklist[i]); // Add it to the unmatched scraped tracks map, using its position in the tracklist as the key
+        }
+        for (let i = 0; i < storedTracklist.length; i++) { // For each stored track...
+            unmatchedStoredTracks.set(i+1, storedTracklist[i]); // Add it to the unmatched stored tracks map, using its position in the tracklist as the key
+        }
+        for (const [scrapedTrackIndex, scrapedTrack] of unmatchedScrapedTracks) { // For each scraped track that hasn't yet been matched with a stored track...
+            for (const [storedTrackIndex, storedTrack] of unmatchedStoredTracks) { // For each stored track that hasn't yet been matched with a scraped track...
+                if (compareTracks(scrapedTrack, storedTrack, collator) === true) { // If the two tracks match...
+                    unmatchedScrapedTracks.delete(scrapedTrackIndex); // Delete the scraped track from the map of unmatched scraped tracks, so that it can't be matched against any other stored tracks
+                    unmatchedStoredTracks.delete(storedTrackIndex); // Delete the stored track from the map of unmatched stored tracks, so that it can't be matched against any other scraped tracks
+                    if (scrapedTrack.unplayable === true && storedTrack.unplayable !== true) { // If the scraped track is listed as unplayable but the stored track wasn't...
+                        unplayableTracks.set(scrapedTrackIndex, scrapedTrack); // Add the scraped track to the map of unplayable tracks, using its position in the tracklist as the key
                     }
                     break;
                 }
             }
-            return trackAdded;
-        });
+        }
 
-        const removedTracks = storedTracklist.filter(storedTrack => (storedTrack.matched !== true));
 
-        return {added:addedTracks, removed:removedTracks, unplayable:unplayableTracks};
+        /////
+
+        // const addedTracks = new Map();
+        // //const removedTracks = new Map();
+        // const unplayableTracks = new Map();
+        // const unmatchedStoredTracks = new Map();
+        // //const unmatchedStoredTracks = new Map(storedTracklist.map(track => [storedTracklist.indexOf(track), track]));
+        // for (let i = 0; i < storedTracklist.length; i++) { // For each stored track...
+        //     unmatchedStoredTracks.set(i, storedTracklist[i]); // Add it to the unmatched stored tracks map, using its index as the key
+        // }
+        // for (let i = 0; i < scrapedTracklist.length; i++) {
+        //     let trackAdded = true;
+        //     for (const [index, storedTrack] of unmatchedStoredTracks) { // For each stored track that hasn't yet been matched with a scraped track...
+        //         if (compareTracks(scrapedTracklist[i], storedTrack, collator) === true) { // If the two tracks match...
+        //             trackAdded = false; // Indicate that the track is not a newly added track, since a match was found in storage
+        //             unmatchedStoredTracks.delete(index); // Delete the stored track from the map of unmatched stored tracks, so that it can't be matched against any other scraped tracks
+        //             if (scrapedTracklist[i].unplayable === true && storedTrack.unplayable !== true) { // If the scraped track is listed as unplayable but the stored track wasn't...
+        //                 unplayableTracks.set(i, scrapedTracklist[i]); // Add the scraped track to the map of unplayable tracks, using its index as the key
+        //             }
+        //             break;
+        //         }
+        //     }
+        //     if (trackAdded === true) { // If no stored track was found that matches the scraped track (i.e. the track was newly added)...
+        //         addedTracks.set(i, scrapedTracklist[i]); // Add the scraped track to the map of scraped tracks, using its index as the key
+        //     }
+        // }
+
+        //
+        
+        //console.log(unmatchedStoredTracks);
+        console.log([...unmatchedScrapedTracks]);
+        console.table([...unmatchedStoredTracks]);
+        console.log(unplayableTracks.entries());
+        //console.log(typeof addedTracks);
+
+        
+        
+        /////
+        
+        // const addedTracks = new Map();
+        // const removedTracks = new Map();
+        // const unplayableTracks = new Map();
+        // for (let i = 0; i < scrapedTracklist.length; i++) {
+        //     let trackAdded = true;
+        //     for (const storedTrack of storedTracklist) {
+        //         if (storedTrack.matched !== true && compareTracks(scrapedTracklist[i], storedTrack, collator) === true) { // If the two tracks match, and the stored track hasn't previously been matched with a different scraped track...
+        //             storedTrack.matched = true; // Set the stored track as matched, so that it can't be matched against any other scraped tracks
+        //             trackAdded = false;
+        //             if (scrapedTracklist[i].unplayable === true && storedTrack.unplayable !== true) { // If the scraped track is listed as unplayable but the stored track wasn't...
+        //                 unplayableTracks.set(i, scrapedTracklist[i]); // Add the scraped track to the array of unplayable tracks
+        //             }
+        //             break;
+        //         }
+        //     }
+        //     if (trackAdded === true) {
+        //         addedTracks.set(i, scrapedTracklist[i]);
+        //     }
+        // }
+
+        // //TODO maybe instead of this, start by creating the map (or cloned array) that matches the stored tracklist, and then remove elements from it instead of marking them as matched.
+        //     // What if we store the tracklists as maps instead of arrays? O.o
+        //         //... Seems like a lot of work just to do this slightly differently than what was already working mostly fine...
+        // for (let i = 0; i < storedTracklist.length; i++) { 
+        //     if (storedTracklist[i].matched !== true) {
+        //         removedTracks.set(i, storedTracklist[i]);
+        //     }
+        // }
+        
+        /////
+
+        // const addedTracks = scrapedTracklist.filter(scrapedTrack => {
+        //     let trackAdded = true;
+        //     for (const storedTrack of storedTracklist) {
+        //         if (storedTrack.matched !== true && compareTracks(scrapedTrack, storedTrack, collator) === true) {
+        //             storedTrack.matched = true; //TODO think of clean way of doing this without using matched, perhaps. Actually, using matched should be fine, because the stored tracklist does not get re-stored ever again.
+        //             trackAdded = false;
+        //             if (scrapedTrack.unplayable === true && storedTrack.unplayable !== true) {
+        //                 unplayableTracks.push(scrapedTrack);
+        //             }
+        //             break;
+        //         }
+        //     }
+        //     return trackAdded;
+        // });
+
+        // const removedTracks = storedTracklist.filter(storedTrack => (storedTrack.matched !== true));
+
+        return {added:unmatchedScrapedTracks, removed:unmatchedStoredTracks, unplayable:unplayableTracks};
     } else console.error("Tried to get delta tracklists, but the parameters provided were invalid. Expected two tracklist arrays (scraped & stored).");
 }
 
@@ -341,7 +447,7 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
             createTrackTable(deltaTracklists.removed, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement});
 
             // If there a list of 'Unplayable Tracks' exits, create a header element and track table for it
-            if (Array.isArray(deltaTracklists.unplayable) === true && deltaTracklists.unplayable.length > 0) {
+            if (typeof deltaTracklists.unplayable === 'object' && deltaTracklists.unplayable.size > 0) {
                 _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'orangeFont noVerticalMargins'}});
                 createTrackTable(deltaTracklists.unplayable, 'Unplayable Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement});
             
