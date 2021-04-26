@@ -339,30 +339,21 @@ function compareTracks(track1, track2, collator) {
 }
 
 function getDeltaTracklists(scrapedTracklist, storedTracklist) {
-
     if (Array.isArray(scrapedTracklist) === true && Array.isArray(storedTracklist) === true) {
         let unplayableTracks = [];
         const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
         const addedTracks = scrapedTracklist.filter(scrapedTrack => {
             let trackAdded = true;
-            //console.debug("LOOKING AT A NEW SCRAPED TRACK ---------- Title: " + scrapedTrack.title + " -----------------");
             for (const storedTrack of storedTracklist) {
-                //console.debug("Comparing stored track. Title: " + storedTrack.title + ". Matched value: " + storedTrack.matched);
-
                 if (storedTrack.matched !== true && compareTracks(scrapedTrack, storedTrack, collator) === true) {
-                    //console.debug("Found a matching track.");
-                    //scrapedTrack.matched = true;
                     storedTrack.matched = true; //TODO think of clean way of doing this without using matched, perhaps. Actually, using matched should be fine, because the stored tracklist does not get re-stored ever again.
                     trackAdded = false;
-
                     if (scrapedTrack.unplayable === true && storedTrack.unplayable !== true) {
                         unplayableTracks.push(scrapedTrack);
                     }
-
                     break;
                 }
             }
-            //console.debug("Found a Track Added.");
             return trackAdded;
         });
 
@@ -376,7 +367,7 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
         // console.table(unplayableTracks);
 
         return {added:addedTracks, removed:removedTracks, unplayable:unplayableTracks};
-    }
+    } else console.error("Tried to get delta tracklists, but the parameters provided were invalid. Expected two tracklist arrays (scraped & stored).");
 }
 
 // TODO why pass the parameter, when we can get the scraped tracklist from the Model right here?
@@ -411,6 +402,12 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
             _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
             createTrackTable(deltaTracklists.removed, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement});
 
+            // If there a list of 'Unplayable Tracks' exits, create a header element and track table for it
+            if (Array.isArray(deltaTracklists.unplayable) === true && deltaTracklists.unplayable.length > 0) {
+                _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'orangeFont noVerticalMargins'}});
+                createTrackTable(deltaTracklists.unplayable, 'Unplayable Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement});
+            }
+            
             // Add the new container div for all the delta track tables to the DOM, within the general track tables div
             ViewRenderer.divs.tracktables.appendChild(ViewRenderer.tracktables.deltas);
 
