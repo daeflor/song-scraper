@@ -210,18 +210,16 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
 
     if (Array.isArray(tracklist) === true) { // If the tracklist parameter provided is a valid array...       
         for (let i = 0; i < tracklist.length; i++) { // For each track in the tracklist...
-            let _td = document.createElement('td'); // Create a new data cell for the track's index
-            _td.textContent = i+1; // Set the index value of the track
+            let _td = window.Utilities.CreateNewElement('td', {textContent:i+1}); // Create a new data cell for the track's index
             _tr = window.Utilities.CreateNewElement('tr', {children:[_td]}); // Create a new row for the track, adding the index cell to the new row     
+            
             _table.appendChild(_tr); // Add the new row to the table
 
             for (const column of _columnsToIncludeInTrackTable) { // For each additional column in the Track Table...
                 if (typeof column === 'string') { // If the current column's name is a valid string...
-                    const _trackMetadatum = tracklist[i][column.toLowerCase()]; // Convert the column name string to lower case and use that value to extract the corresponding metadatum value for the track
-                    if (typeof _trackMetadatum !== 'undefined') { // If the track's metadatum for the current column exists
-                        _td = document.createElement('td'); // Create a new data cell for the track's metadatum
-                        _td.textContent = _trackMetadatum; // Set the cell's text content equal to the metadatum value
-                        _tr.appendChild(_td); // Add the new cell to the track's row
+                    const trackMetadatum = tracklist[i][column.toLowerCase()]; // Convert the column name string to lower case and use that value to extract the corresponding metadatum value for the track
+                    if (typeof trackMetadatum !== 'undefined') { // If the track's metadatum for the current column exists
+                        _tr.append(window.Utilities.CreateNewElement('td', {textContent:trackMetadatum})); // Append to the row a new cell containing the metadatum value
                     } else if (column !== 'Unplayable') { //Print a warning log if the metadata is undefined, except for the 'Unplayable' value, where this is expected.
                         console.warn("A piece of track metadata was encountered that is blank, false, or undefined, and so it was skipped over. This does not include the 'Unplayable' column. This likley indicates that an issue was encountered. Current column is: " + column);
                     }
@@ -446,7 +444,7 @@ window.Utilities = (function() {
             const _element = document.createElement(type); //Create a new element of the specified type
 
             if (typeof options === 'object') { //If an options object was provided...
-                if (typeof options.attributes === 'object') { //If an attributes object was provided...                    
+                if (typeof options.attributes === 'object') { //If an attributes property was provided...                    
                     // for (let i = 0; i < options.attributes.length; i++) {
                     //     _element.setAttribute(options.attributes[i].key, attributes[i].value);
                     // }
@@ -454,8 +452,10 @@ window.Utilities = (function() {
                         _element.setAttribute(key, value);
                     }
                 }
-
-                if (Array.isArray(options.children) === true) { //If a valid array of children was provided...                    
+                if (typeof options.textContent !== 'undefined') { //If a textContent property was provided...                    
+                    _element.textContent = options.textContent;
+                }
+                if (Array.isArray(options.children) === true) { //If a valid array of children was provided as a property...                    
                     for (let i = 0; i < options.children.length; i++) {
                         _element.appendChild(options.children[i]);
                     }
