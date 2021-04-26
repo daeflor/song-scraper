@@ -245,35 +245,11 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
     return _tableContainer; 
 }
 
-function checkIfDurationValuesMatch(durationA, durationB) {
-    if (typeof durationA === 'number' && typeof durationB === 'number') {
-        const _differenceInSeconds = durationA - durationB;
-        return (_differenceInSeconds >= -2 && _differenceInSeconds <= 2) ? true : false;
-    }
-    else {
-        DebugController.logError("Error: Expected two parameters of type 'number' but instead received a) " + durationA + "; b) " + durationB);
-    }
-}
-
-function markMatchingTracks(tracklistCurrent, tracklistPrevious) {
-    const _collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
-
-    for (const _scrapedTrack of tracklistCurrent) { // For every scraped track...
-        for (const _storedTrack of tracklistPrevious) { // For every stored track...
-            if (_storedTrack.matched !== true) { // If the stored track hasn't already been marked as 'matched'...
-                // If the scraped and stored tracks match...
-                if (_collator.compare(_scrapedTrack.title, _storedTrack.title) === 0 &&
-                _collator.compare(_scrapedTrack.artist, _storedTrack.artist) === 0 &&
-                _collator.compare(_scrapedTrack.album, _storedTrack.album) === 0 &&
-                checkIfDurationValuesMatch(_scrapedTrack.seconds, _storedTrack.seconds) === true) {
-                    // Mark the scraped and stored tracks both as 'matched' and move onto the next scraped track
-                    _scrapedTrack.matched = true;
-                    _storedTrack.matched = true;
-                    break;
-                } // TODO Note that the removed track index may be wrong if there were duplicate copies of the track in the tracklist
-            }       
-        }
-    }
+function compareDurationStrings(duration1, duration2) {
+    if (typeof duration1 === 'string' && typeof duration2 === 'string') {
+        const differenceInSeconds = convertDurationStringToSeconds(duration1) - convertDurationStringToSeconds(duration2);
+        return (differenceInSeconds >= -2 && differenceInSeconds <= 2) ? true : false;
+    } else console.error("Tried to compare two duration strings, but the parameters provided were not both of type string.");
 }
 
 function compareTracks(track1, track2, collator) {
@@ -281,7 +257,7 @@ function compareTracks(track1, track2, collator) {
         return (collator.compare(track1.title, track2.title) === 0 &&
         collator.compare(track1.artist, track2.artist) === 0 &&
         collator.compare(track1.album, track2.album) === 0 &&
-        checkIfDurationValuesMatch(track1.seconds, track2.seconds) === true)
+        compareDurationStrings(track1.duration, track2.duration) === true)
             ? true : false;
     } else console.error("Tried to compare two tracks but the parameters provided are not valid.");
 }
@@ -315,96 +291,9 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
             }
         }
 
-
-        /////
-
-        // const addedTracks = new Map();
-        // //const removedTracks = new Map();
-        // const unplayableTracks = new Map();
-        // const unmatchedStoredTracks = new Map();
-        // //const unmatchedStoredTracks = new Map(storedTracklist.map(track => [storedTracklist.indexOf(track), track]));
-        // for (let i = 0; i < storedTracklist.length; i++) { // For each stored track...
-        //     unmatchedStoredTracks.set(i, storedTracklist[i]); // Add it to the unmatched stored tracks map, using its index as the key
-        // }
-        // for (let i = 0; i < scrapedTracklist.length; i++) {
-        //     let trackAdded = true;
-        //     for (const [index, storedTrack] of unmatchedStoredTracks) { // For each stored track that hasn't yet been matched with a scraped track...
-        //         if (compareTracks(scrapedTracklist[i], storedTrack, collator) === true) { // If the two tracks match...
-        //             trackAdded = false; // Indicate that the track is not a newly added track, since a match was found in storage
-        //             unmatchedStoredTracks.delete(index); // Delete the stored track from the map of unmatched stored tracks, so that it can't be matched against any other scraped tracks
-        //             if (scrapedTracklist[i].unplayable === true && storedTrack.unplayable !== true) { // If the scraped track is listed as unplayable but the stored track wasn't...
-        //                 unplayableTracks.set(i, scrapedTracklist[i]); // Add the scraped track to the map of unplayable tracks, using its index as the key
-        //             }
-        //             break;
-        //         }
-        //     }
-        //     if (trackAdded === true) { // If no stored track was found that matches the scraped track (i.e. the track was newly added)...
-        //         addedTracks.set(i, scrapedTracklist[i]); // Add the scraped track to the map of scraped tracks, using its index as the key
-        //     }
-        // }
-
-        //
-        
-        //console.log(unmatchedStoredTracks);
-        console.log(scrapedTracklist);
-        console.log([...unmatchedScrapedTracks.values()]);
-        console.table([...unmatchedStoredTracks]);
-        console.log(unplayableTracks.entries());
-        //console.log(typeof addedTracks);
-
-        
-        
-        /////
-        
-        // const addedTracks = new Map();
-        // const removedTracks = new Map();
-        // const unplayableTracks = new Map();
-        // for (let i = 0; i < scrapedTracklist.length; i++) {
-        //     let trackAdded = true;
-        //     for (const storedTrack of storedTracklist) {
-        //         if (storedTrack.matched !== true && compareTracks(scrapedTracklist[i], storedTrack, collator) === true) { // If the two tracks match, and the stored track hasn't previously been matched with a different scraped track...
-        //             storedTrack.matched = true; // Set the stored track as matched, so that it can't be matched against any other scraped tracks
-        //             trackAdded = false;
-        //             if (scrapedTracklist[i].unplayable === true && storedTrack.unplayable !== true) { // If the scraped track is listed as unplayable but the stored track wasn't...
-        //                 unplayableTracks.set(i, scrapedTracklist[i]); // Add the scraped track to the array of unplayable tracks
-        //             }
-        //             break;
-        //         }
-        //     }
-        //     if (trackAdded === true) {
-        //         addedTracks.set(i, scrapedTracklist[i]);
-        //     }
-        // }
-
-        // //TODO maybe instead of this, start by creating the map (or cloned array) that matches the stored tracklist, and then remove elements from it instead of marking them as matched.
-        //     // What if we store the tracklists as maps instead of arrays? O.o
-        //         //... Seems like a lot of work just to do this slightly differently than what was already working mostly fine...
-        // for (let i = 0; i < storedTracklist.length; i++) { 
-        //     if (storedTracklist[i].matched !== true) {
-        //         removedTracks.set(i, storedTracklist[i]);
-        //     }
-        // }
-        
-        /////
-
-        //Note: This doesn't work properly because now that we're returning new arrays containing *only* the added/removed tracks, the indices printed out later in the track tables are wrong
-        // const addedTracks = scrapedTracklist.filter(scrapedTrack => {
-        //     let trackAdded = true;
-        //     for (const storedTrack of storedTracklist) {
-        //         if (storedTrack.matched !== true && compareTracks(scrapedTrack, storedTrack, collator) === true) {
-        //             storedTrack.matched = true; //TODO think of clean way of doing this without using matched, perhaps. Actually, using matched should be fine, because the stored tracklist does not get re-stored ever again.
-        //             trackAdded = false;
-        //             if (scrapedTrack.unplayable === true && storedTrack.unplayable !== true) {
-        //                 unplayableTracks.push(scrapedTrack);
-        //             }
-        //             break;
-        //         }
-        //     }
-        //     return trackAdded;
-        // });
-
-        // const removedTracks = storedTracklist.filter(storedTrack => (storedTrack.matched !== true));
-
+        console.table([...unmatchedScrapedTracks.values()]);
+        console.table([...unmatchedStoredTracks.values()]);
+    
         return {added:unmatchedScrapedTracks, removed:unmatchedStoredTracks, unplayable:unplayableTracks};
     } else console.error("Tried to get delta tracklists, but the parameters provided were invalid. Expected two tracklist arrays (scraped & stored).");
 }
@@ -412,19 +301,6 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
 // TODO why pass the parameter, when we can get the scraped tracklist from the Model right here?
 export function createDeltaTracklistsGPM(scrapedTracklist) {
     Model.getStoredMetadataGPM(storedTracklist => { // Fetch the stored version of the current tracklist...
-        //TODO can this be merged with the other for loops / for...ofs (inside markMatchingTracks)
-        for (let i = 0; i < storedTracklist.length; i++) { 
-            storedTracklist[i].seconds = convertDurationStringToSeconds(storedTracklist[i].duration);
-            //TODO couldn't this be done more intelligently so that the stored tracklist already has the seconds field set for every track?
-                // That is, assuming we even need to store it. An alternative could be to just convert the duration string to number on the fly when the comparison is triggered, rather than setting a new field in advance here.
-                // However, storing it *may* be useful and would then remove the need to (re)convert the value for the stored tracklist.
-                // But storing the "matched" field would be bad...
-                //Note that, if the delta tables are created prior to storage, the seconds field *is* currently getting stored. Fix it so it's at least consistent. Either always store it or never store it.
-        }
-        for (let i = 0; i < scrapedTracklist.length; i++) { 
-            scrapedTracklist[i].seconds = convertDurationStringToSeconds(scrapedTracklist[i].duration);
-        }
-
         const deltaTracklists = getDeltaTracklists(scrapedTracklist, storedTracklist);
 
         if (typeof deltaTracklists === 'object') {
@@ -432,30 +308,23 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
             ViewRenderer.tracktables.deltas = window.Utilities.CreateNewElement('div'); //TODO why isn't this created in advance? Or just in the html file already. Is there a reason to create it here?
             
             // Create a header element and track table for the list of 'Added Tracks'
-            let _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
-            createTrackTable(deltaTracklists.added, 'Added Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement,});
+            let headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
+            createTrackTable(deltaTracklists.added, 'Added Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:headerElement,});
             
             // Create a header element and track table for the list of 'Removed Tracks'
-            _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
-            createTrackTable(deltaTracklists.removed, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement});
+            headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
+            createTrackTable(deltaTracklists.removed, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:headerElement});
 
             // If there a list of 'Unplayable Tracks' exits, create a header element and track table for it
             if (typeof deltaTracklists.unplayable === 'object' && deltaTracklists.unplayable.size > 0) {
-                _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'orangeFont noVerticalMargins'}});
-                createTrackTable(deltaTracklists.unplayable, 'Unplayable Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement});
+                headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'orangeFont noVerticalMargins'}});
+                createTrackTable(deltaTracklists.unplayable, 'Unplayable Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:headerElement});
             
-                //TODO maybe put a flag here indicating whether or not the 'Unplayable' column should be include, and then send that when creating the 'Added' & 'Removed' track tables.
+                //TODO maybe put a flag here indicating whether or not the 'Unplayable' column should be included, and then send that when creating the 'Added' & 'Removed' track tables.
             }
 
             // Add the new container div for all the delta track tables to the DOM, within the general track tables div
             ViewRenderer.divs.tracktables.appendChild(ViewRenderer.tracktables.deltas);
-
-            // console.log("printing scraped list")
-            // console.log(scrapedTracklist);
-            // console.log(Model.getScrapedTracksArray());
-            //TODO The matched & seconds fields will get set in storage iff the delta track lists/tables are created before storing the data.
-                //Would it work if the storage manager immediately makes a new 'storage object' containing the array once it's returned from the content script?
-                    //Or would that still be referencing the same copy of the array that gets sent to AppNavigator?
         }
     });
 }
@@ -522,12 +391,9 @@ function convertDurationStringToSeconds(duration) {
             case 3: //Track is more than an hour but less than a day long
                 return _splitDurationIntegers[0]*3600 + _splitDurationIntegers[1]*60 + _splitDurationIntegers[2];
             default:
-                DebugController.logWarning("Tried to extract a seconds integer value from a duration string, but the duration is not in a supported format (e.g. the duration may be longer than 24 hours).");
+                console.warn("Tried to extract a seconds integer value from a duration string, but the duration is not in a supported format (e.g. the duration may be longer than 24 hours).");
         }
-    }
-    else {
-        DebugController.LogError("ERROR: Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
-    }
+    } else console.error ("Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
 }
 
 //TODO this should be a module instead (or move the few different remaining helper functions here into other already-existing modules as applicable)
