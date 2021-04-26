@@ -173,7 +173,6 @@ function resetAllTrackTablesAndCheckboxes() {
  */
 export function createTrackTable(tracklist, headerText, options/*parentElement, header, descriptionIfEmpty*/) {
 //TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove (or replace?) any existing scraped tracklist tables, including from ViewRenderer's tracker object
-    const _skipMatchedTracks  = (typeof options === 'object' && typeof options.skipMatchedTracks === 'boolean') ? options.skipMatchedTracks  : false;
     const _parentElement      = (typeof options === 'object' && typeof options.parentElement === 'object')      ? options.parentElement      : ViewRenderer.divs.tracktables;
     const _descriptionIfEmpty = (typeof options === 'object' && typeof options.descriptionIfEmpty === 'string') ? options.descriptionIfEmpty : 'No tracks to display'; //TODO Not sure it's ever going to be necessary to pass this as a parameter instead of just using the default value.
     const _headerElement      = (typeof options === 'object' && typeof options.headerElement === 'object')      ? options.headerElement      : window.Utilities.CreateNewElement('p', {attributes:{class:'noVerticalMargins'}});
@@ -186,8 +185,6 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
         'Artist',
         'Album',
         'Duration',
-        //'Seconds',
-        //'Matched'
         'Unplayable' 
     ]; //TODO This is currently hard-coded. Should eventually be a param, probably. Although it would be good to have a default set of keys to fall back to.
 
@@ -217,11 +214,6 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
         for (let i = 0; i < tracklist.length; i++) {
             //If the current value in the array is a valid object...
             if (typeof tracklist[i] === 'object') {
-                //If 'matched' tracks are purposefully being skipped for this track table, and the current track is 'matched', skip over it.
-                if (_skipMatchedTracks === true && tracklist[i].matched === true) {
-                    //DebugController.logInfo("Track at index " + i + " will be skipped over because it is listed as 'matched' and matched tracks are being skipped for this track table.");
-                    continue;
-                }
 
                 //Create a new data cell for the track's index
                 let _td = document.createElement('td'); 
@@ -286,27 +278,6 @@ function checkIfDurationValuesMatch(durationA, durationB) {
     }
 }
 
-// /**
-//  * Checks if the given track is included in the provided array of tracks
-//  * @param {object} trackToSeek The track to look for
-//  * @param {array} tracksArray The array of tracks in which to look
-//  */
-// function isTrackInTracklist(trackToSeek, tracksArray, collator) {
-//     for (const trackToCompare of tracksArray) { // For every stored track...
-//         if (trackToCompare.matched !== true) { // If the stored track hasn't already been marked as 'matched'...
-//             // If the two tracks match...
-//             if (collator.compare(trackToSeek.title, trackToCompare.title) === 0 &&
-//             collator.compare(trackToSeek.artist, trackToCompare.artist) === 0 &&
-//             collator.compare(trackToSeek.album, trackToCompare.album) === 0 &&
-//             checkIfDurationValuesMatch(trackToSeek.seconds, trackToCompare.seconds) === true) {
-//                 trackToCompare.matched = true;
-//                 return true;
-//             }
-//         } //TODO a reason the 'matched' system may be better is that if there are multiple/duplicate tracks in the array that contains trackToSeek, but tracksArray only has one copy, it will still return true for all cases.
-//     }   //... Not sure how much to care about this case, since I can't think of any instances where I purposefully have duplicate tracks
-//     return false;
-// }
-
 function markMatchingTracks(tracklistCurrent, tracklistPrevious) {
     const _collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
 
@@ -359,13 +330,6 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
 
         const removedTracks = storedTracklist.filter(storedTrack => (storedTrack.matched !== true));
 
-        // console.log("Added Tracks:")
-        // console.table(addedTracks);
-        // console.log("Removed Tracks:")
-        // console.table(removedTracks);
-        // console.log("unplayable Tracks:")
-        // console.table(unplayableTracks);
-
         return {added:addedTracks, removed:removedTracks, unplayable:unplayableTracks};
     } else console.error("Tried to get delta tracklists, but the parameters provided were invalid. Expected two tracklist arrays (scraped & stored).");
 }
@@ -388,8 +352,6 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
 
         const deltaTracklists = getDeltaTracklists(scrapedTracklist, storedTracklist);
 
-        //markMatchingTracks(scrapedTracklist, storedTracklist);
-
         if (typeof deltaTracklists === 'object') {
             // Create a new container div element for all the track tables used to show the deltas (e.g. Added, Removed, Disabled)
             ViewRenderer.tracktables.deltas = window.Utilities.CreateNewElement('div'); //TODO why isn't this created in advance? Or just in the html file already. Is there a reason to create it here?
@@ -407,7 +369,7 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
                 _headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'orangeFont noVerticalMargins'}});
                 createTrackTable(deltaTracklists.unplayable, 'Unplayable Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:_headerElement});
             }
-            
+
             // Add the new container div for all the delta track tables to the DOM, within the general track tables div
             ViewRenderer.divs.tracktables.appendChild(ViewRenderer.tracktables.deltas);
 
