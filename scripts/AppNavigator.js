@@ -288,20 +288,11 @@ function compareTracks(track1, track2, collator) {
 
 function getDeltaTracklists(scrapedTracklist, storedTracklist) {
     if (Array.isArray(scrapedTracklist) === true && Array.isArray(storedTracklist) === true) {
-        //let unplayableTracks = [];
         const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
         
-        //TODO Doesn't seem like a good idea (for readability and other reasons) but what if we just started creating td elements right here, and adding *those* to the added/removed arrays/maps?
-
-        /////
-
-        //TODO in Firebase's UI, storing tracklists as maps instead of arrays would be almost identical, so it may be worth looking into.
-            //Note however, that the scraped tracklist (even if it is saved originally as a map instead of array)...
-            //...can't be altered (i.e. have elements removed) because it is still needed in other parts of the app.
-            //Cloning a map is very easy though
-        //TODO a more obvious solution that doesn't need maps is to just store the index as a property along with the rest of the track metadata.
-            //Then could continue to use arrays instead of maps. Unsure if this is actually better though, especially since we're removing elements from the lists below.
-
+        // TODO could be worth considering storing tracklists as maps instead of arrays. In Firebase's UI, storing tracklists as maps would look almost identical. Note that if the scraped tracks are originally set in a map, that map would have to be cloned before creating the delta lists (below).
+            //An alternative is to just store the index as a property along with the rest of the track metadata. Then could continue to use arrays instead of maps. Unsure if this is actually better though, especially since we're removing elements from the lists below.
+        //Note: it's possible for a track's position/index listed in the delta track tables to be wrong if there are duplicate copies of the track in the tracklist, but this is unlikely. 
         const unmatchedScrapedTracks = new Map();
         const unmatchedStoredTracks = new Map();
         const unplayableTracks = new Map();
@@ -355,7 +346,8 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
         //
         
         //console.log(unmatchedStoredTracks);
-        console.log([...unmatchedScrapedTracks]);
+        console.log(scrapedTracklist);
+        console.log([...unmatchedScrapedTracks.values()]);
         console.table([...unmatchedStoredTracks]);
         console.log(unplayableTracks.entries());
         //console.log(typeof addedTracks);
@@ -395,6 +387,7 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
         
         /////
 
+        //Note: This doesn't work properly because now that we're returning new arrays containing *only* the added/removed tracks, the indices printed out later in the track tables are wrong
         // const addedTracks = scrapedTracklist.filter(scrapedTrack => {
         //     let trackAdded = true;
         //     for (const storedTrack of storedTracklist) {
