@@ -99,26 +99,20 @@ ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() 
     }
 });
 
-//TODO need to handle the case where there is no stored tracklist (e.g. because this is the first time the track was scraped)
-    //Could consider leaving the checkbox disabled unless both tracklists (scraped & stored) exist
-    //But would also be nice to have some feedback about this, such as a message showing up when the checkbox is pressed, indicating a delta cannot yet be displayed
-//Checkbox Value Changed: Delta Tracklists
+// TODO need to handle the case where there is no stored tracklist (e.g. because this is the first time the track was scraped)
+    // Could consider leaving the checkbox disabled unless both tracklists (scraped & stored) exist
+    // But would also be nice to have some feedback about this, such as a message showing up when the checkbox is pressed, indicating a delta cannot yet be displayed
+// Checkbox Value Changed: Delta Tracklists
 ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', function() {
-    //If the checkbox is checked, display the delta tracklists metadata; Otherwise hide them
+    // If the checkbox is checked, display the delta tracklists metadata; Otherwise hide them
     if (ViewRenderer.checkboxes.deltaTrackTables.checked === true) {
-        //If the track table DOM elements have previously been created, just show the existing elements
-        if (typeof ViewRenderer.tracktables.deltas === 'object') {
-            ViewRenderer.unhideElement(ViewRenderer.tracktables.deltas);
+        if (ViewRenderer.tracktables.deltas.childElementCount > 0) { // If the track table DOM elements have previously been created...
+            ViewRenderer.unhideElement(ViewRenderer.tracktables.deltas); // Show the existing elements
+        } else { // Else, if the track table elements dont exist yet...
+            UIController.createDeltaTracklistsGPM(Model.getScrapedTracksArray()); // Create new track tables based on the scraped and stored metadata and add them to the DOM
         }
-        else { //Else, if the track table elements dont exist yet...
-            //Create new track tables based on the scraped and stored metadata and add them to the DOM
-            UIController.createDeltaTracklistsGPM(Model.getScrapedTracksArray());
-        }
-    }
-    else { //Else, if the checkbox is unchecked, hide the track table elements
-        if (typeof ViewRenderer.tracktables.deltas === 'object') {
-            ViewRenderer.hideElement(ViewRenderer.tracktables.deltas);
-        }
+    } else { //Else, if the checkbox is unchecked, hide the track table elements
+        ViewRenderer.hideElement(ViewRenderer.tracktables.deltas);
     }
 });
 

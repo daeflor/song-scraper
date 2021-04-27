@@ -168,7 +168,7 @@ function resetAllTrackTablesAndCheckboxes() {
  * Creates a track table from the provided tracklist and other inputs
  * @param {array} tracklist The tracklist array for which to create a table element
  * @param {string} headerText The name of the track table to display above it
- * @param {object} [options] An object to provide the following optional parameters: parentElement (object); headerElement (object); descriptionIfEmpty (string); skipMatchedTracks (boolean);
+ * @param {object} [options] An object to provide the following optional parameters: parentElement (object); headerElement (object); descriptionIfEmpty (string);
  * @returns The container element for the track table and all associated elements
  */
 export function createTrackTable(tracklist, headerText, options/*parentElement, header, descriptionIfEmpty*/) {
@@ -208,6 +208,8 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
     //Create a new table element, with the header row as a child
     const _table = window.Utilities.CreateNewElement('table', {attributes:{class:'trackTable'}, children:[_tr]});
 
+    //TODO if we keep scraped tracklist as an array but deltas as a map, we will need separate looping logic for each one...
+        //Right now this is BROKEN for scraped/stored lists 
     if (typeof tracklist === 'object') { // If the tracklist parameter provided is a valid object...       
         for (const [index, track] of tracklist) { // For each track in the tracklist...
             let _td = window.Utilities.CreateNewElement('td', {textContent:index}); // Create a new data cell for the track's index
@@ -242,7 +244,9 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
     _headerElement.textContent = headerText.concat(' (' + (_table.childElementCount -1) + ')'); //Set the header text, including the number of tracks in the table
     const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _tableBody]}); //Create a new element to contain the various table elements
     _parentElement.appendChild(_tableContainer); //Add the new container element (and its children) to the DOM
-    return _tableContainer; 
+    return _tableContainer; // TODO it's confusing that sometimes I used this return value and sometimes I don't. Would be better to be more consistent.
+                            // Maybe just always have the extra div layer like the deltas uses/needs, for consistency. Then, always pass the parent element which the final table should be placed under.
+                            // This way, the top level divs under the 'tracktables' div can all be pre-set in HTML and can be referenced easily via ViewRenderer, and this function doesn't have to return anything. 
 }
 
 function compareDurationStrings(duration1, duration2) {
@@ -268,6 +272,8 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
         
         // TODO could be worth considering storing tracklists as maps instead of arrays. In Firebase's UI, storing tracklists as maps would look almost identical. Note that if the scraped tracks are originally set in a map, that map would have to be cloned before creating the delta lists (below).
             //An alternative is to just store the index as a property along with the rest of the track metadata. Then could continue to use arrays instead of maps. Unsure if this is actually better though, especially since we're removing elements from the lists below.
+                //... I don't think the track index actually needs to be kept anywhere other than the delta tracklist arrays/maps. The scraped and stored lists will have the index regardless.
+                //... However, doing this could lead to needing different logic to handle delta vs scraped/stored tracklists, in the createTrackTable function. This might be slight though.
         //Note: it's possible for a track's position/index listed in the delta track tables to be wrong if there are duplicate copies of the track in the tracklist, but this is unlikely. 
         const unmatchedScrapedTracks = new Map();
         const unmatchedStoredTracks = new Map();
@@ -302,11 +308,12 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
 export function createDeltaTracklistsGPM(scrapedTracklist) {
     Model.getStoredMetadataGPM(storedTracklist => { // Fetch the stored version of the current tracklist...
         const deltaTracklists = getDeltaTracklists(scrapedTracklist, storedTracklist);
+        //TODO could start to decouple this from GPM. Instead of doing this, maybe pass the storedTracklist as a param?
 
         if (typeof deltaTracklists === 'object') {
             // Create a new container div element for all the track tables used to show the deltas (e.g. Added, Removed, Disabled)
-            ViewRenderer.tracktables.deltas = window.Utilities.CreateNewElement('div'); //TODO why isn't this created in advance? Or just in the html file already. Is there a reason to create it here?
-            
+            //ViewRenderer.tracktables.deltas = window.Utilities.CreateNewElement('div'); //TODO why isn't this created in advance? Or just in the html file already. Is there a reason to create it here?
+
             // Create a header element and track table for the list of 'Added Tracks'
             let headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
             createTrackTable(deltaTracklists.added, 'Added Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:headerElement,});
@@ -324,7 +331,7 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
             }
 
             // Add the new container div for all the delta track tables to the DOM, within the general track tables div
-            ViewRenderer.divs.tracktables.appendChild(ViewRenderer.tracktables.deltas);
+            //ViewRenderer.divs.tracktables.appendChild(ViewRenderer.tracktables.deltas);
         }
     });
 }
