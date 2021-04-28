@@ -9,8 +9,8 @@ let _firestoreDatabase = undefined;
 
 /**
  * Stores the provided tracklist data in Firestore and then executes the provided callback
- * @param {object} tracklistMetadata An object containing metaata about the tracklist. Must include at least title and type fields.
- * @param {array} tracksArray The array of tracks to store with the tracklist
+ * @param {Object} tracklistMetadata An object containing metaata about the tracklist. Must include at least title and type fields.
+ * @param {Object[]} tracksArray The array of tracks to store with the tracklist
  * @param {function} callback The function to execute once the data has been successfully stored
  */
 export function storeTracklistInFirestore(tracklistMetadata, tracksArray, callback) {

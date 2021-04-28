@@ -2,43 +2,32 @@
 
 /**
  * Creates a string of comma-separated values from the provided array
- * @param {array} array An array of the values to use to create a comma-separated string
+ * @param {*[]} array An array of the values to use to create a comma-separated string
  */
 function createCommaSeparatedStringFromArray(array) {
     if (Array.isArray(array) === true) { 
         let _string = ''; //Start with a blank string
 
-        //For each element in the array except for the last one...
-        for (let i = 0; i < array.length-1; i++) {
-            //If the element's value type is a string...
-            if (typeof array[i] === 'string') {
-                //Include double-quotes around the output string, followed by a comma to indicate the end of the current element/value
-                _string += '"' + array[i] + '",';
-            }
-            //Otherwise, output the value without quotes, followed by a comma to indicate the end of the current element/value
-            else {
+        for (let i = 0; i < array.length-1; i++) { // For each element in the array except the last one... 
+            if (typeof array[i] === 'string') { // If the element's value type is a string...
+                _string += '"' + array[i] + '",'; // Include double-quotes around the output string, followed by a comma to indicate the end of the current element/value
+            } else { // Otherwise, output the value without quotes, followed by a comma to indicate the end of the current element/value
                 _string += array[i] + ',';
             }
         }
 
-        //Add the array's last value to the string
-        _string += array[array.length-1];
-
+        _string += array[array.length-1]; // Add the array's last value to the string
         return _string;
-    }
-    else {
-        console.error("Request received to create a comma-separated string but an array of values was not provided.");
-    }
+
+    } else console.error("Request received to create a comma-separated string but an array of values was not provided.");
 }
 
 //** Publicly-Exposed Utility Functions **//
 
-//TODO would be good to pass the track position (index to these files)
-
 /**
  * Converts multiple maps of objects to a csv
- * @param {array} maps An array of maps. The contents of each map of which will be printed side-by-side
- * @param {array} keysToInclude An array to indicate the specific object keys which should be included in the csv file, and the order in which to output them.
+ * @param {Object[]} maps An array of maps. The contents of each map of which will be printed side-by-side
+ * @param {string[]} keysToInclude An array to indicate the specific object keys which should be included in the csv file, and the order in which to output them.
  * @returns {string} The CSV generated from the data in the provided maps
  */
 export function convertObjectMapsToCsv(maps, keysToInclude) {
@@ -59,7 +48,6 @@ export function convertObjectMapsToCsv(maps, keysToInclude) {
             }
         });
         const mapEntries = maps?.map(e => e.entries()); //Get an array of Map Iterators from the provided array of maps
-
 
         for (let i = 0; i < largestMapSize; i++) {
             const valuesInCurrentRow = []; // Create an array to hold all the string values that will be included in the current row of the csv
@@ -84,78 +72,78 @@ export function convertObjectMapsToCsv(maps, keysToInclude) {
     return csv;
 }
 
-/**
- * Converts multiple arrays of objects to a csv and then downloads the file locally
- * @param {array} arrays An array of arrays. The contents of each of which will be printed side-by-side
- * @param {string} filename The name of the file to download
- * @param {array} [objectKeysToInclude] An optional array to indicate the specific object keys which should be included in the csv file, and the order in which to output them. If none is provided, all keys for every object will be outputted.
- */
-export function convertArraysOfObjectsToCsv(arrays, filename, objectKeysToInclude) {
-    let csv = ''; // Begin with a blank string for the CSV
+// /**
+//  * Converts multiple arrays of objects to a csv and then downloads the file locally
+//  * @param {array} arrays An array of arrays. The contents of each of which will be printed side-by-side
+//  * @param {string} filename The name of the file to download
+//  * @param {array} [objectKeysToInclude] An optional array to indicate the specific object keys which should be included in the csv file, and the order in which to output them. If none is provided, all keys for every object will be outputted.
+//  */
+// export function convertArraysOfObjectsToCsv(arrays, filename, objectKeysToInclude) {
+//     let csv = ''; // Begin with a blank string for the CSV
     
-    // Note that a header row can only be included if a list of specific keys to use was provided. Otherwise, all keys are included in the file export which means they might not all be consistent and able to match specific header columns.
-    if (typeof objectKeysToInclude !== 'undefined') { // If a list of object keys to include was provided...
-        let valuesInHeaderRow = []; // Create an array to hold all the string values that will be included in the header row of the csv
-        arrays?.forEach(array => { // For each array of objects provided...
-            valuesInHeaderRow = valuesInHeaderRow.concat(objectKeysToInclude); // Add the set of included keys to the values that will be used to create columns for the file's header row
-        });
-        csv += createCommaSeparatedStringFromArray(valuesInHeaderRow) + '\r\n'; // Add a newline character to indicate the end of the header row
-    }
+//     // Note that a header row can only be included if a list of specific keys to use was provided. Otherwise, all keys are included in the file export which means they might not all be consistent and able to match specific header columns.
+//     if (typeof objectKeysToInclude !== 'undefined') { // If a list of object keys to include was provided...
+//         let valuesInHeaderRow = []; // Create an array to hold all the string values that will be included in the header row of the csv
+//         arrays?.forEach(array => { // For each array of objects provided...
+//             valuesInHeaderRow = valuesInHeaderRow.concat(objectKeysToInclude); // Add the set of included keys to the values that will be used to create columns for the file's header row
+//         });
+//         csv += createCommaSeparatedStringFromArray(valuesInHeaderRow) + '\r\n'; // Add a newline character to indicate the end of the header row
+//     }
 
-    //TODO maybe this function should be less abstract and more about exporting two side-by-side (delta) tracklists.
-        //That would make it easier to force in the track position
-        //Also, this approach of printing two objects side by side probably doesn't make much sense in the abstract. It really is just applicable to the delta tracklists, I think...
+//     //TODO maybe this function should be less abstract and more about exporting two side-by-side (delta) tracklists.
+//         //That would make it easier to force in the track position
+//         //Also, this approach of printing two objects side by side probably doesn't make much sense in the abstract. It really is just applicable to the delta tracklists, I think...
 
-    let highestTrackCount = arrays?.[0]?.length; //TODO highestTrackCount and some other variable names below are specific to tracklists, while the rest of this function isn't
+//     let highestTrackCount = arrays?.[0]?.length; //TODO highestTrackCount and some other variable names below are specific to tracklists, while the rest of this function isn't
     
-    for (let i = 1; i < arrays?.length; i++) {
-        if (arrays[i]?.length > highestTrackCount) {
-            highestTrackCount = arrays[i]?.length;
-        }
-    }
+//     for (let i = 1; i < arrays?.length; i++) {
+//         if (arrays[i]?.length > highestTrackCount) {
+//             highestTrackCount = arrays[i]?.length;
+//         }
+//     }
 
-    console.log(highestTrackCount);
+//     console.log(highestTrackCount);
 
-    for (let i = 0; i < highestTrackCount; i++) {
-        const valuesInCurrentRow = []; // Create an array to hold all the string values that will be included in the current row of the csv
-        arrays.forEach(array => {
-            //array.forEach(track => {
-                const currentObject = array?.[i];
-                //const valuesInCurrentObject = []; //Create an array to contain all the values for the current object that are going to be included in the CSV
+//     for (let i = 0; i < highestTrackCount; i++) {
+//         const valuesInCurrentRow = []; // Create an array to hold all the string values that will be included in the current row of the csv
+//         arrays.forEach(array => {
+//             //array.forEach(track => {
+//                 const currentObject = array?.[i];
+//                 //const valuesInCurrentObject = []; //Create an array to contain all the values for the current object that are going to be included in the CSV
                 
-                // If a list of specific keys to include was not provided, and there is a valid object from which to extract data...
-                if (typeof objectKeysToInclude === 'undefined' && typeof currentObject !== 'undefined') {
-                    objectKeysToInclude = Object.keys(currentObject); // Get the list of keys from the current object
-                }
+//                 // If a list of specific keys to include was not provided, and there is a valid object from which to extract data...
+//                 if (typeof objectKeysToInclude === 'undefined' && typeof currentObject !== 'undefined') {
+//                     objectKeysToInclude = Object.keys(currentObject); // Get the list of keys from the current object
+//                 }
 
-                //TODO problem I think is that if there is no track AND no object keys were included as a parameter, then the foreach below will not hit anything and so no blank strings will be included
-                    //Which is a problem because if it's the first/left array/list which has the fewer elements, then the printout will be wrong.
-                    //Could just require the list of objectKeys OR could grab them from the first object available rather than every single one.
+//                 //TODO problem I think is that if there is no track AND no object keys were included as a parameter, then the foreach below will not hit anything and so no blank strings will be included
+//                     //Which is a problem because if it's the first/left array/list which has the fewer elements, then the printout will be wrong.
+//                     //Could just require the list of objectKeys OR could grab them from the first object available rather than every single one.
 
-                //If a list of specific keys to use wasn't provided, use all of the object's keys
-                //objectKeysToInclude = objectKeysToInclude ?? Object.keys(currentObject);
+//                 //If a list of specific keys to use wasn't provided, use all of the object's keys
+//                 //objectKeysToInclude = objectKeysToInclude ?? Object.keys(currentObject);
 
-                objectKeysToInclude.forEach(key => {
-                    //If the value that matches the current key isn't falsy (e.g. undefined), use that value, otherwise set it to a blank string so that the column is still included in the CSV row later
-                    const currentValue = currentObject?.[key] ?? '';
-                    //Add the key's value to the array of values to include in the CSV row later
-                    valuesInCurrentRow.push(currentValue);  
-                });
-            //});
-        });
-        //Create a comma-separated string from the array of recorded values and append the resulting string to the CSV string, followed by a newline character to indicate the end of the current row
-        csv += createCommaSeparatedStringFromArray(valuesInCurrentRow) + '\r\n';
-    }
+//                 objectKeysToInclude.forEach(key => {
+//                     //If the value that matches the current key isn't falsy (e.g. undefined), use that value, otherwise set it to a blank string so that the column is still included in the CSV row later
+//                     const currentValue = currentObject?.[key] ?? '';
+//                     //Add the key's value to the array of values to include in the CSV row later
+//                     valuesInCurrentRow.push(currentValue);  
+//                 });
+//             //});
+//         });
+//         //Create a comma-separated string from the array of recorded values and append the resulting string to the CSV string, followed by a newline character to indicate the end of the current row
+//         csv += createCommaSeparatedStringFromArray(valuesInCurrentRow) + '\r\n';
+//     }
 
-    //console.log(csv);
-    downloadTextFile(csv, filename, 'csv');
-}
+//     //console.log(csv);
+//     downloadTextFile(csv, filename, 'csv');
+// }
 
 /**
  * Converts an array of objects to a CSV file and then downloads the file locally
- * @param {array} array An array of object to convert to CSV
+ * @param {Object[]} array An array of objects to convert to CSV
  * @param {string} filename The name of the file to download
- * @param {array} [objectKeysToInclude] An optional array to indicate the specific object keys which should be included in the CSV, and the order in which to output them. If none is provided, all keys for every object will be outputted.
+ * @param {string[]} [objectKeysToInclude] An optional array to indicate the specific object keys which should be included in the CSV, and the order in which to output them. If none is provided, all keys for every object will be outputted.
  */
 export function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=null) {
     let _csv = ''; //Begin with a blank string for the CSV

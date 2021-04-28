@@ -18,7 +18,7 @@ function init() {
  * Reacts to a change in the authentication state of the current user of the application. 
  * If they are not signed in, the Authentication Screen is displayed and Firebase Google Authentication UI is initiated.
  * If they are signed in, the landing page is displayed.
- * @param {object} user The object representing the data for the authenticated user, if one exists
+ * @param {Object} user The object representing the data for the authenticated user, if one exists
  */
 function reactToEvent_AuthStateChanged(user) {
     if (user === null) { //If there is no user signed into the app...

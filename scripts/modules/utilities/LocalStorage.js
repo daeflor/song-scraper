@@ -23,7 +23,7 @@ function get(key, callback) {
 
 /**
  * Saves an object to Local Storage and then executes the provided callback function
- * @param {object} object The object to save to Local Storage
+ * @param {Object} object The object to save to Local Storage
  * @param {function} callback The function to execute once the object has been saved to Local Storage
  */
 function set(object, callback) {

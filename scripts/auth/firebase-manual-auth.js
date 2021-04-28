@@ -14,7 +14,7 @@ function init() {
 
 /**
  * Reacts to a detected change in the Firebase Authentication state and updates the UI accordingly
- * @param {object} user The object containing details about the authenitcated user, if there is one. 
+ * @param {Object} user The object containing details about the authenitcated user, if there is one. 
  */
 function reactToEvent_AuthStateChanged(user) {
     if (user === null) { //If there is no user signed into the app...

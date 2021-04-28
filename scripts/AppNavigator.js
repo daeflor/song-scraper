@@ -171,10 +171,10 @@ function resetAllTrackTablesAndCheckboxes() {
 
 /**
  * Creates a track table from the provided tracklist and other inputs
- * @param {array} tracklist The tracklist array for which to create a table element
+ * @param {Object[]} tracklist The tracklist array for which to create a table element
  * @param {string} headerText The name of the track table to display above it
- * @param {object} parentElement The element in the DOM under which the track table should be appended
- * @param {object} [options] An object to provide the following optional parameters: headerElement (object); descriptionIfEmpty (string);
+ * @param {Object} parentElement The element in the DOM under which the track table should be appended
+ * @param {Object} [options] An object to provide the following optional parameters: headerElement (object); descriptionIfEmpty (string);
  * @returns The container element for the track table and all associated elements
  */
 export function createTrackTable(tracklist, headerText, parentElement, options/*parentElement, header, descriptionIfEmpty*/) {
@@ -441,7 +441,6 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
 // TODO all download logic could probably go in its own module or class
 
 export function getDeltaListsAsCSV() {
-    //const filename = 'TracklistExport_Delta_' + Model.tracklist.title;
     const keysToIncludeInExport = [
         'title',
         'artist',
@@ -449,9 +448,6 @@ export function getDeltaListsAsCSV() {
         'duration',
         'unplayable'
     ];
-
-    //TODO when doing this, would it make sense to merge the unplayable songs into added and removed lists?
-        //It seems overly complicated, but could be nice to see them there.
 
     return IO.convertObjectMapsToCsv([gDeltaTracklists.added, gDeltaTracklists.removed, gDeltaTracklists.unplayable], keysToIncludeInExport);
 }
@@ -525,7 +521,7 @@ window.Utilities = (function() {
     /**
      * Creates and returns an element of the specified type and with the specified attributes and/or children
      * @param {string} type The type of element to create
-     * @param {object} [options] An optional object to provide attributes or children to the new element (using the 'attributes' and 'children' properties) 
+     * @param {Object} [options] An optional object to provide attributes or children to the new element (using the 'attributes' and 'children' properties) 
      * @returns the new element object
      */
     function createNewElement(type, options) {
