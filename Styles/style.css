@@ -86,6 +86,10 @@ input[type='checkbox'] {
 	color: #ff0000;
 }
 
+.orangeFont {
+	color: #ffa600;
+}
+
 .noVerticalMargins {
 	margin-top: 0px;
 	margin-bottom: 0px;
