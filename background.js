@@ -103,7 +103,7 @@ function compareTrackCountsAndUpdateIcon(tracklistTitle, currentTrackCount) {
     getTrackCountFromGPMTracklistData(tracklistTitle, gpmTrackCount => {
         //(currentTrackCount === gpmTrackCount) ? updateIcon(_iconPaths.default) : updateIcon(_iconPaths.exclamation);
 
-        if (gpmTrackCount === undefined) {
+        if (typeof gpmTrackCount === 'undefined') {
             console.info("Background: The stored track count could not be determined.");
             updateIcon('default');
         } else {

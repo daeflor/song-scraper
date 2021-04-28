@@ -3,6 +3,12 @@ import * as ViewRenderer from './modules/ViewRenderer.js';
 import * as Model from './modules/Model.js';
 import * as IO from './modules/Utilities/IO.js';
 
+const gDeltaTracklists = {
+    added: undefined,
+    removed: undefined,
+    unplayable: undefined
+};
+
 // window.Model = (function() {
 //     // //TODO might want to freeze this once the values have been set
 //     // //TODO should this be inside of or consolidated with TabManager?
@@ -397,6 +403,11 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
 
         /////
 
+        gDeltaTracklists.added = unmatchedScrapedTracks;
+        gDeltaTracklists.removed = unmatchedStoredTracks;
+        gDeltaTracklists.unplayable = unplayableTracks;
+
+        //TODO Since we want to offer the ability to export the delta lists too, it would probably be good to save these as persistent variables that can be referenced again
         return {added:unmatchedScrapedTracks, removed:unmatchedStoredTracks, unplayable:unplayableTracks};
     } else console.error("Tried to get delta tracklists, but the parameters provided were invalid. Expected two tracklist arrays (scraped & stored).");
 }
@@ -425,6 +436,22 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
             }
         }
     });
+}
+
+// TODO all download logic could probably go in its own module or class
+
+export function downloadDeltaListAsCSV(tracklist) {
+    const filename = 'TracklistExport_Delta_' + Model.tracklist.title;
+    const keysToIncludeInExport = [
+        'title',
+        'artist',
+        'album',
+        'duration',
+        'unplayable'
+    ];
+    
+    //TODO need to get the actual delta tracklists to pass here
+    //IO.convertArraysOfObjectsToCsv([tracklist, tracklist], filename, keysToIncludeInExport);
 }
 
 function downloadCurrentTracklistAsCSV(tracklist) {
