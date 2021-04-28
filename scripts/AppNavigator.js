@@ -208,13 +208,11 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
     //Create a new table element, with the header row as a child
     const _table = window.Utilities.CreateNewElement('table', {attributes:{class:'trackTable'}, children:[_tr]});
 
-    //TODO if we keep scraped tracklist as an array but deltas as a map, we will need separate looping logic for each one...
-        //Right now this is BROKEN for scraped/stored lists 
     if (typeof tracklist === 'object') { // If the tracklist parameter provided is a valid object...       
-        for (const [index, track] of tracklist) { // For each track in the tracklist...
-            let _td = window.Utilities.CreateNewElement('td', {textContent:index}); // Create a new data cell for the track's index
-            _tr = window.Utilities.CreateNewElement('tr', {children:[_td]}); // Create a new row for the track, adding the index cell to the new row     
-            
+        tracklist.forEach( (track, key) => { // For each track in the tracklist...
+            const trackPosition = (Array.isArray(tracklist) === true) ? key + 1 : key; // If the tracklist is stored in an array, the track position should be its index (or key) plus 1. If the tracklist is stored in a map, the track position is equal to the key value.
+            const td = window.Utilities.CreateNewElement('td', {textContent:trackPosition}); // Create a new data cell for the track position
+            _tr = window.Utilities.CreateNewElement('tr', {children:[td]}); // Create a new row for the track, adding the index cell to the new row      
             _table.appendChild(_tr); // Add the new row to the table
 
             for (const column of _columnsToIncludeInTrackTable) { // For each additional column in the Track Table...
@@ -227,7 +225,7 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
                     }
                 }
             }
-        }
+        });
     } else console.error("Tried to create a track table but a valid tracklist object was not provided.");
     //TODO could probably separate creating the track table itself from all the various other elements (e.g. header, description) that go along with it, to have smaller and easier-to-read functions
 
@@ -263,43 +261,129 @@ function compareTracks(track1, track2, collator) {
         collator.compare(track1.album, track2.album) === 0 &&
         compareDurationStrings(track1.duration, track2.duration) === true)
             ? true : false;
-    } else console.error("Tried to compare two tracks but the parameters provided are not valid.");
+    } else console.error("Tried to compare two tracks but the parameters provided are not valid. Parameters provided: " + [...arguments]);
 }
 
 function getDeltaTracklists(scrapedTracklist, storedTracklist) {
     if (Array.isArray(scrapedTracklist) === true && Array.isArray(storedTracklist) === true) {
         const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
         
+        //TODO would it make sense to the compareTracks() and other helper functions be part of the Track class?
+        //TODO or rather, would it make sense to have a new 'Tracklist' (or similar) class?
+            //And in there, put compareTracks() and other helper functions
+
+        //TODO it might not be a bad idea having an undefined check in the createTrackTable() fnc *regardless*, so may want to consider just going back to that.
+
+        /////
+
         // TODO could be worth considering storing tracklists as maps instead of arrays. In Firebase's UI, storing tracklists as maps would look almost identical. Note that if the scraped tracks are originally set in a map, that map would have to be cloned before creating the delta lists (below).
             //An alternative is to just store the index as a property along with the rest of the track metadata. Then could continue to use arrays instead of maps. Unsure if this is actually better though, especially since we're removing elements from the lists below.
                 //... I don't think the track index actually needs to be kept anywhere other than the delta tracklist arrays/maps. The scraped and stored lists will have the index regardless.
                 //... However, doing this could lead to needing different logic to handle delta vs scraped/stored tracklists, in the createTrackTable function. This might be slight though.
-        //Note: it's possible for a track's position/index listed in the delta track tables to be wrong if there are duplicate copies of the track in the tracklist, but this is unlikely. 
+            //One extra complication is that the logic to create csv files from tracklists would need to be updated to work with maps
+        // Note: it's possible for a track's position/index listed in the delta track tables to be wrong if there are duplicate copies of the track in the tracklist, but this is unlikely. 
         const unmatchedScrapedTracks = new Map();
         const unmatchedStoredTracks = new Map();
         const unplayableTracks = new Map();
-        for (let i = 0; i < scrapedTracklist.length; i++) { // For each scraped track...
-            unmatchedScrapedTracks.set(i+1, scrapedTracklist[i]); // Add it to the unmatched scraped tracks map, using its position in the tracklist as the key
-        }
-        for (let i = 0; i < storedTracklist.length; i++) { // For each stored track...
-            unmatchedStoredTracks.set(i+1, storedTracklist[i]); // Add it to the unmatched stored tracks map, using its position in the tracklist as the key
-        }
-        for (const [scrapedTrackIndex, scrapedTrack] of unmatchedScrapedTracks) { // For each scraped track that hasn't yet been matched with a stored track...
-            for (const [storedTrackIndex, storedTrack] of unmatchedStoredTracks) { // For each stored track that hasn't yet been matched with a scraped track...
+        scrapedTracklist.forEach( (track, index) => unmatchedScrapedTracks.set(index+1, track)); //Create a map from the stored tracks array, using the track position as the key
+        storedTracklist.forEach( (track, index) => unmatchedStoredTracks.set(index+1, track)); //Create a map from the stored tracks array, using the track position as the key
+        unmatchedScrapedTracks.forEach( (scrapedTrack, scrapedTrackKey) => { // For each unmatched scraped track...
+            //unmatchedScrapedTracks.set(scrapedTrackIndex+1, scrapedTrack);
+            for (const [storedTrackKey, storedTrack] of unmatchedStoredTracks) { // For each stored track that hasn't yet been matched with a scraped track...
                 if (compareTracks(scrapedTrack, storedTrack, collator) === true) { // If the two tracks match...
-                    unmatchedScrapedTracks.delete(scrapedTrackIndex); // Delete the scraped track from the map of unmatched scraped tracks, so that it can't be matched against any other stored tracks
-                    unmatchedStoredTracks.delete(storedTrackIndex); // Delete the stored track from the map of unmatched stored tracks, so that it can't be matched against any other scraped tracks
-                    if (scrapedTrack.unplayable === true && storedTrack.unplayable !== true) { // If the scraped track is listed as unplayable but the stored track wasn't...
-                        unplayableTracks.set(scrapedTrackIndex, scrapedTrack); // Add the scraped track to the map of unplayable tracks, using its position in the tracklist as the key
+                    unmatchedScrapedTracks.delete(scrapedTrackKey); // Delete the scraped track from the map of unmatched scraped tracks
+                    unmatchedStoredTracks.delete(storedTrackKey); // Delete the stored track from the map of unmatched stored tracks, so that it can't be matched against any other scraped tracks
+                    if (scrapedTrack.unplayable !== storedTrack.unplayable) { // If the 'unplayable' statuses of the scraped and stored tracks do not match...
+                        unplayableTracks.set(scrapedTrackKey, scrapedTrack); // Add the scraped track to the map of unplayable tracks, using its position in the tracklist as the key
                     }
                     break;
                 }
             }
-        }
+        });
 
-        console.table([...unmatchedScrapedTracks.values()]);
-        console.table([...unmatchedStoredTracks.values()]);
-    
+        /////
+
+        // //Note: it's possible for a track's position/index listed in the delta track tables to be wrong if there are duplicate copies of the track in the tracklist, but this is unlikely. 
+        // const unmatchedScrapedTracks = [...scrapedTracklist]; // Make a copy of the scraped tracks array, to keep the tracks that haven't yet been matched
+        // const unmatchedStoredTracks = [...storedTracklist]; // Make a copy of the stored tracks array, to keep the tracks that haven't yet been matched
+        // const unplayableTracks = [...scrapedTracklist]; // Make a copy of the scraped tracks array, to keep the tracks that are marked as unplayable
+        
+        // // console.log(unmatchedScrapedTracks);
+        // // console.log(unmatchedStoredTracks);
+        // console.log(unplayableTracks);
+        
+        // //TODO could probably replace this with a foreach since you can get the index from that and we don't need to ever break out of it.
+        // for (let i = 0; i < unmatchedScrapedTracks.length; i++) { // For each scraped track that hasn't yet been matched with a stored track...
+            
+        //     //TODO per MDN: Elements that are deleted are still visited.
+        //         //So it's the same problem as before. The find is going through the full array, including matched/deleted tracks, and therefore sending unefined to comparison function.
+        //         //Will need to add extra checks for undefined (as done below)... or...
+        //         //Might just need to manually set the matched array elements as undefined (original style)
+        //         //Or use maps everywhere in app?
+
+        //     const matchingIndex = unmatchedStoredTracks.findIndex(storedTrack => {
+        //         return (storedTrack !== undefined) ? compareTracks(unmatchedScrapedTracks[i], storedTrack, collator) : false;
+        //     });
+
+        //     // console.log("Matched Track Index:");
+        //     // console.log(matchingIndex);
+
+        //     if (matchingIndex > -1) {
+        //         // console.log(unmatchedScrapedTracks[i].unplayable);
+        //         // console.log(unmatchedStoredTracks[matchingIndex].unplayable);
+        //         if (unmatchedScrapedTracks[i].unplayable === unmatchedStoredTracks[matchingIndex].unplayable) { // If the 'unplayable' status of the track has not changed...
+        //             delete unplayableTracks[i]; // Delete the track from the array of unplayable tracks, since it isn't 'newly' marked as unplayable. (i.e. it is 'playable', or it was already marked as 'unplayable' in storage)
+        //         }
+        //         delete unmatchedScrapedTracks[i]; // Delete the scraped track from the array of unmatched scraped tracks, so that it can't be matched against any other stored tracks
+        //         delete unmatchedStoredTracks[matchingIndex];  // Delete the stored track from the array of unmatched stored tracks, so that it can't be matched against any other scraped tracks
+        //         //break;
+        //     } else {
+        //         //TODO I really don't like this way of handling unplayable tracks. It will be hard to understand what's going on later, I think.
+        //         delete unplayableTracks[i]; // If the scraped track didn't match any in storage, also remove it from the array of unplayable tracks
+        //     }
+        // }
+
+        /////
+
+        // //Note: it's possible for a track's position/index listed in the delta track tables to be wrong if there are duplicate copies of the track in the tracklist, but this is unlikely. 
+        // const unmatchedScrapedTracks = [...scrapedTracklist]; // Make a copy of the scraped tracks array, to keep the tracks that haven't yet been matched
+        // const unmatchedStoredTracks = [...storedTracklist]; // Make a copy of the stored tracks array, to keep the tracks that haven't yet been matched
+        // const unplayableTracks = [...scrapedTracklist]; // Make a copy of the scraped tracks array, to keep the tracks that are marked as unplayable
+        
+        //     console.log(unmatchedScrapedTracks);
+        //     console.log(unmatchedStoredTracks);
+        //     console.log(unplayableTracks);
+        
+        // for (let i = 0; i < unmatchedScrapedTracks.length; i++) { // For each scraped track that hasn't yet been matched with a stored track...
+        //     for (let j = 0; j < unmatchedStoredTracks.length; j++) { // For each stored track that hasn't yet been matched with a scraped track...
+        //         console.log(j);
+        //         //TODO This doesn't work since array element are being 'deleted', when this loop starts over it sends undefined values to the compare fnc
+        //             //Using a for...in may solve this since it will skip the deleted elements and is breakable
+        //                 //...However, for...in iteration order is not guaranteed to be consistent.
+        //             //Would a 'array.find()' work instead of this second loop?
+        //         if (compareTracks(unmatchedScrapedTracks[i], unmatchedStoredTracks[j], collator) === true) { // If the two tracks match...
+        //             if (unmatchedScrapedTracks[i].unplayable === unmatchedStoredTracks[j].unplayable) { // If the 'unplayable' status of the track has not changed...
+        //                 delete unplayableTracks[i]; // Delete the track from the array of unplayable tracks, since it isn't 'newly' marked as unplayable. (i.e. it is 'playable', or it was already marked as 'unplayable' in storage)
+        //             }
+        //             // if (unmatchedScrapedTracks[i].unplayable === false || unmatchedStoredTracks[j].unplayable === true) { // If the scraped track is not listed as unplayable or if the stored track is already listed as unplayable...
+        //             //     delete unplayableTracks[i]; // Delete the track from the array of unplayable tracks, since it isn't 'newly' marked as unplayable. (i.e. it is 'playable', or it was already marked as 'unplayable' in storage)
+        //             // }
+        //             delete unmatchedScrapedTracks[i]; // Delete the scraped track from the array of unmatched scraped tracks, so that it can't be matched against any other stored tracks
+        //             delete unmatchedStoredTracks[j];  // Delete the stored track from the array of unmatched stored tracks, so that it can't be matched against any other scraped tracks
+        //             break;
+        //         }
+        //         delete unplayableTracks[i]; // If the scraped track didn't match any in storage, also remove it from the array of unplayable tracks
+        //     }
+        // }
+
+//             scraped, stored
+// unplayable  true     true
+// unplayable*  true     false
+// unplayable  false     true
+// unplayable  false     false
+
+        /////
+
         return {added:unmatchedScrapedTracks, removed:unmatchedStoredTracks, unplayable:unplayableTracks};
     } else console.error("Tried to get delta tracklists, but the parameters provided were invalid. Expected two tracklist arrays (scraped & stored).");
 }
@@ -322,10 +406,10 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
             headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
             createTrackTable(deltaTracklists.removed, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:headerElement});
 
-            // If there a list of 'Unplayable Tracks' exits, create a header element and track table for it
-            if (typeof deltaTracklists.unplayable === 'object' && deltaTracklists.unplayable.size > 0) {
+            // If a list of 'Unplayable Tracks' exits, create a header element and track table for it
+            if (deltaTracklists.unplayable?.size > 0) {
                 headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'orangeFont noVerticalMargins'}});
-                createTrackTable(deltaTracklists.unplayable, 'Unplayable Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:headerElement});
+                createTrackTable(deltaTracklists.unplayable, "Change in 'Unplayable' Status", {parentElement:ViewRenderer.tracktables.deltas, headerElement:headerElement});
             
                 //TODO maybe put a flag here indicating whether or not the 'Unplayable' column should be included, and then send that when creating the 'Added' & 'Removed' track tables.
             }

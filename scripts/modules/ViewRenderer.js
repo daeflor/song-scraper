@@ -2,6 +2,12 @@
 
 //Should these objects be in the ViewRenderer or elsewhere (e.g. ViewState?)?
 
+//TODO would it make sense / be useful to have some kind of custom 'element' class, which then contains the functions below?
+    //For example, instead of calling ViewRenderer.hideElement(ViewRenderer.divs.auth), you would call ViewRenderer.divs.auth.hide()
+    //The 'element' constructor would require an actual DOM element as a parameter. The more thorough (currently non-existent) 'isElement' check would only need to be done in the constructor and not again after that.
+        //That would even eliminate the need for some of the simpler functions (e.g. hide, show)
+    //I'm not certain how the 'removeElement' case would be handled
+
 export const divs = Object.freeze({
     auth: document.getElementById('auth'),
     header: document.getElementById('header'),
@@ -31,7 +37,7 @@ export const checkboxes = Object.freeze({
 export const tracktables = {
     stored: undefined,
     scraped: undefined,
-    deltas: undefined
+    deltas: document.getElementById('trackTableDeltas')
 };
 
 export function disableElement(element) {
