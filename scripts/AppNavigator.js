@@ -125,7 +125,7 @@ export function triggerUITransition(transition) {
         ViewRenderer.unhideElement(ViewRenderer.divs.buttons);
         ViewRenderer.unhideElement(ViewRenderer.divs.checkboxes);
         ViewRenderer.unhideElement(ViewRenderer.divs.tracktables);
-        ViewRenderer.enableElement(ViewRenderer.buttons.scrape);
+        //ViewRenderer.enableElement(ViewRenderer.buttons.scrape);
         ViewRenderer.enableElement(ViewRenderer.buttons.storeScrapedMetadata);
         ViewRenderer.enableElement(ViewRenderer.buttons.exportScrapedMetadata);
         ViewRenderer.enableElement(ViewRenderer.checkboxes.scrapedTrackTable);
