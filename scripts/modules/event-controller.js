@@ -14,6 +14,7 @@ import * as Auth from '../auth/firebase-ui-auth.js'
 //TODO could consider adding to and/or removing from EventController so that it's the central place for all event-driven logic
     //i.e. EventController should dictate & be aware of all events & reactions throughout the app (not sure about auth...)
     //But it shouldn't necessarily handle any in-depth / area-specific logic. It should hand that off to the scripts designated specifically for that and then just get back the results and act on them.
+    //If this is done, it turn out that it's unnecessary/unhelpful having ViewRenderer & UI Controller be separate 
 
 // Button Pressed: Log Out
 ViewRenderer.buttons.logOut.addEventListener('click', function() {

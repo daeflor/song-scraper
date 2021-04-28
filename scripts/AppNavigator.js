@@ -123,8 +123,6 @@ export function triggerUITransition(transition) {
         ViewRenderer.hideElement(ViewRenderer.divs.buttons);
         ViewRenderer.hideElement(ViewRenderer.divs.checkboxes);
         ViewRenderer.hideElement(ViewRenderer.divs.tracktables);
-        //ViewRenderer.hideLandingPage();
-
         ViewRenderer.showStatusMessage('Song list comparison in progress.');
     } else if (transition === 'ScrapeSuccessful') {
         ViewRenderer.hideElement(ViewRenderer.divs.status);
@@ -276,8 +274,6 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
 
         //TODO it might not be a bad idea having an undefined check in the createTrackTable() fnc *regardless*, so may want to consider just going back to that.
 
-        /////
-
         // TODO could be worth considering storing tracklists as maps instead of arrays. In Firebase's UI, storing tracklists as maps would look almost identical. Note that if the scraped tracks are originally set in a map, that map would have to be cloned before creating the delta lists (below).
             //An alternative is to just store the index as a property along with the rest of the track metadata. Then could continue to use arrays instead of maps. Unsure if this is actually better though, especially since we're removing elements from the lists below.
                 //... I don't think the track index actually needs to be kept anywhere other than the delta tracklist arrays/maps. The scraped and stored lists will have the index regardless.
@@ -403,11 +399,14 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
 
         /////
 
+        //TODO could just use the global variables above, instead of creating new temp variables for the matching process. 
+            //However, the names would need to be clear enough to avoid complication. May not be worth it.
         gDeltaTracklists.added = unmatchedScrapedTracks;
         gDeltaTracklists.removed = unmatchedStoredTracks;
         gDeltaTracklists.unplayable = unplayableTracks;
 
         //TODO Since we want to offer the ability to export the delta lists too, it would probably be good to save these as persistent variables that can be referenced again
+            //This is now done (above), but could probably be handled better.
         return {added:unmatchedScrapedTracks, removed:unmatchedStoredTracks, unplayable:unplayableTracks};
     } else console.error("Tried to get delta tracklists, but the parameters provided were invalid. Expected two tracklist arrays (scraped & stored).");
 }
@@ -438,7 +437,9 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
     });
 }
 
-// TODO all download logic could probably go in its own module or class
+//TODO Should there be an IOController?
+    //all download logic could probably go in its own module or class
+    //Although it may also make sense (eventually) to move some of it into event-controller
 
 export function getDeltaListsAsCSV() {
     const keysToIncludeInExport = [
@@ -467,7 +468,6 @@ function downloadCurrentTracklistAsCSV(tracklist) {
     IO.convertArrayOfObjectsToCsv(tracklist, _filename, _keysToIncludeInExport);
 }
 
-//TODO Should I have an IOController?
 function downloadGooglePlayMusicTracklistAsCSV() {
     //The object keys to include when outputting the GPM track data to CSV
     const _keysToIncludeInExport = [
