@@ -59,10 +59,11 @@ ViewRenderer.buttons.exportStoredMetadata.addEventListener('click', function() {
 
 // Button Pressed: Copy to Clipboard
 ViewRenderer.buttons.copyToClipboard.addEventListener('click', function() {
-    //TODO maybe change the button appearance while the data is being generated and copied.
     //TODO calling this through UI Controller is now an unnecessary step, since it does almost nothing and is not related to UI
+        //Once event-controller / AppNavigator refactor takes place, that extra step should be removable.
+    ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'pending'; //As soon as the button is pressed, update the button to show a 'pending' icon
     navigator.clipboard.writeText(UIController.getDeltaListsAsCSV()).then(function() {
-        console.log("Delta tracklist CSV copied to clipboard");
+        setTimeout(() => {ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'content_paste';}, 100); //Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
   }, function() {
         console.error("Failed to copy delta tracklist CSV to clipboard.");
   });
