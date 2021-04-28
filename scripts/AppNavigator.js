@@ -440,8 +440,8 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
 
 // TODO all download logic could probably go in its own module or class
 
-export function downloadDeltaListAsCSV() {
-    const filename = 'TracklistExport_Delta_' + Model.tracklist.title;
+export function getDeltaListsAsCSV() {
+    //const filename = 'TracklistExport_Delta_' + Model.tracklist.title;
     const keysToIncludeInExport = [
         'title',
         'artist',
@@ -450,7 +450,10 @@ export function downloadDeltaListAsCSV() {
         'unplayable'
     ];
 
-    IO.convertObjectMapsToCsv([gDeltaTracklists.added, gDeltaTracklists.removed], keysToIncludeInExport, filename);
+    //TODO when doing this, would it make sense to merge the unplayable songs into added and removed lists?
+        //It seems overly complicated, but could be nice to see them there.
+
+    return IO.convertObjectMapsToCsv([gDeltaTracklists.added, gDeltaTracklists.removed], keysToIncludeInExport);
 }
 
 function downloadCurrentTracklistAsCSV(tracklist) {

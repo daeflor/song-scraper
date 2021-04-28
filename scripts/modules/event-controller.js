@@ -57,18 +57,29 @@ ViewRenderer.buttons.exportStoredMetadata.addEventListener('click', function() {
     UIController.downloadGooglePlayMusicTracklistAsCSV();
 });
 
-// Button Pressed: Export Selected Lists
-ViewRenderer.buttons.exportSelectedLists.addEventListener('click', function() {
-    if (ViewRenderer.checkboxes.scrapedTrackTable.checked === true) {
-
-    }
-    if (ViewRenderer.checkboxes.storedTrackTable.checked === true) {
-
-    }
-    if (ViewRenderer.checkboxes.deltaTrackTables.checked === true) {
-        UIController.downloadDeltaListAsCSV();
-    }
+// Button Pressed: Copy to Clipboard
+ViewRenderer.buttons.copyToClipboard.addEventListener('click', function() {
+    //TODO maybe change the button appearance while the data is being generated and copied.
+    //TODO calling this through UI Controller is now an unnecessary step, since it does almost nothing and is not related to UI
+    navigator.clipboard.writeText(UIController.getDeltaListsAsCSV()).then(function() {
+        console.log("Delta tracklist CSV copied to clipboard");
+  }, function() {
+        console.error("Failed to copy delta tracklist CSV to clipboard.");
+  });
 });
+
+// // Button Pressed: Export Selected Lists
+// ViewRenderer.buttons.exportSelectedLists.addEventListener('click', function() {
+//     if (ViewRenderer.checkboxes.scrapedTrackTable.checked === true) {
+
+//     }
+//     if (ViewRenderer.checkboxes.storedTrackTable.checked === true) {
+
+//     }
+//     if (ViewRenderer.checkboxes.deltaTrackTables.checked === true) {
+//         UIController.downloadDeltaListAsCSV();
+//     }
+// });
 
 //TODO it does seem like the 3 listeners below could all be merged into one somehow, since they all follow the exact same pattern
     //Would just need to know how to map/link from a checkbox to a tracktable and to a UI controller callback/function
@@ -132,10 +143,12 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', function() {
             UIController.createDeltaTracklistsGPM(Model.getScrapedTracksArray()); // Create new track tables based on the scraped and stored metadata and add them to the DOM
         }
         //TODO this is temp, should probably be in UI controller
-        ViewRenderer.enableElement(ViewRenderer.buttons.exportSelectedLists);
+        //ViewRenderer.enableElement(ViewRenderer.buttons.exportSelectedLists);
+        ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
         //UIController.triggerUITransition('CheckboxChecked');
     } else { // Else, if the checkbox is unchecked, hide the track table elements
         ViewRenderer.hideElement(ViewRenderer.tracktables.deltas);
+        ViewRenderer.hideElement(ViewRenderer.buttons.copyToClipboard);
         //TODO Still need to implement this:
             //If (allCheckboxesUnchecked() === true) {
             //     UIController.triggerUITransition('AllCheckboxesUnchecked');

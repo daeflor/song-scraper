@@ -35,7 +35,13 @@ function createCommaSeparatedStringFromArray(array) {
 
 //TODO would be good to pass the track position (index to these files)
 
-export function convertObjectMapsToCsv(maps, keysToInclude, filename) {
+/**
+ * Converts multiple maps of objects to a csv
+ * @param {array} maps An array of maps. The contents of each map of which will be printed side-by-side
+ * @param {array} keysToInclude An array to indicate the specific object keys which should be included in the csv file, and the order in which to output them.
+ * @returns {string} The CSV generated from the data in the provided maps
+ */
+export function convertObjectMapsToCsv(maps, keysToInclude) {
     let csv = ''; // Begin with a blank string for the CSV
 
     if (Array.isArray(keysToInclude) === true) {
@@ -45,22 +51,12 @@ export function convertObjectMapsToCsv(maps, keysToInclude, filename) {
             valuesInHeaderRow = valuesInHeaderRow.concat(keysToInclude); // Add the set of included keys to the values that will be used to create columns for the csv's header row
         });
         csv += createCommaSeparatedStringFromArray(valuesInHeaderRow) + '\r\n'; // Add a newline character to indicate the end of the header row
-    
-        // let largestMapSize = maps?.[0]?.size; // Get the size of the first map (i.e. the number of elements contained within it)
-
-        // for (let i = 1; i < maps?.length; i++) { // For each additional map provided...
-        //     if (maps[i]?.size > largestMapSize) { // If the size of the current map is larger than the previously recorded largest size...
-        //         largestMapSize = maps[i]?.size; // Update the largest size
-        //     }
-        // }
 
         let largestMapSize = 0; // Get the size of the first map (i.e. the number of elements contained within it)
-
         maps?.forEach(map => { // For each map provided...
             if (map?.size > largestMapSize) { // If the size of the current map is larger than the previously recorded largest size...
                 largestMapSize = map.size; // Update the largest size
             }
-            //array[index] = map.entries();
         });
         const mapEntries = maps?.map(e => e.entries()); //Get an array of Map Iterators from the provided array of maps
 
@@ -75,7 +71,6 @@ export function convertObjectMapsToCsv(maps, keysToInclude, filename) {
 
                 valuesInCurrentRow.push(currentIndex); // Add the 'index' to the array of values to include in the current row
                 
-                //keysToInclude.forEach(key => valuesInCurrentRow.push(currentObject?.[key] ?? ''));
                 keysToInclude.forEach(key => { // For each object key to include in the csv row...
                     const currentValue = currentObject?.[key] ?? ''; // If the object's value for the current key isn't falsy (e.g. undefined), use that value, otherwise set it to a blank string so that the column is still included in the CSV row later
                     valuesInCurrentRow.push(currentValue); // Add the value to the array of values to include in the CSV row
@@ -86,8 +81,7 @@ export function convertObjectMapsToCsv(maps, keysToInclude, filename) {
         }
     } else console.error ("Tried to convert map data to a csv, but a list of keys to use for the columns was not provided.");
 
-    //console.log(csv);
-    downloadTextFile(csv, filename, 'csv');
+    return csv;
 }
 
 /**

@@ -19,7 +19,7 @@
     <div id='header' hidden=true>
       <ul id='headerRow'>
         <li class='leftAligned'>
-          <button type='button' id='btnLogOut' class='btnAuth'>
+          <button type='button' id='btnLogOut' class='btn'>
             <span class='autoHeight popupButton material-icons-round'>logout</span>
           </button> 
         </li>
@@ -49,7 +49,11 @@
       <input type="checkbox" id="checkboxScrapedTrackTable" disabled=true>
       <label for="checkboxScrapedTrackTable"> Scraped Track Table</label><br>
       <input type="checkbox" id="checkboxDeltaTrackTables" disabled=true>
-      <label for="checkboxDeltaTrackTables"> Delta Track Tables</label><br>
+      <label for="checkboxDeltaTrackTables"> Delta Track Tables
+        <button type='button' id='btnCopyToClipboard' class='btn' hidden=true>
+          <span class='btnSmall autoHeight popupButton material-icons-round'>content_paste</span>
+        </button> 
+      </label><br>
       <input type="checkbox" id="checkboxTracksNotInPlaylists" disabled=true>
       <label for="checkboxTracksNotInPlaylists"> Tracks not in Playlists</label><br>
       <input type="checkbox" id="checkboxTracksNotInLibrary" disabled=true>
