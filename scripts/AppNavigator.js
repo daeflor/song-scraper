@@ -453,7 +453,7 @@ export function getDeltaListsAsCSV() {
     //TODO when doing this, would it make sense to merge the unplayable songs into added and removed lists?
         //It seems overly complicated, but could be nice to see them there.
 
-    return IO.convertObjectMapsToCsv([gDeltaTracklists.added, gDeltaTracklists.removed], keysToIncludeInExport);
+    return IO.convertObjectMapsToCsv([gDeltaTracklists.added, gDeltaTracklists.removed, gDeltaTracklists.unplayable], keysToIncludeInExport);
 }
 
 function downloadCurrentTracklistAsCSV(tracklist) {
