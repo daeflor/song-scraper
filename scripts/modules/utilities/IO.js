@@ -35,9 +35,64 @@ function createCommaSeparatedStringFromArray(array) {
 
 //TODO would be good to pass the track position (index to these files)
 
+export function convertObjectMapsToCsv(maps, keysToInclude, filename) {
+    let csv = ''; // Begin with a blank string for the CSV
+
+    if (Array.isArray(keysToInclude) === true) {
+        let valuesInHeaderRow = []; // Create an array to hold all the string values that will be included in the header row of the csv
+        maps?.forEach(() => { // For each map provided...
+            valuesInHeaderRow.push('index'); // Add an index column before the rest of the keys
+            valuesInHeaderRow = valuesInHeaderRow.concat(keysToInclude); // Add the set of included keys to the values that will be used to create columns for the csv's header row
+        });
+        csv += createCommaSeparatedStringFromArray(valuesInHeaderRow) + '\r\n'; // Add a newline character to indicate the end of the header row
+    
+        // let largestMapSize = maps?.[0]?.size; // Get the size of the first map (i.e. the number of elements contained within it)
+
+        // for (let i = 1; i < maps?.length; i++) { // For each additional map provided...
+        //     if (maps[i]?.size > largestMapSize) { // If the size of the current map is larger than the previously recorded largest size...
+        //         largestMapSize = maps[i]?.size; // Update the largest size
+        //     }
+        // }
+
+        let largestMapSize = 0; // Get the size of the first map (i.e. the number of elements contained within it)
+
+        maps?.forEach(map => { // For each map provided...
+            if (map?.size > largestMapSize) { // If the size of the current map is larger than the previously recorded largest size...
+                largestMapSize = map.size; // Update the largest size
+            }
+            //array[index] = map.entries();
+        });
+        const mapEntries = maps?.map(e => e.entries()); //Get an array of Map Iterators from the provided array of maps
+
+
+        for (let i = 0; i < largestMapSize; i++) {
+            const valuesInCurrentRow = []; // Create an array to hold all the string values that will be included in the current row of the csv
+
+            mapEntries.forEach(iterator => { // For each map iterator... 
+                const currentEntry = iterator.next().value; // Get the next entry from the iterator
+                const currentIndex = currentEntry?.[0] ?? ''; // Use the entry's key as an 'index' value to print alongside the actual object data. If the key is falsy, then just use a blank string
+                const currentObject = currentEntry?.[1]; // Get the current object from the entry's value
+
+                valuesInCurrentRow.push(currentIndex); // Add the 'index' to the array of values to include in the current row
+                
+                //keysToInclude.forEach(key => valuesInCurrentRow.push(currentObject?.[key] ?? ''));
+                keysToInclude.forEach(key => { // For each object key to include in the csv row...
+                    const currentValue = currentObject?.[key] ?? ''; // If the object's value for the current key isn't falsy (e.g. undefined), use that value, otherwise set it to a blank string so that the column is still included in the CSV row later
+                    valuesInCurrentRow.push(currentValue); // Add the value to the array of values to include in the CSV row
+                });
+            });
+            
+            csv += createCommaSeparatedStringFromArray(valuesInCurrentRow) + '\r\n'; // Create a comma-separated string from the array of recorded values and append the resulting string to the CSV string, followed by a newline character to indicate the end of the current row
+        }
+    } else console.error ("Tried to convert map data to a csv, but a list of keys to use for the columns was not provided.");
+
+    //console.log(csv);
+    downloadTextFile(csv, filename, 'csv');
+}
+
 /**
  * Converts multiple arrays of objects to a csv and then downloads the file locally
- * @param {array} arrays An array of arrays, each of which will be printed side-by-side
+ * @param {array} arrays An array of arrays. The contents of each of which will be printed side-by-side
  * @param {string} filename The name of the file to download
  * @param {array} [objectKeysToInclude] An optional array to indicate the specific object keys which should be included in the csv file, and the order in which to output them. If none is provided, all keys for every object will be outputted.
  */

@@ -66,7 +66,7 @@ ViewRenderer.buttons.exportSelectedLists.addEventListener('click', function() {
 
     }
     if (ViewRenderer.checkboxes.deltaTrackTables.checked === true) {
-        UIController.downloadDeltaListAsCSV(Model.getScrapedTracksArray());
+        UIController.downloadDeltaListAsCSV();
     }
 });
 

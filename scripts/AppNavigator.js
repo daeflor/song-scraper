@@ -440,7 +440,7 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
 
 // TODO all download logic could probably go in its own module or class
 
-export function downloadDeltaListAsCSV(tracklist) {
+export function downloadDeltaListAsCSV() {
     const filename = 'TracklistExport_Delta_' + Model.tracklist.title;
     const keysToIncludeInExport = [
         'title',
@@ -449,9 +449,8 @@ export function downloadDeltaListAsCSV(tracklist) {
         'duration',
         'unplayable'
     ];
-    
-    //TODO need to get the actual delta tracklists to pass here
-    //IO.convertArraysOfObjectsToCsv([tracklist, tracklist], filename, keysToIncludeInExport);
+
+    IO.convertObjectMapsToCsv([gDeltaTracklists.added, gDeltaTracklists.removed], keysToIncludeInExport, filename);
 }
 
 function downloadCurrentTracklistAsCSV(tracklist) {
