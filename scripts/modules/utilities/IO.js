@@ -71,21 +71,26 @@ export function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=
         }
     }
 
-    //TODO at some point, pull this logic out of this function and into a separate one specifically for downloading a csv file
-    //If the CSV actually has some data in it after the array has been converted...
-    if (_csv.length > 0) {
+    downloadTextFile(_csv, filename, 'csv');
+}
+
+/**
+ * Downloads a text file with the provided data
+ * @param {string} data The text data that makes up the contents of the file
+ * @param {string} [filename] The name of the file. Defaults to 'download'.
+ * @param {string} [fileType] The type/extension of the file. Defaults to 'csv'.
+ */
+function downloadTextFile(data, filename = 'download', fileType = 'csv') {
+    if (data.length > 0) { //If there is data to download...
         //Create a new link DOM element to use to trigger a download of the file locally
-        const _link = document.createElement('a');
-        _link.id = 'download-csv';
-        _link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(_csv));
-        _link.setAttribute('download', filename+'.csv');
-        document.body.appendChild(_link); //Add the link element to the DOM
-        _link.click(); //Trigger an automated click of the link to download the CSV file
-        _link.remove(); //Remove the temporary link element from the DOM
-    }
-    else {
-        console.warn("The generated CSV was blank, so no file will be downloaded.");
-    }
+        const link = document.createElement('a');
+        link.id = 'download-text-file';
+        link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data));
+        link.setAttribute('download', filename + '.' + fileType);
+        document.body.appendChild(link); // Add the link element to the DOM
+        link.click(); // Trigger an automated click of the link to download the CSV file
+        link.remove(); // Remove the temporary link element from the DOM
+    } else console.warn("Tried to download a text file but the data provided was blank, so no file will be downloaded.");
 }
 
 /**
