@@ -168,12 +168,12 @@ function resetAllTrackTablesAndCheckboxes() {
  * Creates a track table from the provided tracklist and other inputs
  * @param {array} tracklist The tracklist array for which to create a table element
  * @param {string} headerText The name of the track table to display above it
- * @param {object} [options] An object to provide the following optional parameters: parentElement (object); headerElement (object); descriptionIfEmpty (string);
+ * @param {object} parentElement The element in the DOM under which the track table should be appended
+ * @param {object} [options] An object to provide the following optional parameters: headerElement (object); descriptionIfEmpty (string);
  * @returns The container element for the track table and all associated elements
  */
-export function createTrackTable(tracklist, headerText, options/*parentElement, header, descriptionIfEmpty*/) {
+export function createTrackTable(tracklist, headerText, parentElement, options/*parentElement, header, descriptionIfEmpty*/) {
 //TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove (or replace?) any existing scraped tracklist tables, including from ViewRenderer's tracker object
-    const _parentElement      = (typeof options === 'object' && typeof options.parentElement === 'object')      ? options.parentElement      : ViewRenderer.divs.tracktables;
     const _descriptionIfEmpty = (typeof options === 'object' && typeof options.descriptionIfEmpty === 'string') ? options.descriptionIfEmpty : 'No tracks to display'; //TODO Not sure it's ever going to be necessary to pass this as a parameter instead of just using the default value.
     const _headerElement      = (typeof options === 'object' && typeof options.headerElement === 'object')      ? options.headerElement      : window.Utilities.CreateNewElement('p', {attributes:{class:'noVerticalMargins'}});
     
@@ -241,10 +241,7 @@ export function createTrackTable(tracklist, headerText, options/*parentElement, 
     }
     _headerElement.textContent = headerText.concat(' (' + (_table.childElementCount -1) + ')'); //Set the header text, including the number of tracks in the table
     const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _tableBody]}); //Create a new element to contain the various table elements
-    _parentElement.appendChild(_tableContainer); //Add the new container element (and its children) to the DOM
-    return _tableContainer; // TODO it's confusing that sometimes I used this return value and sometimes I don't. Would be better to be more consistent.
-                            // Maybe just always have the extra div layer like the deltas uses/needs, for consistency. Then, always pass the parent element which the final table should be placed under.
-                            // This way, the top level divs under the 'tracktables' div can all be pre-set in HTML and can be referenced easily via ViewRenderer, and this function doesn't have to return anything. 
+    parentElement.appendChild(_tableContainer); //Add the new container element (and its children) to the DOM
 }
 
 function compareDurationStrings(duration1, duration2) {
@@ -300,6 +297,23 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
                 }
             }
         });
+
+        /////
+
+        // scrapedTracklist.forEach( (scrapedTrack, scrapedTrackKey) => { // For each unmatched scraped track...
+        //     //let matchedTrack = undefined;
+        //     const matchingIndex = unmatchedStoredTracks.findIndex(storedTrack => {
+        //         return (storedTrack !== undefined) ? compareTracks(scrapedTrack, storedTrack, collator) : false;
+        //     });
+        //     if (matchingIndex > -1) {
+        //         if (scrapedTrack.unplayable !== unmatchedStoredTracks[matchingIndex].unplayable) { // If the 'unplayable' statuses of the scraped and stored tracks do not match...
+        //             unplayableTracks.set(scrapedTrackKey, scrapedTrack); // Add the scraped track to the map of unplayable tracks, using its position in the tracklist as the key
+        //         }
+        //         delete unmatchedStoredTracks[matchingIndex];
+        //     } else {
+        //         unmatchedScrapedTracks.set(scrapedTrackKey, scrapedTrack);
+        //     }
+        // });
 
         /////
 
@@ -395,27 +409,21 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
         //TODO could start to decouple this from GPM. Instead of doing this, maybe pass the storedTracklist as a param?
 
         if (typeof deltaTracklists === 'object') {
-            // Create a new container div element for all the track tables used to show the deltas (e.g. Added, Removed, Disabled)
-            //ViewRenderer.tracktables.deltas = window.Utilities.CreateNewElement('div'); //TODO why isn't this created in advance? Or just in the html file already. Is there a reason to create it here?
-
             // Create a header element and track table for the list of 'Added Tracks'
             let headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
-            createTrackTable(deltaTracklists.added, 'Added Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:headerElement,});
+            createTrackTable(deltaTracklists.added, 'Added Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
             
             // Create a header element and track table for the list of 'Removed Tracks'
             headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
-            createTrackTable(deltaTracklists.removed, 'Removed Tracks', {parentElement:ViewRenderer.tracktables.deltas, headerElement:headerElement});
+            createTrackTable(deltaTracklists.removed, 'Removed Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
 
             // If a list of 'Unplayable Tracks' exits, create a header element and track table for it
             if (deltaTracklists.unplayable?.size > 0) {
                 headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'orangeFont noVerticalMargins'}});
-                createTrackTable(deltaTracklists.unplayable, "Change in 'Unplayable' Status", {parentElement:ViewRenderer.tracktables.deltas, headerElement:headerElement});
+                createTrackTable(deltaTracklists.unplayable, "Change in 'Unplayable' Status", ViewRenderer.tracktables.deltas, {headerElement:headerElement});
             
                 //TODO maybe put a flag here indicating whether or not the 'Unplayable' column should be included, and then send that when creating the 'Added' & 'Removed' track tables.
             }
-
-            // Add the new container div for all the delta track tables to the DOM, within the general track tables div
-            //ViewRenderer.divs.tracktables.appendChild(ViewRenderer.tracktables.deltas);
         }
     });
 }
@@ -470,9 +478,6 @@ function convertDurationStringToSeconds(duration) {
     if (typeof duration === 'string') {
         //Split the duration string, then convert each split portion into an integer and return a new array of split integer values
         const _splitDurationIntegers = duration.split(':').map(durationString => parseInt(durationString, 10));
-        //TODO technically I don't think it's necessary to convert these to numbers because I think JS supports arithmatic with 'string versions' of numbers
-            //maybe NVM. The multiplication does work, but the addition does not
-            //A way around this would be to always multiply the last array index by 1, but at that point, is it worth it?
 
         switch(_splitDurationIntegers.length) {
             case 1: //Track is less than a minute long

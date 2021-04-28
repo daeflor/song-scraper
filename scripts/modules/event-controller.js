@@ -15,7 +15,7 @@ import * as Auth from '../auth/firebase-ui-auth.js'
     //i.e. EventController should dictate & be aware of all events & reactions throughout the app (not sure about auth...)
     //But it shouldn't necessarily handle any in-depth / area-specific logic. It should hand that off to the scripts designated specifically for that and then just get back the results and act on them.
 
-//Button Pressed: Log Out
+// Button Pressed: Log Out
 ViewRenderer.buttons.logOut.addEventListener('click', function() {
     //AuthController.logOut();
     //ViewRenderer.uncheckBox(ViewRenderer.checkboxes.storedTrackTable);
@@ -24,7 +24,7 @@ ViewRenderer.buttons.logOut.addEventListener('click', function() {
     Auth.logOut();
 });
 
-//Button Pressed: Scrape Current Tracklist
+// Button Pressed: Scrape Current Tracklist
 ViewRenderer.buttons.scrape.addEventListener('click', function() {
     UIController.triggerUITransition('StartScrape');
     Messenger.sendMessageToContentScripts('GetTracks', tracksArray => {
@@ -38,7 +38,7 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
     });
 });
 
-//Button Pressed: Store Scraped Metadata
+// Button Pressed: Store Scraped Metadata
 ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
     UIController.triggerUITransition('StorageInProgress'); //Update the UI while the data is being stored (e.g. disable the 'store' button)
 
@@ -47,55 +47,45 @@ ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
     });
 });
 
-//Button Pressed: Export Scraped Tracklist 
+// Button Pressed: Export Scraped Tracklist 
 ViewRenderer.buttons.exportScrapedMetadata.addEventListener('click', function() {
     UIController.downloadCurrentTracklistAsCSV(Model.getScrapedTracksArray());
 });
 
-//Button Pressed: Export Stored GPM Tracklist 
+// Button Pressed: Export Stored GPM Tracklist 
 ViewRenderer.buttons.exportStoredMetadata.addEventListener('click', function() {
     UIController.downloadGooglePlayMusicTracklistAsCSV();
 });
 
-//Checkbox Value Changed: Stored YTM Tracklist
+// Checkbox Value Changed: Stored YTM Tracklist
 ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', function() {
-    //If the checkbox is checked, display the stored metadata for the current tracklist; Otherwise hide it
+    // If the checkbox is checked, display the stored metadata for the current tracklist; Otherwise hide it
     if (ViewRenderer.checkboxes.storedTrackTable.checked === true) {
-        //If a track table DOM element has previously been created, just show the existing element
-        if (typeof ViewRenderer.tracktables.stored === 'object') {
-            ViewRenderer.unhideElement(ViewRenderer.tracktables.stored);
-        } else { //Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
+        if (ViewRenderer.tracktables.stored.childElementCount > 0) { // If a track table DOM element has previously been created...
+            ViewRenderer.unhideElement(ViewRenderer.tracktables.stored); // Show the existing element
+        } else { // Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
             Model.getStoredMetadata(tracksArray => {
-                ViewRenderer.tracktables.stored = UIController.createTrackTable(tracksArray, 'Stored YTM Tracklist');
-                //TODO this interaction with ViewRenderer is WIP
+                UIController.createTrackTable(tracksArray, 'Stored YTM Tracklist', ViewRenderer.tracktables.stored);
+                // TODO this interaction with ViewRenderer is WIP
             });
         }
-    }
-    else { //Else, if the checkbox is unchecked, hide the track table element
-        if (typeof ViewRenderer.tracktables.stored === 'object') {
-            ViewRenderer.hideElement(ViewRenderer.tracktables.stored);
-        }
+    } else { // Else, if the checkbox is unchecked, hide the track table element
+        ViewRenderer.hideElement(ViewRenderer.tracktables.stored);
     }
 });
 
-//Checkbox Value Changed: Scraped Tracklist
+// Checkbox Value Changed: Scraped Tracklist
 ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() {
-    //If the checkbox is checked, display the scraped tracklist metadata; Otherwise hide it
+    // If the checkbox is checked, display the scraped tracklist metadata; Otherwise hide it
     if (ViewRenderer.checkboxes.scrapedTrackTable.checked === true) {
-        //If a track table DOM element has previously been created, just show the existing element
-        if (typeof ViewRenderer.tracktables.scraped === 'object') {
-            ViewRenderer.unhideElement(ViewRenderer.tracktables.scraped);
+        if (ViewRenderer.tracktables.scraped.childElementCount > 0) { // If a track table DOM element has previously been created...
+            ViewRenderer.unhideElement(ViewRenderer.tracktables.scraped); // Show the existing element
+        } else { // Else, if a track table element doesn't exist yet, create a new one using the scraped metadata and add it to the DOM
+            UIController.createTrackTable(Model.getScrapedTracksArray(), 'Scraped Tracklist', ViewRenderer.tracktables.scraped);
+            // TODO this interaction with ViewRenderer is WIP
         }
-        //Else, if a track table element doesn't exist yet, create a new one using the scraped metadata and add it to the DOM
-        else {
-            ViewRenderer.tracktables.scraped = UIController.createTrackTable(Model.getScrapedTracksArray(), 'Scraped Tracklist');
-            //TODO this interaction with ViewRenderer is WIP
-        }
-    }
-    else { //Else, if the checkbox is unchecked, hide the track table element
-        if (typeof ViewRenderer.tracktables.scraped === 'object') {
-            ViewRenderer.hideElement(ViewRenderer.tracktables.scraped);
-        }
+    } else { // Else, if the checkbox is unchecked, hide the track table element
+        ViewRenderer.hideElement(ViewRenderer.tracktables.scraped);
     }
 });
 
@@ -111,7 +101,7 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', function() {
         } else { // Else, if the track table elements dont exist yet...
             UIController.createDeltaTracklistsGPM(Model.getScrapedTracksArray()); // Create new track tables based on the scraped and stored metadata and add them to the DOM
         }
-    } else { //Else, if the checkbox is unchecked, hide the track table elements
+    } else { // Else, if the checkbox is unchecked, hide the track table elements
         ViewRenderer.hideElement(ViewRenderer.tracktables.deltas);
     }
 });

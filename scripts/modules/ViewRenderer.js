@@ -35,8 +35,8 @@ export const checkboxes = Object.freeze({
 //TODO It could be a bit confusing that these are all also divs, not actual 'tables'
     //It might be easier to follow to nest these under the divs object above, and add a divs.tracktables.root field, or something to that effect.
 export const tracktables = {
-    stored: undefined,
-    scraped: undefined,
+    scraped: document.getElementById('trackTableScraped'),
+    stored: document.getElementById('trackTableStored'),
     deltas: document.getElementById('trackTableDeltas')
 };
 
