@@ -450,7 +450,9 @@ export function getDeltaListsAsCSV() {
         'unplayable'
     ];
 
-    return IO.convertObjectMapsToCsv([gDeltaTracklists.added, gDeltaTracklists.removed, gDeltaTracklists.unplayable], keysToIncludeInExport);
+    const tracklistsMap = new Map([['Added', gDeltaTracklists.added], ['Removed', gDeltaTracklists.removed], ['Unplayable', gDeltaTracklists.unplayable]]);
+
+    return IO.convertObjectMapsToCsv(tracklistsMap, keysToIncludeInExport);
 }
 
 function downloadCurrentTracklistAsCSV(tracklist) {

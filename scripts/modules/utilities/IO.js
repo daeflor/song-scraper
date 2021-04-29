@@ -24,26 +24,32 @@ function createCommaSeparatedStringFromArray(array) {
 
 //** Publicly-Exposed Utility Functions **//
 
-//TODO maybe include an additional header row, that lists the 'map names' (e.g. Added Tracks, Removed Tracks, etc.)
 /**
  * Converts multiple maps of objects to a csv
- * @param {Object[]} maps An array of maps. The contents of each map of which will be printed side-by-side
+ * @param {Object} maps A map of maps. The contents of each map of which will be printed side-by-side
  * @param {string[]} keysToInclude An array to indicate the specific object keys which should be included in the csv file, and the order in which to output them.
  * @returns {string} The CSV generated from the data in the provided maps
  */
 export function convertObjectMapsToCsv(maps, keysToInclude) {
     let csv = ''; // Begin with a blank string for the CSV
 
-    if (Array.isArray(maps) === true && Array.isArray(keysToInclude) === true) { // If the parameters provided are both valid arrays...
-        let valuesInHeaderRow = []; // Create an array to hold all the column names that will be included in the header row of the csv
+    if (maps instanceof Map === true && Array.isArray(keysToInclude) === true) { // If the parameters provided are both valid...
+        const mapEntries = []; // Create an array to hold the Map Iterators for any maps provided that aren't empty.
+        const valuesInHeaderRow = []; // Create an array to hold map names that will be included in the header row of the csv
+        let valuesInSecondaryHeaderRow = []; // Create an array to hold all the column names that will be included in the secondary header row of the csv
         let largestMapSize = 0; // Used to keep track of the size of the largest Map (i.e. the map with the most number of elements contained within it). This determines the final number of rows in the CSV.
         
-        maps.forEach((map, index, array) => { // For each map in the provided array...
+        maps.forEach((map, key) => { // For each individual map provided...
             if (typeof map === 'undefined' || map?.size === 0) { // If the map is undefined or empty...
-                delete array[index]; // Delete the map, so it isn't considered during future loops/checks
+                maps.delete(key); // Delete the map, so it isn't considered during future loops/checks
             } else { //Else, if the map contains data...
-                valuesInHeaderRow.push('index'); // Add an index column before the rest of the column names
-                valuesInHeaderRow = valuesInHeaderRow.concat(keysToInclude); // Add the set of included keys to the values that will be used to create columns for the csv's header row
+                mapEntries.push(map.entries());
+                
+                valuesInHeaderRow.push(key); // Use the map key as the name to appear in the header row for this map
+                keysToInclude.forEach(() => valuesInHeaderRow.push('')); // Add empty values to the header row equal to the number of values in the list of keys (column names) to include
+
+                valuesInSecondaryHeaderRow.push('index'); // Add an index column before the rest of the column names
+                valuesInSecondaryHeaderRow = valuesInSecondaryHeaderRow.concat(keysToInclude); // Add the set of included keys to the values that will be used to create columns for the csv's header row
             
                 if (map?.size > largestMapSize) { // If the size of the current map is larger than the previously recorded largest size...
                     largestMapSize = map.size; // Update the largest size
@@ -52,9 +58,8 @@ export function convertObjectMapsToCsv(maps, keysToInclude) {
         });
 
         csv += createCommaSeparatedStringFromArray(valuesInHeaderRow) + '\r\n'; // Convert the array of values for the header row into a string, with a newline character at the end to indicate the end of the row
+        csv += createCommaSeparatedStringFromArray(valuesInSecondaryHeaderRow) + '\r\n'; // Convert the array of values for the secondary header row into a string, with a newline character at the end to indicate the end of the row
    
-        const mapEntries = maps.map(e => e.entries()); //Get an array of Map Iterators from the provided array of maps. Note that for any maps that were deleted earlier and now have the "empty" value, the Map Iterator will also be "empty", so it will be skipped during the following loop. 
-
         for (let i = 0; i < largestMapSize; i++) { // For each row to include in the CSV...
             const valuesInCurrentRow = []; // Create an array to hold all the string values that will be included in the row
 
