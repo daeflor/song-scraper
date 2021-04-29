@@ -2,42 +2,92 @@
 
 /**
  * Creates a string of comma-separated values from the provided array
- * @param {array} array An array of the values to use to create a comma-separated string
+ * @param {*[]} array An array of the values to use to create a comma-separated string
  */
 function createCommaSeparatedStringFromArray(array) {
     if (Array.isArray(array) === true) { 
         let _string = ''; //Start with a blank string
 
-        //For each element in the array except for the last one...
-        for (let i = 0; i < array.length-1; i++) {
-            //If the element's value type is a string...
-            if (typeof array[i] === 'string') {
-                //Include double-quotes around the output string, followed by a comma to indicate the end of the current element/value
-                _string += '"' + array[i] + '",';
-            }
-            //Otherwise, output the value without quotes, followed by a comma to indicate the end of the current element/value
-            else {
+        for (let i = 0; i < array.length-1; i++) { // For each element in the array except the last one... 
+            if (typeof array[i] === 'string') { // If the element's value type is a string...
+                _string += '"' + array[i] + '",'; // Include double-quotes around the output string, followed by a comma to indicate the end of the current element/value
+            } else { // Otherwise, output the value without quotes, followed by a comma to indicate the end of the current element/value
                 _string += array[i] + ',';
             }
         }
 
-        //Add the array's last value to the string
-        _string += array[array.length-1];
-
+        _string += array[array.length-1]; // Add the array's last value to the string
         return _string;
-    }
-    else {
-        console.error("Request received to create a comma-separated string but an array of values was not provided.");
-    }
+
+    } else console.error("Request received to create a comma-separated string but an array of values was not provided.");
 }
 
 //** Publicly-Exposed Utility Functions **//
 
 /**
+ * Converts multiple maps of objects to a csv
+ * @param {Object} maps A map of maps. The contents of each map of which will be printed side-by-side
+ * @param {string[]} keysToInclude An array to indicate the specific object keys which should be included in the csv file, and the order in which to output them.
+ * @returns {string} The CSV generated from the data in the provided maps
+ */
+export function convertObjectMapsToCsv(maps, keysToInclude) {
+    let csv = ''; // Begin with a blank string for the CSV
+
+    if (maps instanceof Map === true && Array.isArray(keysToInclude) === true) { // If the parameters provided are both valid...
+        const mapEntries = []; // Create an array to hold the Map Iterators for any maps provided that aren't empty.
+        const valuesInHeaderRow = []; // Create an array to hold map names that will be included in the header row of the csv
+        let valuesInSecondaryHeaderRow = []; // Create an array to hold all the column names that will be included in the secondary header row of the csv
+        let largestMapSize = 0; // Used to keep track of the size of the largest Map (i.e. the map with the most number of elements contained within it). This determines the final number of rows in the CSV.
+        
+        maps.forEach((map, key) => { // For each individual map provided...
+            if (map instanceof Map === true && map.size > 0) { //If the map contains data...
+                mapEntries.push(map.entries()); // Get a new Iterator for the map which will be used later to extract each element's data
+                
+                valuesInHeaderRow.push(key); // Use the map key as the name to appear in the header row for this map
+                keysToInclude.forEach(() => valuesInHeaderRow.push('')); // Add empty values to the header row equal to the number of values in the list of keys (column names) to include
+
+                valuesInSecondaryHeaderRow.push('index'); // Add an index column before the rest of the column names
+                valuesInSecondaryHeaderRow = valuesInSecondaryHeaderRow.concat(keysToInclude); // Add the set of included keys to the values that will be used to create columns for the csv's header row
+            
+                if (map.size > largestMapSize) { // If the size of the current map is larger than the previously recorded largest size...
+                    largestMapSize = map.size; // Update the largest size
+                }
+            } else { // Else, if the map is empty or isn't a valid map...
+                maps.delete(key); // Delete the map, so it isn't considered during future loops/checks
+            }
+        });
+
+        csv += createCommaSeparatedStringFromArray(valuesInHeaderRow) + '\r\n'; // Convert the array of values for the header row into a string, with a newline character at the end to indicate the end of the row
+        csv += createCommaSeparatedStringFromArray(valuesInSecondaryHeaderRow) + '\r\n'; // Convert the array of values for the secondary header row into a string, with a newline character at the end to indicate the end of the row
+   
+        for (let i = 0; i < largestMapSize; i++) { // For each row to include in the CSV...
+            const valuesInCurrentRow = []; // Create an array to hold all the string values that will be included in the row
+
+            mapEntries.forEach(iterator => { // For each map iterator... 
+                const currentEntry = iterator.next().value; // Get the next entry from the iterator
+                const currentIndex = currentEntry?.[0] ?? ''; // Use the entry's key as an 'index' value to print alongside the actual object data. If the key is falsy, then just use a blank string
+                const currentObject = currentEntry?.[1]; // Get the current object from the entry's value
+
+                valuesInCurrentRow.push(currentIndex); // Add the 'index' to the array of values to include in the current row
+                
+                keysToInclude.forEach(key => { // For each object key to include in the csv row...
+                    const currentValue = currentObject?.[key] ?? ''; // If the object's value for the current key isn't falsy (e.g. undefined), use that value, otherwise set it to a blank string so that the column is still included in the CSV row later
+                    valuesInCurrentRow.push(currentValue); // Add the value to the array of values to include in the CSV row
+                });
+            });
+            
+            csv += createCommaSeparatedStringFromArray(valuesInCurrentRow) + '\r\n'; // Create a comma-separated string from the array of recorded values and append the resulting string to the CSV string, followed by a newline character to indicate the end of the current row
+        }
+    } else console.error ("Tried to convert map data to a csv, but invalid parameters were provided. Expected an array of maps and an array of keys to use for the column names.");
+
+    return csv;
+}
+
+/**
  * Converts an array of objects to a CSV file and then downloads the file locally
- * @param {array} array An array of object to convert to CSV
+ * @param {Object[]} array An array of objects to convert to CSV
  * @param {string} filename The name of the file to download
- * @param {array} [objectKeysToInclude] An optional array to indicate the specific object keys which should be included in the CSV, and the order in which to output them. If none is provided, all keys for every object will be outputted.
+ * @param {string[]} [objectKeysToInclude] An optional array to indicate the specific object keys which should be included in the CSV, and the order in which to output them. If none is provided, all keys for every object will be outputted.
  */
 export function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=null) {
     let _csv = ''; //Begin with a blank string for the CSV
@@ -71,21 +121,26 @@ export function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=
         }
     }
 
-    //TODO at some point, pull this logic out of this function and into a separate one specifically for downloading a csv file
-    //If the CSV actually has some data in it after the array has been converted...
-    if (_csv.length > 0) {
+    downloadTextFile(_csv, filename, 'csv');
+}
+
+/**
+ * Downloads a text file with the provided data
+ * @param {string} data The text data that makes up the contents of the file
+ * @param {string} [filename] The name of the file. Defaults to 'download'.
+ * @param {string} [fileType] The type/extension of the file. Defaults to 'csv'.
+ */
+function downloadTextFile(data, filename = 'download', fileType = 'csv') {
+    if (data.length > 0) { //If there is data to download...
         //Create a new link DOM element to use to trigger a download of the file locally
-        const _link = document.createElement('a');
-        _link.id = 'download-csv';
-        _link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(_csv));
-        _link.setAttribute('download', filename+'.csv');
-        document.body.appendChild(_link); //Add the link element to the DOM
-        _link.click(); //Trigger an automated click of the link to download the CSV file
-        _link.remove(); //Remove the temporary link element from the DOM
-    }
-    else {
-        console.warn("The generated CSV was blank, so no file will be downloaded.");
-    }
+        const link = document.createElement('a');
+        link.id = 'download-text-file';
+        link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data));
+        link.setAttribute('download', filename + '.' + fileType);
+        document.body.appendChild(link); // Add the link element to the DOM
+        link.click(); // Trigger an automated click of the link to download the CSV file
+        link.remove(); // Remove the temporary link element from the DOM
+    } else console.warn("Tried to download a text file but the data provided was blank, so no file will be downloaded.");
 }
 
 /**

@@ -165,7 +165,7 @@
 
     /**
      * Runs through a process that scrolls through the current tracklist and scrapes the metadata out of all the track rows
-     * @param {object} tracksContainer The element containing all the rows of track elements
+     * @param {Object} tracksContainer The element containing all the rows of track elements
      * @param {number} scrapeStartingIndex The index within the tracks container at which to begin the initial scrape
      * @param {function} callback The function to execute once the scrape process has ended, either due to successful completion or timeout
      * @param {number} [expectedTrackCount] An optional parameter indicating the expected track count for the tracklist, if available
@@ -276,7 +276,7 @@
 
     /**
      * Gets the index of the provided element within it's parent element's list of children
-     * @param {object} element The element for which to get an index
+     * @param {Object} element The element for which to get an index
      * @returns {number} The index of the position of the given element within it's parent's list of children
      */
      function getIndexOfElement(element) {
@@ -297,7 +297,7 @@
 
     /**
      * Scrolls to the top of the provided container element
-     * @param {object} container The container element to scroll to the top of
+     * @param {Object} container The container element to scroll to the top of
      */
     function scrollToTopOfContainer(container) {
         if (typeof container === 'object') {
@@ -316,7 +316,7 @@
 
     /**
      * Scrolls the page such that the given element is in view
-     * @param {object} element The DOM element to scroll into view
+     * @param {Object} element The DOM element to scroll into view
      */
      function scrollToElement(element) {
         if (typeof element === 'object') {
@@ -350,7 +350,7 @@
     // /**
     //  * Gets a DOM element from the name provided
     //  * @param {string} name The name of the DOM element to look for. Supported names are included in the 'metadataNames' object.
-    //  * @returns {object} The element matching the name provided
+    //  * @returns {Object} The element matching the name provided
     //  */
     // function getElement(name) {
     //     if (currentApp === supportedApps.youTubeMusic) {
@@ -373,7 +373,7 @@
 
     /**
      * Extracts and returns the tracklist title string from the title element
-     * @param {object} element The DOM element containing the tracklist title
+     * @param {Object} element The DOM element containing the tracklist title
      * @returns {string} The tracklist title as a string
      */
      function getTracklistTitleFromElement(element) {
@@ -392,7 +392,7 @@
         //Could even consider ONLY using the API to get track counts, though it does seem like a lot of extra work that shouldn't be necessary
     /**
      * Extracts the track count string from the track count element and then returns the track count number
-     * @param {object} element The DOM element containing the track count string
+     * @param {Object} element The DOM element containing the track count string
      * @returns {number} The tracklist's track count, as a number
      */
     function getTrackCountFromElement(element) {

@@ -22,7 +22,7 @@ body {
 }
 
 input[type='checkbox'] {
-	margin-left: 25px;
+	margin-left: 24px;
 }
 
 #headerRow {
@@ -40,10 +40,11 @@ input[type='checkbox'] {
 	font-size: 24px;
 }
 
-.btnAuth {
+.btn {
 	background-color: inherit;
 	border-style: none;
 	outline: none;
+	padding: 1px 1px 1px 1px;
 }
 
 /* #auth {
@@ -211,6 +212,18 @@ td {
 	background: gainsboro;
 }
 
+.btnSmall {
+	font-size: 12px;
+    padding: 3px 4px 3px 4px;
+    margin: 0px;
+    width: auto;
+    vertical-align: middle;
+}
+
 .autoHeight {
 	height:auto;
+}
+
+label {
+	min-width: 93px;
 }

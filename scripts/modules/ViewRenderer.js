@@ -23,7 +23,9 @@ export const buttons = Object.freeze({
     scrape: document.getElementById('btnScrape'),
     storeScrapedMetadata: document.getElementById('btnStoreScrapedMetadata'),
     exportScrapedMetadata: document.getElementById('btnExportScrapedMetadata'),
-    exportStoredMetadata: document.getElementById('btnExportStoredMetadataForCurrentTracklist')
+    exportStoredMetadata: document.getElementById('btnExportStoredMetadataForCurrentTracklist'),
+    exportSelectedLists: document.getElementById('btnExportSelectedLists'),
+    copyToClipboard: document.getElementById('btnCopyToClipboard')
 });
 
 export const checkboxes = Object.freeze({

@@ -68,7 +68,7 @@ export function storeScrapedTracklist(callback) {
 //TODO Is this getter and setter necessary or is it ok for other files to just access the entire tracklist object?
 /**
  * Get the scraped tracks array
- * @returns {array} the scraped tracks array
+ * @returns {Object[]} the scraped tracks array
  */
 export function getScrapedTracksArray() {
     return tracklist.tracks.scraped;
@@ -76,7 +76,7 @@ export function getScrapedTracksArray() {
 
 /**
  * Sets the scraped tracks array
- * @param {array} tracksArray The scraped tracks array
+ * @param {Object[]} tracksArray The scraped tracks array
  */
 export function setScrapedTracksArray(tracksArray) {
     tracklist.tracks.scraped = tracksArray;

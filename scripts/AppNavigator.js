@@ -3,6 +3,12 @@ import * as ViewRenderer from './modules/ViewRenderer.js';
 import * as Model from './modules/Model.js';
 import * as IO from './modules/Utilities/IO.js';
 
+const gDeltaTracklists = {
+    added: undefined,
+    removed: undefined,
+    unplayable: undefined
+};
+
 // window.Model = (function() {
 //     // //TODO might want to freeze this once the values have been set
 //     // //TODO should this be inside of or consolidated with TabManager?
@@ -117,8 +123,6 @@ export function triggerUITransition(transition) {
         ViewRenderer.hideElement(ViewRenderer.divs.buttons);
         ViewRenderer.hideElement(ViewRenderer.divs.checkboxes);
         ViewRenderer.hideElement(ViewRenderer.divs.tracktables);
-        //ViewRenderer.hideLandingPage();
-
         ViewRenderer.showStatusMessage('Song list comparison in progress.');
     } else if (transition === 'ScrapeSuccessful') {
         ViewRenderer.hideElement(ViewRenderer.divs.status);
@@ -165,10 +169,10 @@ function resetAllTrackTablesAndCheckboxes() {
 
 /**
  * Creates a track table from the provided tracklist and other inputs
- * @param {array} tracklist The tracklist array for which to create a table element
+ * @param {Object[]} tracklist The tracklist array for which to create a table element
  * @param {string} headerText The name of the track table to display above it
- * @param {object} parentElement The element in the DOM under which the track table should be appended
- * @param {object} [options] An object to provide the following optional parameters: headerElement (object); descriptionIfEmpty (string);
+ * @param {Object} parentElement The element in the DOM under which the track table should be appended
+ * @param {Object} [options] An object to provide the following optional parameters: headerElement (object); descriptionIfEmpty (string);
  * @returns The container element for the track table and all associated elements
  */
 export function createTrackTable(tracklist, headerText, parentElement, options/*parentElement, header, descriptionIfEmpty*/) {
@@ -269,8 +273,6 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
             //And in there, put compareTracks() and other helper functions
 
         //TODO it might not be a bad idea having an undefined check in the createTrackTable() fnc *regardless*, so may want to consider just going back to that.
-
-        /////
 
         // TODO could be worth considering storing tracklists as maps instead of arrays. In Firebase's UI, storing tracklists as maps would look almost identical. Note that if the scraped tracks are originally set in a map, that map would have to be cloned before creating the delta lists (below).
             //An alternative is to just store the index as a property along with the rest of the track metadata. Then could continue to use arrays instead of maps. Unsure if this is actually better though, especially since we're removing elements from the lists below.
@@ -397,6 +399,14 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
 
         /////
 
+        //TODO could just use the global variables above, instead of creating new temp variables for the matching process. 
+            //However, the names would need to be clear enough to avoid complication. May not be worth it.
+        gDeltaTracklists.added = unmatchedScrapedTracks;
+        gDeltaTracklists.removed = unmatchedStoredTracks;
+        gDeltaTracklists.unplayable = unplayableTracks;
+
+        //TODO Since we want to offer the ability to export the delta lists too, it would probably be good to save these as persistent variables that can be referenced again
+            //This is now done (above), but could probably be handled better.
         return {added:unmatchedScrapedTracks, removed:unmatchedStoredTracks, unplayable:unplayableTracks};
     } else console.error("Tried to get delta tracklists, but the parameters provided were invalid. Expected two tracklist arrays (scraped & stored).");
 }
@@ -427,6 +437,28 @@ export function createDeltaTracklistsGPM(scrapedTracklist) {
     });
 }
 
+//TODO Should there be an IOController?
+    //all download logic could probably go in its own module or class
+    //Although it may also make sense (eventually) to move some of it into event-controller
+
+export function getDeltaListsAsCSV() {
+    const keysToIncludeInExport = [
+        'title',
+        'artist',
+        'album',
+        'duration',
+        'unplayable'
+    ];
+
+    const tracklistsMap = new Map([
+        ['Added Tracks', gDeltaTracklists.added], 
+        ['Removed Tracks', gDeltaTracklists.removed], 
+        ['Unplayable Status', gDeltaTracklists.unplayable]
+    ]);
+
+    return IO.convertObjectMapsToCsv(tracklistsMap, keysToIncludeInExport);
+}
+
 function downloadCurrentTracklistAsCSV(tracklist) {
     //The object keys to include when outputting the tracklist data to CSV
     const _keysToIncludeInExport = [
@@ -442,7 +474,6 @@ function downloadCurrentTracklistAsCSV(tracklist) {
     IO.convertArrayOfObjectsToCsv(tracklist, _filename, _keysToIncludeInExport);
 }
 
-//TODO Should I have an IOController?
 function downloadGooglePlayMusicTracklistAsCSV() {
     //The object keys to include when outputting the GPM track data to CSV
     const _keysToIncludeInExport = [
@@ -496,7 +527,7 @@ window.Utilities = (function() {
     /**
      * Creates and returns an element of the specified type and with the specified attributes and/or children
      * @param {string} type The type of element to create
-     * @param {object} [options] An optional object to provide attributes or children to the new element (using the 'attributes' and 'children' properties) 
+     * @param {Object} [options] An optional object to provide attributes or children to the new element (using the 'attributes' and 'children' properties) 
      * @returns the new element object
      */
     function createNewElement(type, options) {

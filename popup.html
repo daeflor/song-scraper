@@ -19,7 +19,7 @@
     <div id='header' hidden=true>
       <ul id='headerRow'>
         <li class='leftAligned'>
-          <button type='button' id='btnLogOut' class='btnAuth'>
+          <button type='button' id='btnLogOut' class='btn'>
             <span class='autoHeight popupButton material-icons-round'>logout</span>
           </button> 
         </li>
@@ -39,7 +39,7 @@
       <button type='button' id='btnRevert' class='popupButton' type='button' disabled=true>Revert Stored Tracklist to Backup</button>
       <button type='button' id='btnExportStoredMetadataForCurrentTracklist' class='popupButton'>Export Stored GPM Tracklist</button>
       <button type='button' id='btnExportScrapedMetadata' class='popupButton' disabled=true>Export Scraped Tracklist</button>
-      <button type='button' id='btnExportAllLocalStorage' class='popupButton' disabled=true>Export All Local Storage</button>
+      <button type='button' id='btnExportSelectedLists' class='popupButton' disabled=true>Export Selected Lists</button>
     </div>
     <div id='checkboxes' hidden=true>
       <input type="checkbox" id="checkboxStoredGPMTrackTable" disabled=true>
@@ -49,7 +49,11 @@
       <input type="checkbox" id="checkboxScrapedTrackTable" disabled=true>
       <label for="checkboxScrapedTrackTable"> Scraped Track Table</label><br>
       <input type="checkbox" id="checkboxDeltaTrackTables" disabled=true>
-      <label for="checkboxDeltaTrackTables"> Delta Track Tables</label><br>
+      <label for="checkboxDeltaTrackTables"> Delta Track Tables
+        <button type='button' id='btnCopyToClipboard' class='btn' hidden=true>
+          <span class='btnSmall autoHeight popupButton material-icons-round'>content_paste</span>
+        </button> 
+      </label><br>
       <input type="checkbox" id="checkboxTracksNotInPlaylists" disabled=true>
       <label for="checkboxTracksNotInPlaylists"> Tracks not in Playlists</label><br>
       <input type="checkbox" id="checkboxTracksNotInLibrary" disabled=true>

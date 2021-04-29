@@ -14,6 +14,7 @@ import * as Auth from '../auth/firebase-ui-auth.js'
 //TODO could consider adding to and/or removing from EventController so that it's the central place for all event-driven logic
     //i.e. EventController should dictate & be aware of all events & reactions throughout the app (not sure about auth...)
     //But it shouldn't necessarily handle any in-depth / area-specific logic. It should hand that off to the scripts designated specifically for that and then just get back the results and act on them.
+    //If this is done, it turn out that it's unnecessary/unhelpful having ViewRenderer & UI Controller be separate 
 
 // Button Pressed: Log Out
 ViewRenderer.buttons.logOut.addEventListener('click', function() {
@@ -57,6 +58,34 @@ ViewRenderer.buttons.exportStoredMetadata.addEventListener('click', function() {
     UIController.downloadGooglePlayMusicTracklistAsCSV();
 });
 
+// Button Pressed: Copy to Clipboard
+ViewRenderer.buttons.copyToClipboard.addEventListener('click', function() {
+    //TODO calling this through UI Controller is now an unnecessary step, since it does almost nothing and is not related to UI
+        //Once event-controller / AppNavigator refactor takes place, that extra step should be removable.
+    ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'pending'; //As soon as the button is pressed, update the button to show a 'pending' icon
+    navigator.clipboard.writeText(UIController.getDeltaListsAsCSV()).then(function() {
+        setTimeout(() => {ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'content_paste';}, 100); //Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
+  }, function() {
+        console.error("Failed to copy delta tracklist CSV to clipboard.");
+  });
+});
+
+// // Button Pressed: Export Selected Lists
+// ViewRenderer.buttons.exportSelectedLists.addEventListener('click', function() {
+//     if (ViewRenderer.checkboxes.scrapedTrackTable.checked === true) {
+
+//     }
+//     if (ViewRenderer.checkboxes.storedTrackTable.checked === true) {
+
+//     }
+//     if (ViewRenderer.checkboxes.deltaTrackTables.checked === true) {
+//         UIController.downloadDeltaListAsCSV();
+//     }
+// });
+
+//TODO it does seem like the 3 listeners below could all be merged into one somehow, since they all follow the exact same pattern
+    //Would just need to know how to map/link from a checkbox to a tracktable and to a UI controller callback/function
+
 // Checkbox Value Changed: Stored YTM Tracklist
 ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', function() {
     // If the checkbox is checked, display the stored metadata for the current tracklist; Otherwise hide it
@@ -69,8 +98,15 @@ ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', function() {
                 // TODO this interaction with ViewRenderer is WIP
             });
         }
+        //TODO Implement:
+        //UIController.triggerUITransition('CheckboxChecked');
     } else { // Else, if the checkbox is unchecked, hide the track table element
         ViewRenderer.hideElement(ViewRenderer.tracktables.stored);
+
+        //TODO Still need to implement this:
+            //If (allCheckboxesUnchecked() === true) {
+            //     UIController.triggerUITransition('AllCheckboxesUnchecked');
+            // }
     }
 });
 
@@ -84,8 +120,15 @@ ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() 
             UIController.createTrackTable(Model.getScrapedTracksArray(), 'Scraped Tracklist', ViewRenderer.tracktables.scraped);
             // TODO this interaction with ViewRenderer is WIP
         }
+        //TODO Implement:
+        //UIController.triggerUITransition('CheckboxChecked');
     } else { // Else, if the checkbox is unchecked, hide the track table element
         ViewRenderer.hideElement(ViewRenderer.tracktables.scraped);
+
+        //TODO Still need to implement this:
+            //If (allCheckboxesUnchecked() === true) {
+            //     UIController.triggerUITransition('AllCheckboxesUnchecked');
+            // }
     }
 });
 
@@ -101,8 +144,17 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', function() {
         } else { // Else, if the track table elements dont exist yet...
             UIController.createDeltaTracklistsGPM(Model.getScrapedTracksArray()); // Create new track tables based on the scraped and stored metadata and add them to the DOM
         }
+        //TODO this is temp, should probably be in UI controller
+        //ViewRenderer.enableElement(ViewRenderer.buttons.exportSelectedLists);
+        ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
+        //UIController.triggerUITransition('CheckboxChecked');
     } else { // Else, if the checkbox is unchecked, hide the track table elements
         ViewRenderer.hideElement(ViewRenderer.tracktables.deltas);
+        ViewRenderer.hideElement(ViewRenderer.buttons.copyToClipboard);
+        //TODO Still need to implement this:
+            //If (allCheckboxesUnchecked() === true) {
+            //     UIController.triggerUITransition('AllCheckboxesUnchecked');
+            // }
     }
 });
 
