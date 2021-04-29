@@ -1,24 +1,18 @@
-//TODO This is actually the Chrome storage API which isn't the same as the generic localStorage API. It might be worth renaming the file for clarity.
-
 /**
- * Gets a value from Local Storage and then executes the provided callback function
+ * Gets a value from chrome local storage and then executes the provided callback function
+ * @param {string} area The storage area to access. Allowed values are: local, sync
  * @param {string} key The key to use to get the value from Local Storage
- * @param {function} callback The function to execute once the value has been retrieved from Local Storage
  */
-function get(key, callback) {
-    chrome.storage.local.get (
-        key, 
-        function(result) {
-            if (chrome.runtime.lastError != null) {
-                console.error("ERROR: " + chrome.runtime.lastError.message);
-            }
-            else {
-                console.log("Retrieved value from Local Storage: ");
-                console.log(result[key]);
-                callback(result[key]);
-            }
-        }
-    );
+export function get(area, key) {
+    if (area === 'local' || area === 'sync') { //TODO would it be better to put this inside the Promise constructor?. Yes, right now this will result in an Uncaught TypeError
+        return new Promise((resolve) => {
+            chrome.storage[area].get(key, storageResult => {
+                typeof chrome.runtime.lastError === 'undefined'
+                ? resolve(storageResult[key])
+                : console.error(chrome.runtime.lastError.message)
+            });
+        });
+    } else console.error("Tried to access chrome storage but an invalid storage area was provided. Accepted values are 'local' and 'sync'.");
 }
 
 /**
@@ -40,4 +34,4 @@ function set(object, callback) {
     );
 }
 
-export { get, set };
+export { set };
