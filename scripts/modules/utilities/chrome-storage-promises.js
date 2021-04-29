@@ -4,15 +4,15 @@
  * @param {string} key The key to use to get the value from Local Storage
  */
 export function get(area, key) {
-    if (area === 'local' || area === 'sync') { //TODO would it be better to put this inside the Promise constructor?. Yes, right now this will result in an Uncaught TypeError
-        return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+        if (area === 'local' || area === 'sync') {
             chrome.storage[area].get(key, storageResult => {
                 typeof chrome.runtime.lastError === 'undefined'
                 ? resolve(storageResult[key])
-                : console.error(chrome.runtime.lastError.message)
+                : reject(Error(chrome.runtime.lastError.message))
             });
-        });
-    } else console.error("Tried to access chrome storage but an invalid storage area was provided. Accepted values are 'local' and 'sync'.");
+        } else reject(Error("Tried to access chrome storage but an invalid storage area was provided. Accepted values are 'local' and 'sync'."));
+    });
 }
 
 /**
