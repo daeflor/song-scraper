@@ -6,6 +6,9 @@ import * as Messenger from './utilities/messenger.js';
 //import logOut from './AuthController.js' //TODO use or remove this, as desired
 import * as Auth from '../auth/firebase-ui-auth.js'
 
+import firebaseConfig from '../Configuration/Config.js'; //Import the app's config object needed to initialize Firebase
+import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
+
 //Button Pressed: Log In
 // ViewRenderer.buttons.logIn.addEventListener('click', function() {
 //     auth.logIn();
@@ -15,6 +18,21 @@ import * as Auth from '../auth/firebase-ui-auth.js'
     //i.e. EventController should dictate & be aware of all events & reactions throughout the app (not sure about auth...)
     //But it shouldn't necessarily handle any in-depth / area-specific logic. It should hand that off to the scripts designated specifically for that and then just get back the results and act on them.
     //If this is done, it turn out that it's unnecessary/unhelpful having ViewRenderer & UI Controller be separate 
+
+init();
+
+// ? Extension Popup Opened
+function init() {
+    firebase.initializeApp(firebaseConfig); //Initialize Firebase
+}
+
+// Auth State Changes
+Auth.listenForAuthStateChange(() => {
+    //TODO this is temp. There shouldn't be an init in the UI-controller (probably)
+        //Also, right now, this init can get called more than once, which isn't right.
+    UIController.init();
+});
+
 
 // Button Pressed: Log Out
 ViewRenderer.buttons.logOut.addEventListener('click', function() {
