@@ -40,10 +40,8 @@ export function convertObjectMapsToCsv(maps, keysToInclude) {
         let largestMapSize = 0; // Used to keep track of the size of the largest Map (i.e. the map with the most number of elements contained within it). This determines the final number of rows in the CSV.
         
         maps.forEach((map, key) => { // For each individual map provided...
-            if (typeof map === 'undefined' || map?.size === 0) { // If the map is undefined or empty...
-                maps.delete(key); // Delete the map, so it isn't considered during future loops/checks
-            } else { //Else, if the map contains data...
-                mapEntries.push(map.entries());
+            if (map instanceof Map === true && map.size > 0) { //If the map contains data...
+                mapEntries.push(map.entries()); // Get a new Iterator for the map which will be used later to extract each element's data
                 
                 valuesInHeaderRow.push(key); // Use the map key as the name to appear in the header row for this map
                 keysToInclude.forEach(() => valuesInHeaderRow.push('')); // Add empty values to the header row equal to the number of values in the list of keys (column names) to include
@@ -51,9 +49,11 @@ export function convertObjectMapsToCsv(maps, keysToInclude) {
                 valuesInSecondaryHeaderRow.push('index'); // Add an index column before the rest of the column names
                 valuesInSecondaryHeaderRow = valuesInSecondaryHeaderRow.concat(keysToInclude); // Add the set of included keys to the values that will be used to create columns for the csv's header row
             
-                if (map?.size > largestMapSize) { // If the size of the current map is larger than the previously recorded largest size...
+                if (map.size > largestMapSize) { // If the size of the current map is larger than the previously recorded largest size...
                     largestMapSize = map.size; // Update the largest size
                 }
+            } else { // Else, if the map is empty or isn't a valid map...
+                maps.delete(key); // Delete the map, so it isn't considered during future loops/checks
             }
         });
 
