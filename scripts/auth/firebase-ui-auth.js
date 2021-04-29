@@ -29,7 +29,6 @@ function startFirebaseUIAuthFlow() {
 }
 
 /**
- * 
  * @returns {Object} The FirebaseUI config
  */
 function getUiConfig() {
@@ -50,10 +49,11 @@ function getUiConfig() {
     };
 }
 
+/**
+ * Signs the current user out and then triggers an update to the UI, accordingly
+ */
 export function logOut() {
-    firebase.auth().signOut().then(function() {
-            UIController.triggerUITransition('LogOut');
-        }).catch(function(error) {
-            DebugController.logError(error);
-        });
+    firebase.auth().signOut()
+        .then(() => UIController.triggerUITransition('LogOut'))
+        .catch(error => console.error(error));
 }

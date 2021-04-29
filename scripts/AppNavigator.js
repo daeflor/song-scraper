@@ -9,61 +9,6 @@ const gDeltaTracklists = {
     unplayable: undefined
 };
 
-// window.Model = (function() {
-//     // //TODO might want to freeze this once the values have been set
-//     // //TODO should this be inside of or consolidated with TabManager?
-//     //     //Could consolidate this into model
-//     // const currentState = {
-//     //     app: null,
-//     //     tracklistType: null,
-//     //     //tracklistTitle: null
-//     // }
-//     let tabId = null;
-//     let app = null; //TODO might want to keep app and tracklistType together in one object to be set and passed around together more easily
-//     let tracklistType = null;
-//     let tracklistTitle = null;
-//     let localStorageKey = null;
-//     //const localStorageBackupKey = chrome.runtime.id + '_Backup';
-
-//     return { 
-//         GetTabId: function() {
-//             return tabId; 
-//         },
-//         SetTabId: function(id){
-//             tabId = id;
-//         },
-//         GetApp: function() {
-//             return app;
-//         },
-//         SetApp: function(currentApp) {
-//             app = currentApp;
-//         },
-//         GetTracklistType: function() {
-//             return tracklistType;
-//         },
-//         SetTracklistType: function(type) {
-//             tracklistType = type;
-//         },
-//         GetTracklistTitle: function() {
-//             return tracklistTitle;
-//         },
-//         SetTracklistTitle: function(title) {
-//             tracklistTitle = title;
-//             //localStorageKey = chrome.runtime.id + '_Playlist_\'' + playlistName + '\'';
-//             localStorageKey = title;
-//             //console.log("Playlist name set to: " + playlistName + ". Key set to: " + key);
-//         },
-//         GetLocalStorageKey : function() {
-//             return localStorageKey; 
-//         },
-//         // GetBackupKey : function()
-//         // {
-//         //     return localStorageBackupKey; 
-//         // },
-//     };
-// })();
-
-
 function init() {
     const _storagekey = 'currentTracklistMetadata';
     chrome.storage.local.get(_storagekey, storageResult => { //Get the cached metadata for the current tracklist from local storage
