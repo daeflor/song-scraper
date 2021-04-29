@@ -23,40 +23,31 @@ export function listenForAuthStateChange(onSuccessCallback) {
  * Starts a new or existing Firebase AuthUI instance
  */
 function startFirebaseUIAuthFlow() {
-    let _authUI = firebaseui.auth.AuthUI.getInstance();
-    let _uiConfig;
+    // Get the existing Firebase AuthUI instance if it exits; otherwise, set up a new instance
+    const authUI = firebaseui.auth.AuthUI.getInstance() ?? new firebaseui.auth.AuthUI(firebase.auth());
+    authUI.start('#auth', getUiConfig());
+}
 
-    //If a Firebase AuthUI instance does not already exist, set up a new instance along with a configuration
-    if (_authUI === null) {
-        DebugController.logInfo("AuthController: A Firebase AuthUI instance does not already exist, so setting up a new one.");
-
-        //Initialize the FirebaseUI Widget using Firebase.
-        _authUI = new firebaseui.auth.AuthUI(firebase.auth());
-
-        //Specify configuration details for the FirebaseUI Authentication widget
-        _uiConfig = {
-            callbacks: {
-                uiShown: function() { 
-                    UIController.triggerUITransition('ShowAuthPrompt'); //Hide the status message and show the auth prompt
-                },
-                signInSuccessWithAuthResult: (authResult, redirectUrl) => false, //Return false so the page doesn't get automatically redirected
-                signInFailure: function(error) {
-                    DebugController.logError("AuthController: An error was encountered during the authentication process. Error (below):");
-                    DebugController.logError(error);
-                }
-            },
-            signInFlow: 'popup',
-            signInOptions : [{
-                provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-                scopes: ['https://www.googleapis.com/auth/appstate'],
-                customParameters: {
-                    prompt: 'select_account' //Forces account selection even when one account is available
-                }
-            }]
-        };
-    }
-
-    _authUI.start('#auth', _uiConfig);
+/**
+ * 
+ * @returns {Object} The FirebaseUI config
+ */
+function getUiConfig() {
+    return {
+        callbacks: {
+            uiShown: () => UIController.triggerUITransition('ShowAuthPrompt'), // Hide the status message and show the auth prompt
+            signInSuccessWithAuthResult: (authResult, redirectUrl) => false, // Return false so the page doesn't get automatically redirected
+            signInFailure: error => console.error(error)
+        },
+        signInFlow: 'popup',
+        signInOptions : [{
+            provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+            scopes: ['https://www.googleapis.com/auth/appstate'],
+            customParameters: {
+                prompt: 'select_account' //Forces account selection even when one account is available
+            }
+        }]
+    };
 }
 
 export function logOut() {
