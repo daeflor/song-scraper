@@ -44,7 +44,7 @@ input[type='checkbox'] {
 	background-color: inherit;
 	border-style: none;
 	outline: none;
-	padding: 1px 1px 1px 1px;
+	padding: 0px 1px 0px 1px;
 }
 
 /* #auth {
@@ -214,7 +214,7 @@ td {
 
 .btnSmall {
 	font-size: 12px;
-    padding: 3px 4px 3px 4px;
+    padding: 2px 3px 2px 3px;
     margin: 0px;
     width: auto;
     vertical-align: middle;
