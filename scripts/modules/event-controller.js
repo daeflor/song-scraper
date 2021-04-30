@@ -9,6 +9,9 @@ import * as Auth from '../auth/firebase-ui-auth.js'
 import firebaseConfig from '../Configuration/Config.js'; //Import the app's config object needed to initialize Firebase
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 
+import * as Storage from './StorageManager.js';
+import * as chromeStorage from './utilities/chrome-storage-promises.js'
+
 //Button Pressed: Log In
 // ViewRenderer.buttons.logIn.addEventListener('click', function() {
 //     auth.logIn();
@@ -19,6 +22,18 @@ import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App befor
     //But it shouldn't necessarily handle any in-depth / area-specific logic. It should hand that off to the scripts designated specifically for that and then just get back the results and act on them.
     //If this is done, it turn out that it's unnecessary/unhelpful having ViewRenderer & UI Controller be separate 
 
+const SESSION_STATE = { //TODO Could use this to replace Model
+    tracklist: {
+        type: undefined,
+        title: undefined,
+        tracks: {
+            scraped: undefined,
+            stored: undefined,
+            gpm: undefined
+        }
+    }
+}
+
 init();
 
 // ? Extension Popup Opened
@@ -26,11 +41,58 @@ function init() {
     firebase.initializeApp(firebaseConfig); //Initialize Firebase
 }
 
+async function tempInit() {
+    console.log("calling tempInit");
+    const cachedMetadataStoragekey = 'currentTracklistMetadata';
+
+    let tracklistMetadata = undefined;
+
+    try {
+        tracklistMetadata = await chromeStorage.get('local', cachedMetadataStoragekey);
+    } catch (error){
+        console.error(error);
+        //TODO might be better to call TriggerUITransition here instead, to keep all ViewRenderer calls in one place
+        ViewRenderer.showStatusMessage('Unable to retrieve cached tracklist metadata from local storage.');
+        return;
+        //TODO is there a better approach to this rather than having a bunch of returns each time there is an error?
+            //If all of the status messages can be consistent, then could pullit out into a separate fnc
+    }
+    
+    // chromeStorage.get('syncs', cachedMetadataStoragekey)
+    //     .then(value => console.log(value))
+    //     .catch(error => console.error(error));
+
+    //TODO could put an undefined check here for tracklist metadata. The checks below handle it fine, 
+        //but the error messages may be able to be clearer if we know that its value is undefined.
+
+    if (typeof tracklistMetadata?.type === 'string') { // If the tracklist type has been set correctly, record it in the session state object for future reference
+        SESSION_STATE.tracklist.type = tracklistMetadata.type;
+    } else {
+        console.error("The tracklist type could not be determined from the URL.");
+        //TODO might be better to call TriggerUITransition here instead, to keep all ViewRenderer calls in one place
+        ViewRenderer.showStatusMessage('Unable to retrieve cached tracklist metadata from local storage.');
+        return;
+    }
+
+    if (typeof tracklistMetadata?.title === 'string') { //If the tracklist title has been set correctly, record it in the session state object for future reference
+        SESSION_STATE.tracklist.title = tracklistMetadata.title;
+    } else {
+        console.error("The tracklist type could not be determined from the URL.");
+        ViewRenderer.showStatusMessage('Unable to retrieve cached tracklist metadata from local storage.');
+        return;
+    }
+
+    console.info("Retrieved tracklist metadata from local storage cache:");
+    console.info(SESSION_STATE.tracklist);
+    UIController.triggerUITransition('ShowLandingPage', {tracklistTitle: tracklistMetadata.title}); //If all the required metadata have been set correctly, show the extension landing page
+}
+
 // Auth State Changes
 Auth.listenForAuthStateChange(() => {
     //TODO this is temp. There shouldn't be an init in the UI-controller (probably)
         //Also, right now, this init can get called more than once, which isn't right.
-    UIController.init();
+    //UIController.init();
+    tempInit();
 });
 
 
@@ -47,8 +109,8 @@ ViewRenderer.buttons.logOut.addEventListener('click', function() {
 ViewRenderer.buttons.scrape.addEventListener('click', function() {
     UIController.triggerUITransition('StartScrape');
     Messenger.sendMessageToContentScripts('GetTracks', tracksArray => {
-        if (Array.isArray(tracksArray) === true) { //If the response received is an array...
-            Model.setScrapedTracksArray(tracksArray); //TODO not sure about this naming //Update the scraped tracklist metadata in the Model
+        if (Array.isArray(tracksArray) === true) { //If the response received is an array... 
+            SESSION_STATE.tracklist.tracks.scraped = tracksArray;
             UIController.triggerUITransition('ScrapeSuccessful'); //Transition the UI accordingly
         } else {
             UIController.triggerUITransition('ScrapeFailed');
@@ -68,12 +130,12 @@ ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
 
 // Button Pressed: Export Scraped Tracklist 
 ViewRenderer.buttons.exportScrapedMetadata.addEventListener('click', function() {
-    UIController.downloadCurrentTracklistAsCSV(Model.getScrapedTracksArray());
+    UIController.downloadCurrentTracklistAsCSV(SESSION_STATE.tracklist.tracks.scraped, SESSION_STATE.tracklist.title);
 });
 
 // Button Pressed: Export Stored GPM Tracklist 
 ViewRenderer.buttons.exportStoredMetadata.addEventListener('click', function() {
-    UIController.downloadGooglePlayMusicTracklistAsCSV();
+    UIController.downloadGooglePlayMusicTracklistAsCSV(SESSION_STATE.tracklist.title);
 });
 
 // Button Pressed: Copy to Clipboard
@@ -104,38 +166,14 @@ ViewRenderer.buttons.copyToClipboard.addEventListener('click', function() {
 //TODO it does seem like the 3 listeners below could all be merged into one somehow, since they all follow the exact same pattern
     //Would just need to know how to map/link from a checkbox to a tracktable and to a UI controller callback/function
 
-// Checkbox Value Changed: Stored YTM Tracklist
-ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', function() {
-    // If the checkbox is checked, display the stored metadata for the current tracklist; Otherwise hide it
-    if (ViewRenderer.checkboxes.storedTrackTable.checked === true) {
-        if (ViewRenderer.tracktables.stored.childElementCount > 0) { // If a track table DOM element has previously been created...
-            ViewRenderer.unhideElement(ViewRenderer.tracktables.stored); // Show the existing element
-        } else { // Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
-            Model.getStoredMetadata(tracksArray => {
-                UIController.createTrackTable(tracksArray, 'Stored YTM Tracklist', ViewRenderer.tracktables.stored);
-                // TODO this interaction with ViewRenderer is WIP
-            });
-        }
-        //TODO Implement:
-        //UIController.triggerUITransition('CheckboxChecked');
-    } else { // Else, if the checkbox is unchecked, hide the track table element
-        ViewRenderer.hideElement(ViewRenderer.tracktables.stored);
-
-        //TODO Still need to implement this:
-            //If (allCheckboxesUnchecked() === true) {
-            //     UIController.triggerUITransition('AllCheckboxesUnchecked');
-            // }
-    }
-});
-
-// Checkbox Value Changed: Scraped Tracklist
+// Checkbox Value Changed: Scraped Track Table
 ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() {
     // If the checkbox is checked, display the scraped tracklist metadata; Otherwise hide it
     if (ViewRenderer.checkboxes.scrapedTrackTable.checked === true) {
         if (ViewRenderer.tracktables.scraped.childElementCount > 0) { // If a track table DOM element has previously been created...
             ViewRenderer.unhideElement(ViewRenderer.tracktables.scraped); // Show the existing element
         } else { // Else, if a track table element doesn't exist yet, create a new one using the scraped metadata and add it to the DOM
-            UIController.createTrackTable(Model.getScrapedTracksArray(), 'Scraped Tracklist', ViewRenderer.tracktables.scraped);
+            UIController.createTrackTable(SESSION_STATE.tracklist.tracks.scraped, 'Scraped Tracklist', ViewRenderer.tracktables.scraped);
             // TODO this interaction with ViewRenderer is WIP
         }
         //TODO Implement:
@@ -150,17 +188,41 @@ ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() 
     }
 });
 
+// Checkbox Value Changed: Stored YTM Track Table
+ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', async function() {
+    // If the checkbox is checked, display the stored metadata for the current tracklist; Otherwise hide it
+    if (ViewRenderer.checkboxes.storedTrackTable.checked === true) {
+        if (ViewRenderer.tracktables.stored.childElementCount > 0) { // If a track table DOM element has previously been created...
+            ViewRenderer.unhideElement(ViewRenderer.tracktables.stored); // Show the existing element
+        } else { // Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
+            const storedTracks = await getStoredTracks(SESSION_STATE.tracklist.title);
+            UIController.createTrackTable(storedTracks, 'Stored YTM Tracklist', ViewRenderer.tracktables.stored);
+            // TODO this interaction with ViewRenderer is WIP
+        }
+        //TODO Implement:
+        //UIController.triggerUITransition('CheckboxChecked');
+    } else { // Else, if the checkbox is unchecked, hide the track table element
+        ViewRenderer.hideElement(ViewRenderer.tracktables.stored);
+
+        //TODO Still need to implement this:
+            //If (allCheckboxesUnchecked() === true) {
+            //     UIController.triggerUITransition('AllCheckboxesUnchecked');
+            // }
+    }
+});
+
 // TODO need to handle the case where there is no stored tracklist (e.g. because this is the first time the track was scraped)
     // Could consider leaving the checkbox disabled unless both tracklists (scraped & stored) exist
     // But would also be nice to have some feedback about this, such as a message showing up when the checkbox is pressed, indicating a delta cannot yet be displayed
 // Checkbox Value Changed: Delta Tracklists
-ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', function() {
+ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async function() {
     // If the checkbox is checked, display the delta tracklists metadata; Otherwise hide them
     if (ViewRenderer.checkboxes.deltaTrackTables.checked === true) {
         if (ViewRenderer.tracktables.deltas.childElementCount > 0) { // If the track table DOM elements have previously been created...
             ViewRenderer.unhideElement(ViewRenderer.tracktables.deltas); // Show the existing elements
         } else { // Else, if the track table elements dont exist yet...
-            UIController.createDeltaTracklistsGPM(Model.getScrapedTracksArray()); // Create new track tables based on the scraped and stored metadata and add them to the DOM
+            const storedTracks = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+            UIController.createDeltaTracklistsGPM(SESSION_STATE.tracklist.tracks.scraped, storedTracks); // Create new delta track tables based on the scraped and stored tracklists, and then add them to the DOM
         }
         //TODO this is temp, should probably be in UI controller
         //ViewRenderer.enableElement(ViewRenderer.buttons.exportSelectedLists);
@@ -179,3 +241,33 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', function() {
 // function react_PrintScrapedMetadata() {
 //     console.log(Model.getScrapedTracksArray());
 // }
+
+///////////
+
+//TODO I think this is just here temporarily. I don't think I like the event-controller containing functions like this.
+//TODO Also, does it really make sense to use async/await for these functions. Is it actually better than just using callbacks?
+function getStoredTracks(tracklistTitle) {
+    return new Promise((resolve) => {
+        if (Array.isArray(SESSION_STATE.tracklist.tracks.stored) === true) { //If the stored tracks for the current tracklist have previously been fetched, return that array
+            resolve(SESSION_STATE.tracklist.tracks.stored);
+        } else { //Else, retrieve the tracks from storage and then return them
+            Storage.retrieveTracklistFromFirestore(tracklistTitle, tracksArray => {
+                SESSION_STATE.tracklist.tracks.stored = tracksArray; //Cache the array in a local variable for future reference
+                resolve(SESSION_STATE.tracklist.tracks.stored);
+            });
+        }
+    });
+}
+
+function getStoredTracksGPM(tracklistTitle) {
+    return new Promise((resolve) => {
+        if (Array.isArray(SESSION_STATE.tracklist.tracks.gpm) === true) { //If the stored tracks for the current tracklist have previously been fetched, return that array
+            resolve(SESSION_STATE.tracklist.tracks.gpm);
+        } else { //Else, retrieve the tracks from storage and then return them
+            Storage.retrieveGPMTracklistFromLocalStorage(tracklistTitle, tracksArray => {
+                SESSION_STATE.tracklist.tracks.gpm = tracksArray; //Cache the array in a local variable for future reference
+                resolve(SESSION_STATE.tracklist.tracks.gpm);
+            });
+        }
+    });
+}

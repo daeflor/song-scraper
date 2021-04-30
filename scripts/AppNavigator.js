@@ -9,38 +9,12 @@ const gDeltaTracklists = {
     unplayable: undefined
 };
 
-function init() {
-    const _storagekey = 'currentTracklistMetadata';
-    chrome.storage.local.get(_storagekey, storageResult => { //Get the cached metadata for the current tracklist from local storage
-        const _tracklistMetadata = storageResult[_storagekey];
-
-        //TODO Maybe Model should just grab these values itself, although it would need to be able to call ShowLandingPage or equivalent afterwards
-        //TODO Or instead, maybe only the files that need certain variables should track those.
-
-        if (typeof _tracklistMetadata.type === 'string') { //If the tracklist type has been set correctly, update it in the Model
-            Model.tracklist.type = _tracklistMetadata.type;
-        } else {
-            console.error("The tracklist type could not be determined from the URL.");
-            //TODO might be better to call TriggerUITransition here instead, to keep all ViewRenderer calls in one place
-            ViewRenderer.showStatusMessage('The tracklist type could not be determined from the URL.');
-            return;
-        }
-
-        if (typeof _tracklistMetadata.title === 'string') { //If the tracklist title has been set correctly, update it in the Model
-            Model.tracklist.title = _tracklistMetadata.title;
-        } else {
-            console.error("The tracklist type could not be determined from the URL.");
-            ViewRenderer.showStatusMessage('The tracklist type could not be determined from the URL.');
-            return;
-        }
-
-        console.info("Retrieved tracklist metadata from local storage cache:");
-        console.info(Model.tracklist);
-        triggerUITransition('ShowLandingPage'); //If all the required metadata have been set correctly, show the extension landing page
-    });
-}
-
-export function triggerUITransition(transition) {
+/**
+ * Updates the UI as specified by the transition parameter
+ * @param {string} transition The type of transition that the UI should undergo
+ * @param {Object} [options] An optional object to provide additional parameters needed to fulfill the UI transition. Accepted properties: tracklistTitle
+ */
+export function triggerUITransition(transition, options) {
     if (transition === 'UrlInvalid') {
         ViewRenderer.showStatusMessage('The current URL is not supported by this extension.');
     } else if (transition === 'ShowAuthPrompt') {
@@ -54,15 +28,27 @@ export function triggerUITransition(transition) {
 
         resetAllTrackTablesAndCheckboxes();
 
+        //TODO if you log out and back in, the clipboard button doesn't get hidden
+        //TODO for that matter, if you log out and back in, the 'stored' tracks array doesn't get reset, which it really should
+        //Also, if the scrape button and checklist will both be disabled and you will be unable to initiate a new scrape or view the scrape track table
+            //These could probably all be solved with some better rules in this function but it may also be easiest and make the most sense...
+            //...to just reset the app state completely when the user logs out. (i.e. clear out all the SESSION_STATE properties)
+            //...and then call init again and start over when the user logs back in (like I was doing before, but this time more intentionally)
+
         ViewRenderer.disableElement(ViewRenderer.buttons.exportScrapedMetadata);
         ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Save Scraped Metadata to Storage');
 
         ViewRenderer.unhideElement(ViewRenderer.divs.auth);
     } else if (transition === 'ShowLandingPage') {
-        ViewRenderer.hideElement(ViewRenderer.divs.status);
-        ViewRenderer.hideElement(ViewRenderer.divs.auth);
-        ViewRenderer.showHeader(Model.tracklist.title);
-        ViewRenderer.showLandingPage();
+        if (typeof options?.tracklistTitle === 'string') {
+            ViewRenderer.hideElement(ViewRenderer.divs.status);
+            ViewRenderer.hideElement(ViewRenderer.divs.auth);
+            ViewRenderer.showHeader(options.tracklistTitle);
+            ViewRenderer.showLandingPage();
+        } else {
+            ViewRenderer.showStatusMessage('The tracklist title retrieved from the cached metadata is invalid.');
+            console.error("Tried to display the tracklist title but a valid string wasn't provided.");
+        }
     } else if (transition === 'StartScrape') {
         ViewRenderer.disableElement(ViewRenderer.buttons.scrape);
         ViewRenderer.hideElement(ViewRenderer.divs.buttons);
@@ -356,30 +342,27 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
     } else console.error("Tried to get delta tracklists, but the parameters provided were invalid. Expected two tracklist arrays (scraped & stored).");
 }
 
-// TODO why pass the parameter, when we can get the scraped tracklist from the Model right here?
-export function createDeltaTracklistsGPM(scrapedTracklist) {
-    Model.getStoredMetadataGPM(storedTracklist => { // Fetch the stored version of the current tracklist...
-        const deltaTracklists = getDeltaTracklists(scrapedTracklist, storedTracklist);
-        //TODO could start to decouple this from GPM. Instead of doing this, maybe pass the storedTracklist as a param?
+export function createDeltaTracklistsGPM(scrapedTracklist, storedTracklist) {
+    const deltaTracklists = getDeltaTracklists(scrapedTracklist, storedTracklist);
+    //TODO could start to decouple this from GPM. Instead of doing this, maybe pass the storedTracklist as a param?
 
-        if (typeof deltaTracklists === 'object') {
-            // Create a header element and track table for the list of 'Added Tracks'
-            let headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
-            createTrackTable(deltaTracklists.added, 'Added Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
-            
-            // Create a header element and track table for the list of 'Removed Tracks'
-            headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
-            createTrackTable(deltaTracklists.removed, 'Removed Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
+    if (typeof deltaTracklists === 'object') {
+        // Create a header element and track table for the list of 'Added Tracks'
+        let headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
+        createTrackTable(deltaTracklists.added, 'Added Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
+        
+        // Create a header element and track table for the list of 'Removed Tracks'
+        headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
+        createTrackTable(deltaTracklists.removed, 'Removed Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
 
-            // If a list of 'Unplayable Tracks' exits, create a header element and track table for it
-            if (deltaTracklists.unplayable?.size > 0) {
-                headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'orangeFont noVerticalMargins'}});
-                createTrackTable(deltaTracklists.unplayable, "Change in 'Unplayable' Status", ViewRenderer.tracktables.deltas, {headerElement:headerElement});
-            
-                //TODO maybe put a flag here indicating whether or not the 'Unplayable' column should be included, and then send that when creating the 'Added' & 'Removed' track tables.
-            }
+        // If a list of 'Unplayable Tracks' exits, create a header element and track table for it
+        if (deltaTracklists.unplayable?.size > 0) {
+            headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'orangeFont noVerticalMargins'}});
+            createTrackTable(deltaTracklists.unplayable, "Change in 'Unplayable' Status", ViewRenderer.tracktables.deltas, {headerElement:headerElement});
+        
+            //TODO maybe put a flag here indicating whether or not the 'Unplayable' column should be included, and then send that when creating the 'Added' & 'Removed' track tables.
         }
-    });
+    }
 }
 
 //TODO Should there be an IOController?
@@ -404,9 +387,14 @@ export function getDeltaListsAsCSV() {
     return IO.convertObjectMapsToCsv(tracklistsMap, keysToIncludeInExport);
 }
 
-function downloadCurrentTracklistAsCSV(tracklist) {
-    //The object keys to include when outputting the tracklist data to CSV
-    const _keysToIncludeInExport = [
+/**
+ * Initiates a conversion of the given tracks array to a CSV and then downloads it as a local file
+ * @param {Object[]} tracksArray The array of tracks to convert
+ * @param {string} tracklistTitle The title of the tracklist
+ */
+export function downloadCurrentTracklistAsCSV(tracksArray, tracklistTitle) {
+    const filename = 'TracklistExport_After_' + tracklistTitle;
+    const keysToIncludeInExport = [ // The object keys to include when outputting the tracklist data to CSV
         'title',
         'artist',
         'album',
@@ -414,14 +402,14 @@ function downloadCurrentTracklistAsCSV(tracklist) {
         'unplayable'
     ];
 
-    const _filename = 'TracklistExport_After_' + Model.tracklist.title;
-
-    IO.convertArrayOfObjectsToCsv(tracklist, _filename, _keysToIncludeInExport);
+    IO.convertArrayOfObjectsToCsv(tracksArray, filename, keysToIncludeInExport);
 }
 
-function downloadGooglePlayMusicTracklistAsCSV() {
+//TODO make this less specific to GPM so it can be merged with the function above
+    // and note that this still uses the old Model call
+export function downloadGooglePlayMusicTracklistAsCSV(tracklistTitle) {
     //The object keys to include when outputting the GPM track data to CSV
-    const _keysToIncludeInExport = [
+    const keysToIncludeInExport = [
         'title',
         'artist',
         'album',
@@ -431,8 +419,8 @@ function downloadGooglePlayMusicTracklistAsCSV() {
 
     //Once the Google Play Music metadata for the current tracklist has been fetched, convert it to a CSV file
     const _onGooglePlayMusicMetadataRetrieved = function(tracklistsArray) {
-        const _filename = 'TracklistExport_Before_' + Model.tracklist.title;
-        IO.convertArrayOfObjectsToCsv(tracklistsArray, _filename, _keysToIncludeInExport);
+        const filename = 'TracklistExport_Before_' + tracklistTitle;
+        IO.convertArrayOfObjectsToCsv(tracklistsArray, filename, keysToIncludeInExport);
     };
 
     //Fetch the Google Play Music tracklist metadata from the Model and then execute the callback
@@ -584,5 +572,3 @@ window.Utilities = (function() {
 })();
 
 //window.Utilities.FadeIn(document.body, init, 500);
-
-export {init, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};
