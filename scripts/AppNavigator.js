@@ -21,25 +21,32 @@ export function triggerUITransition(transition, options) {
     } else if (transition === 'ShowAuthPrompt') {
         ViewRenderer.hideElement(ViewRenderer.divs.status);
         ViewRenderer.unhideElement(ViewRenderer.divs.auth);
-    } else if (transition === 'LogOut') {
+    } else if (transition === 'LogOutAndExit') {
+        //ViewRenderer.hideElement(ViewRenderer.divs.auth);
         ViewRenderer.hideElement(ViewRenderer.divs.header);
         ViewRenderer.hideElement(ViewRenderer.divs.buttons);
         ViewRenderer.hideElement(ViewRenderer.divs.checkboxes);
-        //ViewRenderer.hideElement(ViewRenderer.divs.tracktables);
+        ViewRenderer.hideElement(ViewRenderer.divs.tracktables);
+        ViewRenderer.showStatusMessage('Goodbye');
+    // } else if (transition === 'LogOut') {
+    //     ViewRenderer.hideElement(ViewRenderer.divs.header);
+    //     ViewRenderer.hideElement(ViewRenderer.divs.buttons);
+    //     ViewRenderer.hideElement(ViewRenderer.divs.checkboxes);
+    //     //ViewRenderer.hideElement(ViewRenderer.divs.tracktables);
 
-        resetAllTrackTablesAndCheckboxes();
+    //     resetAllTrackTablesAndCheckboxes();
 
-        //TODO if you log out and back in, the clipboard button doesn't get hidden
-        //TODO for that matter, if you log out and back in, the 'stored' tracks array doesn't get reset, which it really should
-        //Also, if the scrape button and checklist will both be disabled and you will be unable to initiate a new scrape or view the scrape track table
-            //These could probably all be solved with some better rules in this function but it may also be easiest and make the most sense...
-            //...to just reset the app state completely when the user logs out. (i.e. clear out all the SESSION_STATE properties)
-            //...and then call init again and start over when the user logs back in (like I was doing before, but this time more intentionally)
+    //     //TODO if you log out and back in, the clipboard button doesn't get hidden
+    //     //TODO for that matter, if you log out and back in, the 'stored' tracks array doesn't get reset, which it really should
+    //     //Also, if the scrape button and checklist will both be disabled and you will be unable to initiate a new scrape or view the scrape track table
+    //         //These could probably all be solved with some better rules in this function but it may also be easiest and make the most sense...
+    //         //...to just reset the app state completely when the user logs out. (i.e. clear out all the SESSION_STATE properties)
+    //         //...and then call init again and start over when the user logs back in (like I was doing before, but this time more intentionally)
 
-        ViewRenderer.disableElement(ViewRenderer.buttons.exportScrapedMetadata);
-        ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Save Scraped Metadata to Storage');
+    //     ViewRenderer.disableElement(ViewRenderer.buttons.exportScrapedMetadata);
+    //     ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Save Scraped Metadata to Storage');
 
-        ViewRenderer.unhideElement(ViewRenderer.divs.auth);
+    //     ViewRenderer.unhideElement(ViewRenderer.divs.auth);
     } else if (transition === 'ShowLandingPage') {
         if (typeof options?.tracklistTitle === 'string') {
             ViewRenderer.hideElement(ViewRenderer.divs.status);
@@ -80,24 +87,24 @@ export function triggerUITransition(transition, options) {
     }
 }
 
-function resetAllTrackTablesAndCheckboxes() {
-    //For each potential track table...
-    for (const key in ViewRenderer.tracktables) {
-        //If the track table actually exists (i.e. was previously created)...
-        if (typeof ViewRenderer.tracktables[key] === 'object') {
-            //Hide the track table
-            ViewRenderer.hideElement(ViewRenderer.tracktables[key]);
-        } 
-    }
-    //For each track table checkbox...
-    for (const key in ViewRenderer.checkboxes) {
-        //Uncheck the checkbox
-        ViewRenderer.uncheckBox(ViewRenderer.checkboxes[key]);
-    }
-    //Disable the 'scraped' and 'deltas' track table checkboxes
-    ViewRenderer.disableElement(ViewRenderer.checkboxes.scrapedTrackTable);
-    ViewRenderer.disableElement(ViewRenderer.checkboxes.deltaTrackTables);
-}
+// function resetAllTrackTablesAndCheckboxes() {
+//     //For each potential track table...
+//     for (const key in ViewRenderer.tracktables) {
+//         //If the track table actually exists (i.e. was previously created)...
+//         if (typeof ViewRenderer.tracktables[key] === 'object') {
+//             //Hide the track table
+//             ViewRenderer.hideElement(ViewRenderer.tracktables[key]);
+//         } 
+//     }
+//     //For each track table checkbox...
+//     for (const key in ViewRenderer.checkboxes) {
+//         //Uncheck the checkbox
+//         ViewRenderer.uncheckBox(ViewRenderer.checkboxes[key]);
+//     }
+//     //Disable the 'scraped' and 'deltas' track table checkboxes
+//     ViewRenderer.disableElement(ViewRenderer.checkboxes.scrapedTrackTable);
+//     ViewRenderer.disableElement(ViewRenderer.checkboxes.deltaTrackTables);
+// }
 
 /**
  * Creates a track table from the provided tracklist and other inputs

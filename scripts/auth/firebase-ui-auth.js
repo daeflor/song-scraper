@@ -14,8 +14,14 @@ import '/node_modules/firebaseui/dist/firebaseui.js'; //Import the Firebase Auth
  */
 export function listenForAuthStateChange(onSuccessCallback) {
     //If there is no user signed in, begin the Firebase UI Authentication flow. Otherwise, execute the callback function.
-    firebase.auth().onAuthStateChanged(user => {
-        (user === null) ? startFirebaseUIAuthFlow() : onSuccessCallback();
+    const authListener = firebase.auth().onAuthStateChanged(user => { // When a change in the user's authentication state is detected...
+        //(user === null) ? startFirebaseUIAuthFlow() : onSuccessCallback();
+        if (user === null) { // If the user is not signed in, start the Firebase UI Authentication flow
+            startFirebaseUIAuthFlow();
+        } else { // Else, if the user is signed in, remove the listener and execute the provided callback function
+            authListener();
+            onSuccessCallback();
+        }
     });
 }
 
@@ -52,8 +58,8 @@ function getUiConfig() {
 /**
  * Signs the current user out and then triggers an update to the UI, accordingly
  */
-export function logOut() {
+export function logOut(callback) {
     firebase.auth().signOut()
-        .then(() => UIController.triggerUITransition('LogOut'))
+        .then(callback)
         .catch(error => console.error(error));
 }
