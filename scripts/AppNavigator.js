@@ -15,8 +15,9 @@ const gDeltaTracklists = {
  * @param {Object} [options] An optional object to provide additional parameters needed to fulfill the UI transition. Accepted properties: tracklistTitle
  */
 export function triggerUITransition(transition, options) {
-    if (transition === 'UrlInvalid') {
-        ViewRenderer.showStatusMessage('The current URL is not supported by this extension.');
+    if (transition === 'CachedTracklistMetadataInvalid') {
+        //ViewRenderer.showStatusMessage(options.statusMessage ?? 'Error');
+        ViewRenderer.showStatusMessage('Unable to retrieve cached tracklist metadata from local storage.');
     } else if (transition === 'ShowAuthPrompt') {
         ViewRenderer.hideElement(ViewRenderer.divs.status);
         ViewRenderer.unhideElement(ViewRenderer.divs.auth);
@@ -406,7 +407,7 @@ export function downloadCurrentTracklistAsCSV(tracksArray, tracklistTitle) {
 }
 
 //TODO make this less specific to GPM so it can be merged with the function above
-    // and note that this still uses the old Model call
+    //TODO and note that this still uses the old Model call
 export function downloadGooglePlayMusicTracklistAsCSV(tracklistTitle) {
     //The object keys to include when outputting the GPM track data to CSV
     const keysToIncludeInExport = [

@@ -41,58 +41,27 @@ function init() {
     firebase.initializeApp(firebaseConfig); //Initialize Firebase
 }
 
-async function tempInit() {
-    console.log("calling tempInit");
-    const cachedMetadataStoragekey = 'currentTracklistMetadata';
-
+// User Becomes Authenticated
+Auth.listenForAuthStateChange(async () => {
+    //TODO Right now, this can get called more than once, which won't necessarily work correctly.
+        //Need to properly clear out any data that needs to be cleared (if/as applicable) and then start over.
+    //const cachedMetadataStoragekey = 'currentTracklistMetadata';
     let tracklistMetadata = undefined;
 
     try {
-        tracklistMetadata = await chromeStorage.get('local', cachedMetadataStoragekey);
+        tracklistMetadata = await chromeStorage.get('local', 'currentTracklistMetadata');
     } catch (error){
         console.error(error);
-        //TODO might be better to call TriggerUITransition here instead, to keep all ViewRenderer calls in one place
-        ViewRenderer.showStatusMessage('Unable to retrieve cached tracklist metadata from local storage.');
-        return;
-        //TODO is there a better approach to this rather than having a bunch of returns each time there is an error?
-            //If all of the status messages can be consistent, then could pullit out into a separate fnc
+        UIController.triggerUITransition('CachedTracklistMetadataInvalid');
     }
-    
-    // chromeStorage.get('syncs', cachedMetadataStoragekey)
-    //     .then(value => console.log(value))
-    //     .catch(error => console.error(error));
 
-    //TODO could put an undefined check here for tracklist metadata. The checks below handle it fine, 
-        //but the error messages may be able to be clearer if we know that its value is undefined.
-
-    if (typeof tracklistMetadata?.type === 'string') { // If the tracklist type has been set correctly, record it in the session state object for future reference
-        SESSION_STATE.tracklist.type = tracklistMetadata.type;
+    if (typeof tracklistMetadata?.type === 'string' && typeof tracklistMetadata?.title === 'string') { // If valid tracklist type and title values were retrieved from the local storage cache...
+        SESSION_STATE.tracklist.type = tracklistMetadata.type; //Record the tracklist type in the session state object for future reference
+        SESSION_STATE.tracklist.title = tracklistMetadata.title; //Record the tracklist title in the session state object for future reference
+        UIController.triggerUITransition('ShowLandingPage', {tracklistTitle: tracklistMetadata.title}); //Display the extension landing page
     } else {
-        console.error("The tracklist type could not be determined from the URL.");
-        //TODO might be better to call TriggerUITransition here instead, to keep all ViewRenderer calls in one place
-        ViewRenderer.showStatusMessage('Unable to retrieve cached tracklist metadata from local storage.');
-        return;
+        UIController.triggerUITransition('CachedTracklistMetadataInvalid');
     }
-
-    if (typeof tracklistMetadata?.title === 'string') { //If the tracklist title has been set correctly, record it in the session state object for future reference
-        SESSION_STATE.tracklist.title = tracklistMetadata.title;
-    } else {
-        console.error("The tracklist type could not be determined from the URL.");
-        ViewRenderer.showStatusMessage('Unable to retrieve cached tracklist metadata from local storage.');
-        return;
-    }
-
-    console.info("Retrieved tracklist metadata from local storage cache:");
-    console.info(SESSION_STATE.tracklist);
-    UIController.triggerUITransition('ShowLandingPage', {tracklistTitle: tracklistMetadata.title}); //If all the required metadata have been set correctly, show the extension landing page
-}
-
-// Auth State Changes
-Auth.listenForAuthStateChange(() => {
-    //TODO this is temp. There shouldn't be an init in the UI-controller (probably)
-        //Also, right now, this init can get called more than once, which isn't right.
-    //UIController.init();
-    tempInit();
 });
 
 
@@ -122,7 +91,7 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
 // Button Pressed: Store Scraped Metadata
 ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
     UIController.triggerUITransition('StorageInProgress'); //Update the UI while the data is being stored (e.g. disable the 'store' button)
-
+    //TODO transition away from this Model (and callback) interaction, maybe
     Model.storeScrapedTracklist(() => { //Store the scraped tracklist and then update the UI accordingly once the storage process is complete
         UIController.triggerUITransition('ScrapedMetadataStored');
     });
