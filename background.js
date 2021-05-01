@@ -36,6 +36,12 @@
 //     chrome.action.setBadgeText({text: ""});
 // });
 
+//import firebaseConfig from '/scripts/Configuration/Config.js';
+//self.importScripts('/scripts/Configuration/Config.js');
+//self.importScripts('/node_modules/firebase/firebase-app.js'); //Import the Firebase App before any other Firebase libraries
+//self.importScripts('/node_modules/firebase/firebase-auth.js'); //Import the Firebase Auth library
+//self.importScripts('/node_modules/firebaseui/dist/firebaseui.js'); //Import the Firebase Auth UI library
+
 //Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
 chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
     //console.log("Main web nav event fired");
@@ -83,15 +89,23 @@ function cacheTracklistMetadata(tracklistType, tracklistTitle) {
     });
 }
 
-chrome.runtime.onMessage.addListener(
-    function(request, sender, sendResponse) {
-        if (request.greeting === 'TracklistMetadataUpdated') {
-            console.log('The current tracklist metadata was updated. New track title is "%s" and new track count is "%s".',
-                request.currentTracklistMetadata.title, request.currentTracklistMetadata.trackCount);
-            compareTrackCountsAndUpdateIcon(request.currentTracklistMetadata.title, request.currentTracklistMetadata.trackCount);
-        }
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.greeting === 'TracklistMetadataUpdated') {
+        console.log('The current tracklist metadata was updated. New track title is "%s" and new track count is "%s".',
+            message.currentTracklistMetadata.title, message.currentTracklistMetadata.trackCount);
+        compareTrackCountsAndUpdateIcon(message.currentTracklistMetadata.title, message.currentTracklistMetadata.trackCount);
+    // } else if (message.greeting === 'GetAuthToken'){
+    //     chrome.identity.clearAllCachedAuthTokens(() => {
+    //         console.log("Cleared cached token");
+    //         getAuthToken((token) => {
+    //             message.response = token;
+    //             sendResponse(message);
+    //         });
+    //     });
     }
-);
+
+    //return true; //Return true to keep the message channel open (so the callback can be called asynchronously)
+});
 
 /**
  * Compares the current and stored track counts for the current tracklist, and then updates the extension icon accordingly
@@ -187,3 +201,9 @@ function clearCachedTracklistMetadata() {
             console.info("Background: Cleared cached tracklist metadata.");
     });
 }
+
+// function getAuthToken(callback) {
+//     chrome.identity.getAuthToken({interactive: true}, token => {
+//         callback(token);
+//     });
+// }

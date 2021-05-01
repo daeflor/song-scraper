@@ -1,11 +1,14 @@
-import * as DebugController from '../Modules/DebugController.js';
 import * as UIController from '../AppNavigator.js';
 
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 import '/node_modules/firebase/firebase-auth.js'; //Import the Firebase Auth library
 import '/node_modules/firebaseui/dist/firebaseui.js'; //Import the Firebase Auth UI library
 
-//TODO try async
+//TODO it appears that logging in with google sign-in (from any of the 3 methods supported by this app), the sign-in UI popup causes the extension popup to be closed
+    //This doesn't happen if devtools for the extension are open (i.e. Inspect Popup is used), which is why this went unnoticed before
+    //This issue still occurs if the extension/popup script sends a message to the background script to initiate the interactive sign-in from the background.
+    //Could look into other work-arounds, such as signing in through an options screen instead of the extension popup itself.
+
 /**
  * Listens for a change in authentication state of the current user of the application. 
  * If the user is not authenticated, the authentication screen is displayed and the Firebase UI Auth flow is initiated.

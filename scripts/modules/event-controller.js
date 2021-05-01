@@ -12,11 +12,6 @@ import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App befor
 import * as Storage from './StorageManager.js';
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
 
-//Button Pressed: Log In
-// ViewRenderer.buttons.logIn.addEventListener('click', function() {
-//     auth.logIn();
-// });
-
 //TODO could consider adding to and/or removing from EventController so that it's the central place for all event-driven logic
     //i.e. EventController should dictate & be aware of all events & reactions throughout the app (not sure about auth...)
     //But it shouldn't necessarily handle any in-depth / area-specific logic. It should hand that off to the scripts designated specifically for that and then just get back the results and act on them.
@@ -45,7 +40,6 @@ function init() {
 Auth.listenForAuthStateChange(async () => {
     //TODO Right now, this can get called more than once, which won't necessarily work correctly.
         //Need to properly clear out any data that needs to be cleared (if/as applicable) and then start over.
-    //const cachedMetadataStoragekey = 'currentTracklistMetadata';
     let tracklistMetadata = undefined;
 
     try {
@@ -63,6 +57,16 @@ Auth.listenForAuthStateChange(async () => {
         UIController.triggerUITransition('CachedTracklistMetadataInvalid');
     }
 });
+
+// // Button Pressed: Log In
+// ViewRenderer.buttons.logIn.addEventListener('click', function() {
+//     //TODO when the button gets clicked once, it should get disabled, to ensure it doesn't accidentally get clicked again
+//     Auth.logIn();
+//     // Messenger.sendMessageToExtension('GetAuthToken', token => {
+//     //     const credential = firebase.auth.GoogleAuthProvider.credential(null, token); 
+//     //     firebase.auth().signInWithCredential(credential); //TODO could use some error checking here (e.g. a 'catch' block)
+//     // });
+// });
 
 
 // Button Pressed: Log Out
@@ -90,7 +94,7 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
 // Button Pressed: Store Scraped Metadata
 ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
     UIController.triggerUITransition('StorageInProgress'); //Update the UI while the data is being stored (e.g. disable the 'store' button)
-    //TODO - transition away from this Model (and callback) interaction, maybe
+    //TODO transition away from this Model (and callback) interaction, maybe
     Model.storeScrapedTracklist(() => { //Store the scraped tracklist and then update the UI accordingly once the storage process is complete
         UIController.triggerUITransition('ScrapedMetadataStored');
     });
