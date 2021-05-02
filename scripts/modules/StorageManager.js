@@ -13,34 +13,32 @@ let _firestoreDatabase = undefined;
  * @param {Object[]} tracksArray The array of tracks to store with the tracklist
  * @param {function} callback The function to execute once the data has been successfully stored
  */
-export function storeTracklistInFirestore(tracklistMetadata, tracksArray, callback) {
-    //Initialize an instance of Cloud Firestore if it hasn't already been initialized
-    if (typeof _firestoreDatabase !== 'object') {
-        _firestoreDatabase = firebase.firestore();
-    }
+export function storeTracklistInFirestore(tracklistTitle, tracklistType, tracksArray, callback) {
 
-    const _userId = firebase.auth().currentUser.uid;
-    const _tracklistCollection = _firestoreDatabase.collection('users').doc(_userId).collection('tracklists');
-    //const _tracklistKey = tracklistData.type + "_'" + tracklistData.title + "'";
-    //TODO might be better to create an ID for the tracklist the first time it is scraped/stored and use that for the key instead / as well, since the title is not unique.
-        //For manual playlist, the ID in the YTM URL could be used for this.
-    const _currentTracklistDocument = _tracklistCollection.doc(tracklistMetadata.title);
+    if (typeof tracklistTitle === 'string' && typeof tracklistType === 'string' && Array.isArray(tracksArray) === true) {
 
-    const _documentData = {
-        title: tracklistMetadata.title,
-        type: tracklistMetadata.type,
-        tracks: tracksArray
-    };
 
-    //Add or update the document for the current tracklist, merging it with any existing data if the document already exists
-    _currentTracklistDocument.set(_documentData, {merge:true})
-        .then(callback)
-        .catch(function(error) {
-            console.error("Error writing document to storage:" + error);
-        });
+        const userId = firebase.auth().currentUser.uid;
+        const tracklistCollection = firebase.firestore().collection('users').doc(userId).collection('tracklists');
+        //const _tracklistKey = tracklistData.type + "_'" + tracklistData.title + "'";
+        //TODO might be better to create an ID for the tracklist the first time it is scraped/stored and use that for the key instead / as well, since the title is not unique.
+            //For manual playlist, the ID in the YTM URL could be used for this.
 
-    //TODO May want to provide better feedback that the storage process was successful
-        //Maybe only enable the "store" button after doing a comparison of the scraped and stored data, and only if they differ
+        const currentTracklistDocument = tracklistCollection.doc(tracklistTitle);
+
+        const documentData = {
+            title: tracklistTitle,
+            type: tracklistType,
+            tracks: tracksArray
+        };
+
+        //TODO could promisify this
+        // Add or update the document for the current tracklist, merging it with any existing data if the document already exists
+        currentTracklistDocument
+            .set(documentData, {merge:true})
+            .then(callback)
+            .catch(error => console.error("Error writing document to storage:" + error));
+    } else console.error("Tried to store the scraped tracklist in Firestore but the parameters provided were invalid.");
 }
 
 /**
@@ -63,6 +61,8 @@ export function retrieveTracklistFromFirestore(tracklistTitle, callback) {
         if (doc.exists) {
             callback(doc.data().tracks);
         } else {
+            //TODO it would probably be good to have a check before this to ensure the tracklist title isn't undefined...
+                //...right now, if it is undefined, it will result in the warning below, whereas it really should be an error and separate.
             console.warn("Tried retrieving tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
         }
     }).catch((error) => {
@@ -91,28 +91,26 @@ export function retrieveGPMTracklistFromLocalStorage(tracklistTitle, callback){
     });
 }
 
+//TODO could have a storage directory that contains multiple files, maybe:
+    //One for Firebase related logic
+    //One for chrome storage related logic
+    //One for chrome storage utility/helper functions?
+
 /**
  * Stores the provided track count for the given tracklist in chrome sync storage
  * @param {string} tracklistTitle The title of the tracklist
  * @param {number} trackCount The latest track count of the tracklist
  */
-export function storeTrackCountInSyncStorage(tracklistTitle, trackCount) {
-    const _storagekey = 'trackCounts';
-    chrome.storage.sync.get(_storagekey, storageResult => {
-        //Get the track counts object from storage or create a new empty object if one doesn't exist
-        const _trackCountsObject = storageResult[_storagekey] || {}; 
+export function storeTrackCountInChromeSyncStorage(tracklistTitle, trackCount) {
+    const storageKey = 'trackCounts_' + firebase.auth().currentUser.uid;
+            
+    chrome.storage.sync.get(storageKey, storageResult => {
+        storageResult[storageKey] = storageResult[storageKey] ?? {} // If a track counts object doesn't already exist for the current user, create a new one
+        storageResult[storageKey][tracklistTitle] = trackCount; // Set the latest track count for the current tracklist 
 
-        // console.log("Retrieved track counts object from sync storage: ");
-        // console.table(_trackCountsObject);
-        _trackCountsObject[tracklistTitle] = trackCount;
-        // console.log("Updated track counts object with latest track count for tracklist: " + tracklistTitle);
-        // console.table(_trackCountsObject);
-
-        chrome.storage.sync.set ({trackCounts: _trackCountsObject}, () => {
-            if (chrome.runtime.lastError != null) {
-                console.error("ERROR: " + chrome.runtime.lastError.message);
-            } else {
-                console.info("StorageManager: Successfully updated track count in chrome sync storage for tracklist: " + tracklistTitle);
+        chrome.storage.sync.set(storageResult, () => {
+            if (typeof chrome.runtime.error !== 'undefined') {
+                console.error("Error encountered while attempting to store track count in chrome sync storage: " + chrome.runtime.lastError.message);
             }
         });
     });

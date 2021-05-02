@@ -93,9 +93,13 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
 
 // Button Pressed: Store Scraped Metadata
 ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
-    UIController.triggerUITransition('StorageInProgress'); //Update the UI while the data is being stored (e.g. disable the 'store' button)
-    //TODO transition away from this Model (and callback) interaction, maybe
-    Model.storeScrapedTracklist(() => { //Store the scraped tracklist and then update the UI accordingly once the storage process is complete
+    UIController.triggerUITransition('StorageInProgress'); // Update the UI while the data is being stored (e.g. disable the 'store' button)
+
+    SESSION_STATE.tracklist.tracks.stored = SESSION_STATE.tracklist.tracks.scraped; // Set the stored tracks array equal to the scraped tracks array, saving it for future reference within the current app session
+    
+    // Store the tracklist in Firestore, then store the track count in chrome sync storage, and then update UI
+    Storage.storeTracklistInFirestore(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.type, SESSION_STATE.tracklist.tracks.stored, () => {
+        Storage.storeTrackCountInChromeSyncStorage(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.tracks.stored.length);
         UIController.triggerUITransition('ScrapedMetadataStored');
     });
 });
