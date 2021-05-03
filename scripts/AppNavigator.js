@@ -1,13 +1,6 @@
 import * as DebugController from './modules/DebugController.js';
 import * as ViewRenderer from './modules/ViewRenderer.js';
-import * as Model from './modules/Model.js';
-import * as IO from './modules/Utilities/IO.js';
-
-const gDeltaTracklists = {
-    added: undefined,
-    removed: undefined,
-    unplayable: undefined
-};
+//import * as IO from './modules/Utilities/IO.js';
 
 /**
  * Updates the UI as specified by the transition parameter
@@ -203,7 +196,7 @@ function compareTracks(track1, track2, collator) {
     } else console.error("Tried to compare two tracks but the parameters provided are not valid. Parameters provided: " + [...arguments]);
 }
 
-function getDeltaTracklists(scrapedTracklist, storedTracklist) {
+export function getDeltaTracklists(scrapedTracklist, storedTracklist) {
     if (Array.isArray(scrapedTracklist) === true && Array.isArray(storedTracklist) === true) {
         const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
         
@@ -340,9 +333,9 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
 
         //TODO could just use the global variables above, instead of creating new temp variables for the matching process. 
             //However, the names would need to be clear enough to avoid complication. May not be worth it.
-        gDeltaTracklists.added = unmatchedScrapedTracks;
-        gDeltaTracklists.removed = unmatchedStoredTracks;
-        gDeltaTracklists.unplayable = unplayableTracks;
+        // gDeltaTracklists.added = unmatchedScrapedTracks;
+        // gDeltaTracklists.removed = unmatchedStoredTracks;
+        // gDeltaTracklists.unplayable = unplayableTracks;
 
         //TODO Since we want to offer the ability to export the delta lists too, it would probably be good to save these as persistent variables that can be referenced again
             //This is now done (above), but could probably be handled better.
@@ -350,11 +343,11 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
     } else console.error("Tried to get delta tracklists, but the parameters provided were invalid. Expected two tracklist arrays (scraped & stored).");
 }
 
-export function createDeltaTracklistsGPM(scrapedTracklist, storedTracklist) {
-    const deltaTracklists = getDeltaTracklists(scrapedTracklist, storedTracklist);
+export function addDeltaTrackTablesToDOM(deltaTracklists) {
+    //const deltaTracklists = getDeltaTracklists(scrapedTracklist, storedTracklist);
     //TODO could start to decouple this from GPM. Instead of doing this, maybe pass the storedTracklist as a param?
 
-    if (typeof deltaTracklists === 'object') {
+    if (deltaTracklists instanceof Object === true) {
         // Create a header element and track table for the list of 'Added Tracks'
         let headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
         createTrackTable(deltaTracklists.added, 'Added Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
@@ -371,27 +364,6 @@ export function createDeltaTracklistsGPM(scrapedTracklist, storedTracklist) {
             //TODO maybe put a flag here indicating whether or not the 'Unplayable' column should be included, and then send that when creating the 'Added' & 'Removed' track tables.
         }
     }
-}
-
-//TODO Should there be an IOController?
-    //all download logic could probably go in its own module or class
-    //Although it may also make sense (eventually) to move some of it into event-controller
-export function getDeltaListsAsCSV() {
-    const keysToIncludeInExport = [
-        'title',
-        'artist',
-        'album',
-        'duration',
-        'unplayable'
-    ];
-
-    const tracklistsMap = new Map([
-        ['Added Tracks', gDeltaTracklists.added], 
-        ['Removed Tracks', gDeltaTracklists.removed], 
-        ['Unplayable Status', gDeltaTracklists.unplayable]
-    ]);
-
-    return IO.convertObjectMapsToCsv(tracklistsMap, keysToIncludeInExport);
 }
 
 function convertDurationStringToSeconds(duration) {
