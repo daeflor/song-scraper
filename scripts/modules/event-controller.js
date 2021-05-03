@@ -27,11 +27,7 @@ const SESSION_STATE = { //TODO Could use this to replace Model
             stored: undefined,
             gpm: undefined
         },
-        deltas: {
-            added: undefined,
-            removed: undefined,
-            unplayable: undefined
-        }
+        deltas: undefined
     }
 }
 
@@ -136,16 +132,7 @@ ViewRenderer.buttons.copyToClipboard.addEventListener('click', function() {
     ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'pending'; //As soon as the button is pressed, update the button to show a 'pending' icon
     
     const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV.
-
-    //TODO why not just store the SESSION_STATE.tracklist.deltas as a map then?
-        //The checkboxes.deltaTrackTables event listener & addDeltaTrackTablesToDOM fnc could be updated to handle this.
-    const tracklistsMap = new Map([
-        ['Added Tracks', SESSION_STATE.tracklist.deltas.added], 
-        ['Removed Tracks', SESSION_STATE.tracklist.deltas.removed], 
-        ['Unplayable Status', SESSION_STATE.tracklist.deltas.unplayable]
-    ]);
-
-    const csv = IO.convertObjectMapsToCsv(tracklistsMap, includedProperties);
+    const csv = IO.convertObjectMapsToCsv(SESSION_STATE.tracklist.deltas, includedProperties);
 
     navigator.clipboard.writeText(csv)
         .then(() => {
@@ -227,12 +214,7 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
             ViewRenderer.unhideElement(ViewRenderer.tracktables.deltas); // Show the existing elements
         } else { // Else, if the track table elements dont exist yet...
             const storedTracks = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
-            
-            const deltaTracklists = UIController.getDeltaTracklists(SESSION_STATE.tracklist.tracks.scraped, storedTracks); // Generate delta tracklists based on the scraped and stored tracklists
-            SESSION_STATE.tracklist.deltas.added = deltaTracklists?.added;
-            SESSION_STATE.tracklist.deltas.removed = deltaTracklists?.removed;
-            SESSION_STATE.tracklist.deltas.unplayable = deltaTracklists?.unplayable;
-            
+            SESSION_STATE.tracklist.deltas = UIController.getDeltaTracklists(SESSION_STATE.tracklist.tracks.scraped, storedTracks); // Generate delta tracklists based on the scraped and stored tracklists
             UIController.addDeltaTrackTablesToDOM(SESSION_STATE.tracklist.deltas);
         }
         //TODO this is temp, should probably be in UI controller

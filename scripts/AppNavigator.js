@@ -331,15 +331,11 @@ export function getDeltaTracklists(scrapedTracklist, storedTracklist) {
 
         /////
 
-        //TODO could just use the global variables above, instead of creating new temp variables for the matching process. 
-            //However, the names would need to be clear enough to avoid complication. May not be worth it.
-        // gDeltaTracklists.added = unmatchedScrapedTracks;
-        // gDeltaTracklists.removed = unmatchedStoredTracks;
-        // gDeltaTracklists.unplayable = unplayableTracks;
-
-        //TODO Since we want to offer the ability to export the delta lists too, it would probably be good to save these as persistent variables that can be referenced again
-            //This is now done (above), but could probably be handled better.
-        return {added:unmatchedScrapedTracks, removed:unmatchedStoredTracks, unplayable:unplayableTracks};
+        return new Map([
+            ['Added Tracks', unmatchedScrapedTracks], 
+            ['Removed Tracks', unmatchedStoredTracks], 
+            ['Unplayable Status', unplayableTracks]
+        ]);
     } else console.error("Tried to get delta tracklists, but the parameters provided were invalid. Expected two tracklist arrays (scraped & stored).");
 }
 
@@ -347,19 +343,19 @@ export function addDeltaTrackTablesToDOM(deltaTracklists) {
     //const deltaTracklists = getDeltaTracklists(scrapedTracklist, storedTracklist);
     //TODO could start to decouple this from GPM. Instead of doing this, maybe pass the storedTracklist as a param?
 
-    if (deltaTracklists instanceof Object === true) {
+    if (deltaTracklists instanceof Map === true) {
         // Create a header element and track table for the list of 'Added Tracks'
         let headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
-        createTrackTable(deltaTracklists.added, 'Added Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
+        createTrackTable(deltaTracklists.get('Added Tracks'), 'Added Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
         
         // Create a header element and track table for the list of 'Removed Tracks'
         headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
-        createTrackTable(deltaTracklists.removed, 'Removed Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
+        createTrackTable(deltaTracklists.get('Removed Tracks'), 'Removed Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
 
         // If a list of 'Unplayable Tracks' exits, create a header element and track table for it
-        if (deltaTracklists.unplayable?.size > 0) {
+        if (deltaTracklists.get('Unplayable Status')?.size > 0) {
             headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'orangeFont noVerticalMargins'}});
-            createTrackTable(deltaTracklists.unplayable, "Change in 'Unplayable' Status", ViewRenderer.tracktables.deltas, {headerElement:headerElement});
+            createTrackTable(deltaTracklists.get('Unplayable Status'), "Change in 'Unplayable' Status", ViewRenderer.tracktables.deltas, {headerElement:headerElement});
         
             //TODO maybe put a flag here indicating whether or not the 'Unplayable' column should be included, and then send that when creating the 'Added' & 'Removed' track tables.
         }
