@@ -1,4 +1,3 @@
-import * as Model from './Model.js';
 import * as ViewRenderer from './ViewRenderer.js';
 import * as UIController from '../AppNavigator.js';
 import * as Messenger from './utilities/messenger.js';
@@ -18,7 +17,7 @@ import * as IO from './utilities/IO.js';
     //But it shouldn't necessarily handle any in-depth / area-specific logic. It should hand that off to the scripts designated specifically for that and then just get back the results and act on them.
     //If this is done, it turn out that it's unnecessary/unhelpful having ViewRenderer & UI Controller be separate 
 
-const SESSION_STATE = { //TODO Could use this to replace Model
+const SESSION_STATE = {
     tracklist: {
         title: undefined,
         type: undefined,
@@ -230,10 +229,6 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
             // }
     }
 });
-
-// function react_PrintScrapedMetadata() {
-//     console.log(Model.getScrapedTracksArray());
-// }
 
 ///////////
 
