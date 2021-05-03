@@ -48,22 +48,23 @@ export function getStoredMetadataGPM(callback) {
     }
 }
 
-/**
- * Stores the scraped tracklist in the cache and Cloud Firestore, and the track count in chrome sync storage
- * @param {function} callback The function to execute once the tracklist and track count have been stored
- */
-export function storeScrapedTracklist(callback) {
-    //Set the stored tracks array equal to the scraped tracks array, caching it for future reference within the current app session
-    tracklist.tracks.stored = tracklist.tracks.scraped;
+// /**
+//  * Stores the scraped tracklist in the cache and Cloud Firestore, and the track count in chrome sync storage
+//  * @param {function} callback The function to execute once the tracklist and track count have been stored
+//  */
+// export function storeScrapedTracklist(callback) {
+//     //Set the stored tracks array equal to the scraped tracks array, caching it for future reference within the current app session
+//     tracklist.tracks.stored = tracklist.tracks.scraped;
+//     //TODO this still needs updating to use new SESSION STORAGE or preferred approach
     
-    //Store the tracklist in Firestore, then store the track count in chrome sync storage, and then execute the callback function
-    //TODO should I pass the whole tracklist object or just the necessary fields/values?
-    Storage.storeTracklistInFirestore(tracklist, tracklist.tracks.stored, () => {
-        //UIController.triggerUITransition('ScrapedMetadataStored');
-        Storage.storeTrackCountInSyncStorage(tracklist.title, tracklist.tracks.stored.length);
-        callback();
-    });
-}
+//     //Store the tracklist in Firestore, then store the track count in chrome sync storage, and then execute the callback function
+//     //TODO should I pass the whole tracklist object or just the necessary fields/values?
+//     Storage.storeTracklistInFirestore(tracklist, tracklist.tracks.stored, () => {
+//         //UIController.triggerUITransition('ScrapedMetadataStored');
+//         Storage.storeTrackCountInSyncStorage(tracklist.title, tracklist.tracks.stored.length);
+//         callback();
+//     });
+// }
 
 //TODO Is this getter and setter necessary or is it ok for other files to just access the entire tracklist object?
 /**

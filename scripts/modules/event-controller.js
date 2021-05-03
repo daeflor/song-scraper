@@ -11,6 +11,7 @@ import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App befor
 
 import * as Storage from './StorageManager.js';
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
+import * as IO from './utilities/IO.js';
 
 //TODO could consider adding to and/or removing from EventController so that it's the central place for all event-driven logic
     //i.e. EventController should dictate & be aware of all events & reactions throughout the app (not sure about auth...)
@@ -106,24 +107,36 @@ ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
 
 // Button Pressed: Export Scraped Tracklist 
 ViewRenderer.buttons.exportScrapedMetadata.addEventListener('click', function() {
-    UIController.downloadCurrentTracklistAsCSV(SESSION_STATE.tracklist.tracks.scraped, SESSION_STATE.tracklist.title);
+    const filename = 'TracklistAfterScrape_' + SESSION_STATE.tracklist.title;
+    const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV.
+    IO.convertArrayOfObjectsToCsv(SESSION_STATE.tracklist.tracks.scraped, filename, includedProperties);
 });
 
 // Button Pressed: Export Stored GPM Tracklist 
-ViewRenderer.buttons.exportStoredMetadata.addEventListener('click', function() {
-    UIController.downloadGooglePlayMusicTracklistAsCSV(SESSION_STATE.tracklist.title);
+ViewRenderer.buttons.exportStoredMetadata.addEventListener('click', async function() {
+    const storedTracks = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+    const filename = 'TracklistBefore_' + SESSION_STATE.tracklist.title;
+    const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV.
+    IO.convertArrayOfObjectsToCsv(storedTracks, filename, includedProperties); 
+    //TODO it's unclear that convertArrayOfObjectsToCsv triggers a download, while convertObjectMapsToCsv (used below) does not
+        //Should standardize this to have them both just return a CSV, and have the download be triggered separately
 });
+
+//TODO maybe put little download buttons next to the clipboard button, which can be used to download the csv for each tracklist
 
 // Button Pressed: Copy to Clipboard
 ViewRenderer.buttons.copyToClipboard.addEventListener('click', function() {
     //TODO calling this through UI Controller is now an unnecessary step, since it does almost nothing and is not related to UI
         //Once event-controller / AppNavigator refactor takes place, that extra step should be removable.
     ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'pending'; //As soon as the button is pressed, update the button to show a 'pending' icon
-    navigator.clipboard.writeText(UIController.getDeltaListsAsCSV()).then(function() {
-        setTimeout(() => {ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'content_paste';}, 100); //Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
-  }, function() {
-        console.error("Failed to copy delta tracklist CSV to clipboard.");
-  });
+    
+    navigator.clipboard
+        .writeText(UIController.getDeltaListsAsCSV())
+        .then(() => {
+            setTimeout(() => {ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'content_paste';}, 100); //Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
+        }, () => {
+            console.error("Failed to copy delta tracklist CSV to clipboard.");
+        });
 });
 
 // // Button Pressed: Export Selected Lists

@@ -376,7 +376,6 @@ export function createDeltaTracklistsGPM(scrapedTracklist, storedTracklist) {
 //TODO Should there be an IOController?
     //all download logic could probably go in its own module or class
     //Although it may also make sense (eventually) to move some of it into event-controller
-
 export function getDeltaListsAsCSV() {
     const keysToIncludeInExport = [
         'title',
@@ -394,56 +393,6 @@ export function getDeltaListsAsCSV() {
 
     return IO.convertObjectMapsToCsv(tracklistsMap, keysToIncludeInExport);
 }
-
-/**
- * Initiates a conversion of the given tracks array to a CSV and then downloads it as a local file
- * @param {Object[]} tracksArray The array of tracks to convert
- * @param {string} tracklistTitle The title of the tracklist
- */
-export function downloadCurrentTracklistAsCSV(tracksArray, tracklistTitle) {
-    const filename = 'TracklistExport_After_' + tracklistTitle;
-    const keysToIncludeInExport = [ // The object keys to include when outputting the tracklist data to CSV
-        'title',
-        'artist',
-        'album',
-        'duration',
-        'unplayable'
-    ];
-
-    IO.convertArrayOfObjectsToCsv(tracksArray, filename, keysToIncludeInExport);
-}
-
-//TODO make this less specific to GPM so it can be merged with the function above
-    //TODO and note that this still uses the old Model call
-export function downloadGooglePlayMusicTracklistAsCSV(tracklistTitle) {
-    //The object keys to include when outputting the GPM track data to CSV
-    const keysToIncludeInExport = [
-        'title',
-        'artist',
-        'album',
-        'duration',
-        'unplayable' //TODO This is currently hard-coded. We probably should only pass one copy of _keysToIncludeInExport per 'comparison' so that the two csv files match
-    ];
-
-    //Once the Google Play Music metadata for the current tracklist has been fetched, convert it to a CSV file
-    const _onGooglePlayMusicMetadataRetrieved = function(tracklistsArray) {
-        const filename = 'TracklistExport_Before_' + tracklistTitle;
-        IO.convertArrayOfObjectsToCsv(tracklistsArray, filename, keysToIncludeInExport);
-    };
-
-    //Fetch the Google Play Music tracklist metadata from the Model and then execute the callback
-    Model.getStoredMetadataGPM(_onGooglePlayMusicMetadataRetrieved);
-}
-
-    //TODO NEW - this should take a tracklist key to be more general. Right now it only works for the current playlist which is unclear
-    // function downloadTracklistAsCsv(tracklistArray)
-    // {
-    //     const _gpmTracklistKey = getTracklistKeyFromTracklistName(tracklistArray, TabManager.GetPlaylistName());
-    //     console.log('GPM Tracklist Key: ' + _gpmTracklistKey);
-    //     console.log(tracklistArray[_gpmTracklistKey]);
-
-    //     convertArrayOfObjectsToCsv(tracklistArray[_gpmTracklistKey]);
-    // }
 
 function convertDurationStringToSeconds(duration) {
     if (typeof duration === 'string') {
