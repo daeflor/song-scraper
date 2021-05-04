@@ -1,13 +1,5 @@
 ***** Notes *****
 
-** TODOs **
-
-	- popup.html    : 1
-	- content.js    : 14
-	- popup.js      : 15
-	- TabManager.js : 1
-	- Style.css     : 3
-
 ** Bugs **
 
 	- Hit an issue where the same song showed up under Removed and Added, for unknown reasons. May be resolved by showing all info for the songs that have been removed/added. 
@@ -33,7 +25,7 @@
 	- Clean up CSS
 	- Get code ready for transition to YTM/YTM comparison (vs current GPM/YTM comparison) so that it’s ready when I’m ready to switch over.
 		- This includes track count comparison in service worker
-	- Deprecate legacy files as applicable
+	- Deprecate unused files as applicable, including legacy js files, sandbox files, and static js files
 	- May want to set up logic so that storage default is YTM, and GPM is the fallback, so that I can start transferring over
 	- Would be helpful to add the track index number into the tracklist DOM
 	- Does it make sense to disable buttons for scrape/store/etc.? I can't think of any case where scraping a second time makes any sense.

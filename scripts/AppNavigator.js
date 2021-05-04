@@ -115,13 +115,7 @@ export function createTrackTable(tracklist, headerText, parentElement, options/*
     //TODO Should all or some of this be done in ViewRenderer instead?
 
     //TODO A nice-to-have in the future would be to omit any header/column (e.g. 'Unplayable') if there are zero displayable values for that metadatum
-    const _columnsToIncludeInTrackTable = [
-        'Title',
-        'Artist',
-        'Album',
-        'Duration',
-        'Unplayable' 
-    ]; //TODO This is currently hard-coded. Should eventually be a param, probably. Although it would be good to have a default set of keys to fall back to.
+    const _columnsToIncludeInTrackTable = ['Title', 'Artist', 'Album', 'Duration', 'Unplayable']; //TODO This is currently hard-coded. Should eventually be a param, probably. Although it would be good to have a default set of keys to fall back to.
 
     let _tr = document.createElement('tr');
 
@@ -196,6 +190,8 @@ function compareTracks(track1, track2, collator) {
     } else console.error("Tried to compare two tracks but the parameters provided are not valid. Parameters provided: " + [...arguments]);
 }
 
+//TODO this function doesn't belong in the UI Controller, but there isn't currently a better place for it.
+    //Maybe create a module that just contains a Track or Tracklist class definition?
 export function getDeltaTracklists(scrapedTracklist, storedTracklist) {
     if (Array.isArray(scrapedTracklist) === true && Array.isArray(storedTracklist) === true) {
         const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
@@ -211,6 +207,7 @@ export function getDeltaTracklists(scrapedTracklist, storedTracklist) {
                 //... I don't think the track index actually needs to be kept anywhere other than the delta tracklist arrays/maps. The scraped and stored lists will have the index regardless.
                 //... However, doing this could lead to needing different logic to handle delta vs scraped/stored tracklists, in the createTrackTable function. This might be slight though.
             //One extra complication is that the logic to create csv files from tracklists would need to be updated to work with maps
+        
         // Note: it's possible for a track's position/index listed in the delta track tables to be wrong if there are duplicate copies of the track in the tracklist, but this is unlikely. 
         const unmatchedScrapedTracks = new Map();
         const unmatchedStoredTracks = new Map();
@@ -340,9 +337,6 @@ export function getDeltaTracklists(scrapedTracklist, storedTracklist) {
 }
 
 export function addDeltaTrackTablesToDOM(deltaTracklists) {
-    //const deltaTracklists = getDeltaTracklists(scrapedTracklist, storedTracklist);
-    //TODO could start to decouple this from GPM. Instead of doing this, maybe pass the storedTracklist as a param?
-
     if (deltaTracklists instanceof Map === true) {
         // Create a header element and track table for the list of 'Added Tracks'
         let headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});

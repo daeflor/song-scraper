@@ -233,6 +233,7 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
 ///////////
 
 //TODO I think this is just here temporarily. I don't think I like the event-controller containing functions like this.
+    //Could these go in StorageManager instead?
 //TODO Also, does it really make sense to use async/await for these functions. Is it actually better than just using callbacks?
 function getStoredTracks(tracklistTitle) {
     return new Promise((resolve) => {
