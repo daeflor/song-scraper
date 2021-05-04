@@ -1,5 +1,3 @@
-//import * as DebugController from './DebugController.js';
-
 //Should these objects be in the ViewRenderer or elsewhere (e.g. ViewState?)?
 
 //TODO would it make sense / be useful to have some kind of custom 'element' class, which then contains the functions below?
@@ -87,23 +85,17 @@ export function updateElementTextContent(element, text) {
 
 export function showLandingPage() {
     document.getElementById('buttons').hidden = false;
-    document.getElementById('checkboxes').hidden = false;
-    
-    //document.getElementById('landingPage').hidden = false;
-}
-
-export function hideLandingPage() {
-    document.getElementById('landingPage').hidden = true;
+    document.getElementById('checkboxes').hidden = false;    
 }
 
 export function showStatusMessage(text) {
-    document.getElementById('status').textContent = text;
-    document.getElementById('status').hidden = false;
+    divs.status.textContent = text;
+    divs.status.hidden = false;
 }
 
 export function showHeader(title) {
     document.getElementById('title').textContent = title;
-    document.getElementById('header').hidden = false;
+    divs.header.hidden = false;
 }
 
 export function removeElement(element) {

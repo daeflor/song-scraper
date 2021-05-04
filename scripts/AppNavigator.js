@@ -1,123 +1,55 @@
 import * as DebugController from './modules/DebugController.js';
 import * as ViewRenderer from './modules/ViewRenderer.js';
-import * as Model from './modules/Model.js';
-import * as IO from './modules/Utilities/IO.js';
+//import * as IO from './modules/Utilities/IO.js';
 
-const gDeltaTracklists = {
-    added: undefined,
-    removed: undefined,
-    unplayable: undefined
-};
-
-// window.Model = (function() {
-//     // //TODO might want to freeze this once the values have been set
-//     // //TODO should this be inside of or consolidated with TabManager?
-//     //     //Could consolidate this into model
-//     // const currentState = {
-//     //     app: null,
-//     //     tracklistType: null,
-//     //     //tracklistTitle: null
-//     // }
-//     let tabId = null;
-//     let app = null; //TODO might want to keep app and tracklistType together in one object to be set and passed around together more easily
-//     let tracklistType = null;
-//     let tracklistTitle = null;
-//     let localStorageKey = null;
-//     //const localStorageBackupKey = chrome.runtime.id + '_Backup';
-
-//     return { 
-//         GetTabId: function() {
-//             return tabId; 
-//         },
-//         SetTabId: function(id){
-//             tabId = id;
-//         },
-//         GetApp: function() {
-//             return app;
-//         },
-//         SetApp: function(currentApp) {
-//             app = currentApp;
-//         },
-//         GetTracklistType: function() {
-//             return tracklistType;
-//         },
-//         SetTracklistType: function(type) {
-//             tracklistType = type;
-//         },
-//         GetTracklistTitle: function() {
-//             return tracklistTitle;
-//         },
-//         SetTracklistTitle: function(title) {
-//             tracklistTitle = title;
-//             //localStorageKey = chrome.runtime.id + '_Playlist_\'' + playlistName + '\'';
-//             localStorageKey = title;
-//             //console.log("Playlist name set to: " + playlistName + ". Key set to: " + key);
-//         },
-//         GetLocalStorageKey : function() {
-//             return localStorageKey; 
-//         },
-//         // GetBackupKey : function()
-//         // {
-//         //     return localStorageBackupKey; 
-//         // },
-//     };
-// })();
-
-
-function init() {
-    const _storagekey = 'currentTracklistMetadata';
-    chrome.storage.local.get(_storagekey, storageResult => { //Get the cached metadata for the current tracklist from local storage
-        const _tracklistMetadata = storageResult[_storagekey];
-
-        //TODO Maybe Model should just grab these values itself, although it would need to be able to call ShowLandingPage or equivalent afterwards
-        //TODO Or instead, maybe only the files that need certain variables should track those.
-
-        if (typeof _tracklistMetadata.type === 'string') { //If the tracklist type has been set correctly, update it in the Model
-            Model.tracklist.type = _tracklistMetadata.type;
-        } else {
-            console.error("The tracklist type could not be determined from the URL.");
-            //TODO might be better to call TriggerUITransition here instead, to keep all ViewRenderer calls in one place
-            ViewRenderer.showStatusMessage('The tracklist type could not be determined from the URL.');
-            return;
-        }
-
-        if (typeof _tracklistMetadata.title === 'string') { //If the tracklist title has been set correctly, update it in the Model
-            Model.tracklist.title = _tracklistMetadata.title;
-        } else {
-            console.error("The tracklist type could not be determined from the URL.");
-            ViewRenderer.showStatusMessage('The tracklist type could not be determined from the URL.');
-            return;
-        }
-
-        console.info("Retrieved tracklist metadata from local storage cache:");
-        console.info(Model.tracklist);
-        triggerUITransition('ShowLandingPage'); //If all the required metadata have been set correctly, show the extension landing page
-    });
-}
-
-export function triggerUITransition(transition) {
-    if (transition === 'UrlInvalid') {
-        ViewRenderer.showStatusMessage('The current URL is not supported by this extension.');
+/**
+ * Updates the UI as specified by the transition parameter
+ * @param {string} transition The type of transition that the UI should undergo
+ * @param {Object} [options] An optional object to provide additional parameters needed to fulfill the UI transition. Accepted properties: tracklistTitle
+ */
+export function triggerUITransition(transition, options) {
+    if (transition === 'CachedTracklistMetadataInvalid') {
+        //ViewRenderer.showStatusMessage(options.statusMessage ?? 'Error');
+        ViewRenderer.showStatusMessage('Unable to retrieve cached tracklist metadata from local storage.');
     } else if (transition === 'ShowAuthPrompt') {
         ViewRenderer.hideElement(ViewRenderer.divs.status);
         ViewRenderer.unhideElement(ViewRenderer.divs.auth);
-    } else if (transition === 'LogOut') {
+    } else if (transition === 'LogOutAndExit') {
+        //ViewRenderer.hideElement(ViewRenderer.divs.auth);
         ViewRenderer.hideElement(ViewRenderer.divs.header);
         ViewRenderer.hideElement(ViewRenderer.divs.buttons);
         ViewRenderer.hideElement(ViewRenderer.divs.checkboxes);
-        //ViewRenderer.hideElement(ViewRenderer.divs.tracktables);
+        ViewRenderer.hideElement(ViewRenderer.divs.tracktables);
+        ViewRenderer.showStatusMessage('Goodbye');
+    // } else if (transition === 'LogOut') {
+    //     ViewRenderer.hideElement(ViewRenderer.divs.header);
+    //     ViewRenderer.hideElement(ViewRenderer.divs.buttons);
+    //     ViewRenderer.hideElement(ViewRenderer.divs.checkboxes);
+    //     //ViewRenderer.hideElement(ViewRenderer.divs.tracktables);
 
-        resetAllTrackTablesAndCheckboxes();
+    //     resetAllTrackTablesAndCheckboxes();
 
-        ViewRenderer.disableElement(ViewRenderer.buttons.exportScrapedMetadata);
-        ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Save Scraped Metadata to Storage');
+    //     //TODO if you log out and back in, the clipboard button doesn't get hidden
+    //     //TODO for that matter, if you log out and back in, the 'stored' tracks array doesn't get reset, which it really should
+    //     //Also, if the scrape button and checklist will both be disabled and you will be unable to initiate a new scrape or view the scrape track table
+    //         //These could probably all be solved with some better rules in this function but it may also be easiest and make the most sense...
+    //         //...to just reset the app state completely when the user logs out. (i.e. clear out all the SESSION_STATE properties)
+    //         //...and then call init again and start over when the user logs back in (like I was doing before, but this time more intentionally)
 
-        ViewRenderer.unhideElement(ViewRenderer.divs.auth);
+    //     ViewRenderer.disableElement(ViewRenderer.buttons.exportScrapedMetadata);
+    //     ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Save Scraped Metadata to Storage');
+
+    //     ViewRenderer.unhideElement(ViewRenderer.divs.auth);
     } else if (transition === 'ShowLandingPage') {
-        ViewRenderer.hideElement(ViewRenderer.divs.status);
-        ViewRenderer.hideElement(ViewRenderer.divs.auth);
-        ViewRenderer.showHeader(Model.tracklist.title);
-        ViewRenderer.showLandingPage();
+        if (typeof options?.tracklistTitle === 'string') {
+            ViewRenderer.hideElement(ViewRenderer.divs.status);
+            ViewRenderer.hideElement(ViewRenderer.divs.auth);
+            ViewRenderer.showHeader(options.tracklistTitle);
+            ViewRenderer.showLandingPage();
+        } else {
+            ViewRenderer.showStatusMessage('The tracklist title retrieved from the cached metadata is invalid.');
+            console.error("Tried to display the tracklist title but a valid string wasn't provided.");
+        }
     } else if (transition === 'StartScrape') {
         ViewRenderer.disableElement(ViewRenderer.buttons.scrape);
         ViewRenderer.hideElement(ViewRenderer.divs.buttons);
@@ -148,24 +80,24 @@ export function triggerUITransition(transition) {
     }
 }
 
-function resetAllTrackTablesAndCheckboxes() {
-    //For each potential track table...
-    for (const key in ViewRenderer.tracktables) {
-        //If the track table actually exists (i.e. was previously created)...
-        if (typeof ViewRenderer.tracktables[key] === 'object') {
-            //Hide the track table
-            ViewRenderer.hideElement(ViewRenderer.tracktables[key]);
-        } 
-    }
-    //For each track table checkbox...
-    for (const key in ViewRenderer.checkboxes) {
-        //Uncheck the checkbox
-        ViewRenderer.uncheckBox(ViewRenderer.checkboxes[key]);
-    }
-    //Disable the 'scraped' and 'deltas' track table checkboxes
-    ViewRenderer.disableElement(ViewRenderer.checkboxes.scrapedTrackTable);
-    ViewRenderer.disableElement(ViewRenderer.checkboxes.deltaTrackTables);
-}
+// function resetAllTrackTablesAndCheckboxes() {
+//     //For each potential track table...
+//     for (const key in ViewRenderer.tracktables) {
+//         //If the track table actually exists (i.e. was previously created)...
+//         if (typeof ViewRenderer.tracktables[key] === 'object') {
+//             //Hide the track table
+//             ViewRenderer.hideElement(ViewRenderer.tracktables[key]);
+//         } 
+//     }
+//     //For each track table checkbox...
+//     for (const key in ViewRenderer.checkboxes) {
+//         //Uncheck the checkbox
+//         ViewRenderer.uncheckBox(ViewRenderer.checkboxes[key]);
+//     }
+//     //Disable the 'scraped' and 'deltas' track table checkboxes
+//     ViewRenderer.disableElement(ViewRenderer.checkboxes.scrapedTrackTable);
+//     ViewRenderer.disableElement(ViewRenderer.checkboxes.deltaTrackTables);
+// }
 
 /**
  * Creates a track table from the provided tracklist and other inputs
@@ -183,13 +115,7 @@ export function createTrackTable(tracklist, headerText, parentElement, options/*
     //TODO Should all or some of this be done in ViewRenderer instead?
 
     //TODO A nice-to-have in the future would be to omit any header/column (e.g. 'Unplayable') if there are zero displayable values for that metadatum
-    const _columnsToIncludeInTrackTable = [
-        'Title',
-        'Artist',
-        'Album',
-        'Duration',
-        'Unplayable' 
-    ]; //TODO This is currently hard-coded. Should eventually be a param, probably. Although it would be good to have a default set of keys to fall back to.
+    const _columnsToIncludeInTrackTable = ['Title', 'Artist', 'Album', 'Duration', 'Unplayable']; //TODO This is currently hard-coded. Should eventually be a param, probably. Although it would be good to have a default set of keys to fall back to.
 
     let _tr = document.createElement('tr');
 
@@ -264,7 +190,9 @@ function compareTracks(track1, track2, collator) {
     } else console.error("Tried to compare two tracks but the parameters provided are not valid. Parameters provided: " + [...arguments]);
 }
 
-function getDeltaTracklists(scrapedTracklist, storedTracklist) {
+//TODO this function doesn't belong in the UI Controller, but there isn't currently a better place for it.
+    //Maybe create a module that just contains a Track or Tracklist class definition?
+export function getDeltaTracklists(scrapedTracklist, storedTracklist) {
     if (Array.isArray(scrapedTracklist) === true && Array.isArray(storedTracklist) === true) {
         const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
         
@@ -279,6 +207,7 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
                 //... I don't think the track index actually needs to be kept anywhere other than the delta tracklist arrays/maps. The scraped and stored lists will have the index regardless.
                 //... However, doing this could lead to needing different logic to handle delta vs scraped/stored tracklists, in the createTrackTable function. This might be slight though.
             //One extra complication is that the logic to create csv files from tracklists would need to be updated to work with maps
+        
         // Note: it's possible for a track's position/index listed in the delta track tables to be wrong if there are duplicate copies of the track in the tracklist, but this is unlikely. 
         const unmatchedScrapedTracks = new Map();
         const unmatchedStoredTracks = new Map();
@@ -399,110 +328,33 @@ function getDeltaTracklists(scrapedTracklist, storedTracklist) {
 
         /////
 
-        //TODO could just use the global variables above, instead of creating new temp variables for the matching process. 
-            //However, the names would need to be clear enough to avoid complication. May not be worth it.
-        gDeltaTracklists.added = unmatchedScrapedTracks;
-        gDeltaTracklists.removed = unmatchedStoredTracks;
-        gDeltaTracklists.unplayable = unplayableTracks;
-
-        //TODO Since we want to offer the ability to export the delta lists too, it would probably be good to save these as persistent variables that can be referenced again
-            //This is now done (above), but could probably be handled better.
-        return {added:unmatchedScrapedTracks, removed:unmatchedStoredTracks, unplayable:unplayableTracks};
+        return new Map([
+            ['Added Tracks', unmatchedScrapedTracks], 
+            ['Removed Tracks', unmatchedStoredTracks], 
+            ['Unplayable Status', unplayableTracks]
+        ]);
     } else console.error("Tried to get delta tracklists, but the parameters provided were invalid. Expected two tracklist arrays (scraped & stored).");
 }
 
-// TODO why pass the parameter, when we can get the scraped tracklist from the Model right here?
-export function createDeltaTracklistsGPM(scrapedTracklist) {
-    Model.getStoredMetadataGPM(storedTracklist => { // Fetch the stored version of the current tracklist...
-        const deltaTracklists = getDeltaTracklists(scrapedTracklist, storedTracklist);
-        //TODO could start to decouple this from GPM. Instead of doing this, maybe pass the storedTracklist as a param?
+export function addDeltaTrackTablesToDOM(deltaTracklists) {
+    if (deltaTracklists instanceof Map === true) {
+        // Create a header element and track table for the list of 'Added Tracks'
+        let headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
+        createTrackTable(deltaTracklists.get('Added Tracks'), 'Added Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
+        
+        // Create a header element and track table for the list of 'Removed Tracks'
+        headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
+        createTrackTable(deltaTracklists.get('Removed Tracks'), 'Removed Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
 
-        if (typeof deltaTracklists === 'object') {
-            // Create a header element and track table for the list of 'Added Tracks'
-            let headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
-            createTrackTable(deltaTracklists.added, 'Added Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
-            
-            // Create a header element and track table for the list of 'Removed Tracks'
-            headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
-            createTrackTable(deltaTracklists.removed, 'Removed Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
-
-            // If a list of 'Unplayable Tracks' exits, create a header element and track table for it
-            if (deltaTracklists.unplayable?.size > 0) {
-                headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'orangeFont noVerticalMargins'}});
-                createTrackTable(deltaTracklists.unplayable, "Change in 'Unplayable' Status", ViewRenderer.tracktables.deltas, {headerElement:headerElement});
-            
-                //TODO maybe put a flag here indicating whether or not the 'Unplayable' column should be included, and then send that when creating the 'Added' & 'Removed' track tables.
-            }
+        // If a list of 'Unplayable Tracks' exits, create a header element and track table for it
+        if (deltaTracklists.get('Unplayable Status')?.size > 0) {
+            headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'orangeFont noVerticalMargins'}});
+            createTrackTable(deltaTracklists.get('Unplayable Status'), "Change in 'Unplayable' Status", ViewRenderer.tracktables.deltas, {headerElement:headerElement});
+        
+            //TODO maybe put a flag here indicating whether or not the 'Unplayable' column should be included, and then send that when creating the 'Added' & 'Removed' track tables.
         }
-    });
+    }
 }
-
-//TODO Should there be an IOController?
-    //all download logic could probably go in its own module or class
-    //Although it may also make sense (eventually) to move some of it into event-controller
-
-export function getDeltaListsAsCSV() {
-    const keysToIncludeInExport = [
-        'title',
-        'artist',
-        'album',
-        'duration',
-        'unplayable'
-    ];
-
-    const tracklistsMap = new Map([
-        ['Added Tracks', gDeltaTracklists.added], 
-        ['Removed Tracks', gDeltaTracklists.removed], 
-        ['Unplayable Status', gDeltaTracklists.unplayable]
-    ]);
-
-    return IO.convertObjectMapsToCsv(tracklistsMap, keysToIncludeInExport);
-}
-
-function downloadCurrentTracklistAsCSV(tracklist) {
-    //The object keys to include when outputting the tracklist data to CSV
-    const _keysToIncludeInExport = [
-        'title',
-        'artist',
-        'album',
-        'duration',
-        'unplayable'
-    ];
-
-    const _filename = 'TracklistExport_After_' + Model.tracklist.title;
-
-    IO.convertArrayOfObjectsToCsv(tracklist, _filename, _keysToIncludeInExport);
-}
-
-function downloadGooglePlayMusicTracklistAsCSV() {
-    //The object keys to include when outputting the GPM track data to CSV
-    const _keysToIncludeInExport = [
-        'title',
-        'artist',
-        'album',
-        'duration',
-        'unplayable' //TODO This is currently hard-coded. We probably should only pass one copy of _keysToIncludeInExport per 'comparison' so that the two csv files match
-    ];
-
-    //Once the Google Play Music metadata for the current tracklist has been fetched, convert it to a CSV file
-    const _onGooglePlayMusicMetadataRetrieved = function(tracklistsArray) {
-        const _filename = 'TracklistExport_Before_' + Model.tracklist.title;
-        IO.convertArrayOfObjectsToCsv(tracklistsArray, _filename, _keysToIncludeInExport);
-    };
-
-    //Fetch the Google Play Music tracklist metadata from the Model and then execute the callback
-    Model.getStoredMetadataGPM(_onGooglePlayMusicMetadataRetrieved);
-}
-
-    //TODO NEW - this should take a tracklist key to be more general. Right now it only works for the current playlist which is unclear
-    // function downloadTracklistAsCsv(tracklistArray)
-    // {
-    //     const _gpmTracklistKey = getTracklistKeyFromTracklistName(tracklistArray, TabManager.GetPlaylistName());
-    //     console.log('GPM Tracklist Key: ' + _gpmTracklistKey);
-    //     console.log(tracklistArray[_gpmTracklistKey]);
-
-    //     convertArrayOfObjectsToCsv(tracklistArray[_gpmTracklistKey]);
-    // }
 
 function convertDurationStringToSeconds(duration) {
     if (typeof duration === 'string') {
@@ -639,5 +491,3 @@ window.Utilities = (function() {
 })();
 
 //window.Utilities.FadeIn(document.body, init, 500);
-
-export {init, downloadCurrentTracklistAsCSV, downloadGooglePlayMusicTracklistAsCSV};

@@ -1,83 +1,68 @@
-import * as DebugController from '../Modules/DebugController.js';
 import * as UIController from '../AppNavigator.js';
-import firebaseConfig from '../Configuration/Config.js';
 
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 import '/node_modules/firebase/firebase-auth.js'; //Import the Firebase Auth library
 import '/node_modules/firebaseui/dist/firebaseui.js'; //Import the Firebase Auth UI library
 
-/**
- * Sets up the Firebase context and register a listener for the auth state changing
- */
-function init() {
-    firebase.initializeApp(firebaseConfig); //Initialize Firebase
-    firebase.auth().onAuthStateChanged(reactToEvent_AuthStateChanged); //Listen for auth state changes
-}
+//TODO it appears that logging in with google sign-in (from any of the 3 methods supported by this app), the sign-in UI popup causes the extension popup to be closed
+    //This doesn't happen if devtools for the extension are open (i.e. Inspect Popup is used), which is why this went unnoticed before
+    //This issue still occurs if the extension/popup script sends a message to the background script to initiate the interactive sign-in from the background.
+    //Could look into other work-arounds, such as signing in through an options screen instead of the extension popup itself.
 
 /**
- * Reacts to a change in the authentication state of the current user of the application. 
- * If they are not signed in, the Authentication Screen is displayed and Firebase Google Authentication UI is initiated.
- * If they are signed in, the landing page is displayed.
- * @param {Object} user The object representing the data for the authenticated user, if one exists
+ * Listens for a change in authentication state of the current user of the application. 
+ * If the user is not authenticated, the authentication screen is displayed and the Firebase UI Auth flow is initiated.
+ * If the user is authenticated, the provided callback is executed. 
+ *  @param {{()}} onSuccessCallback The function to execute once a user has succesfully authenticated
  */
-function reactToEvent_AuthStateChanged(user) {
-    if (user === null) { //If there is no user signed into the app...
-        DebugController.logInfo("AuthController: There is no user signed in so the FirebaseUI Authentication flow will be initiated.");
-        startFirebaseUIAuthFlow(); //Start the Firebase Authentication UI flow
-    } else { //Else, if there is a user signed into the app...
-        DebugController.logInfo("AuthController: A user is signed in so the landing page will be displayed.");
-        UIController.init();
-        //TODO probably shouldn't be calling an "init" function more than once,
-            //but right now, if you sign out and back in, it will do this (and not all state is re-set properly)
-    }
+export function listenForAuthStateChange(onSuccessCallback) {
+    //If there is no user signed in, begin the Firebase UI Authentication flow. Otherwise, execute the callback function.
+    const authListener = firebase.auth().onAuthStateChanged(user => { // When a change in the user's authentication state is detected...
+        //(user === null) ? startFirebaseUIAuthFlow() : onSuccessCallback();
+        if (user === null) { // If the user is not signed in, start the Firebase UI Authentication flow
+            startFirebaseUIAuthFlow();
+        } else { // Else, if the user is signed in, remove the listener and execute the provided callback function
+            authListener();
+            onSuccessCallback();
+        }
+    });
 }
 
 /**
  * Starts a new or existing Firebase AuthUI instance
  */
 function startFirebaseUIAuthFlow() {
-    let _authUI = firebaseui.auth.AuthUI.getInstance();
-    let _uiConfig;
-
-    //If a Firebase AuthUI instance does not already exist, set up a new instance along with a configuration
-    if (_authUI === null) {
-        DebugController.logInfo("AuthController: A Firebase AuthUI instance does not already exist, so setting up a new one.");
-
-        //Initialize the FirebaseUI Widget using Firebase.
-        _authUI = new firebaseui.auth.AuthUI(firebase.auth());
-
-        //Specify configuration details for the FirebaseUI Authentication widget
-        _uiConfig = {
-            callbacks: {
-                uiShown: function() { 
-                    UIController.triggerUITransition('ShowAuthPrompt'); //Hide the status message and show the auth prompt
-                },
-                signInSuccessWithAuthResult: (authResult, redirectUrl) => false, //Return false so the page doesn't get automatically redirected
-                signInFailure: function(error) {
-                    DebugController.logError("AuthController: An error was encountered during the authentication process. Error (below):");
-                    DebugController.logError(error);
-                }
-            },
-            signInFlow: 'popup',
-            signInOptions : [{
-                provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-                scopes: ['https://www.googleapis.com/auth/appstate'],
-                customParameters: {
-                    prompt: 'select_account' //Forces account selection even when one account is available
-                }
-            }]
-        };
-    }
-
-    _authUI.start('#auth', _uiConfig);
+    // Get the existing Firebase AuthUI instance if it exits; otherwise, set up a new instance
+    const authUI = firebaseui.auth.AuthUI.getInstance() ?? new firebaseui.auth.AuthUI(firebase.auth());
+    authUI.start('#auth', getUiConfig());
 }
 
-export function logOut() {
-    firebase.auth().signOut().then(function() {
-            UIController.triggerUITransition('LogOut');
-        }).catch(function(error) {
-            DebugController.logError(error);
-        });
+/**
+ * @returns {Object} The FirebaseUI config
+ */
+function getUiConfig() {
+    return {
+        callbacks: {
+            uiShown: () => UIController.triggerUITransition('ShowAuthPrompt'), // Hide the status message and show the auth prompt
+            signInSuccessWithAuthResult: (authResult, redirectUrl) => false, // Return false so the page doesn't get automatically redirected
+            signInFailure: error => console.error(error)
+        },
+        signInFlow: 'popup',
+        signInOptions : [{
+            provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+            scopes: ['https://www.googleapis.com/auth/appstate'],
+            customParameters: {
+                prompt: 'select_account' //Forces account selection even when one account is available
+            }
+        }]
+    };
 }
 
-init();
+/**
+ * Signs the current user out and then triggers an update to the UI, accordingly
+ */
+export function logOut(callback) {
+    firebase.auth().signOut()
+        .then(callback)
+        .catch(error => console.error(error));
+}

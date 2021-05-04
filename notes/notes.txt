@@ -1,13 +1,5 @@
 ***** Notes *****
 
-** TODOs **
-
-	- popup.html    : 1
-	- content.js    : 14
-	- popup.js      : 15
-	- TabManager.js : 1
-	- Style.css     : 3
-
 ** Bugs **
 
 	- Hit an issue where the same song showed up under Removed and Added, for unknown reasons. May be resolved by showing all info for the songs that have been removed/added. 
@@ -25,26 +17,39 @@
 ** Upcoming To-Do List **
 
 	2021:
+	- Maybe exclude the 'unplayable' column from tracktables when empty (see TODO)
 	- Maybe change Import names in EventController (and other places?)?
 	- Clean up logic to set up landing page in AppNavigator & consolidate it with other similar logic; then remove deprecated html
 	- Overall cleanup
 	- Element/DOM validation
 	- Clean up CSS
+	- Get code ready for transition to YTM/YTM comparison (vs current GPM/YTM comparison) so that it’s ready when I’m ready to switch over.
+		- This includes track count comparison in service worker
+	- Deprecate unused files as applicable, including legacy js files, sandbox files, and static js files
+	- May want to set up logic so that storage default is YTM, and GPM is the fallback, so that I can start transferring over
+	- Would be helpful to add the track index number into the tracklist DOM
+	- Does it make sense to disable buttons for scrape/store/etc.? I can't think of any case where scraping a second time makes any sense.
+	- Maybe switch away from typeof === 'object' checks, since this doesn't discount a value of null.
+	- Could have an option in options.html indicating whether GPM or YTM should be used when creating the delta tracklists.
 
+	- Could consider having different popup html files for different tracklists, if it makes sense to show significantly different options/UI for each.
 	- Would it be possible somehow to use an extension context menu to select multiple tracks and edit their info in Firestore (e.g. assign their genre)?
-	
+	- It would probably also be possible to accomplish this ^ by inserting some DOM elements into tracklists. (e.g. add checkboxes to every track row and a buton / text field to set the genre, as one example/option)
+	- It would also be be possible to do this ^ in the popup itself (e.g. adding more elements with the scraped tracklist like buttons, text fields, and checkboxes)
+	- Instead of using a mutation observer to watch the DOM, it's probably possible to scrape the loading track metadata by watching the network requests. It might even be possible to bypass the DOM track element creation, which could speed up the whole scrape & scroll process. This would be a large undertaking though, and maybe not even possible.
+		- Maybe it would be sufficient to block the loading of the track thumbnails..
+		- Actually it seems that downloading the tracklist content takes considerably less time than "Waiting (TTFB)" & work happening on the server side, and I don't know how to speed the latter up.
+	- Could update JSDOC callback documentation throughout code (https://jsdoc.app/tags-callback.html)
+
 	Old:
 	- Could add support for and save lists for individual genres, for easier viewing/fixing
 	- Save URLs in one place so that it's easy to update them if needed
 	- 'Soundtracks' playlist includes 'added' songs that are not elsewhere accounted for
 	- Finalize / clean-up support for 'All Songs'
-	- Add song duration to info saved in storage
 
 
 ** Style & Organization **
 
-	- Differentiate content script methods from similarly named Popup methods
-	- MVC and other organization possibilities
 	- Create a new chart (digital?) for the app layout	
 	- Look into 'use strict mode', and consider using a Linter (https://www.sitepoint.com/comparison-javascript-linting-tools/)
 	- Consider Grunt or something similar to merge all files into one
@@ -57,12 +62,9 @@ V1:
 	- - Would it be possible to use this in order to scrub out all the old unused lists saved in Local Storgae?
 	- ! Google music css variable names mapping
 	- ! Error handling method for all the page css variable getters/queries
-	- ! Include the Song Duration/Length when saving tracklists !
 	- Option to backup all extisting track lists with current date (similar to JSON idea)
 	- Option to change a playlist's name
-	- ! Re-organize files into more logical order, and maybe break up into additional files
 	- When storing a list, could store the timestamp so you can see the lastUsed date and then auto-delete anything no longer in use
-	- If all the playlists in Storage are children of a parent object, do they all need the id in their name? Is that even how it works right now?
 	- Could check count of songs in list before saving to storage, to verify it matches the playlist track count (to avoid edge case infinite loop)
 	- Would be nice to know if the position of a track in a playlist has changed
 	- Is it worth having a button that either copies comparison results to clipboard and/or outputs a csv/xsl file of the results
@@ -70,7 +72,7 @@ V1:
 
 V2:
 	- Have the user's track list info be accessible across devices so they can use the extension from anywhere
-		- Extension Sync storage may not work because of the quota limits. 
+		- Extension Sync storage won't work because of the quota limits. 
 		- Could consider Google Drive integration, or switching to a Packaged App
 	- Allow user to save more than just playlists (e.g. All songs added to library, Uploaded & Purchased songs, and Subscription songs).
 		- These all use this url: https://play.google.com/music/listen?u=0#/all
