@@ -37,10 +37,13 @@ function init() {
     firebase.initializeApp(firebaseConfig); //Initialize Firebase
 }
 
+//TODO Ideally I should only set up this port if the user ISN'T signed into firebase. Could also just ALWAYS open it and then immediately close it once the auth status comes back as positive.
+    //But an alternative would be to only open this port from the auth script if the user isn't signed in. Then it doesn't even need to be manually closed.
+    //Only issue with that is that I'm not sure I like the auth script handling this kind of logic...
+//let port = chrome.runtime.connect({name: 'AuthenticationPending'}); //TODO remember to disconnect, if needed (see above)
+
 // User Becomes Authenticated
-Auth.listenForAuthStateChange(async () => {
-    //TODO Right now, this can get called more than once, which won't necessarily work correctly.
-        //Need to properly clear out any data that needs to be cleared (if/as applicable) and then start over.
+Auth.listenForAuthStateChange(async () => { // TODO this name is a bit misleading, since the callback only fires on an initial sign-in (i.e. not on sign-out)
     let tracklistMetadata = undefined;
 
     try {
@@ -69,12 +72,12 @@ Auth.listenForAuthStateChange(async () => {
 //     // });
 // });
 
-
 // Button Pressed: Log Out
 ViewRenderer.buttons.logOut.addEventListener('click', function() {
-    Auth.logOut(() => {
-        UIController.triggerUITransition('LogOutAndExit');
-        setTimeout(() => window.close(),1000);
+    Auth.logOut(() => { // Log out of Firebase
+        UIController.triggerUITransition('LogOutAndExit'); // Show the exiting screen
+        chrome.runtime.connect({name: 'AuthenticationChangePending'}); // Open a port so that when the extension popup is closed, the background script will be informed and can update the icon accordingly.
+        setTimeout(() => window.close(), 1000); // After a 1 second delay, close the extension popup
     });
 });
 

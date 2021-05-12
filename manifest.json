@@ -13,9 +13,7 @@
             "run_at": "document_idle"
     }],
     "action": {
-        "default_icon": {
-            "96": "Images/icon_disabled.png"
-          }
+        "default_popup": "popup.html"
     },
     "icons": {
         "96": "Images/icon_disabled.png"
@@ -23,7 +21,6 @@
     "permissions": [
         "storage",
         "downloads",
-        "declarativeContent",
         "webNavigation",
         "unlimitedStorage"
     ],

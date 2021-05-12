@@ -20,21 +20,17 @@ export function listenForAuthStateChange(onSuccessCallback) {
     const authListener = firebase.auth().onAuthStateChanged(user => { // When a change in the user's authentication state is detected...
         //(user === null) ? startFirebaseUIAuthFlow() : onSuccessCallback();
         if (user === null) { // If the user is not signed in, start the Firebase UI Authentication flow
-            startFirebaseUIAuthFlow();
+            // Open a port before prompting the user to sign in. This way, when the google-sign in window causes the extension popup to close, the background script will be informed and can update the icon accordingly. 
+            chrome.runtime.connect({name: 'AuthenticationChangePending'}); 
+
+            // Get the existing Firebase AuthUI instance if it exits; otherwise, set up a new instance. Then start the auth UI flow.
+            const authUI = firebaseui.auth.AuthUI.getInstance() ?? new firebaseui.auth.AuthUI(firebase.auth());
+            authUI.start('#auth', getUiConfig());
         } else { // Else, if the user is signed in, remove the listener and execute the provided callback function
             authListener();
             onSuccessCallback();
         }
     });
-}
-
-/**
- * Starts a new or existing Firebase AuthUI instance
- */
-function startFirebaseUIAuthFlow() {
-    // Get the existing Firebase AuthUI instance if it exits; otherwise, set up a new instance
-    const authUI = firebaseui.auth.AuthUI.getInstance() ?? new firebaseui.auth.AuthUI(firebase.auth());
-    authUI.start('#auth', getUiConfig());
 }
 
 /**
