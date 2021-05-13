@@ -63,27 +63,20 @@ try {
             chrome.action.disable(details.tabId); // Disable the popup action for the specified tab
             chrome.action.setIcon({path: ICON_PATHS.disabled, tabId: details.tabId}); // Show the 'disabled' icon
             chrome.action.setBadgeText({text: "", tabId: details.tabId}); // Clear any badge text on the icon
-        } // TEMP (because the flow from the content script metadata observer hasn't been updated yet for the new logic):
-        else {
-            enableAndUpdateIcon();
         }
     }, {url: [{hostEquals : 'music.youtube.com'}]});
 
-    /////
-
     /**
-     * Enables and updates the icon & badge for the specified tab
+     * Enables and updates the icon & badge for the specified tab based on the tracklist metadata provided
      * @param {Object} currentTracklistMetadata An object containing the current tracklist metadata, which will be used to determine the changes made to the icon. In some cases, this includes calculating and displaying the track count delta in the icon badge.
      * @param {number} [tabId] The id of the tab for which to update the icon. If none is provided, the active tab ID will be used.
     */
      async function enableAndUpdateIcon(currentTracklistMetadata, tabId) {
-
         if (typeof tabId === 'undefined') {
             const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
             tabId = tab.id;
         }
 
-        //TODO in order for this to work, currentTracklistMetadata will have to first be retrieved from the local cache when the user signs in, before calling this function, so that it can be passed as a param.
         if (firebase.auth().currentUser instanceof firebase.User === true) {
             if (typeof currentTracklistMetadata === 'object') {
                 if (currentTracklistMetadata.type === 'all' || currentTracklistMetadata.type === 'uploads') {
@@ -92,21 +85,20 @@ try {
                 } else if (currentTracklistMetadata.type === 'playlist' || currentTracklistMetadata.type === 'likes') {
 
                     const previousTrackCount = await getPreviousTrackCount(currentTracklistMetadata.title);
-
                     const trackCountDelta = currentTracklistMetadata.trackCount - previousTrackCount;
 
                     if (trackCountDelta === 0) {
                         chrome.action.setBadgeText({text: "0", tabId: tabId});
                         chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
                     } else if (trackCountDelta > 0) {
-                        chrome.action.setBadgeText({text: "+" + trackCountDelta, tabId: tabId});
+                        chrome.action.setBadgeText({text: "+" + trackCountDelta.toString(), tabId: tabId});
                         chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
                     } else {
-                        chrome.action.setBadgeText({text: trackCountDelta, tabId: tabId});
+                        chrome.action.setBadgeText({text: trackCountDelta.toString(), tabId: tabId});
                         chrome.action.setBadgeBackgroundColor({color: [255, 153, 153, 200], tabId: tabId}); // Rose
                     }
-                } else console.error(Error("TODO"));
-            } else console.error(Error("TODO"));
+                } else console.error(Error("Tried to update the extension's icon, but a valid tracklist type was not available in the provided tracklist metadata."));
+            } else console.error(Error("Tried to update the extension's icon, but no metadata was provided for the current tracklist."));
         } else {
             chrome.action.setBadgeText({text: "login", tabId: tabId});
             chrome.action.setBadgeBackgroundColor({color: [64, 64, 64, 200], tabId: tabId}); // Dark Grey
@@ -114,63 +106,6 @@ try {
 
         chrome.action.setIcon({path: ICON_PATHS.default, tabId: tabId}); // Set the default icon (i.e. with full color, as opposed to the washed out 'disabled' icon)
         chrome.action.enable(tabId); // Enable the popup action for the specified tab
-    }
-
-    /////
-
-    /**
-     * Enables and updates the icon & badge for the specified tab
-     * @param {number} tabId The id of the tab for which to update the icon
-     * @param {boolean} [showTrackCountDelta] Indicates whether or not the track count delta should be displayed in the icon badge. Defaults to false.
-     * @param {Object} [currentMetadata] If 'showTrackCountDelta' is set to true, this optional parameter can be used to pass the current metadata for the tracklist, which will be used to run a comparison against its previous track count. If no value is provided, the current track count will be fetched from chrome storage, if available.
-     */
-    async function enableAndUpdateIconOld(tabId, /*showTrackCountDelta = false,*/ currentMetadata) {
-        //TODO maybe in here call a helper function to get the trackcount delta?
-            //TODO include a param indicating whether or not a track count delta should be shown
-
-        chrome.action.setIcon({path: ICON_PATHS.default, tabId: tabId}); // Set the default icon (i.e. with full color, as opposed to the washed out 'disabled' icon)
-        chrome.action.enable(tabId); // Enable the popup action for the specified tab
-        
-        if (firebase.auth().currentUser instanceof firebase.User === true) {
-            //if (showTrackCountDelta === true) {
-
-            //TODO:
-                //-In the case of 'added' & 'uploaded': it's known that trackCountDelta is unavailable and doesn't need to be shown
-                //-In the case of playlists & likes: it's known that trackCountDelta should be shown, if logged in, and the current metadata can be passed as a param
-                //-In the case of firebase auth change (sign in, specifically), it's NOT known what the current page is, so it's NOT known if trackCountDelta should be shown or not (or if it's even available)
-                    //Can this info (e.g. tracklist type) somehow be passed along when the port is created? 
-                    //Not really, but a message could be posted after creating the connection (for the sign-in case)
-                    //But at that point, it would probably be easier to just check the cached metadata in chrome storage here. Would just need to re-think how the showTrackCountDelta param is used, since the defualt should probably be something like 'maybe?' rather than 'false'.
-
-                    //TODO: checkIfPreviousTrackCountExists?
-                        /*
-                            currentTrackCount = 
-
-
-                        */
-
-                //const previousTrackCount = await getPreviousTrackCount();
-
-                if (typeof trackCountDelta === 'number') {
-                    if (trackCount === 0) {
-                        chrome.action.setBadgeText({text: "0", tabId: tabId});
-                        chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
-                    } else if (trackCount > 0) {
-                        chrome.action.setBadgeText({text: "+" + trackCountDelta, tabId: tabId});
-                        chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
-                    } else {
-                        chrome.action.setBadgeText({text: trackCountDelta, tabId: tabId});
-                        chrome.action.setBadgeBackgroundColor({color: [255, 153, 153, 200], tabId: tabId}); // Rose
-                    }
-                } else {
-                    chrome.action.setBadgeText({text: "?", tabId: tabId});
-                    chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
-                }
-            //}
-        } else {
-            chrome.action.setBadgeText({text: "login", tabId: tabId});
-            chrome.action.setBadgeBackgroundColor({color: [64, 64, 64, 200], tabId: tabId}); // Dark Grey
-        }
     }
 
     /*
@@ -400,25 +335,9 @@ try {
         if (message.greeting === 'TracklistMetadataUpdated') {
             console.log('The current tracklist metadata was updated. New track title is "%s" and new track count is "%s".',
                 message.currentTracklistMetadata.title, message.currentTracklistMetadata.trackCount);
-
-                //TODO can get tab id via sender.tab.id, so should send this along when updating the icon.
                 
-            if (firebase.auth().currentUser !== null) {
-                compareTrackCountsAndUpdateIcon(message.currentTracklistMetadata.title, message.currentTracklistMetadata.trackCount);
-            }
-            // } else if (message.greeting === 'GetAuthToken'){
-        //     chrome.identity.clearAllCachedAuthTokens(() => {
-        //         console.log("Cleared cached token");
-        //         getAuthToken((token) => {
-        //             message.response = token;
-        //             sendResponse(message);
-        //         });
-        //     });
-        } /*else if (message.greeting === 'FirebaseUserSignedOut') {
-            console.log("Received message from auth script. User signed out of Firebase.");
-        } else if (message.greeting === 'Test') {
-            console.log("Received message from extension script. Popup lost focus.");
-        }*/
+            enableAndUpdateIcon(message.currentTracklistMetadata, sender.tab?.id);
+        }
     });
 
     chrome.runtime.onConnect.addListener(port => {
@@ -432,83 +351,9 @@ try {
                     const metadata = storageResult['currentTracklistMetadata'];
                     enableAndUpdateIcon(metadata);
                 });
-
-                //chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-                //    console.log(tabs[0]);
-                    //enableAndUpdateIcon();
-                //});
             });
         }
     });
-
-    /**
-     * Compares the current and stored track counts for the current tracklist, and then updates the extension icon accordingly
-     * @param {string} tracklistTitle The title of the tracklist, used to fetch the track count from storage
-     * @param {number} currentTrackCount The tracklist's current track count
-     */
-    //TODO getting the track count should probably be decoupled from updating the icon
-    //TODO I could technically just put almost all this logic (except action API calls) in the content script, if that helps at all
-    function compareTrackCountsAndUpdateIcon(tracklistTitle, currentTrackCount) {
-        getTrackCountFromGPMTracklistData(tracklistTitle, gpmTrackCount => {
-            //(currentTrackCount === gpmTrackCount) ? updateIcon(_iconPaths.default) : updateIcon(_iconPaths.exclamation);
-
-            if (typeof gpmTrackCount === 'undefined') {
-                console.info("Background: The stored track count could not be determined.");
-                updateIcon('default');
-            } else {
-                const _trackCountDelta = currentTrackCount - gpmTrackCount;
-                if (_trackCountDelta === 0) {
-                    console.info("Background: The current track count (from the DOM) is the same as the stored track count.");
-                    updateIcon('default');
-                } else {
-                    console.info("Background: The current track count (from the DOM) is different from the stored track count.");
-                    updateIcon('exclamation');
-                    const _badgeText = (_trackCountDelta > 0) ? "+" + _trackCountDelta.toString() : _trackCountDelta.toString(); //Prefix the badge text with a "+" if the delta is positive
-                    const _badgeColor = (_trackCountDelta > 0) ? [255, 127, 0, 255] : [255, 0, 0, 255]; //Set to badge color to orange if the delta is positive, red if negative
-                    updateBadgeText(_badgeText);
-                    chrome.action.setBadgeBackgroundColor({color: _badgeColor});
-                }
-            }
-        });
-    }
-
-    /**
-     * Updates the extension icon using the image at the given path for the specified tab or the active tab, if none is specified
-     * @param {string} name The user-friendly name of the icon that should be show. Accepted values are: 'default', 'disabled', 'exclamation'
-     * @param {number} [tabId] An optional ID to indicate the tab which should have its icon updated. If none is specified, only the active tab has its icon updated.
-     */
-    function updateIcon(name, tabId) {
-        const _iconPaths = Object.freeze({
-            default: 'Images/icon.png',
-            disabled: 'Images/icon_disabled.png',
-            exclamation: 'Images/icon_exclamation_black.png' //TODO would prefer a different 'friendly' name for this
-        });
-
-        if (typeof tabId === 'number') {
-            chrome.action.setIcon({path: _iconPaths[name], tabId: tabId});
-        } else {
-            chrome.tabs.query( { active: true, currentWindow: true}, tabs => {
-                chrome.action.setIcon({path: _iconPaths[name], tabId: tabs[0].id});
-            });
-        }
-
-        console.info("Update the extension's icon.");
-    }
-
-    /**
-     * Updates the icon badge text with the given text for the specified tab or, if none is specified, the active tab 
-     * @param {string} text The text to display on the icon badge
-     * @param {number} [tabId] An optional ID to indicate the tab which should have its icon updated. If none is specified, only the active tab has its icon updated.
-     */
-    function updateBadgeText(text, tabId) {
-        if (typeof tabId === 'number') {
-            chrome.action.setBadgeText({text: text, tabId:tabId});
-        } else {
-            chrome.tabs.query( { active: true, currentWindow: true}, tabs => {
-                chrome.action.setBadgeText({text: text, tabId: tabs[0].id});
-            });
-        }
-    }
 
     /**
      * Returns a promise with the previous track count for the current tracklist, if available
@@ -522,11 +367,6 @@ try {
                 typeof previousTrackCount === 'number'
                 ? resolve(previousTrackCount)
                 : reject(Error("Tried to retrieve the previous track count for the current tracklist, but data for the tracklist could not be found in storage."))
-                // if (typeof previousTrackCount === 'number') {
-                //     resolve(previousTrackCount);
-                // } else {
-                //     reject(Error("Tried to retrieve the previous track count for the current tracklist, but data for the tracklist could not be found in storage."));
-                // }
             });
         });
     }
