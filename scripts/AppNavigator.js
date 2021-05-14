@@ -78,6 +78,10 @@ export function triggerUITransition(transition, options) {
         }
     } else if (transition === 'ScrapedMetadataStored') {
         ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Data successfully stored!');
+        ViewRenderer.updateElementColor(ViewRenderer.buttons.storeScrapedMetadata, '#009900');
+    } else if (transition === 'StorageFailed') {
+        ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Failed to store tracklist data!');
+        ViewRenderer.updateElementColor(ViewRenderer.buttons.storeScrapedMetadata, '#cc3300');
     }
 }
 

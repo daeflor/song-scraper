@@ -83,6 +83,12 @@ export function updateElementTextContent(element, text) {
     } else console.error("Tried to set an element's text content, but a valid element was not provided.");
 }
 
+export function updateElementColor(element, color) {
+    if (typeof element === 'object') { //TODO better isElement check would be good here
+        element.style.color = color;
+    } else console.error("Tried to set an element's color, but a valid element was not provided.");
+}
+
 export function showLandingPage() {
     document.getElementById('buttons').hidden = false;
     document.getElementById('checkboxes').hidden = false;    

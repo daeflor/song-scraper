@@ -89,17 +89,20 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
 });
 
 // Button Pressed: Store Scraped Metadata
-ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
+ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', async function() {
     UIController.triggerUITransition('StorageInProgress'); // Update the UI while the data is being stored (e.g. disable the 'store' button)
 
     SESSION_STATE.tracklist.tracks.stored = SESSION_STATE.tracklist.tracks.scraped; // Set the stored tracks array equal to the scraped tracks array, saving it for future reference within the current app session
     
-    // Store the tracklist in Firestore, then store the track count in chrome sync storage, and then update UI
-    Storage.storeTracklistInFirestore(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.type, SESSION_STATE.tracklist.tracks.stored, async () => {
+    try {
+        // Store the tracklist in Firestore, then store the track count in chrome sync storage, and then update UI
+        await Storage.storeTracklistInFirestore(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.type, SESSION_STATE.tracklist.tracks.stored);
         await Storage.storeTrackCountInChromeSyncStorage(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.tracks.stored.length);
-        //TODO what will happen with playlists that have multiple words in their title? Those won't work for object property keys/names.
         UIController.triggerUITransition('ScrapedMetadataStored');
-    });
+    } catch (error) {
+        UIController.triggerUITransition('StorageFailed');
+        console.error(error);
+    }
 });
 
 // Button Pressed: Export Scraped Tracklist 
