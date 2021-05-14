@@ -99,7 +99,14 @@ export function retrieveGPMTracklistFromLocalStorage(tracklistTitle, callback){
 //     return trackCountObject?.[tracklistTitle]; //TODO would it be good to output a warning if the trackcountObject is undefined? That could mean that the user hasn't saved any track counts, or something else could have gone wrong
 // }
 
-export async function getTrackCountFromChromeSyncStorage_ASYNC_KVPs(tracklistTitle) {
+
+
+/**
+ * Gets the track count from Chrome sync storage for a given tracklist 
+ * @param {string} tracklistTitle The title of the tracklist, used to search storage
+ * @returns {Promise} A promise with the track count matching the given tracklist title
+ */
+export async function getTrackCountFromChromeSyncStorage(tracklistTitle) {
     const userKey = 'trackCounts_' + firebase.auth().currentUser.uid;
     const storageItems = await chromeStorage.getKeyValuePairs('sync', userKey);
     return storageItems[userKey]?.[tracklistTitle];
@@ -127,8 +134,6 @@ export async function storeTrackCountInChromeSyncStorage(tracklistTitle, trackCo
         storageItems[key] = storageItems[key] ?? {}; // If a track counts object doesn't already exist for the current user, create a new one
         storageItems[key][tracklistTitle] = trackCount; // Set the track count for the current tracklist
         
-        return await chromeStorage.set('sync', storageItems);
-        //TODO it could be worth catching an error here so that an error message could printed in the UI (status bar). Currently, the button text will hang at "Storage in progress...", which is probably sufficient indication that something failed.
-        //TODO maybe at least change update the button text color while the storage is in progress and after it has succeeded. e.g. black (normal) -> orange/red -> green.
+        await chromeStorage.set('sync', storageItems);
     } else throw new TypeError("Tried to store the track count in Chrome sync storage, but the parameters provided (title and/or track count) were invalid.");// TODO... what do you do when you need to return nothing/error out in an async func?
 }

@@ -2,6 +2,7 @@ try {
     self.importScripts('/node_modules/firebase/firebase-app.js'); //Import the Firebase App before any other Firebase libraries
     self.importScripts('/node_modules/firebase/firebase-auth.js'); //Import the Firebase Auth library
     self.importScripts('/scripts/Configuration/config-old.js');
+    self.importScripts('/scripts/modules/utilities/chrome-storage-promises-old-format.js');
     console.info("Starting service worker");
 
     const ICON_PATHS = Object.freeze({
@@ -53,19 +54,22 @@ try {
                     chrome.action.setBadgeText({text: "?", tabId: tabId});
                     chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
                 } else if (currentTracklistMetadata.type === 'playlist' || currentTracklistMetadata.type === 'likes') {
-
                     const previousTrackCount = await getPreviousTrackCount(currentTracklistMetadata.title);
                     const trackCountDelta = currentTracklistMetadata.trackCount - previousTrackCount;
-
+                    
                     if (trackCountDelta === 0) {
                         chrome.action.setBadgeText({text: "0", tabId: tabId});
                         chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
                     } else if (trackCountDelta > 0) {
                         chrome.action.setBadgeText({text: "+" + trackCountDelta.toString(), tabId: tabId});
                         chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
-                    } else {
+                    } else if (trackCountDelta < 0) {
                         chrome.action.setBadgeText({text: trackCountDelta.toString(), tabId: tabId});
                         chrome.action.setBadgeBackgroundColor({color: [255, 153, 153, 200], tabId: tabId}); // Rose
+                    } else { // Track count delta not a valid number
+                        chrome.action.setBadgeText({text: "?", tabId: tabId});
+                        chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
+                        console.warn("Tried to display the track count delta in the extension's icon, but a valid track count delta could not be determined.");
                     }
                 } else console.error(Error("Tried to update the extension's icon, but a valid tracklist type was not available in the provided tracklist metadata."));
             } else console.error(Error("Tried to update the extension's icon, but no metadata was provided for the current tracklist."));
@@ -114,35 +118,42 @@ try {
     //Once ES6 module import is possible in service workers, could make this change.
 
     /**
-     * Returns a promise with the previous track count for the current tracklist, if available
-     * @param {string} tracklistTitle The title of the current tracklist
-     * @returns {Promise} A promise with the resulting track count, or an error if the tracklist data could not be found
+     * Returns the previous track count for the given tracklist, if available
+     * @param {string} tracklistTitle The title of the tracklist
+     * @returns {Promise} A promise with the resulting track count
      */
-    function getPreviousTrackCount(tracklistTitle) {
-        return new Promise((resolve, reject) => {
-            //TODO in the future, I'll need a check here to determine if GPM or YTM data should be used to fetch the previous track count.
-            getTrackCountFromGPMTracklistData(tracklistTitle, previousTrackCount => {
-                typeof previousTrackCount === 'number'
-                ? resolve(previousTrackCount)
-                : reject(Error("Tried to retrieve the previous track count for the current tracklist, but data for the tracklist could not be found in storage."))
-            });
-        });
+    async function getPreviousTrackCount(tracklistTitle) {
+        let comparisonMethodPreference = await getPreferencesFromChromeSyncStorage(firebase.auth().currentUser.uid, 'Comparison Method');
+        console.log("Comparison method found in user's preferences: " + comparisonMethodPreference);
+        comparisonMethodPreference = comparisonMethodPreference ?? 'alwaysGPM';
+        console.log("Comparison method that will be used: " + comparisonMethodPreference);
+
+        let previousTrackCount = undefined;
+
+        if (comparisonMethodPreference === 'alwaysGPM') {
+            previousTrackCount = await getTrackCountFromGPMTracklistData(tracklistTitle);
+        } //TODO need more cases here for other preferences (always YTM, preferYTM)
+
+        return previousTrackCount;
     }
 
-    function getTrackCountFromGPMTracklistData(tracklistTitle, callback){
-        const _storagekey = 'gpmLibraryData';
-        chrome.storage.local.get(_storagekey, storageResult => {
-            const _gpmLibraryData = storageResult[_storagekey];
-            for (const tracklistKey in _gpmLibraryData) {
-                if (tracklistKey.includes("'" + tracklistTitle + "'")) {
-                    console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + _gpmLibraryData[tracklistKey].length);
-                    callback(_gpmLibraryData[tracklistKey].length);
-                    return;
-                }
+    /**
+     * Returns the track count for the given tracklist stored in the exported GPM library data, if available
+     * @param {string} tracklistTitle The title of the tracklist
+     * @returns {Promise} A promise with the resulting track count
+     */
+    async function getTrackCountFromGPMTracklistData(tracklistTitle){
+        const gpmLibraryKey = 'gpmLibraryData';
+        const storageItems = await /*chromeStorage.*/getKeyValuePairs('local', gpmLibraryKey);
+        const gpmLibraryData = storageItems[gpmLibraryKey];
+        for (const tracklistKey in gpmLibraryData) {
+            if (tracklistKey.includes("'" + tracklistTitle + "'")) {
+                console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryData[tracklistKey].length);
+                return gpmLibraryData[tracklistKey].length;
             }
-            console.warn("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
-            callback(undefined);
-        });
+        }
+        console.warn("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
+        return undefined;
     }
 
     /**
@@ -155,6 +166,20 @@ try {
             else
                 console.info("Background: Cleared cached tracklist metadata.");
         });
+    }
+
+    /**
+     * Returns a user's preferences object, or a particular preference value if specified
+     * @param {string} userId The Firebase UID used to identify the user
+     * @param {*} [preference] An optional preference to specify, if only one value is desired
+     * @returns {Promise} A promise with either an object containing all the user's preferences, or the value of a single preference, if specified
+     */
+    async function getPreferencesFromChromeSyncStorage(userId, preference) {
+        const userKey = 'preferences_' + userId;
+        const storageItems = await /*chromeStorage.*/getKeyValuePairs('sync', userKey);
+        return (typeof preference === 'undefined')
+        ? storageItems[userKey]
+        : storageItems[userKey]?.[preference];
     }
 } catch (error) {
     console.error(error);
