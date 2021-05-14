@@ -17,7 +17,6 @@ try {
 
     // Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
     chrome.webNavigation.onHistoryStateUpdated.addListener(details => {    
-        //TODO is it possible to re-use this logic in some sort of validateURL func that could also be called after port disconnect?
         if (details.url.includes('/library/songs') === true) {
             const metadata = cacheTracklistMetadata('all', 'Added from YouTube Music'); // Cache the tracklist type and title in chrome local storage
             enableAndUpdateIcon(metadata, details.tabId);
@@ -80,7 +79,7 @@ try {
     }
 
     function cacheTracklistMetadata(tracklistType, tracklistTitle) {
-        const tracklistMetadata = {type: tracklistType, title: tracklistTitle}; //TODO it may turn out that there's no point in storing the title at this point (i.e. we may always want to fetch it when loading the popup just in case it has changed since the page first loaded - unlikely but possible)
+        const tracklistMetadata = {type: tracklistType, title: tracklistTitle};
         chrome.storage.local.set({currentTracklistMetadata: tracklistMetadata}, () => { //Cache the metadata in local storage
             if (typeof chrome.runtime.error !== 'undefined') {
                 console.error("Error encountered while attempting to store metadata in local storage: " + chrome.runtime.lastError.message);
@@ -109,6 +108,10 @@ try {
             });
         }
     });
+
+    //TODO it would be nice if the helper functions below to get the previous/stored track count could be in their own module, 
+    //along with other related functions that the extension scripts need to access.
+    //Once ES6 module import is possible in service workers, could make this change.
 
     /**
      * Returns a promise with the previous track count for the current tracklist, if available

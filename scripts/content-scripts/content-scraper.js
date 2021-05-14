@@ -1,5 +1,5 @@
 'use strict';
-(function() {    
+(function() {
     /**
      * Creates a track object that contains properties for each piece of metadata scraped from the DOM
      */

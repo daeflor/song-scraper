@@ -44,14 +44,7 @@ function init() {
 
 // User Becomes Authenticated
 Auth.listenForAuthStateChange(async () => { // TODO this name is a bit misleading, since the callback only fires on an initial sign-in (i.e. not on sign-out)
-    let tracklistMetadata = undefined;
-
-    try {
-        tracklistMetadata = await chromeStorage.get('local', 'currentTracklistMetadata');
-    } catch (error){
-        console.error(error);
-        UIController.triggerUITransition('CachedTracklistMetadataInvalid');
-    }
+    const tracklistMetadata = await chromeStorage.getValueAtKey('local', 'currentTracklistMetadata');
 
     if (typeof tracklistMetadata?.type === 'string' && typeof tracklistMetadata?.title === 'string') { // If valid tracklist type and title values were retrieved from the local storage cache...
         SESSION_STATE.tracklist.type = tracklistMetadata.type; // Record the tracklist type in the session state object for future reference
@@ -102,8 +95,9 @@ ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
     SESSION_STATE.tracklist.tracks.stored = SESSION_STATE.tracklist.tracks.scraped; // Set the stored tracks array equal to the scraped tracks array, saving it for future reference within the current app session
     
     // Store the tracklist in Firestore, then store the track count in chrome sync storage, and then update UI
-    Storage.storeTracklistInFirestore(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.type, SESSION_STATE.tracklist.tracks.stored, () => {
-        Storage.storeTrackCountInChromeSyncStorage(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.tracks.stored.length);
+    Storage.storeTracklistInFirestore(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.type, SESSION_STATE.tracklist.tracks.stored, async () => {
+        await Storage.storeTrackCountInChromeSyncStorage(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.tracks.stored.length);
+        //TODO what will happen with playlists that have multiple words in their title? Those won't work for object property keys/names.
         UIController.triggerUITransition('ScrapedMetadataStored');
     });
 });

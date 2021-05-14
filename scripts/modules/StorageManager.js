@@ -3,7 +3,7 @@
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 import '/node_modules/firebase/firebase-firestore.js'; //Import the Cloud Firestore library
 
-//TODO might not need a StorageManager separate from the Model
+import * as chromeStorage from './utilities/chrome-storage-promises.js'
 
 let _firestoreDatabase = undefined;
 
@@ -96,22 +96,173 @@ export function retrieveGPMTracklistFromLocalStorage(tracklistTitle, callback){
     //One for chrome storage related logic
     //One for chrome storage utility/helper functions?
 
+// async function getTrackCountObjectFromChromeSyncStorage(userId) {
+//     return new Promise((resolve, reject) => {
+//         const key = 'trackCounts_' + userId;
+    
+//         chrome.storage.sync.get(key, storageResult => {
+//             typeof chrome.runtime.lastError === 'undefined'
+//             ? resolve(storageResult[key])
+//             : reject(Error(chrome.runtime.lastError.message))
+//         });
+//     });
+// }
+
+/////
+    
+export function getTrackCountFromChromeSyncStorage(tracklistTitle) {
+    return new Promise((resolve, reject) => {
+        const key = 'trackCounts_' + firebase.auth().currentUser.uid;
+    
+        chrome.storage.sync.get(key, storageResult => {
+            console.log(storageResult[key]);
+            console.log(storageResult[key]?.[tracklistTitle]);
+            typeof chrome.runtime.lastError === 'undefined'
+                ? resolve(storageResult[key]?.[tracklistTitle])
+                : reject(Error(chrome.runtime.lastError.message))
+        });
+    });
+}
+
+export function getTrackCountFromChromeSyncStorage_NEW(tracklistTitle) {
+    return new Promise(resolve => {
+        const key = 'trackCounts_' + firebase.auth().currentUser.uid;
+    
+        chrome.storage.sync.get(key, storageResult => {
+            //console.log(storageResult[key]);
+            //console.log(storageResult[key]?.[tracklistTitle]);
+
+            typeof chrome.runtime.lastError === 'undefined'
+                ? resolve(storageResult[key]?.[tracklistTitle])
+                : console.error(chrome.runtime.lastError.message)
+        });
+    });
+}
+
+export function getTrackCountFromChromeSyncStorage_NEW_WithCustomChromeStorageAPI(tracklistTitle) {
+    return new Promise(async (resolve) => {
+        const key = 'trackCounts_' + firebase.auth().currentUser.uid;
+        const trackCountObject = await chromeStorage.getValueAtKey('sync', key);
+        resolve(trackCountObject?.[tracklistTitle]);
+    });
+}
+
+//TODO this one doesn't work because it immediately returns an empty promise
+// export async function getTrackCountFromChromeSyncStorage_ASYNC(tracklistTitle) {
+//         const key = 'trackCounts_' + firebase.auth().currentUser.uid;
+    
+//         chrome.storage.sync.get(key, storageResult => {
+//             console.log(storageResult[key]);
+//             console.log(storageResult[key]?.[tracklistTitle]);
+//             if (typeof chrome.runtime.lastError === 'undefined') {
+//                 return storageResult[key]?.[tracklistTitle];
+//             } else console.error(chrome.runtime.lastError.message);
+//         });
+// }
+
+export async function getTrackCountFromChromeSyncStorage_ASYNC(tracklistTitle) {
+    const key = 'trackCounts_' + firebase.auth().currentUser.uid;
+    const trackCountObject = await chromeStorage.getValueAtKey('sync', key);
+    return trackCountObject?.[tracklistTitle]; //TODO would it be good to output a warning if the trackcountObject is undefined? That could mean that the user hasn't saved any track counts, or something else could have gone wrong
+}
+
+export async function getTrackCountFromChromeSyncStorage_ASYNC_KVPs(tracklistTitle) {
+    const userKey = 'trackCounts_' + firebase.auth().currentUser.uid;
+    const storageItems = await chromeStorage.getKeyValuePairs('sync', userKey);
+    return storageItems[userKey]?.[tracklistTitle];
+}
+
+// export async function getTrackCountFromChromeSyncStorage_ASYNC(tracklistTitle) {
+//     const trackCountObject = await getTrackCountObjectFromChromeSyncStorage_ASYNC(tracklistTitle);
+//     return trackCountObject?.[tracklistTitle];
+// }
+
+// async function getTrackCountObjectFromChromeSyncStorage_ASYNC(tracklistTitle) {
+//     const key = 'trackCounts_' + firebase.auth().currentUser.uid;
+//     return await chromeStorage.get('sync', key);
+// }
+
+// export async function getTrackCountFromChromeSyncStorage_ASYNC(tracklistTitle) {
+//     const key = 'trackCounts_' + firebase.auth().currentUser.uid+'s';
+
+//     try {
+//         const trackCountObject = await chromeStorage.get('sync', key);
+//         const trackCount = trackCountObject?.[tracklistTitle];
+//         //console.log(tracklistTitle);
+//         //console.log(trackCountObject);
+//         //console.log(trackCount);
+//         return trackCount;
+//     } catch (e) {
+//         console.error(e);
+//     }
+// }
+
 /**
  * Stores the provided track count for the given tracklist in chrome sync storage
  * @param {string} tracklistTitle The title of the tracklist
  * @param {number} trackCount The latest track count of the tracklist
  */
-export function storeTrackCountInChromeSyncStorage(tracklistTitle, trackCount) {
-    const storageKey = 'trackCounts_' + firebase.auth().currentUser.uid;
-            
-    chrome.storage.sync.get(storageKey, storageResult => {
-        storageResult[storageKey] = storageResult[storageKey] ?? {} // If a track counts object doesn't already exist for the current user, create a new one
-        storageResult[storageKey][tracklistTitle] = trackCount; // Set the latest track count for the current tracklist 
+export async function storeTrackCountInChromeSyncStorage(tracklistTitle, trackCount) {
+    //TODO maybe wrap this all in a check that tracklistTitle and trackCount are valid params
+    
+    //const storageKey = 'trackCounts_' + firebase.auth().currentUser.uid;
+    
+    /////
+    
+    /*
+    //const storageResult = await chromeStorage.get('sync', storageKey);
+    // let trackCountsObject = undefined;
+    // try {
+    //     trackCountsObject = await chromeStorage.get('sync', storageKey);
+    // } catch (error){
+    //     console.error(error);
+    //     //TODO maybe have a generic or specific UI transition that gets called here?
+    // }
 
-        chrome.storage.sync.set(storageResult, () => {
-            if (typeof chrome.runtime.error !== 'undefined') {
-                console.error("Error encountered while attempting to store track count in chrome sync storage: " + chrome.runtime.lastError.message);
-            }
-        });
-    });
+    // trackCountsObject = trackCountsObject ?? {}; // If a track counts object doesn't already exist for the current user, create a new one
+    // trackCountsObject[tracklistTitle] = trackCount;
+
+    // try {
+    //     await chromeStorage.set('sync', {});
+    // }
+
+    /////
+
+    let storageResult = undefined;
+    try {
+        storageResult = await chromeStorage.getKvps('sync', storageKey);
+    } catch (error) {
+        console.error(error);
+        //TODO maybe have a generic or specific UI transition that gets called here?
+    }
+
+    storageResult[storageKey] = storageResult[storageKey] ?? {} // If a track counts object doesn't already exist for the current user, create a new one
+    storageResult[storageKey][tracklistTitle] = trackCount; // Set the latest track count for the current tracklist 
+
+    try {
+        await chromeStorage.set('sync', storageResult);
+    } catch (error) {
+        console.error(error);
+        //TODO maybe have a generic or specific UI transition that gets called here?
+    }
+    */
+    /////
+    
+    // chrome.storage.sync.get(storageKey, storageResult => {
+    //     storageResult[storageKey] = storageResult[storageKey] ?? {}; // If a track counts object doesn't already exist for the current user, create a new one
+    //     storageResult[storageKey][tracklistTitle] = trackCount; // Set the latest track count for the current tracklist 
+
+    //     chrome.storage.sync.set(storageResult, () => {
+    //         if (typeof chrome.runtime.error !== 'undefined') {
+    //             console.error("Error encountered while attempting to store track count in chrome sync storage: " + chrome.runtime.lastError.message);
+    //         }
+    //     });
+    // });
+
+    const key = 'trackCounts_' + firebase.auth().currentUser.uid;
+    const storageItems = await chromeStorage.getKeyValuePairs('sync', key);
+    storageItems[key] = storageItems[key] ?? {}; // If a track counts object doesn't already exist for the current user, create a new one
+    storageItems[key][tracklistTitle] = trackCount; // Set the track count for the current tracklist
+    
+    return await chromeStorage.set('sync', storageItems); //TODO putting an error here on purpose currently leads to it getting caught at line 40, which is not user-friendly
 }

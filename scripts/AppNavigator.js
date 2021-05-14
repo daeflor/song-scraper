@@ -70,6 +70,7 @@ export function triggerUITransition(transition, options) {
     } else if (transition === 'ScrapeFailed') {
         ViewRenderer.showStatusMessage('Failed to retrieve track list.');
     } else if (transition === 'StorageInProgress') {
+        ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Storage in progress...');
         ViewRenderer.disableElement(ViewRenderer.buttons.storeScrapedMetadata); // Disable the button to store the scraped data
         if (ViewRenderer.tracktables.stored.childElementCount > 0) { // If the track table for the stored tracklist exists...
             ViewRenderer.tracktables.stored.textContent = ''; // Remove the tracktable element from the DOM (since it may be out-of-date)
