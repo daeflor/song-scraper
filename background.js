@@ -123,7 +123,7 @@
      * @returns {Promise} A promise with the resulting track count
      */
     async function getPreviousTrackCount(tracklistTitle) {
-        let comparisonMethodPreference = await getPreferencesFromChromeSyncStorage(firebase.auth().currentUser.uid, 'Comparison Method');
+        let comparisonMethodPreference = await getPreferencesFromChromeSyncStorage('Comparison Method');
         console.log("Comparison method found in user's preferences: " + comparisonMethodPreference);
         comparisonMethodPreference = 'alwaysGPM'; //TODO this is currently hard-coded, until we have actual user preferences enabled
         console.log("Comparison method that will be used: " + comparisonMethodPreference);
@@ -181,17 +181,16 @@
     }
 
     /**
-     * Returns a user's preferences object, or a particular preference value if specified
-     * @param {string} userId The Firebase UID used to identify the user
+     * Returns the user's preferences object, or a particular preference value if specified
      * @param {*} [preference] An optional preference to specify, if only one value is desired
      * @returns {Promise} A promise with either an object containing all the user's preferences, or the value of a single preference, if specified
      */
-    async function getPreferencesFromChromeSyncStorage(userId, preference) {
-        const userKey = 'preferences_' + userId;
-        const storageItems = await /*chromeStorage.*/getKeyValuePairs('sync', userKey);
+    async function getPreferencesFromChromeSyncStorage(preference) {
+        const preferencesKey = 'preferences';
+        const storageItems = await /*chromeStorage.*/getKeyValuePairs('sync', preferencesKey);
         return (typeof preference === 'undefined')
-        ? storageItems[userKey]
-        : storageItems[userKey]?.[preference];
+        ? storageItems[preferencesKey]
+        : storageItems[preferencesKey]?.[preference];
     }
 // } catch (error) {
 //     console.error(error);

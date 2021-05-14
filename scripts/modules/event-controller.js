@@ -103,6 +103,7 @@ ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', async functi
         UIController.triggerUITransition('StorageFailed');
         console.error(error);
     }
+    //TODO when tracklist data is stored, would it make sense to update the extension icon? I think it would help
 });
 
 // Button Pressed: Export Scraped Tracklist 
@@ -126,19 +127,14 @@ ViewRenderer.buttons.exportStoredMetadata.addEventListener('click', async functi
 
 // Button Pressed: Copy to Clipboard
 ViewRenderer.buttons.copyToClipboard.addEventListener('click', function() {
-    //TODO calling this through UI Controller is now an unnecessary step, since it does almost nothing and is not related to UI
-        //Once event-controller / AppNavigator refactor takes place, that extra step should be removable.
-    ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'pending'; //As soon as the button is pressed, update the button to show a 'pending' icon
+    ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
     const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV.
     const csv = IO.convertObjectMapsToCsv(SESSION_STATE.tracklist.deltas, includedProperties);
 
     navigator.clipboard.writeText(csv)
-        .then(() => {
-            setTimeout(() => {ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'content_paste';}, 100); //Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
-        }, () => {
-            console.error("Failed to copy delta tracklist CSV to clipboard.");
-        });
+        .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
+              () => console.error("Failed to copy delta tracklist CSV to clipboard."));
 });
 
 // // Button Pressed: Export Selected Lists

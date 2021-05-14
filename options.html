@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="options.js" type="module"></script>
+    <link rel='stylesheet' type='text/css' href='Styles/options-screen.css'/>
+    <title>Song Scraper Options</title>
+</head>
+<body>
+    <h2>Comparison Method To Get Tracklist & Track Count Deltas</h1>
+    <label class="container">Always compare with previous YouTube Music data
+      <input type="radio" name="comparisonMethod" checked="checked" id="alwaysYTM">
+      <span class="checkmark"></span>
+    </label>
+    <label class="container">Prefer previous YouTube Music data, if available. Use Google Play Music data as a fallback.
+      <input type="radio" name="comparisonMethod" id="preferYTM">
+      <span class="checkmark"></span>
+    </label>
+    <label class="container">Always compare with exported Google Play Music data
+      <input type="radio" name="comparisonMethod" id="alwaysGPM">
+      <span class="checkmark"></span>
+    </label>
+</body>
+</html>
