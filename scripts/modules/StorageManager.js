@@ -54,9 +54,7 @@ export function retrieveTracklistFromFirestore(tracklistTitle, callback) {
                 //...right now, if it is undefined, it will result in the warning below, whereas it really should be an error and separate.
             console.warn("Tried retrieving tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
         }
-    }).catch((error) => {
-        console.error("Error getting document:", error);
-    });
+    }).catch (error => console.error("Error getting document:", error));
 }
 
 /**
