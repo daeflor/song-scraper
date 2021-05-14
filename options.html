@@ -6,18 +6,20 @@
     <title>Song Scraper Options</title>
 </head>
 <body>
-    <h2>Comparison Method To Get Tracklist & Track Count Deltas</h1>
-    <label class="container">Always compare with previous YouTube Music data
-      <input type="radio" name="comparisonMethod" checked="checked" id="alwaysYTM">
-      <span class="checkmark"></span>
-    </label>
-    <label class="container">Prefer previous YouTube Music data, if available. Use Google Play Music data as a fallback.
-      <input type="radio" name="comparisonMethod" id="preferYTM">
-      <span class="checkmark"></span>
-    </label>
-    <label class="container">Always compare with exported Google Play Music data
-      <input type="radio" name="comparisonMethod" id="alwaysGPM">
-      <span class="checkmark"></span>
-    </label>
+    <div id="comparisonMethodSection">
+        <h3>Comparison Method To Get Tracklist & Track Count Deltas</h3>
+        <label class="container" title="Always compare with previous YouTube Music data.">Always use YouTube Music
+        <input type="radio" name="comparisonMethod" checked="checked" id="alwaysYTM">
+        <span class="checkmark"></span>
+        </label>
+        <label class="container" title="Prefer previous YouTube Music data, if available. Use Google Play Music data as a fallback.">Prefer YouTube Music
+        <input type="radio" name="comparisonMethod" id="preferYTM">
+        <span class="checkmark"></span>
+        </label>
+        <label class="container" title="Always compare with exported Google Play Music data."> Always use Google Play Music
+        <input type="radio" name="comparisonMethod" id="alwaysGPM">
+        <span class="checkmark"></span>
+        </label>
+    </div>
 </body>
 </html>
