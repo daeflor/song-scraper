@@ -130,11 +130,33 @@ try {
 
         let previousTrackCount = undefined;
 
-        if (comparisonMethodPreference === 'alwaysGPM') {
-            previousTrackCount = await getTrackCountFromGPMTracklistData(tracklistTitle);
-        } //TODO need more cases here for other preferences (always YTM, preferYTM)
+        switch(comparisonMethodPreference) {
+            case 'alwaysYTM': 
+                previousTrackCount = await getTrackCountFromChromeSyncStorage(tracklistTitle);
+                break;
+            case 'preferYTM': 
+                previousTrackCount = await getTrackCountFromChromeSyncStorage(tracklistTitle);
+                previousTrackCount = previousTrackCount ?? await getTrackCountFromGPMTracklistData(tracklistTitle);
+                break;
+            case 'alwaysGPM': 
+                previousTrackCount = await getTrackCountFromGPMTracklistData(tracklistTitle);
+                break;
+            default:
+                console.error("Tried to get the previous track count for the tracklist, but an incorrect comparison method was provided. Valid options are: 'alwaysYTM', 'preferYTM', 'alwaysGPM'.");
+        }
 
         return previousTrackCount;
+    }
+
+    /**
+     * Gets the track count from Chrome sync storage for a given tracklist 
+     * @param {string} tracklistTitle The title of the tracklist, used to search storage
+     * @returns {Promise} A promise with the track count matching the given tracklist title
+     */
+    export async function getTrackCountFromChromeSyncStorage(tracklistTitle) {
+        const userKey = 'trackCounts_' + firebase.auth().currentUser.uid;
+        const storageItems = await chromeStorage.getKeyValuePairs('sync', userKey);
+        return storageItems[userKey]?.[tracklistTitle];
     }
 
     /**
