@@ -3,6 +3,7 @@ body {
     padding: 0px 30px 40px 30px;
 }
 
+/* The wrapper for the whole 'Comparison Method' options section */
 #comparisonMethodSection {
     border-top: 1px solid grey;
     border-bottom: 1px solid grey;

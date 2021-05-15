@@ -59,6 +59,7 @@ input[type='checkbox'] {
 	position: absolute;
 	top: 0;
 	left: 0;
+	padding-left: 5px;
 }
 
 
@@ -210,6 +211,12 @@ td {
 
 .popupButton:disabled {
 	background: gainsboro;
+}
+
+.headerButton {
+	margin-left: 0px;
+	margin-right: 0px;
+    width: 14px;
 }
 
 .btnSmall {

@@ -18,6 +18,7 @@ export const divs = Object.freeze({
 export const buttons = Object.freeze({
     //logIn: document.getElementById('btnLogIn'),
     logOut: document.getElementById('btnLogOut'),
+    options: document.getElementById('btnOptions'),
     scrape: document.getElementById('btnScrape'),
     storeScrapedMetadata: document.getElementById('btnStoreScrapedMetadata'),
     exportScrapedMetadata: document.getElementById('btnExportScrapedMetadata'),

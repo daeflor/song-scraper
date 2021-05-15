@@ -74,6 +74,9 @@ ViewRenderer.buttons.logOut.addEventListener('click', function() {
     });
 });
 
+// Button Pressed: Options
+ViewRenderer.buttons.options.addEventListener('click', () => chrome.runtime.openOptionsPage());
+
 // Button Pressed: Scrape Current Tracklist
 ViewRenderer.buttons.scrape.addEventListener('click', function() {
     UIController.triggerUITransition('StartScrape');
