@@ -5,7 +5,7 @@ import * as ViewRenderer from './modules/ViewRenderer.js';
 /**
  * Updates the UI as specified by the transition parameter
  * @param {string} transition The type of transition that the UI should undergo
- * @param {Object} [options] An optional object to provide additional parameters needed to fulfill the UI transition. Accepted properties: tracklistTitle
+ * @param {Object} [options] An optional object to provide additional parameters needed to fulfill the UI transition. Accepted properties: tracklistTitle, username
  */
 export function triggerUITransition(transition, options) {
     if (transition === 'CachedTracklistMetadataInvalid') {
@@ -41,14 +41,15 @@ export function triggerUITransition(transition, options) {
 
     //     ViewRenderer.unhideElement(ViewRenderer.divs.auth);
     } else if (transition === 'ShowLandingPage') {
-        if (typeof options?.tracklistTitle === 'string') {
+        if (typeof options?.tracklistTitle === 'string' && typeof options.username === 'string') {
             ViewRenderer.hideElement(ViewRenderer.divs.status);
             ViewRenderer.hideElement(ViewRenderer.divs.auth);
             ViewRenderer.showHeader(options.tracklistTitle);
+            ViewRenderer.divs.username.textContent = options.username;
             ViewRenderer.showLandingPage();
         } else {
-            ViewRenderer.showStatusMessage('The tracklist title retrieved from the cached metadata is invalid.');
-            console.error("Tried to display the tracklist title but a valid string wasn't provided.");
+            ViewRenderer.showStatusMessage('The username or the tracklist title retrieved from the cached metadata is invalid.');
+            console.error("Tried to display the landing page but the parameters provided were invalid.");
         }
     } else if (transition === 'StartScrape') {
         ViewRenderer.disableElement(ViewRenderer.buttons.scrape);

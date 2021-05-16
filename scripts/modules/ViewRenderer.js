@@ -7,6 +7,7 @@
     //I'm not certain how the 'removeElement' case would be handled
 
 export const divs = Object.freeze({
+    username: document.getElementById('username'),
     auth: document.getElementById('auth'),
     header: document.getElementById('header'),
     status: document.getElementById('status'),

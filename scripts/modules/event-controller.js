@@ -49,7 +49,7 @@ Auth.listenForAuthStateChange(async () => { // TODO this name is a bit misleadin
     if (typeof tracklistMetadata?.type === 'string' && typeof tracklistMetadata?.title === 'string') { // If valid tracklist type and title values were retrieved from the local storage cache...
         SESSION_STATE.tracklist.type = tracklistMetadata.type; // Record the tracklist type in the session state object for future reference
         SESSION_STATE.tracklist.title = tracklistMetadata.title; // Record the tracklist title in the session state object for future reference
-        UIController.triggerUITransition('ShowLandingPage', {tracklistTitle: tracklistMetadata.title}); // Display the extension landing page
+        UIController.triggerUITransition('ShowLandingPage', {tracklistTitle: tracklistMetadata.title, username: firebase.auth().currentUser.email.split('@')[0]}); // Display the extension landing page
     } else {
         UIController.triggerUITransition('CachedTracklistMetadataInvalid');
     }
