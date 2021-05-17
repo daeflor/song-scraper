@@ -161,7 +161,8 @@ ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() 
     // If the checkbox is checked, display the scraped tracklist metadata; Otherwise hide it
     if (ViewRenderer.checkboxes.scrapedTrackTable.checked === true) {
         if (ViewRenderer.tracktables.scraped.childElementCount > 0) { // If a track table DOM element has previously been created...
-            ViewRenderer.unhideElement(ViewRenderer.tracktables.scraped); // Show the existing element
+            UIController.triggerUITransition('DisplayTrackTable', {tableName: 'scraped'}); // Show the existing element
+            //ViewRenderer.unhideElement(ViewRenderer.tracktables.scraped); 
         } else { // Else, if a track table element doesn't exist yet, create a new one using the scraped metadata and add it to the DOM
             UIController.createTrackTable(SESSION_STATE.tracklist.tracks.scraped, 'Scraped Tracklist', ViewRenderer.tracktables.scraped);
             // TODO this interaction with ViewRenderer is WIP
@@ -183,7 +184,8 @@ ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', async functi
     // If the checkbox is checked, display the stored metadata for the current tracklist; Otherwise hide it
     if (ViewRenderer.checkboxes.storedTrackTable.checked === true) {
         if (ViewRenderer.tracktables.stored.childElementCount > 0) { // If a track table DOM element has previously been created...
-            ViewRenderer.unhideElement(ViewRenderer.tracktables.stored); // Show the existing element
+            UIController.triggerUITransition('DisplayTrackTable', {tableName: 'stored'}); // Show the existing element
+            //ViewRenderer.unhideElement(ViewRenderer.tracktables.stored); 
         } else { // Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
             const storedTracks = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
             UIController.createTrackTable(storedTracks, 'Stored YTM Tracklist', ViewRenderer.tracktables.stored);
@@ -212,8 +214,10 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
         //UIController.triggerUITransition('DisplayDeltaTrackTables');
 
         if (ViewRenderer.tracktables.deltas.childElementCount > 0) { // If the track table DOM elements have previously been created...
-            ViewRenderer.unhideElement(ViewRenderer.tracktables.deltas); // Show the existing elements
-            ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
+            
+            UIController.triggerUITransition('DisplayTrackTable', {tableName: 'deltas'});
+            //ViewRenderer.unhideElement(ViewRenderer.tracktables.deltas); // Show the existing elements
+            //ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
             //TODO should probably trigger a UI transition instead of calling ViewRenderer functions directly
         } else { // Else, if the track table elements dont exist yet...      
             const comparisonMethod = await appStorage.getPreferencesFromChromeSyncStorage('Comparison Method');
@@ -236,7 +240,8 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
             if (typeof tracksUsedForDelta !== 'undefined') {
                 SESSION_STATE.tracklist.deltas = UIController.getDeltaTracklists(SESSION_STATE.tracklist.tracks.scraped, tracksUsedForDelta); // Generate delta tracklists based on the scraped and stored tracklists
                 UIController.triggerUITransition('AddDeltaTrackTables', {deltaTracklists: SESSION_STATE.tracklist.deltas, appUsedForDelta: appUsedForDelta});
-                ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);   
+                //UIController.triggerUITransition('DisplayTrackTable', {tableName: 'deltas'});
+                //ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
             }
         }
     } else { // Else, if the checkbox is unchecked, hide the track table elements

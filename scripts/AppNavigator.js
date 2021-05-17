@@ -5,9 +5,10 @@ import * as ViewRenderer from './modules/ViewRenderer.js';
 /**
  * Updates the UI as specified by the transition parameter
  * @param {string} transition The type of transition that the UI should undergo
- * @param {Object} [options] An optional object to provide additional parameters needed to fulfill the UI transition. Accepted properties: tracklistTitle, username
+ * @param {Object} [options] An optional object to provide additional parameters needed to fulfill the UI transition. Accepted properties: tracklistTitle, username, deltaTracklists, tableName
  */
 export function triggerUITransition(transition, options) {
+    //TODO a switch might be nice here
     if (transition === 'CachedTracklistMetadataInvalid') {
         //ViewRenderer.showStatusMessage(options.statusMessage ?? 'Error');
         ViewRenderer.showStatusMessage('Unable to retrieve cached tracklist metadata from local storage.');
@@ -83,8 +84,6 @@ export function triggerUITransition(transition, options) {
     } else if (transition === 'StorageFailed') {
         ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Failed to store tracklist data!');
         ViewRenderer.updateElementColor(ViewRenderer.buttons.storeScrapedMetadata, '#cc3300');
-    //} else if (transition === 'DisplayComparisonMethod') { //TODO should probably be a more generic 'display track table' or at least 'display delta track table'
-    //    ViewRenderer.labels.deltas.innerText = 'Delta Track Tables (' + options.appUsedForDelta + ')';
     } else if (transition === 'AddDeltaTrackTables') {
         if (options?.deltaTracklists instanceof Map === true) {
             // Create a track table for the list of 'Added Tracks'
@@ -101,7 +100,15 @@ export function triggerUITransition(transition, options) {
             }
 
             ViewRenderer.labels.deltas.childNodes[0].textContent = 'Delta Track Tables (' + options.appUsedForDelta + ')';
+            ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
         } else console.error("Tried to add delta track tables to the DOM, but a valid map of source tracklists was not provided");
+    } else if (transition === 'DisplayTrackTable') {
+        if (typeof options?.tableName === 'string') {
+            ViewRenderer.unhideElement(ViewRenderer.tracktables[options.tableName]); // Show the existing elements
+            if (options.tableName === 'deltas') { // TODO this check here is probably temporary
+                ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
+            }
+        } else console.log("Tried to show a track table, but a valid table name was not provided.");
     }
 }
 
