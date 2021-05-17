@@ -208,6 +208,9 @@ ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', async functi
 ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async function() {
     // If the checkbox is checked, display the delta tracklists metadata; Otherwise hide them
     if (ViewRenderer.checkboxes.deltaTrackTables.checked === true) {
+
+        //UIController.triggerUITransition('DisplayDeltaTrackTables');
+
         if (ViewRenderer.tracktables.deltas.childElementCount > 0) { // If the track table DOM elements have previously been created...
             ViewRenderer.unhideElement(ViewRenderer.tracktables.deltas); // Show the existing elements
             ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
@@ -219,46 +222,69 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
             let tracksUsedForDelta = undefined;
             let appUsedForDelta = 'YTM';
 
-            //TODO if/else might be better
-            switch(comparisonMethod) {
-            case 'alwaysGPM':
-                tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
-                appUsedForDelta = 'GPM';
-                break;
-            case 'preferYTM':
-                tracksUsedForDelta = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
-                if (typeof tracksUsedForDelta === 'undefined') {
-                    tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
-                    appUsedForDelta = 'GPM';
-                }
-                break;
-            default: // 'alwaysYTM'
+            // If the selected comparison method is to use YouTube Music only or whenever possible, get the tracks from Firestore
+            if (comparisonMethod === 'alwaysYTM' || comparisonMethod === 'preferYTM') {
                 tracksUsedForDelta = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
             }
+
+            // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the tracklist was not found in the YTM stored tracks, get the tracks from the GPM data in Chrome local storage
+            if (comparisonMethod === 'alwaysGPM' || (comparisonMethod === 'preferYTM' && typeof tracksUsedForDelta === 'undefined')) {
+                tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+                appUsedForDelta = 'GPM';
+            }
+
+            // if (comparisonMethod === 'alwaysYTM' || comparisonMethod === 'preferYTM') {
+            //     tracksUsedForDelta = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
+            //     if (typeof tracksUsedForDelta === 'undefined' && comparisonMethod === 'preferYTM') {
+            //         tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+            //         appUsedForDelta = 'GPM';
+            //     }
+            // } else if (comparisonMethod === 'alwaysGPM') {
+            //     tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+            //     appUsedForDelta = 'GPM';
+            // }
+
+
+            // if (comparisonMethod === 'alwaysGPM') {
+            //     tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+            //     appUsedForDelta = 'GPM';
+            // } else if (comparisonMethod === 'preferYTM') {
+            //     tracksUsedForDelta = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
+            //     if (typeof tracksUsedForDelta === 'undefined') {
+            //         tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+            //         appUsedForDelta = 'GPM';
+            //     }
+            // } else if (comparisonMethod === 'alwaysYTM') {
+            //     tracksUsedForDelta = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
+            // }
+
+            // //TODO if/else might be better
+            // switch(comparisonMethod) {
+            // case 'alwaysGPM':
+            //     tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+            //     appUsedForDelta = 'GPM';
+            //     break;
+            // case 'preferYTM':
+            //     tracksUsedForDelta = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
+            //     if (typeof tracksUsedForDelta === 'undefined') {
+            //         tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+            //         appUsedForDelta = 'GPM';
+            //     }
+            //     break;
+            // default: // 'alwaysYTM'
+            //     tracksUsedForDelta = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
+            // }
             
             if (typeof tracksUsedForDelta !== 'undefined') {
                 SESSION_STATE.tracklist.deltas = UIController.getDeltaTracklists(SESSION_STATE.tracklist.tracks.scraped, tracksUsedForDelta); // Generate delta tracklists based on the scraped and stored tracklists
                 UIController.addDeltaTrackTablesToDOM(SESSION_STATE.tracklist.deltas);
-                ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);   
                 
+                //TODO maybe this one and the one above could be merged together?
                 UIController.triggerUITransition('DisplayComparisonMethod', {appUsedForDelta: appUsedForDelta});
+
+                ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);   
             }
-            
-            // //const comparisonMethod = await chromeStorage.getValueAtKey('sync', 'Comparison Method');
-            // //UIController.triggerUITransition();
-            // //const storedTracks = await getStoredTracksGPM(SESSION_STATE.tracklist.title, comparisonMethod);
-            // //const storedTracks = await getStoredTracks(SESSION_STATE.tracklist.title);
-            // console.log("GPM TRACKLIST FOUND or NOT FOUND: ");
-            // console.log(tracksUsedForDelta);
-            // //!!!
-            // //TODO this won't really work properly because the "Stored tracks" could have already been fetched to display the Stored YTM tracklist, in which case that will be returned regardless of the "comparison method" preference
-            // SESSION_STATE.tracklist.deltas = UIController.getDeltaTracklists(SESSION_STATE.tracklist.tracks.scraped, tracksUsedForDelta); // Generate delta tracklists based on the scraped and stored tracklists
-            // UIController.addDeltaTrackTablesToDOM(SESSION_STATE.tracklist.deltas);
         }
-        //TODO this is temp, should probably be in UI controller
-        //ViewRenderer.enableElement(ViewRenderer.buttons.exportSelectedLists);
-        //ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
-        //UIController.triggerUITransition('CheckboxChecked');
     } else { // Else, if the checkbox is unchecked, hide the track table elements
         ViewRenderer.hideElement(ViewRenderer.tracktables.deltas);
         ViewRenderer.hideElement(ViewRenderer.buttons.copyToClipboard);
@@ -271,30 +297,13 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
 
 ///////////
 
-// //TODO would be good to clarify that this is only used for comparison (at least for now)... The current vague name is a bit confusing.
-// /**
-//  * Returns the stored tracks array that matches the given tracklist title. The storage location used depends on the selected preference in the extension's options screen.
-//  * @param {string} tracklistTitle The title of the tracklist
-//  * @returns {Promise} A promise with the resulting tracks array
-//  */
-//  async function getStoredTracks(tracklistTitle) {
-//     const storagePreference = await appStorage.getPreferencesFromChromeSyncStorage('Comparison Method'); //TODO should this key be renamed from 'Comparison Method', given the way it's being used here?
-//     console.log("Storage method found in user's preferences: " + storagePreference);
-
-//     //TODO but need to also return not just the tracks array but a string indicating which one was picked, so the UI can be updated to reflect it
-//         //Or could just update the UI from here, but that's weird..
-//     switch(storagePreference) {
-//         case 'alwaysGPM':
-//             return await getStoredTracksGPM(tracklistTitle);
-//         case 'preferYTM':
-//             return await getStoredTracksYTM(tracklistTitle) ?? await getStoredTracksGPM(tracklistTitle);
-//         default: // 'alwaysYTM'
-//             return await getStoredTracksYTM(tracklistTitle);
-//     }
-// }
-
 //TODO I think this is just here temporarily. I don't think I like the event-controller containing functions like this.
     //Could these go in StorageManager instead?
+/**
+ * Returns the YTM tracks array that matches the given tracklist title, if one exists
+ * @param {string} tracklistTitle The title of the tracklist to look for
+ * @returns {Promise} A promise containing the YTM tracks array matching the tracklist title, if one exists
+ */
 async function getStoredTracksYTM(tracklistTitle) {
     // If the YTM tracks array for the current tracklist has previously been fetched, return that array. Otherwise, fetch it from Firestore and then return it
     if (Array.isArray(SESSION_STATE.tracklist.tracks.stored) === false) {
@@ -302,6 +311,8 @@ async function getStoredTracksYTM(tracklistTitle) {
     }
 
     return SESSION_STATE.tracklist.tracks.stored; 
+    // SESSION_STATE.tracklist.tracks.stored = SESSION_STATE.tracklist.tracks.stored ?? await appStorage.retrieveTracksFromFirestore(tracklistTitle);
+    // return SESSION_STATE.tracklist.tracks.stored; 
 }
 
 //TODO could merge the YTM & GPM functions (above and below) but not sure if that would actually be helpful
@@ -317,13 +328,4 @@ async function getStoredTracksGPM(tracklistTitle) {
     }
     
     return SESSION_STATE.tracklist.tracks.gpm; 
-    
-    // return new Promise(async (resolve) => {
-    //     if (Array.isArray(SESSION_STATE.tracklist.tracks.gpm) === true) { //If the stored tracks for the current tracklist have previously been fetched, return that array
-    //         resolve(SESSION_STATE.tracklist.tracks.gpm);
-    //     } else { //Else, retrieve the tracks from storage and then return them
-    //         SESSION_STATE.tracklist.tracks.gpm = await appStorage.retrieveGPMTracklistFromLocalStorage(tracklistTitle);
-    //         resolve(SESSION_STATE.tracklist.tracks.gpm); //TODO should this reject if the tracks array is undefined (i.e. no matching tracklist was found in storage), or is it best to also resolve in that case? I think resolve is best, because it's not *really* an error
-    //     }
-    // });
 }
