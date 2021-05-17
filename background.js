@@ -42,7 +42,7 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
  * @param {Object} currentTracklistMetadata An object containing the current tracklist metadata, which will be used to determine the changes made to the icon. In some cases, this includes calculating and displaying the track count delta in the icon badge.
  * @param {number} [tabId] The id of the tab for which to update the icon. If none is provided, the active tab ID will be used.
 */
-    async function enableAndUpdateIcon(currentTracklistMetadata, tabId) {
+async function enableAndUpdateIcon(currentTracklistMetadata, tabId) {
     if (typeof tabId === 'undefined') {
         const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
         tabId = tab.id;
@@ -53,18 +53,18 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
             if (currentTracklistMetadata.type === 'all' || currentTracklistMetadata.type === 'uploads') {
                 chrome.action.setBadgeText({text: "?", tabId: tabId});
                 chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
-            } else if (currentTracklistMetadata.type === 'playlist' || currentTracklistMetadata.type === 'likes') {
-                const previousTrackCount = await getPreviousTrackCount(currentTracklistMetadata.title);
-                const trackCountDelta = currentTracklistMetadata.trackCount - previousTrackCount;
+            } else if (currentTracklistMetadata.type === 'playlist' || currentTracklistMetadata.type === 'auto') {
+                const previousTrackCountData = await getPreviousTrackCount(currentTracklistMetadata.title);
+                const trackCountDelta = currentTracklistMetadata.trackCount - previousTrackCountData.trackCount;
                 
                 if (trackCountDelta === 0) {
-                    chrome.action.setBadgeText({text: "0", tabId: tabId});
+                    chrome.action.setBadgeText({text: previousTrackCountData.sourcePrefix + "0", tabId: tabId});
                     chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
                 } else if (trackCountDelta > 0) {
-                    chrome.action.setBadgeText({text: "+" + trackCountDelta.toString(), tabId: tabId});
+                    chrome.action.setBadgeText({text: previousTrackCountData.sourcePrefix + "+" + trackCountDelta.toString(), tabId: tabId});
                     chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
                 } else if (trackCountDelta < 0) {
-                    chrome.action.setBadgeText({text: trackCountDelta.toString(), tabId: tabId});
+                    chrome.action.setBadgeText({text: previousTrackCountData.sourcePrefix + trackCountDelta.toString(), tabId: tabId});
                     chrome.action.setBadgeBackgroundColor({color: [255, 153, 153, 200], tabId: tabId}); // Rose
                 } else { // Track count delta not a valid number
                     chrome.action.setBadgeText({text: "?", tabId: tabId});
@@ -74,7 +74,7 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
             } else console.error(Error("Tried to update the extension's icon, but a valid tracklist type was not available in the provided tracklist metadata."));
         } else console.error(Error("Tried to update the extension's icon, but no metadata was provided for the current tracklist."));
     } else {
-        chrome.action.setBadgeText({text: "login", tabId: tabId});
+        chrome.action.setBadgeText({text: "login", tabId: tabId}); // TODO sometimes, this text is displayed in the badge, even though the user is signed in. I suspect it's due to some sort of timing issue, since the repro is inconsistent and rare.
         chrome.action.setBadgeBackgroundColor({color: [64, 64, 64, 200], tabId: tabId}); // Dark Grey
     }
 
@@ -123,17 +123,24 @@ chrome.runtime.onConnect.addListener(port => {
  * @returns {Promise} A promise with the resulting track count
  */
 async function getPreviousTrackCount(tracklistTitle) {
-    const comparisonMethodPreference = await getPreferencesFromChromeSyncStorage('Comparison Method');
-    console.log("Comparison method found in user's preferences: " + comparisonMethodPreference);
+    const comparisonMethod = await getPreferencesFromChromeSyncStorage('Comparison Method');
+    console.log("Comparison method found in user's preferences: " + comparisonMethod);
 
-    switch(comparisonMethodPreference) {
-        case 'alwaysGPM':
-            return await getTrackCountFromGPMTracklistData(tracklistTitle);
-        case 'preferYTM':
-            return await getTrackCountFromChromeSyncStorage(tracklistTitle) ?? await getTrackCountFromGPMTracklistData(tracklistTitle);
-        default: // 'alwaysYTM'
-            return await getTrackCountFromChromeSyncStorage(tracklistTitle);
+    let trackCount = undefined;
+    let trackCountSourcePrefix = 'Y';
+
+    // If the selected comparison method is to use YouTube Music only or whenever possible, get the track count from Chrome sync storage
+    if (comparisonMethod === 'alwaysYTM' || comparisonMethod === 'preferYTM') {
+        trackCount = await getTrackCountFromChromeSyncStorage(tracklistTitle);
     }
+
+    // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the track count was not found in Chrome sync storage, get the track count from the GPM data in Chrome local storage
+    if (comparisonMethod === 'alwaysGPM' || (comparisonMethod === 'preferYTM' && typeof trackCount === 'undefined')) {
+        trackCount = await getTrackCountFromGPMTracklistData(tracklistTitle);
+        trackCountSourcePrefix = 'G';
+    }
+
+    return {trackCount:trackCount, sourcePrefix:trackCountSourcePrefix};
 }
 
 /**
