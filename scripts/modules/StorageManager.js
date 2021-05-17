@@ -31,51 +31,51 @@ export async function storeTracklistInFirestore(tracklistTitle, tracklistType, t
 }
 
 /**
- * Retrieves tracklist data from Firestore that corresponds to the provided tracklist title
+ * Retrieves the tracks array stored in Firestore that matches the provided tracklist title, if it exists
  * @param {string} tracklistTitle The title of the tracklist to retrieve
- * @param {function} callback The function to execute once the data has been successfully retrieved
+ * @returns {Promise} A promise with the tracks array matching the provided tracklist title, if it exists
  */
-export function retrieveTracklistFromFirestore(tracklistTitle, callback) {
-    //Initialize an instance of Cloud Firestore if it hasn't already been initialized
-    if (typeof _firestoreDatabase !== 'object') {
-        _firestoreDatabase = firebase.firestore();
-    }
-
-    const _userId = firebase.auth().currentUser.uid;
-    const _tracklistCollection = _firestoreDatabase.collection('users').doc(_userId).collection('tracklists');
-    //const _tracklistKey = tracklistType + "_'" + tracklistTitle + "'";
-    const _currentTracklistDocument = _tracklistCollection.doc(tracklistTitle);
-
-    _currentTracklistDocument.get().then(doc => {
-        if (doc.exists) {
-            callback(doc.data().tracks);
-        } else {
-            //TODO it would probably be good to have a check before this to ensure the tracklist title isn't undefined...
-                //...right now, if it is undefined, it will result in the warning below, whereas it really should be an error and separate.
-            console.warn("Tried retrieving tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
-        }
-    }).catch (error => console.error("Error getting document:", error));
+export function retrieveTracksFromFirestore(tracklistTitle) {
+    return new Promise((resolve, reject) => {
+        if (typeof tracklistTitle === 'string') {
+            const userId = firebase.auth().currentUser.uid;
+            const tracklistCollection = firebase.firestore().collection('users').doc(userId).collection('tracklists');
+            //const _tracklistKey = tracklistType + "_'" + tracklistTitle + "'";
+            const currentTracklistDocument = tracklistCollection.doc(tracklistTitle);
+        
+            currentTracklistDocument.get().then(doc => {
+                if (doc.exists) {
+                    resolve(doc.data().tracks);
+                } else {
+                    console.warn("Tried retrieving tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
+                    resolve(undefined);
+                }
+            });
+        } else reject (Error("Tried to retrieve tracks from Firestore, but a valid string was not provided for the tracklist title."));
+    });
 }
 
+//TODO since almost the exact same logic is used to get the GPM tracks array as the track count (in background script),
+    //...it may make sense to make a single helper function that does this and re-use that.
+    //It could possibly return either the tracks array or the track count, depending on what is requested
+    //Should wait until Chrome 91 comes out to see if it addresses Chromium Bug 824647
 /**
- * Retrieves GPM tracklist data from chrome local storage that corresponds to the provided tracklist title
+ * Retrieves GPM tracklist data from chrome local storage that matches the provided tracklist title
  * @param {string} tracklistTitle The title of the tracklist to retrieve
- * @param {function} callback The function to execute once the data has been successfully retrieved
+ * @returns {Promise} A promise with the tracks array, if it's found
  */
-export function retrieveGPMTracklistFromLocalStorage(tracklistTitle, callback){
-    const _storagekey = 'gpmLibraryData';
-    chrome.storage.local.get(_storagekey, storageResult => {
-        const _gpmLibraryData = storageResult[_storagekey];
-
-        for (const _tracklistKey in _gpmLibraryData) {
-            if (_tracklistKey.includes("'" + tracklistTitle + "'")) {
-                //console.log("Retrieved tracklist metadata from GPM exported data. Track count: " + _gpmLibraryData[_tracklistKey].length);
-                callback(_gpmLibraryData[_tracklistKey]);
-                return;
-            }
+export async function retrieveGPMTracklistFromLocalStorage(tracklistTitle){
+    const gpmLibraryKey = 'gpmLibraryData';
+    const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
+    const gpmLibraryData = storageItems[gpmLibraryKey];
+    for (const tracklistKey in gpmLibraryData) {
+        if (tracklistKey.includes("'" + tracklistTitle + "'")) {
+            //console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryData[tracklistKey].length);
+            return gpmLibraryData[tracklistKey];
         }
-        console.warn("Tried retrieving tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
-    });
+    }
+    console.warn("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
+    return undefined;
 }
 
 //TODO could have a storage directory that contains multiple files, maybe:
@@ -121,4 +121,19 @@ export async function storeTrackCountInChromeSyncStorage(tracklistTitle, trackCo
         
         await chromeStorage.set('sync', storageItems);
     } else throw new TypeError("Tried to store the track count in Chrome sync storage, but the parameters provided (title and/or track count) were invalid.");// TODO... what do you do when you need to return nothing/error out in an async func?
+}
+
+//TODO Duplicated due to Chromium Bug 824647
+//TODO this would be good to put in a module that both background and options scripts can access, once Chrome 91 releases.
+/**
+ * Returns the user's preferences object, or a particular preference value if specified
+ * @param {string} [preference] An optional preference to specify, if only one value is desired
+ * @returns {Promise} A promise with either an object containing all the user's preferences, or the value of a single preference, if specified
+ */
+ export async function getPreferencesFromChromeSyncStorage(preference) {
+    const preferencesKey = 'preferences';
+    const storageItems = await chromeStorage.getKeyValuePairs('sync', preferencesKey);
+    return (typeof preference === 'undefined')
+    ? storageItems[preferencesKey]
+    : storageItems[preferencesKey]?.[preference];
 }

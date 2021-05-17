@@ -83,6 +83,8 @@ export function triggerUITransition(transition, options) {
     } else if (transition === 'StorageFailed') {
         ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Failed to store tracklist data!');
         ViewRenderer.updateElementColor(ViewRenderer.buttons.storeScrapedMetadata, '#cc3300');
+    } else if (transition === 'DisplayComparisonMethod') { //TODO should probably be a more generic 'display track table' or at least 'display delta track table'
+        ViewRenderer.labels.deltas.innerText = 'Delta Track Tables (' + options.appUsedForDelta + ')';
     }
 }
 

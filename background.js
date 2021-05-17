@@ -123,10 +123,8 @@ chrome.runtime.onConnect.addListener(port => {
  * @returns {Promise} A promise with the resulting track count
  */
 async function getPreviousTrackCount(tracklistTitle) {
-    let comparisonMethodPreference = await getPreferencesFromChromeSyncStorage('Comparison Method');
+    const comparisonMethodPreference = await getPreferencesFromChromeSyncStorage('Comparison Method');
     console.log("Comparison method found in user's preferences: " + comparisonMethodPreference);
-    comparisonMethodPreference = 'alwaysGPM'; //TODO this is currently hard-coded, until we have actual user preferences enabled
-    console.log("Comparison method that will be used: " + comparisonMethodPreference);
 
     switch(comparisonMethodPreference) {
         case 'alwaysGPM':

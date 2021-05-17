@@ -42,12 +42,16 @@ export const tracktables = {
     deltas: document.getElementById('trackTableDeltas')
 };
 
+export const labels = {
+    deltas: document.getElementById('labelDeltaTrackTables')
+};
+
 export function disableElement(element) {
     //TODO it would be better to have a more thorough 'isElement'/'validateElement' check
     if (typeof element === 'object') {
         element.disabled = true;
     } else {
-        throw new Error('Cannot find element.');
+        throw Error('Cannot find element.');
     }
 }
 
@@ -60,7 +64,7 @@ export function hideElement(element) {
     if (typeof element === 'object') {
         element.hidden = true;
     } else {
-        throw new Error('Cannot find element.');
+        throw Error('Cannot find element.');
     }
 }
 
