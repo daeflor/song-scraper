@@ -232,56 +232,10 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
                 tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
                 appUsedForDelta = 'GPM';
             }
-
-            // if (comparisonMethod === 'alwaysYTM' || comparisonMethod === 'preferYTM') {
-            //     tracksUsedForDelta = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
-            //     if (typeof tracksUsedForDelta === 'undefined' && comparisonMethod === 'preferYTM') {
-            //         tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
-            //         appUsedForDelta = 'GPM';
-            //     }
-            // } else if (comparisonMethod === 'alwaysGPM') {
-            //     tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
-            //     appUsedForDelta = 'GPM';
-            // }
-
-
-            // if (comparisonMethod === 'alwaysGPM') {
-            //     tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
-            //     appUsedForDelta = 'GPM';
-            // } else if (comparisonMethod === 'preferYTM') {
-            //     tracksUsedForDelta = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
-            //     if (typeof tracksUsedForDelta === 'undefined') {
-            //         tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
-            //         appUsedForDelta = 'GPM';
-            //     }
-            // } else if (comparisonMethod === 'alwaysYTM') {
-            //     tracksUsedForDelta = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
-            // }
-
-            // //TODO if/else might be better
-            // switch(comparisonMethod) {
-            // case 'alwaysGPM':
-            //     tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
-            //     appUsedForDelta = 'GPM';
-            //     break;
-            // case 'preferYTM':
-            //     tracksUsedForDelta = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
-            //     if (typeof tracksUsedForDelta === 'undefined') {
-            //         tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
-            //         appUsedForDelta = 'GPM';
-            //     }
-            //     break;
-            // default: // 'alwaysYTM'
-            //     tracksUsedForDelta = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
-            // }
             
             if (typeof tracksUsedForDelta !== 'undefined') {
                 SESSION_STATE.tracklist.deltas = UIController.getDeltaTracklists(SESSION_STATE.tracklist.tracks.scraped, tracksUsedForDelta); // Generate delta tracklists based on the scraped and stored tracklists
-                UIController.addDeltaTrackTablesToDOM(SESSION_STATE.tracklist.deltas);
-                
-                //TODO maybe this one and the one above could be merged together?
-                UIController.triggerUITransition('DisplayComparisonMethod', {appUsedForDelta: appUsedForDelta});
-
+                UIController.triggerUITransition('AddDeltaTrackTables', {deltaTracklists: SESSION_STATE.tracklist.deltas, appUsedForDelta: appUsedForDelta});
                 ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);   
             }
         }
