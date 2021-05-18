@@ -1,193 +1,172 @@
-//Note: It appears that since the transition to MV3, the declarative content rules have stopped working
-    //The icon and popup are now enabled for all pages/tabs. 
-    //Because of this, I've switched to using a different approach to only enable the icon/popup for specific pages.
-// const _conditionsForValidTracklistPage = [
-//     new chrome.declarativeContent.PageStateMatcher({
-//         pageUrl: { 
-//             hostEquals: 'music.youtube.com', 
-//             schemes: ['https'],
-//             pathEquals: '/playlist' 
-//         }
-//     })
-// ];
-//When the extenstion is installed or updated...
-// chrome.runtime.onInstalled.addListener(function(details) {
-//     console.log("Background: Extension installed"); 
-//     //Remove all pre-existing rules to start from a clean slate and then...
-//     chrome.declarativeContent.onPageChanged.removeRules(undefined, function () {
-        
-//         // //createImageDataFromFile(_iconPaths.disabled, 96, function(imageData) {
-//         //     let _rule = {
-//         //         conditions: _conditionsForValidTracklistPage,
-//         //         actions: [
-//         //             //new chrome.declarativeContent.SetIcon({imageData: imageData}),
-//         //             new chrome.declarativeContent.ShowPageAction()
-//         //         ] 
-//         //     };
+//TODO once Chrome 91 is released and ES6 modules can be used (supposedly), consider splitting up background.js into various files (e.g. background-event-controller.js and others)
+self.importScripts('/node_modules/firebase/firebase-app.js'); //Import the Firebase App before any other Firebase libraries
+self.importScripts('/node_modules/firebase/firebase-auth.js'); //Import the Firebase Auth library
+self.importScripts('/scripts/Configuration/config-old.js');
+self.importScripts('/scripts/modules/utilities/chrome-storage-promises-old-format.js');
+console.info("Starting service worker");
 
-//         //     chrome.declarativeContent.onPageChanged.addRules([_rule]); 
-//              console.log("Background: Rules have been updated.");     
-//         // //});
-//     });
-// });
+const ICON_PATHS = Object.freeze({
+    default: 'Images/icon.png',
+    disabled: 'Images/icon_disabled.png'
+});
 
-// chrome.runtime.onSuspend.addListener(function() {
-//     console.log("Unloading.");
-//     chrome.action.setBadgeText({text: ""});
-// });
+if (firebase.apps.length === 0) { // If Firebase has not yet been initialized (i.e. if the extension was just installed)...
+    firebase.initializeApp(firebaseConfig); // Initialize Firebase
+    firebase.auth(); // "Initialize" Firebase auth - TODO this is janky. It doesn't really seem necessary to do this, given how we're using firebase elsewhere in this script. Not including this triggers a warning when Firebase auth is first reference later in this script, however (nested under other listeners).
+    chrome.action.disable(); // Disable the extension's icons on all tabs
+}
 
-//import firebaseConfig from '/scripts/Configuration/Config.js';
-//self.importScripts('/scripts/Configuration/Config.js');
-//self.importScripts('/node_modules/firebase/firebase-app.js'); //Import the Firebase App before any other Firebase libraries
-//self.importScripts('/node_modules/firebase/firebase-auth.js'); //Import the Firebase Auth library
-//self.importScripts('/node_modules/firebaseui/dist/firebaseui.js'); //Import the Firebase Auth UI library
-
-//Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
+// Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
 chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
-    //console.log("Main web nav event fired");
-    //Update the tracklist metadata in the cache depending on the current URL
     if (details.url.includes('/library/songs') === true) {
-        cacheTracklistMetadata('all', 'Added from YouTube Music'); //Cache the tracklist type and title in chrome local storage
-        updateIcon('exclamation', details.tabId); //Note: since the track count isn't known prior to a complete scrape, the 'exclamation' icon is shown by default
-        updateBadgeText("?");
-        chrome.action.setBadgeBackgroundColor({color: [255, 127, 0, 255]});
-        chrome.action.setPopup({popup: 'popup.html', tabId: details.tabId}); //Allow the popup to be opened if the icon is clicked on
-        //chrome.action.enable();
+        const metadata = cacheTracklistMetadata('all', 'Added from YouTube Music'); // Cache the tracklist type and title in chrome local storage
+        enableAndUpdateIcon(metadata, details.tabId);
     } else if (details.url.includes('/library/uploaded_songs') === true) {
-        cacheTracklistMetadata('uploads', 'Uploaded Songs'); //Cache the tracklist type and title in chrome local storage
-        updateIcon('exclamation', details.tabId); //Note: since the track count isn't known prior to a complete scrape, the 'exclamation' icon is shown by default
-        updateBadgeText("?"); //TODO if gonna do this, should change color too
-        chrome.action.setBadgeBackgroundColor({color: [255, 127, 0, 255]});
-        chrome.action.setPopup({popup: 'popup.html', tabId: details.tabId}); //Allow the popup to be opened if the icon is clicked on
-    } else if (details.url.includes('list=LM') === true) {
-        //cacheTracklistMetadata('auto', 'Your Likes');
-        //chrome.action.setIcon({path: _iconPaths.exclamation});
-        chrome.action.setPopup({popup: 'popup.html', tabId: details.tabId}); //Allow the popup to be opened if the icon is clicked on
-    } //TODO Since the track count reported in the YTM UI for the 'Your Likes' list seems to be way off...
-        //...it may be acceptable to just not bother getting the track count to update the icon...
-        //...since it's likely to be incorrect anyway. Instead, we could just always display the regular icon, or a special one.
-      else if (details.url.includes('list=PL') === true) {
-        chrome.action.setPopup({popup: 'popup.html', tabId: details.tabId}); //Allow the popup to be opened if the icon is clicked on
-    } else { //Else, if the URL doesn't include any valid tracklist substrings...
-        console.info("Background: Navigated to a YouTube Music page that isn't a valid tracklist. The extension icon will be disabled.");
-        clearCachedTracklistMetadata(); //Clear the metadata cached in storage
-        updateIcon('disabled', details.tabId); //Disable the extension icon
-        updateBadgeText("", details.tabId); //Clear any badge text on the icon
-        chrome.action.setPopup({popup: '', tabId: details.tabId}); //Prevent the popup from being able to be opened
+        const metadata = cacheTracklistMetadata('uploads', 'Uploaded Songs'); //Cache the tracklist type and title in chrome local storage
+        enableAndUpdateIcon(metadata, details.tabId);
+    }   
+    //TODO Since the track count reported in the YTM UI for the 'Your Likes' list seems to be way off, it may be acceptable to just not bother getting the track count to update the icon for this page, since it's likely to be incorrect anyway. Instead, we could just always display the icon with a question mark, like with the 'added' and 'uploaded' cases.
+    else if (details.url.includes('list=LM') === false && details.url.includes('list=PL') === false) {
+        chrome.action.disable(details.tabId); // Disable the popup action for the specified tab
+        chrome.action.setIcon({path: ICON_PATHS.disabled, tabId: details.tabId}); // Show the 'disabled' icon
+        chrome.action.setBadgeText({text: "", tabId: details.tabId}); // Clear any badge text on the icon
     }
 }, {url: [{hostEquals : 'music.youtube.com'}]});
 
+/**
+ * Enables and updates the icon & badge for the specified tab based on the tracklist metadata provided
+ * @param {Object} currentTracklistMetadata An object containing the current tracklist metadata, which will be used to determine the changes made to the icon. In some cases, this includes calculating and displaying the track count delta in the icon badge.
+ * @param {number} [tabId] The id of the tab for which to update the icon. If none is provided, the active tab ID will be used.
+*/
+async function enableAndUpdateIcon(currentTracklistMetadata, tabId) {
+    if (typeof tabId === 'undefined') {
+        const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+        tabId = tab.id;
+    }
+
+    if (firebase.auth().currentUser instanceof firebase.User === true) {
+        if (typeof currentTracklistMetadata === 'object') {
+            if (currentTracklistMetadata.type === 'all' || currentTracklistMetadata.type === 'uploads') {
+                chrome.action.setBadgeText({text: "?", tabId: tabId});
+                chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
+            } else if (currentTracklistMetadata.type === 'playlist' || currentTracklistMetadata.type === 'auto') {
+                const previousTrackCountData = await getPreviousTrackCount(currentTracklistMetadata.title);
+                const trackCountDelta = currentTracklistMetadata.trackCount - previousTrackCountData.trackCount;
+                
+                if (trackCountDelta === 0) {
+                    chrome.action.setBadgeText({text: previousTrackCountData.sourcePrefix + "0", tabId: tabId});
+                    chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
+                } else if (trackCountDelta > 0) {
+                    chrome.action.setBadgeText({text: previousTrackCountData.sourcePrefix + "+" + trackCountDelta.toString(), tabId: tabId});
+                    chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
+                } else if (trackCountDelta < 0) {
+                    chrome.action.setBadgeText({text: previousTrackCountData.sourcePrefix + trackCountDelta.toString(), tabId: tabId});
+                    chrome.action.setBadgeBackgroundColor({color: [255, 153, 153, 200], tabId: tabId}); // Rose
+                } else { // Track count delta not a valid number
+                    chrome.action.setBadgeText({text: "?", tabId: tabId});
+                    chrome.action.setBadgeBackgroundColor({color: [255, 178, 102, 200], tabId: tabId}); // Peach
+                    console.warn("Tried to display the track count delta in the extension's icon, but a valid track count delta could not be determined.");
+                }
+            } else console.error(Error("Tried to update the extension's icon, but a valid tracklist type was not available in the provided tracklist metadata."));
+        } else console.error(Error("Tried to update the extension's icon, but no metadata was provided for the current tracklist."));
+    } else {
+        chrome.action.setBadgeText({text: "login", tabId: tabId}); // TODO sometimes, this text is displayed in the badge, even though the user is signed in. I suspect it's due to some sort of timing issue, since the repro is inconsistent and rare.
+        chrome.action.setBadgeBackgroundColor({color: [64, 64, 64, 200], tabId: tabId}); // Dark Grey
+    }
+
+    chrome.action.setIcon({path: ICON_PATHS.default, tabId: tabId}); // Set the default icon (i.e. with full color, as opposed to the washed out 'disabled' icon)
+    chrome.action.enable(tabId); // Enable the popup action for the specified tab
+}
+
 function cacheTracklistMetadata(tracklistType, tracklistTitle) {
-    const _tracklistMetadata = {
-        type: tracklistType,
-        title: tracklistTitle //TODO it may turn out that there's no point in storing the title at this point (i.e. we may always want to fetch it when loading the popup just in case it has changed since the page first loaded - unlikely but possible)
-    };
-    chrome.storage.local.set ({currentTracklistMetadata: _tracklistMetadata}, () => { //Cache the metadata in local storage
-        if (typeof chrome.runtime.error !== 'undefined') {
+    const tracklistMetadata = {type: tracklistType, title: tracklistTitle};
+    chrome.storage.local.set({currentTracklistMetadata: tracklistMetadata}, () => { //Cache the metadata in local storage
+        if (typeof chrome.runtime.lastError !== 'undefined') {
             console.error("Error encountered while attempting to store metadata in local storage: " + chrome.runtime.lastError.message);
         }
     });
+
+    return tracklistMetadata;
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.greeting === 'TracklistMetadataUpdated') {
         console.log('The current tracklist metadata was updated. New track title is "%s" and new track count is "%s".',
             message.currentTracklistMetadata.title, message.currentTracklistMetadata.trackCount);
-        compareTrackCountsAndUpdateIcon(message.currentTracklistMetadata.title, message.currentTracklistMetadata.trackCount);
-    // } else if (message.greeting === 'GetAuthToken'){
-    //     chrome.identity.clearAllCachedAuthTokens(() => {
-    //         console.log("Cleared cached token");
-    //         getAuthToken((token) => {
-    //             message.response = token;
-    //             sendResponse(message);
-    //         });
-    //     });
+            
+        enableAndUpdateIcon(message.currentTracklistMetadata, sender.tab?.id);
     }
-
-    //return true; //Return true to keep the message channel open (so the callback can be called asynchronously)
 });
 
-/**
- * Compares the current and stored track counts for the current tracklist, and then updates the extension icon accordingly
- * @param {string} tracklistTitle The title of the tracklist, used to fetch the track count from storage
- * @param {number} currentTrackCount The tracklist's current track count
- */
-//TODO I could technically just put almost all this logic (except action API calls) in the content script, if that helps at all 
-function compareTrackCountsAndUpdateIcon(tracklistTitle, currentTrackCount) {
-    getTrackCountFromGPMTracklistData(tracklistTitle, gpmTrackCount => {
-        //(currentTrackCount === gpmTrackCount) ? updateIcon(_iconPaths.default) : updateIcon(_iconPaths.exclamation);
-
-        if (typeof gpmTrackCount === 'undefined') {
-            console.info("Background: The stored track count could not be determined.");
-            updateIcon('default');
-        } else {
-            const _trackCountDelta = currentTrackCount - gpmTrackCount;
-            if (_trackCountDelta === 0) {
-                console.info("Background: The current track count (from the DOM) is the same as the stored track count.");
-                updateIcon('default');
-            } else {
-                console.info("Background: The current track count (from the DOM) is different from the stored track count.");
-                updateIcon('exclamation');
-                const _badgeText = (_trackCountDelta > 0) ? "+" + _trackCountDelta.toString() : _trackCountDelta.toString(); //Prefix the badge text with a "+" if the delta is positive
-                const _badgeColor = (_trackCountDelta > 0) ? [255, 127, 0, 255] : [255, 0, 0, 255]; //Set to badge color to orange if the delta is positive, red if negative
-                updateBadgeText(_badgeText);
-                chrome.action.setBadgeBackgroundColor({color: _badgeColor});
-            }
-        }
-    });
-}
-
-/**
- * Updates the extension icon using the image at the given path for the specified tab or the active tab, if none is specified
- * @param {string} name The user-friendly name of the icon that should be show. Accepted values are: 'default', 'disabled', 'exclamation'
- * @param {number} [tabId] An optional ID to indicate the tab which should have its icon updated. If none is specified, only the active tab has its icon updated.
- */
-function updateIcon(name, tabId) {
-
-    const _iconPaths = {
-        default: 'Images/icon.png',
-        disabled: 'Images/icon_disabled.png',
-        exclamation: 'Images/icon_exclamation_black.png' //TODO would prefer a different 'friendly' name for this
-    };
-
-    if (typeof tabId === 'number') {
-        chrome.action.setIcon({path: _iconPaths[name], tabId: tabId});
-    } else {
-        chrome.tabs.query( { active: true, currentWindow: true}, tabs => { 
-            chrome.action.setIcon({path: _iconPaths[name], tabId: tabs[0].id});
+chrome.runtime.onConnect.addListener(port => {
+    if (port.name === 'AuthenticationChangePending') {
+        port.onDisconnect.addListener(port => {
+            chrome.storage.local.get('currentTracklistMetadata', storageResult => {
+                const metadata = storageResult['currentTracklistMetadata'];
+                enableAndUpdateIcon(metadata);
+            });
         });
     }
+});
+
+//TODO it would be nice if the helper functions below to get the previous/stored track count could be in their own module, 
+//along with other related functions that the extension scripts need to access.
+//Once ES6 module import is possible in service workers, could make this change. Waiting for Chromium Chromium Bug 824647 to be fixed.
+
+/**
+ * Returns the previous track count for the given tracklist, if available
+ * @param {string} tracklistTitle The title of the tracklist
+ * @returns {Promise} A promise with the resulting track count
+ */
+async function getPreviousTrackCount(tracklistTitle) {
+    const comparisonMethod = await getPreferencesFromChromeSyncStorage('Comparison Method');
+    console.log("Comparison method found in user's preferences: " + comparisonMethod);
+
+    let trackCount = undefined;
+    let trackCountSourcePrefix = 'Y';
+
+    // If the selected comparison method is to use YouTube Music only or whenever possible, get the track count from Chrome sync storage
+    if (comparisonMethod === 'alwaysYTM' || comparisonMethod === 'preferYTM') {
+        trackCount = await getTrackCountFromChromeSyncStorage(tracklistTitle);
+    }
+
+    // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the track count was not found in Chrome sync storage, get the track count from the GPM data in Chrome local storage
+    if (comparisonMethod === 'alwaysGPM' || (comparisonMethod === 'preferYTM' && typeof trackCount === 'undefined')) {
+        trackCount = await getTrackCountFromGPMTracklistData(tracklistTitle);
+        trackCountSourcePrefix = 'G';
+    }
+
+    return {trackCount:trackCount, sourcePrefix:trackCountSourcePrefix};
 }
 
 /**
- * Updates the icon badge text with the given text for the specified tab or, if none is specified, the active tab 
- * @param {string} text The text to display on the icon badge
- * @param {number} [tabId] An optional ID to indicate the tab which should have its icon updated. If none is specified, only the active tab has its icon updated.
+ * Gets the track count from Chrome sync storage for a given tracklist
+ * @param {string} tracklistTitle The title of the tracklist, used to search storage
+ * @returns {Promise} A promise with the track count matching the given tracklist title
  */
-function updateBadgeText(text, tabId) {
-    if (typeof tabId === 'number') {
-        chrome.action.setBadgeText({text: text, tabId:tabId});
-    } else {
-        chrome.tabs.query( { active: true, currentWindow: true}, tabs => { 
-            chrome.action.setBadgeText({text: text, tabId: tabs[0].id});
-        });
-    }
+async function getTrackCountFromChromeSyncStorage(tracklistTitle) {
+    const userKey = 'trackCounts_' + firebase.auth().currentUser.uid;
+    const storageItems = await /*chromeStorage.*/getKeyValuePairs('sync', userKey);
+    return storageItems[userKey]?.[tracklistTitle];
 }
 
-function getTrackCountFromGPMTracklistData(tracklistTitle, callback){
-    const _storagekey = 'gpmLibraryData';
-    chrome.storage.local.get(_storagekey, storageResult => {
-        const _gpmLibraryData = storageResult[_storagekey];
-        for (const tracklistKey in _gpmLibraryData) {
-            if (tracklistKey.includes("'" + tracklistTitle + "'")) {
-                console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + _gpmLibraryData[tracklistKey].length);
-                callback(_gpmLibraryData[tracklistKey].length);
-                return;
-            }
+/**
+ * Returns the track count for the given tracklist stored in the exported GPM library data, if available
+ * @param {string} tracklistTitle The title of the tracklist
+ * @returns {Promise} A promise with the resulting track count
+ */
+async function getTrackCountFromGPMTracklistData(tracklistTitle){
+    const gpmLibraryKey = 'gpmLibraryData';
+    const storageItems = await /*chromeStorage.*/getKeyValuePairs('local', gpmLibraryKey);
+    const gpmLibraryData = storageItems[gpmLibraryKey];
+    for (const tracklistKey in gpmLibraryData) {
+        if (tracklistKey.includes("'" + tracklistTitle + "'")) {
+            console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryData[tracklistKey].length);
+            return gpmLibraryData[tracklistKey].length;
         }
-        console.warn("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
-        callback(undefined);
-    });
+    }
+    console.warn("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
+    return undefined;
 }
 
 /**
@@ -195,15 +174,22 @@ function getTrackCountFromGPMTracklistData(tracklistTitle, callback){
  */
 function clearCachedTracklistMetadata() {
     chrome.storage.local.set ({currentTracklistMetadata: {}}, () => {
-        if (chrome.runtime.lastError != null) 
-            console.error("ERROR: " + chrome.runtime.lastError.message);
-        else
-            console.info("Background: Cleared cached tracklist metadata.");
+        typeof chrome.runtime.lastError === 'undefined'
+        ? console.info("Background: Cleared cached tracklist metadata.")
+        : console.error(chrome.runtime.lastError.message)
     });
 }
 
-// function getAuthToken(callback) {
-//     chrome.identity.getAuthToken({interactive: true}, token => {
-//         callback(token);
-//     });
-// }
+//TODO this would be good to put in a module that both background and options scripts can access, once Chrome 91 releases.
+/**
+ * Returns the user's preferences object, or a particular preference value if specified
+ * @param {string} [preference] An optional preference to specify, if only one value is desired
+ * @returns {Promise} A promise with either an object containing all the user's preferences, or the value of a single preference, if specified
+ */
+async function getPreferencesFromChromeSyncStorage(preference) {
+    const preferencesKey = 'preferences';
+    const storageItems = await /*chromeStorage.*/getKeyValuePairs('sync', preferencesKey);
+    return (typeof preference === 'undefined')
+    ? storageItems[preferencesKey]
+    : storageItems[preferencesKey]?.[preference];
+}

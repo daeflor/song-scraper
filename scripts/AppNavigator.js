@@ -5,9 +5,10 @@ import * as ViewRenderer from './modules/ViewRenderer.js';
 /**
  * Updates the UI as specified by the transition parameter
  * @param {string} transition The type of transition that the UI should undergo
- * @param {Object} [options] An optional object to provide additional parameters needed to fulfill the UI transition. Accepted properties: tracklistTitle
+ * @param {Object} [options] An optional object to provide additional parameters needed to fulfill the UI transition. Accepted properties: tracklistTitle, username, deltaTracklists, tableName
  */
 export function triggerUITransition(transition, options) {
+    //TODO a switch might be nice here
     if (transition === 'CachedTracklistMetadataInvalid') {
         //ViewRenderer.showStatusMessage(options.statusMessage ?? 'Error');
         ViewRenderer.showStatusMessage('Unable to retrieve cached tracklist metadata from local storage.');
@@ -41,14 +42,15 @@ export function triggerUITransition(transition, options) {
 
     //     ViewRenderer.unhideElement(ViewRenderer.divs.auth);
     } else if (transition === 'ShowLandingPage') {
-        if (typeof options?.tracklistTitle === 'string') {
+        if (typeof options?.tracklistTitle === 'string' && typeof options.username === 'string') {
             ViewRenderer.hideElement(ViewRenderer.divs.status);
             ViewRenderer.hideElement(ViewRenderer.divs.auth);
             ViewRenderer.showHeader(options.tracklistTitle);
+            ViewRenderer.divs.username.textContent = options.username;
             ViewRenderer.showLandingPage();
         } else {
-            ViewRenderer.showStatusMessage('The tracklist title retrieved from the cached metadata is invalid.');
-            console.error("Tried to display the tracklist title but a valid string wasn't provided.");
+            ViewRenderer.showStatusMessage('The username or the tracklist title retrieved from the cached metadata is invalid.');
+            console.error("Tried to display the landing page but the parameters provided were invalid.");
         }
     } else if (transition === 'StartScrape') {
         ViewRenderer.disableElement(ViewRenderer.buttons.scrape);
@@ -70,6 +72,7 @@ export function triggerUITransition(transition, options) {
     } else if (transition === 'ScrapeFailed') {
         ViewRenderer.showStatusMessage('Failed to retrieve track list.');
     } else if (transition === 'StorageInProgress') {
+        ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Storage in progress...');
         ViewRenderer.disableElement(ViewRenderer.buttons.storeScrapedMetadata); // Disable the button to store the scraped data
         if (ViewRenderer.tracktables.stored.childElementCount > 0) { // If the track table for the stored tracklist exists...
             ViewRenderer.tracktables.stored.textContent = ''; // Remove the tracktable element from the DOM (since it may be out-of-date)
@@ -77,6 +80,35 @@ export function triggerUITransition(transition, options) {
         }
     } else if (transition === 'ScrapedMetadataStored') {
         ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Data successfully stored!');
+        ViewRenderer.updateElementColor(ViewRenderer.buttons.storeScrapedMetadata, '#009900');
+    } else if (transition === 'StorageFailed') {
+        ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Failed to store tracklist data!');
+        ViewRenderer.updateElementColor(ViewRenderer.buttons.storeScrapedMetadata, '#cc3300');
+    } else if (transition === 'AddDeltaTrackTables') {
+        if (options?.deltaTracklists instanceof Map === true) {
+            // Create a track table for the list of 'Added Tracks'
+            createTrackTable(options.deltaTracklists.get('Added Tracks'), 'Added Tracks', ViewRenderer.tracktables.deltas, {customHeaderClass:'greenFont noVerticalMargins'});
+            
+            // Create a track table for the list of 'Removed Tracks'
+            createTrackTable(options.deltaTracklists.get('Removed Tracks'), 'Removed Tracks', ViewRenderer.tracktables.deltas, {customHeaderClass:'redFont noVerticalMargins'});
+    
+            // If a list of 'Unplayable Tracks' exits, create a track table for it
+            if (options.deltaTracklists.get('Unplayable Status')?.size > 0) {
+                createTrackTable(options.deltaTracklists.get('Unplayable Status'), "Change in 'Unplayable' Status", ViewRenderer.tracktables.deltas, {customHeaderClass:'orangeFont noVerticalMargins'});
+            
+                //TODO maybe put a flag here indicating whether or not the 'Unplayable' column should be included, and then send that when creating the 'Added' & 'Removed' track tables.
+            }
+
+            ViewRenderer.labels.deltas.childNodes[0].textContent = 'Delta Track Tables (' + options.appUsedForDelta + ')';
+            ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
+        } else console.error("Tried to add delta track tables to the DOM, but a valid map of source tracklists was not provided");
+    } else if (transition === 'DisplayTrackTable') {
+        if (typeof options?.tableName === 'string') {
+            ViewRenderer.unhideElement(ViewRenderer.tracktables[options.tableName]); // Show the existing elements
+            if (options.tableName === 'deltas') { // TODO this check here is probably temporary
+                ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
+            }
+        } else console.log("Tried to show a track table, but a valid table name was not provided.");
     }
 }
 
@@ -99,6 +131,8 @@ export function triggerUITransition(transition, options) {
 //     ViewRenderer.disableElement(ViewRenderer.checkboxes.deltaTrackTables);
 // }
 
+//TODO maybe this should just create the track table element (and sub-elements) and not handle actually adding them to a parent element
+    //That step could be done later with the 'new' Element.append() method
 /**
  * Creates a track table from the provided tracklist and other inputs
  * @param {Object[]} tracklist The tracklist array for which to create a table element
@@ -110,8 +144,15 @@ export function triggerUITransition(transition, options) {
 export function createTrackTable(tracklist, headerText, parentElement, options/*parentElement, header, descriptionIfEmpty*/) {
 //TODO: Future note: If it's possible to go back and re-scrape, doing another scrape should remove (or replace?) any existing scraped tracklist tables, including from ViewRenderer's tracker object
     const _descriptionIfEmpty = (typeof options === 'object' && typeof options.descriptionIfEmpty === 'string') ? options.descriptionIfEmpty : 'No tracks to display'; //TODO Not sure it's ever going to be necessary to pass this as a parameter instead of just using the default value.
-    const _headerElement      = (typeof options === 'object' && typeof options.headerElement === 'object')      ? options.headerElement      : window.Utilities.CreateNewElement('p', {attributes:{class:'noVerticalMargins'}});
+    //const _headerElement      = options?.headerElement ?? window.Utilities.CreateNewElement('p', {attributes:{class:'noVerticalMargins'}});
+    const headerElement = (typeof options?.customHeaderClass === 'string') ? window.Utilities.CreateNewElement('p', {attributes:{class:options.customHeaderClass}}) : window.Utilities.CreateNewElement('p', {attributes:{class:'noVerticalMargins'}});
+    //const headerElement = window.Utilities.CreateNewElement('p');
+    //typeof options?.customHeaderClass === 'string' ? headerElement.classList.add(options.customHeaderClass) : headerElement.classList.add('noVerticalMargins');
     
+    //const headerClass = options?.customHeaderClass ?? 'noVerticalMargins';
+    //const headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:headerClass}});
+
+
     //TODO Should all or some of this be done in ViewRenderer instead?
 
     //TODO A nice-to-have in the future would be to omit any header/column (e.g. 'Unplayable') if there are zero displayable values for that metadatum
@@ -168,8 +209,8 @@ export function createTrackTable(tracklist, headerText, parentElement, options/*
     else { //Else, if the table does have tracks in it, create a scroll area to contain the table
         _tableBody = window.Utilities.CreateNewElement('div', {attributes:{class:'trackTableScrollArea'}, children:[_table]});
     }
-    _headerElement.textContent = headerText.concat(' (' + (_table.childElementCount -1) + ')'); //Set the header text, including the number of tracks in the table
-    const _tableContainer = window.Utilities.CreateNewElement('div', {children:[_headerElement, _tableBody]}); //Create a new element to contain the various table elements
+    headerElement.textContent = headerText.concat(' (' + (_table.childElementCount -1) + ')'); //Set the header text, including the number of tracks in the table
+    const _tableContainer = window.Utilities.CreateNewElement('div', {children:[headerElement, _tableBody]}); //Create a new element to contain the various table elements
     parentElement.appendChild(_tableContainer); //Add the new container element (and its children) to the DOM
 }
 
@@ -334,26 +375,6 @@ export function getDeltaTracklists(scrapedTracklist, storedTracklist) {
             ['Unplayable Status', unplayableTracks]
         ]);
     } else console.error("Tried to get delta tracklists, but the parameters provided were invalid. Expected two tracklist arrays (scraped & stored).");
-}
-
-export function addDeltaTrackTablesToDOM(deltaTracklists) {
-    if (deltaTracklists instanceof Map === true) {
-        // Create a header element and track table for the list of 'Added Tracks'
-        let headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'greenFont noVerticalMargins'}});
-        createTrackTable(deltaTracklists.get('Added Tracks'), 'Added Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
-        
-        // Create a header element and track table for the list of 'Removed Tracks'
-        headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'redFont noVerticalMargins'}});
-        createTrackTable(deltaTracklists.get('Removed Tracks'), 'Removed Tracks', ViewRenderer.tracktables.deltas, {headerElement:headerElement});
-
-        // If a list of 'Unplayable Tracks' exits, create a header element and track table for it
-        if (deltaTracklists.get('Unplayable Status')?.size > 0) {
-            headerElement = window.Utilities.CreateNewElement('p', {attributes:{class:'orangeFont noVerticalMargins'}});
-            createTrackTable(deltaTracklists.get('Unplayable Status'), "Change in 'Unplayable' Status", ViewRenderer.tracktables.deltas, {headerElement:headerElement});
-        
-            //TODO maybe put a flag here indicating whether or not the 'Unplayable' column should be included, and then send that when creating the 'Added' & 'Removed' track tables.
-        }
-    }
 }
 
 function convertDurationStringToSeconds(duration) {

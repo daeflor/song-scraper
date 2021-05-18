@@ -8,7 +8,7 @@ import * as Auth from '../auth/firebase-ui-auth.js'
 import firebaseConfig from '../Configuration/Config.js'; //Import the app's config object needed to initialize Firebase
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 
-import * as Storage from './StorageManager.js';
+import * as appStorage from './StorageManager.js';
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
 import * as IO from './utilities/IO.js';
 
@@ -23,7 +23,7 @@ const SESSION_STATE = {
         type: undefined,
         tracks: {
             scraped: undefined,
-            stored: undefined,
+            stored: undefined, // TODO: maybe call this ytm instead of stored?
             gpm: undefined
         },
         deltas: undefined
@@ -38,22 +38,13 @@ function init() {
 }
 
 // User Becomes Authenticated
-Auth.listenForAuthStateChange(async () => {
-    //TODO Right now, this can get called more than once, which won't necessarily work correctly.
-        //Need to properly clear out any data that needs to be cleared (if/as applicable) and then start over.
-    let tracklistMetadata = undefined;
-
-    try {
-        tracklistMetadata = await chromeStorage.get('local', 'currentTracklistMetadata');
-    } catch (error){
-        console.error(error);
-        UIController.triggerUITransition('CachedTracklistMetadataInvalid');
-    }
+Auth.listenForAuthStateChange(async () => { // TODO this name is a bit misleading, since the callback only fires on an initial sign-in (i.e. not on sign-out)
+    const tracklistMetadata = await chromeStorage.getValueAtKey('local', 'currentTracklistMetadata');
 
     if (typeof tracklistMetadata?.type === 'string' && typeof tracklistMetadata?.title === 'string') { // If valid tracklist type and title values were retrieved from the local storage cache...
         SESSION_STATE.tracklist.type = tracklistMetadata.type; // Record the tracklist type in the session state object for future reference
         SESSION_STATE.tracklist.title = tracklistMetadata.title; // Record the tracklist title in the session state object for future reference
-        UIController.triggerUITransition('ShowLandingPage', {tracklistTitle: tracklistMetadata.title}); // Display the extension landing page
+        UIController.triggerUITransition('ShowLandingPage', {tracklistTitle: tracklistMetadata.title, username: firebase.auth().currentUser.email.split('@')[0]}); // Display the extension landing page
     } else {
         UIController.triggerUITransition('CachedTracklistMetadataInvalid');
     }
@@ -69,14 +60,17 @@ Auth.listenForAuthStateChange(async () => {
 //     // });
 // });
 
-
 // Button Pressed: Log Out
 ViewRenderer.buttons.logOut.addEventListener('click', function() {
-    Auth.logOut(() => {
-        UIController.triggerUITransition('LogOutAndExit');
-        setTimeout(() => window.close(),1000);
+    Auth.logOut(() => { // Log out of Firebase
+        UIController.triggerUITransition('LogOutAndExit'); // Show the exiting screen
+        chrome.runtime.connect({name: 'AuthenticationChangePending'}); // Open a port so that when the extension popup is closed, the background script will be informed and can update the icon accordingly.
+        setTimeout(() => window.close(), 1000); // After a 1 second delay, close the extension popup
     });
 });
+
+// Button Pressed: Options
+ViewRenderer.buttons.options.addEventListener('click', () => chrome.runtime.openOptionsPage());
 
 // Button Pressed: Scrape Current Tracklist
 ViewRenderer.buttons.scrape.addEventListener('click', function() {
@@ -93,16 +87,21 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
 });
 
 // Button Pressed: Store Scraped Metadata
-ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', function() {
+ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', async function() {
     UIController.triggerUITransition('StorageInProgress'); // Update the UI while the data is being stored (e.g. disable the 'store' button)
 
     SESSION_STATE.tracklist.tracks.stored = SESSION_STATE.tracklist.tracks.scraped; // Set the stored tracks array equal to the scraped tracks array, saving it for future reference within the current app session
     
-    // Store the tracklist in Firestore, then store the track count in chrome sync storage, and then update UI
-    Storage.storeTracklistInFirestore(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.type, SESSION_STATE.tracklist.tracks.stored, () => {
-        Storage.storeTrackCountInChromeSyncStorage(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.tracks.stored.length);
+    try {
+        // Store the tracklist in Firestore, then store the track count in chrome sync storage, and then update UI
+        await appStorage.storeTracklistInFirestore(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.type, SESSION_STATE.tracklist.tracks.stored);
+        await appStorage.storeTrackCountInChromeSyncStorage(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.tracks.stored.length);
         UIController.triggerUITransition('ScrapedMetadataStored');
-    });
+    } catch (error) {
+        UIController.triggerUITransition('StorageFailed');
+        console.error(error);
+    }
+    //TODO when tracklist data is stored, would it make sense to update the extension icon? I think it would help
 });
 
 // Button Pressed: Export Scraped Tracklist 
@@ -126,19 +125,14 @@ ViewRenderer.buttons.exportStoredMetadata.addEventListener('click', async functi
 
 // Button Pressed: Copy to Clipboard
 ViewRenderer.buttons.copyToClipboard.addEventListener('click', function() {
-    //TODO calling this through UI Controller is now an unnecessary step, since it does almost nothing and is not related to UI
-        //Once event-controller / AppNavigator refactor takes place, that extra step should be removable.
-    ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'pending'; //As soon as the button is pressed, update the button to show a 'pending' icon
+    ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
     const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV.
     const csv = IO.convertObjectMapsToCsv(SESSION_STATE.tracklist.deltas, includedProperties);
 
     navigator.clipboard.writeText(csv)
-        .then(() => {
-            setTimeout(() => {ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'content_paste';}, 100); //Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
-        }, () => {
-            console.error("Failed to copy delta tracklist CSV to clipboard.");
-        });
+        .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
+              () => console.error("Failed to copy delta tracklist CSV to clipboard."));
 });
 
 // // Button Pressed: Export Selected Lists
@@ -162,7 +156,8 @@ ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() 
     // If the checkbox is checked, display the scraped tracklist metadata; Otherwise hide it
     if (ViewRenderer.checkboxes.scrapedTrackTable.checked === true) {
         if (ViewRenderer.tracktables.scraped.childElementCount > 0) { // If a track table DOM element has previously been created...
-            ViewRenderer.unhideElement(ViewRenderer.tracktables.scraped); // Show the existing element
+            UIController.triggerUITransition('DisplayTrackTable', {tableName: 'scraped'}); // Show the existing element
+            //ViewRenderer.unhideElement(ViewRenderer.tracktables.scraped); 
         } else { // Else, if a track table element doesn't exist yet, create a new one using the scraped metadata and add it to the DOM
             UIController.createTrackTable(SESSION_STATE.tracklist.tracks.scraped, 'Scraped Tracklist', ViewRenderer.tracktables.scraped);
             // TODO this interaction with ViewRenderer is WIP
@@ -184,9 +179,10 @@ ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', async functi
     // If the checkbox is checked, display the stored metadata for the current tracklist; Otherwise hide it
     if (ViewRenderer.checkboxes.storedTrackTable.checked === true) {
         if (ViewRenderer.tracktables.stored.childElementCount > 0) { // If a track table DOM element has previously been created...
-            ViewRenderer.unhideElement(ViewRenderer.tracktables.stored); // Show the existing element
+            UIController.triggerUITransition('DisplayTrackTable', {tableName: 'stored'}); // Show the existing element
+            //ViewRenderer.unhideElement(ViewRenderer.tracktables.stored); 
         } else { // Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
-            const storedTracks = await getStoredTracks(SESSION_STATE.tracklist.title);
+            const storedTracks = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
             UIController.createTrackTable(storedTracks, 'Stored YTM Tracklist', ViewRenderer.tracktables.stored);
             // TODO this interaction with ViewRenderer is WIP
         }
@@ -209,17 +205,40 @@ ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', async functi
 ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async function() {
     // If the checkbox is checked, display the delta tracklists metadata; Otherwise hide them
     if (ViewRenderer.checkboxes.deltaTrackTables.checked === true) {
+
+        //UIController.triggerUITransition('DisplayDeltaTrackTables');
+
         if (ViewRenderer.tracktables.deltas.childElementCount > 0) { // If the track table DOM elements have previously been created...
-            ViewRenderer.unhideElement(ViewRenderer.tracktables.deltas); // Show the existing elements
-        } else { // Else, if the track table elements dont exist yet...
-            const storedTracks = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
-            SESSION_STATE.tracklist.deltas = UIController.getDeltaTracklists(SESSION_STATE.tracklist.tracks.scraped, storedTracks); // Generate delta tracklists based on the scraped and stored tracklists
-            UIController.addDeltaTrackTablesToDOM(SESSION_STATE.tracklist.deltas);
+            
+            UIController.triggerUITransition('DisplayTrackTable', {tableName: 'deltas'});
+            //ViewRenderer.unhideElement(ViewRenderer.tracktables.deltas); // Show the existing elements
+            //ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
+            //TODO should probably trigger a UI transition instead of calling ViewRenderer functions directly
+        } else { // Else, if the track table elements dont exist yet...      
+            const comparisonMethod = await appStorage.getPreferencesFromChromeSyncStorage('Comparison Method');
+            console.log("Comparison method found in user's preferences: " + comparisonMethod);
+
+            let tracksUsedForDelta = undefined;
+            let appUsedForDelta = 'YTM';
+
+            // If the selected comparison method is to use YouTube Music only or whenever possible, get the tracks from Firestore
+            if (comparisonMethod === 'alwaysYTM' || comparisonMethod === 'preferYTM') {
+                tracksUsedForDelta = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
+            }
+
+            // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the tracklist was not found in the YTM stored tracks, get the tracks from the GPM data in Chrome local storage
+            if (comparisonMethod === 'alwaysGPM' || (comparisonMethod === 'preferYTM' && typeof tracksUsedForDelta === 'undefined')) {
+                tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+                appUsedForDelta = 'GPM';
+            }
+            
+            if (typeof tracksUsedForDelta !== 'undefined') {
+                SESSION_STATE.tracklist.deltas = UIController.getDeltaTracklists(SESSION_STATE.tracklist.tracks.scraped, tracksUsedForDelta); // Generate delta tracklists based on the scraped and stored tracklists
+                UIController.triggerUITransition('AddDeltaTrackTables', {deltaTracklists: SESSION_STATE.tracklist.deltas, appUsedForDelta: appUsedForDelta});
+                //UIController.triggerUITransition('DisplayTrackTable', {tableName: 'deltas'});
+                //ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
+            }
         }
-        //TODO this is temp, should probably be in UI controller
-        //ViewRenderer.enableElement(ViewRenderer.buttons.exportSelectedLists);
-        ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
-        //UIController.triggerUITransition('CheckboxChecked');
     } else { // Else, if the checkbox is unchecked, hide the track table elements
         ViewRenderer.hideElement(ViewRenderer.tracktables.deltas);
         ViewRenderer.hideElement(ViewRenderer.buttons.copyToClipboard);
@@ -234,29 +253,33 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
 
 //TODO I think this is just here temporarily. I don't think I like the event-controller containing functions like this.
     //Could these go in StorageManager instead?
-//TODO Also, does it really make sense to use async/await for these functions. Is it actually better than just using callbacks?
-function getStoredTracks(tracklistTitle) {
-    return new Promise((resolve) => {
-        if (Array.isArray(SESSION_STATE.tracklist.tracks.stored) === true) { //If the stored tracks for the current tracklist have previously been fetched, return that array
-            resolve(SESSION_STATE.tracklist.tracks.stored);
-        } else { //Else, retrieve the tracks from storage and then return them
-            Storage.retrieveTracklistFromFirestore(tracklistTitle, tracksArray => {
-                SESSION_STATE.tracklist.tracks.stored = tracksArray; //Cache the array in a local variable for future reference
-                resolve(SESSION_STATE.tracklist.tracks.stored);
-            });
-        }
-    });
+/**
+ * Returns the YTM tracks array that matches the given tracklist title, if one exists
+ * @param {string} tracklistTitle The title of the tracklist to look for
+ * @returns {Promise} A promise containing the YTM tracks array matching the tracklist title, if one exists
+ */
+async function getStoredTracksYTM(tracklistTitle) {
+    // If the YTM tracks array for the current tracklist has previously been fetched, return that array. Otherwise, fetch it from Firestore and then return it
+    if (Array.isArray(SESSION_STATE.tracklist.tracks.stored) === false) {
+        SESSION_STATE.tracklist.tracks.stored = await appStorage.retrieveTracksFromFirestore(tracklistTitle);
+    }
+
+    return SESSION_STATE.tracklist.tracks.stored; 
+    // SESSION_STATE.tracklist.tracks.stored = SESSION_STATE.tracklist.tracks.stored ?? await appStorage.retrieveTracksFromFirestore(tracklistTitle);
+    // return SESSION_STATE.tracklist.tracks.stored; 
 }
 
-function getStoredTracksGPM(tracklistTitle) {
-    return new Promise((resolve) => {
-        if (Array.isArray(SESSION_STATE.tracklist.tracks.gpm) === true) { //If the stored tracks for the current tracklist have previously been fetched, return that array
-            resolve(SESSION_STATE.tracklist.tracks.gpm);
-        } else { //Else, retrieve the tracks from storage and then return them
-            Storage.retrieveGPMTracklistFromLocalStorage(tracklistTitle, tracksArray => {
-                SESSION_STATE.tracklist.tracks.gpm = tracksArray; //Cache the array in a local variable for future reference
-                resolve(SESSION_STATE.tracklist.tracks.gpm);
-            });
-        }
-    });
+//TODO could merge the YTM & GPM functions (above and below) but not sure if that would actually be helpful
+/**
+ * Returns the GPM tracks array that matches the given tracklist title, if one exists
+ * @param {string} tracklistTitle The title of the tracklist to look for
+ * @returns {Promise} A promise containing the GPM tracks array matching the tracklist title, if one exists
+ */
+async function getStoredTracksGPM(tracklistTitle) {
+    // If the GPM tracks array for the current tracklist has previously been fetched, return that array. Otherwise, fetch it from local storage and then return it
+    if (Array.isArray(SESSION_STATE.tracklist.tracks.gpm) === false) {
+        SESSION_STATE.tracklist.tracks.gpm = await appStorage.retrieveGPMTracklistFromLocalStorage(tracklistTitle);
+    }
+    
+    return SESSION_STATE.tracklist.tracks.gpm; 
 }

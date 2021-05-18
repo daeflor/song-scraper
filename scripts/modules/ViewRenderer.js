@@ -7,6 +7,7 @@
     //I'm not certain how the 'removeElement' case would be handled
 
 export const divs = Object.freeze({
+    username: document.getElementById('username'),
     auth: document.getElementById('auth'),
     header: document.getElementById('header'),
     status: document.getElementById('status'),
@@ -18,6 +19,7 @@ export const divs = Object.freeze({
 export const buttons = Object.freeze({
     //logIn: document.getElementById('btnLogIn'),
     logOut: document.getElementById('btnLogOut'),
+    options: document.getElementById('btnOptions'),
     scrape: document.getElementById('btnScrape'),
     storeScrapedMetadata: document.getElementById('btnStoreScrapedMetadata'),
     exportScrapedMetadata: document.getElementById('btnExportScrapedMetadata'),
@@ -40,12 +42,16 @@ export const tracktables = {
     deltas: document.getElementById('trackTableDeltas')
 };
 
+export const labels = {
+    deltas: document.getElementById('labelDeltaTrackTables')
+};
+
 export function disableElement(element) {
     //TODO it would be better to have a more thorough 'isElement'/'validateElement' check
     if (typeof element === 'object') {
         element.disabled = true;
     } else {
-        throw new Error('Cannot find element.');
+        throw Error('Cannot find element.');
     }
 }
 
@@ -58,7 +64,7 @@ export function hideElement(element) {
     if (typeof element === 'object') {
         element.hidden = true;
     } else {
-        throw new Error('Cannot find element.');
+        throw Error('Cannot find element.');
     }
 }
 
@@ -81,6 +87,12 @@ export function updateElementTextContent(element, text) {
     if (typeof element === 'object') { //TODO better isElement check would be good here
         element.textContent = text;
     } else console.error("Tried to set an element's text content, but a valid element was not provided.");
+}
+
+export function updateElementColor(element, color) {
+    if (typeof element === 'object') { //TODO better isElement check would be good here
+        element.style.color = color;
+    } else console.error("Tried to set an element's color, but a valid element was not provided.");
 }
 
 export function showLandingPage() {

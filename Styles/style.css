@@ -54,13 +54,28 @@ input[type='checkbox'] {
 #title {
 	display: flex;
 }
-
+/* 
 .leftAligned {
 	position: absolute;
 	top: 0;
 	left: 0;
+	padding-left: 5px;
+} */
+
+.rightAligned {
+	display: flex;
+	align-items: center;
+	position: absolute;
+	right: 0;
+	padding-right: 5px;
+	list-style: none;
 }
 
+#username {
+	margin-right: 5px;
+	padding-bottom: 2px;
+	font-size: 15px;
+}
 
 .statusText {
 	text-align: center;
@@ -210,6 +225,12 @@ td {
 
 .popupButton:disabled {
 	background: gainsboro;
+}
+
+.headerButton {
+	margin-left: 0px;
+	margin-right: 0px;
+    width: 14px;
 }
 
 .btnSmall {
