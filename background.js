@@ -21,10 +21,6 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
     if (details.url.includes('/library/songs') === true) {
         const metadata = cacheTracklistMetadata('all', 'Added from YouTube Music'); // Cache the tracklist type and title in chrome local storage
         enableAndUpdateIcon(metadata, details.tabId);
-
-        // cacheTracklistMetadata('all', 'Added from YouTube Music', metadataObject => {
-        //     enableAndUpdateIcon(metadataObject, details.tabId);
-        // });
     } else if (details.url.includes('/library/uploaded_songs') === true) {
         const metadata = cacheTracklistMetadata('uploads', 'Uploaded Songs'); //Cache the tracklist type and title in chrome local storage
         enableAndUpdateIcon(metadata, details.tabId);
@@ -115,7 +111,7 @@ chrome.runtime.onConnect.addListener(port => {
 
 //TODO it would be nice if the helper functions below to get the previous/stored track count could be in their own module, 
 //along with other related functions that the extension scripts need to access.
-//Once ES6 module import is possible in service workers, could make this change.
+//Once ES6 module import is possible in service workers, could make this change. Waiting for Chromium Chromium Bug 824647 to be fixed.
 
 /**
  * Returns the previous track count for the given tracklist, if available

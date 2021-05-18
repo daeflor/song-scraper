@@ -23,14 +23,13 @@
 	- Overall cleanup
 	- Element/DOM validation
 	- Clean up CSS
-	- Get code ready for transition to YTM/YTM comparison (vs current GPM/YTM comparison) so that it’s ready when I’m ready to switch over.
-		- This includes track count comparison in service worker
 	- Deprecate unused files as applicable, including legacy js files, sandbox files, and static js files
-	- May want to set up logic so that storage default is YTM, and GPM is the fallback, so that I can start transferring over
 	- Would be helpful to add the track index number into the tracklist DOM
 	- Does it make sense to disable buttons for scrape/store/etc.? I can't think of any case where scraping a second time makes any sense.
 	- Maybe switch away from typeof === 'object' checks, since this doesn't discount a value of null.
-	- Could have an option in options.html indicating whether GPM or YTM should be used when creating the delta tracklists.
+	- Update or remove 'catch' blocks that aren't actually handling errors at all.
+	- Fix up modules once Chrome 91 is out (end of May?)
+	- Maybe bring back DebugController usage, and update the extension icon whenever an error is hit.
 
 	- Could consider having different popup html files for different tracklists, if it makes sense to show significantly different options/UI for each.
 	- Would it be possible somehow to use an extension context menu to select multiple tracks and edit their info in Firestore (e.g. assign their genre)?

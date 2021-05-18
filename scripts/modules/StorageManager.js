@@ -83,30 +83,6 @@ export async function retrieveGPMTracklistFromLocalStorage(tracklistTitle){
     //One for chrome storage related logic
     //One for chrome storage utility/helper functions?
 
-// export function getTrackCountFromChromeSyncStorage_NEW_WithCustomChromeStorageAPI(tracklistTitle) {
-//     return new Promise(async (resolve) => {
-//         const key = 'trackCounts_' + firebase.auth().currentUser.uid;
-//         const trackCountObject = await chromeStorage.getValueAtKey('sync', key);
-//         resolve(trackCountObject?.[tracklistTitle]);
-//     });
-// }
-
-// export async function getTrackCountFromChromeSyncStorage_ASYNC(tracklistTitle) {
-//     const key = 'trackCounts_' + firebase.auth().currentUser.uid;
-//     const trackCountObject = await chromeStorage.getValueAtKey('sync', key);
-//     return trackCountObject?.[tracklistTitle]; //TODO would it be good to output a warning if the trackcountObject is undefined? That could mean that the user hasn't saved any track counts, or something else could have gone wrong
-// }
-
-// export async function getTrackCountFromChromeSyncStorage_ASYNC(tracklistTitle) {
-//     const trackCountObject = await getTrackCountObjectFromChromeSyncStorage_ASYNC(tracklistTitle);
-//     return trackCountObject?.[tracklistTitle];
-// }
-
-// async function getTrackCountObjectFromChromeSyncStorage_ASYNC(tracklistTitle) {
-//     const key = 'trackCounts_' + firebase.auth().currentUser.uid;
-//     return await chromeStorage.get('sync', key);
-// }
-
 /**
  * Stores the provided track count for the given tracklist in chrome sync storage
  * @param {string} tracklistTitle The title of the tracklist

@@ -37,11 +37,6 @@ function init() {
     firebase.initializeApp(firebaseConfig); //Initialize Firebase
 }
 
-//TODO Ideally I should only set up this port if the user ISN'T signed into firebase. Could also just ALWAYS open it and then immediately close it once the auth status comes back as positive.
-    //But an alternative would be to only open this port from the auth script if the user isn't signed in. Then it doesn't even need to be manually closed.
-    //Only issue with that is that I'm not sure I like the auth script handling this kind of logic...
-//let port = chrome.runtime.connect({name: 'AuthenticationPending'}); //TODO remember to disconnect, if needed (see above)
-
 // User Becomes Authenticated
 Auth.listenForAuthStateChange(async () => { // TODO this name is a bit misleading, since the callback only fires on an initial sign-in (i.e. not on sign-out)
     const tracklistMetadata = await chromeStorage.getValueAtKey('local', 'currentTracklistMetadata');

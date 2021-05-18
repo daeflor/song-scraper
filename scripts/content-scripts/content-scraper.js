@@ -153,6 +153,8 @@
         } else console.error("Tried observing the YTM header element for DOM mutations, but the element doesn't exist.");
     }
 
+    //TODO this could be updated to use async/await
+        //It could also be generalized to get the <elements> in a list (i.e. as opposed to speficially tracks)
     function GetTracks(callback) {
         const _firstTrack = document.querySelector("ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]"); //Find the first track element using query selector. This selector is used because it currently works across all valid tracklists.
         if (typeof _firstTrack === 'object') {
