@@ -96,64 +96,15 @@
             // message.response = GetPlaylists();
             // sendResponse(message);
         }
+        
+        return true; //Return true to keep the message channel open (so the callback can be called asynchronously)
+    });
 
-        //TODO this should be in a different onMessage listener that doesn't stay open
+    chrome.runtime.onMessage.addListener(message => {
         if (message.greeting === 'GetPlaylists') {
             console.info("Content Script: Received a request to retrieve a list of playlists from the DOM.");
             getPlaylists();
-            //getPlaylists(results => {
-            //    message.response = results;
-                /*
-
-                //If a valid array was provided...
-                if (Array.isArray(results) === true) {
-                    let csv = 'Playlists\r\n';
-                    //For each element in the array...
-                    for (const playlistTitle of results) {
-                        csv += playlistTitle + '\r\n';
-                    }
-                    // for (let i = 0; i < results.length; i++) {
-                    //     csv += results[i] + '\r\n';
-                    // }
-
-                    //console.log(csv);
-
-
-                    //TODO what if I used write instead of writeText?
-
-                    //TODO better flow would probably be to alert once the scrape is completed and, if possible, include a button in the alert that copies to clipboard.
-
-                    
-                    if (window.confirm("List of playlists scraped from the DOM. Press OK to copy the list to the clipboard.")) {
-                        setTimeout(() => navigator.clipboard.writeText(csv),500);
-                    //     .then(() => alert("List of playlists copied to clipboard!"),
-                    //           (error) => {
-                    //             console.error("Failed to copy list of playlists to clipboard. Error Message:");
-                    //             console.error(error);
-                    //   });
-                    }
-
-
-                    // navigator.clipboard.writeText(csv)
-                    //     .then(() => alert("List of playlists copied to clipboard!"),
-                    // //.then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
-                    //   (error) => {
-                    //       console.error("Failed to copy list of playlists to clipboard. Error Message:");
-                    //       console.error(error);
-                    //   });
-                } else console.error("Tried to copy the list of playlists to the clipboard, but a valid array of playlist titles was not provided.");
-*/
-
-                //console.log(results);
-                //let stringResults = results.toString();
-                //console.log(stringResults);
-                //console.table(results);
-
-                //sendResponse(message);
-            //});
         }
-        
-        return true; //Return true to keep the message channel open (so the callback can be called asynchronously)
     });
 
     //TODO something that hasn't been considered is that a tracklist could change in the time between...
@@ -220,39 +171,18 @@
         } else console.error("Tried observing the YTM header element for DOM mutations, but the element doesn't exist.");
     }
 
-    function createDialog(includeConfirmationButton = false, buttonText) {
-        
-        const dialog = document.createElement('dialog');
-
-        const span = document.createElement('span');
-        //span.classList.add('material-icons-round');
-        span.textContent = 'Scrape In Progress...';
-
-        dialog.append(span);
-        document.body.append(dialog);
-
-        // if (includeConfirmationButton === true) {
-        //     const button = document.createElement('button');
-        //     button.textContent= buttonText;
-
-        //     const form = document.createElement('form');
-        //     form.method = 'dialog';
-
-        //     form.append(button);
-        //     dialog.append(form);
-        // }  
-        
-        dialog.showModal();
-        return dialog;
-    }
-
     //TODO does this make sense to be a class when there is only one ever created?
     class ScrapeInProgressDialog {
-        constructor(text = 'Scrape In Progress...') { //TODO this param is never passed
+        constructor() {
             this.dialog = document.createElement('dialog');
             this.dialog.style.textAlign = 'center';
+            this.dialog.style.color = '#FFCC66';
+            this.dialog.style.backgroundColor = '#303030';
+            this.dialog.style.fontFamily = 'Gill Sans';
+
             this.dialogText = document.createElement('h3');
-            this.dialogText.textContent = text;
+            this.dialogText.textContent = 'Scrape In Progress...';
+            this.dialogText.style.marginBottom = '5px';
             
             this.dialog.append(this.dialogText);
             document.body.append(this.dialog);
@@ -268,119 +198,58 @@
             this.dialogText.textContent = value;
         }
 
-        // /**
-        //  * @param {Object[]} buttons An array of button elements to include in the form
-        //  * @param {Funciton} submitAction The function to execute when the form's 'confirmation' button is selected
-        //  */
-        // addForm(buttons, submitAction) {
-        //     this.form = document.createElement('form');
-        //     form.method = 'dialog';
-        //     this.form.append(buttons);
-
-        //     this.dialog.addEventListener('close', function onClose() {
-        //         //TODO DO SOMETHING
-        //         submitAction(dialog.returnValue);
-        //         //console.log(dialog.returnValue);
-        //         //navigator.clipboard.writeText(dialog.returnValue);
-        //       });
-        // }
-
         addCopyToClipboardPrompt(results) {
             const form = document.createElement('form');
             form.method = 'dialog';
 
-            // const menu = document.createElement('menu');
-            // menu.style.display = 'block';
-
             const closeButton = document.createElement('button');
             closeButton.textContent= 'Close';
             closeButton.style.margin = '10px';
-            //clipboardButton.value = '';
+            closeButton.style.color = '#505739';
+            closeButton.style.backgroundColor = '#eae0c2';
+            closeButton.style.padding = '10px';
+            closeButton.style.borderRadius = '15px';
 
             const clipboardButton = document.createElement('button');
             clipboardButton.textContent= 'Copy to Clipboard';
             clipboardButton.style.margin = '10px';
-            //clipboardButton.value = csv;
+            clipboardButton.style.color = '#505739';
+            clipboardButton.style.backgroundColor = '#eae0c2';
+            clipboardButton.style.padding = '10px';
+            clipboardButton.style.borderRadius = '15px';
 
             clipboardButton.addEventListener('click', () => {
-                //console.log("Clipboard Button clicked");
-
-                //If a valid array was provided...
-                if (Array.isArray(results) === true) {
+                
+                if (Array.isArray(results) === true) { // If a valid array was provided, create a csv of the playlist names
                     let csv = '';
-                    //let csv = 'Playlists\r\n'; //It's weird to have this hard-coded here
-                    //For each element in the array...
                     for (const playlistTitle of results) {
                         csv += playlistTitle + '\r\n';
                     }
 
                     navigator.clipboard.writeText(csv);
-                } else console.error("Tried to copy the list of playlists to the clipboard, but a valid array of playlist titles was not provided.");
-                
+                } else console.error("Tried to copy the list of playlists to the clipboard, but a valid array of playlist titles was not provided.");  
             });
 
             form.append(closeButton, clipboardButton);
-            //form.append(menu);
             this.dialog.append(form);
         }
     }
     
     /**
-     * Extracts a list of all playlists by scraping the playlist elements in the DOM
-     * @param {Function} callback The function to execute once the list of playlists has been generated. The callback function takes a an array of objects as a parameter.
+     * Extracts a list of all playlists by scraping the playlist elements in the DOM, and then displays a modal dialog with an option to copy the resulting list to the clipboard
      */
-    async function getPlaylists() { //TODO rename this and the message itself
+    async function getPlaylists() {
         const firstElementInList = document.querySelector('ytmusic-two-row-item-renderer.style-scope.ytmusic-grid-renderer'); // Find the first track element using query selector.
         if (firstElementInList instanceof Element === true) {
             const elementContainer = firstElementInList.parentElement; // Get the container element
             const scrapeStartingIndex = getIndexOfElement(firstElementInList) + 1; // The scrape should start at one greater than the index of the first element in the list. This is because the first element is the 'New playlist' button, which should be skipped. 
-            //const scrapeMetadataFromElement = element => new Playlist(element);
             const scrapeMetadataFromElement = element => element.children[0].title;
-            //const scrapeMetadataFromElement = element => [0, element.children[0].title];
-
-            //const dialog = createDialog();
             const dialog = new ScrapeInProgressDialog();
-                
-            //return scrapeElements(elementContainer, scrapeStartingIndex, scrapeMetadataFromElement); //Initiate the scrape & scroll process
-
             const results = await scrapeElements(elementContainer, scrapeStartingIndex, scrapeMetadataFromElement); //Initiate the scrape & scroll process;
             
             dialog.text = 'List of Playlists Successfully Scraped!';
             dialog.addCopyToClipboardPrompt(results);
-
-            /*
-            //If a valid array was provided...
-            if (Array.isArray(results) === true) {
-                let csv = 'Playlists\r\n';
-                //For each element in the array...
-                for (const playlistTitle of results) {
-                    csv += playlistTitle + '\r\n';
-                }
-
-                    const button = document.createElement('button');
-                    button.textContent= 'Copy list of playlists to clipboard';
-                    button.value = csv;
-            
-                    const form = document.createElement('form');
-                    form.method = 'dialog';
-            
-                    form.append(button);
-                    dialog.append(form);
-
-                    dialog.addEventListener('close', function onClose() {
-                        console.log(dialog.returnValue);
-                        navigator.clipboard.writeText(dialog.returnValue);
-                      });
-
-
-                //dialog.close();
-                //navigator.clipboard.writeText(csv);
-                //console.log(csv);
-            } else console.error("Tried to copy the list of playlists to the clipboard, but a valid array of playlist titles was not provided.");
-            
-            */
-            //callback(results);
-        } else throw(Error("Tried to scrape the list of playlists, but the first element in the list couldn't be identified."));
+        } else console.error("Tried to scrape the list of playlists, but the first element in the list couldn't be identified.");
     }
 
     /**
