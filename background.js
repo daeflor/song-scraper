@@ -14,7 +14,19 @@ if (firebase.apps.length === 0) { // If Firebase has not yet been initialized (i
     firebase.initializeApp(firebaseConfig); // Initialize Firebase
     firebase.auth(); // "Initialize" Firebase auth - TODO this is janky. It doesn't really seem necessary to do this, given how we're using firebase elsewhere in this script. Not including this triggers a warning when Firebase auth is first reference later in this script, however (nested under other listeners).
     chrome.action.disable(); // Disable the extension's icons on all tabs
+
+    chrome.contextMenus.create({
+        id: 'contextMenu_scrapePlaylists',
+        title: "Get List of Playlists",
+        documentUrlPatterns: ['https://music.youtube.com/library/playlists']
+    });
 }
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId === 'contextMenu_scrapePlaylists') {
+        chrome.tabs.sendMessage(tab.id, {greeting:'GetPlaylists'});
+    }
+});
 
 // Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
 chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
@@ -24,7 +36,7 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
     } else if (details.url.includes('/library/uploaded_songs') === true) {
         const metadata = cacheTracklistMetadata('uploads', 'Uploaded Songs'); //Cache the tracklist type and title in chrome local storage
         enableAndUpdateIcon(metadata, details.tabId);
-    }   
+    }
     //TODO Since the track count reported in the YTM UI for the 'Your Likes' list seems to be way off, it may be acceptable to just not bother getting the track count to update the icon for this page, since it's likely to be incorrect anyway. Instead, we could just always display the icon with a question mark, like with the 'added' and 'uploaded' cases.
     else if (details.url.includes('list=LM') === false && details.url.includes('list=PL') === false) {
         chrome.action.disable(details.tabId); // Disable the popup action for the specified tab
@@ -172,7 +184,7 @@ async function getTrackCountFromGPMTracklistData(tracklistTitle){
 /**
  * Clears the tracklist metadata which is cached in chrome local storage
  */
-function clearCachedTracklistMetadata() {
+function clearCachedTracklistMetadata() { //TODO This is no longer being done. Is that fine?
     chrome.storage.local.set ({currentTracklistMetadata: {}}, () => {
         typeof chrome.runtime.lastError === 'undefined'
         ? console.info("Background: Cleared cached tracklist metadata.")
