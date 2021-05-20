@@ -171,7 +171,35 @@
         } else console.error("Tried observing the YTM header element for DOM mutations, but the element doesn't exist.");
     }
 
+    // const scrapeDialog = Object.freeze({
+    //     dialog: document.createElement('dialog'),
+    //     enable: () => {
+
+    //     },
+    //     setText: () 
+    // });
+
+    class CustomButton {
+        constructor(text) {
+            this.buttonElement = document.createElement('button');
+            this.buttonElement.textContent= text;
+            this.buttonElement.style.margin = '10px';
+            this.buttonElement.style.color = '#505739';
+            this.buttonElement.style.backgroundColor = '#eae0c2';
+            this.buttonElement.style.padding = '10px';
+            this.buttonElement.style.borderRadius = '15px';
+        }
+
+        get button() {
+            return this.buttonElement;
+        }
+    }
+
     //TODO does this make sense to be a class when there is only one ever created?
+        //Actually iy might be best left as a class because multiple dialogs ARE created if a scrape is initiated more than once per session (which is likely to happen)
+        //Perhaps a bigger concern is that the dialogs are never removed from the DOM, so more and more just keep getting tacked on.
+        //It may be best to remove the dialog when it gets hidden
+        //Another approach is to always re-use the same dialog, but I don't see much benefit in that, especially if having to handle going between playlist and tracks scrape. And having two separate dialogs, one for tracks and one for playlist scrape, seems a bit cumberome too.
     class ScrapeInProgressDialog {
         constructor() {
             this.dialog = document.createElement('dialog');
@@ -202,21 +230,8 @@
             const form = document.createElement('form');
             form.method = 'dialog';
 
-            const closeButton = document.createElement('button');
-            closeButton.textContent= 'Close';
-            closeButton.style.margin = '10px';
-            closeButton.style.color = '#505739';
-            closeButton.style.backgroundColor = '#eae0c2';
-            closeButton.style.padding = '10px';
-            closeButton.style.borderRadius = '15px';
-
-            const clipboardButton = document.createElement('button');
-            clipboardButton.textContent= 'Copy to Clipboard';
-            clipboardButton.style.margin = '10px';
-            clipboardButton.style.color = '#505739';
-            clipboardButton.style.backgroundColor = '#eae0c2';
-            clipboardButton.style.padding = '10px';
-            clipboardButton.style.borderRadius = '15px';
+            const closeButton = new CustomButton('Close').button;
+            const clipboardButton = new CustomButton('Copy to Clipboard').button;
 
             clipboardButton.addEventListener('click', () => {
                 
