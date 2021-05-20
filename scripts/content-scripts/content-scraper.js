@@ -28,6 +28,66 @@
         }
     }
 
+    class CustomButton {
+        constructor(text) {
+            this.buttonElement = document.createElement('button');
+            this.buttonElement.textContent= text;
+            this.buttonElement.style.margin = '10px';
+            this.buttonElement.style.color = '#505739';
+            this.buttonElement.style.backgroundColor = '#eae0c2';
+            this.buttonElement.style.padding = '10px';
+            this.buttonElement.style.borderRadius = '15px';
+        }
+
+        get button() {
+            return this.buttonElement;
+        }
+    }
+
+    class ScrapeInProgressDialog {
+        constructor() {
+            this.dialog = document.createElement('dialog');
+            this.dialog.style.textAlign = 'center';
+            this.dialog.style.color = '#FFCC66';
+            this.dialog.style.backgroundColor = '#303030';
+            this.dialog.style.fontFamily = 'Gill Sans';
+
+            this.dialog.addEventListener('close', () => this.dialog.remove());
+
+            this.dialogText = document.createElement('h3');
+            this.dialogText.textContent = 'Scrape In Progress...';
+            this.dialogText.style.marginBottom = '5px';
+            
+            this.dialog.append(this.dialogText);
+            document.body.append(this.dialog);
+
+            this.dialog.showModal();
+        }
+
+        /**
+         * Updates the text displayed in the dialog
+         * @param {string} value The text string value to show in the dialog modal
+         */
+        set text(value) {
+            this.dialogText.textContent = value;
+        }
+
+        /**
+         * Adds a form to the dialog that prompts the user to copy the provided data to the clipboard
+         * @param {string[]} results An array of strings that will be converted to a csv and copied to the clipboard if the corresponding button is pressed
+         */
+        addCopyToClipboardPrompt(results) {
+            const closeButton = new CustomButton('Close').button;
+            const clipboardButton = new CustomButton('Copy to Clipboard').button;
+            clipboardButton.addEventListener('click', () => navigator.clipboard.writeText(convertArrayToSingleColumnCSV(results)));
+
+            const form = document.createElement('form');
+            form.method = 'dialog';
+            form.append(closeButton, clipboardButton);
+            this.dialog.append(form);
+        }
+    }
+
     const supportedApps = Object.freeze({ 
         youTubeMusic: 'ytm',
         googlePlayMusic: 'gpm'
@@ -169,85 +229,6 @@
         if (typeof persistentElements.header === 'object') { //If the element to observe actually exists in the DOM...
             _observer.observe(persistentElements.header, _observerConfig); //Start observing the specified element for configured mutations (i.e. for any changes to its childList)
         } else console.error("Tried observing the YTM header element for DOM mutations, but the element doesn't exist.");
-    }
-
-    // const scrapeDialog = Object.freeze({
-    //     dialog: document.createElement('dialog'),
-    //     enable: () => {
-
-    //     },
-    //     setText: () 
-    // });
-
-    class CustomButton {
-        constructor(text) {
-            this.buttonElement = document.createElement('button');
-            this.buttonElement.textContent= text;
-            this.buttonElement.style.margin = '10px';
-            this.buttonElement.style.color = '#505739';
-            this.buttonElement.style.backgroundColor = '#eae0c2';
-            this.buttonElement.style.padding = '10px';
-            this.buttonElement.style.borderRadius = '15px';
-        }
-
-        get button() {
-            return this.buttonElement;
-        }
-    }
-
-    //TODO does this make sense to be a class when there is only one ever created?
-        //Actually iy might be best left as a class because multiple dialogs ARE created if a scrape is initiated more than once per session (which is likely to happen)
-        //Perhaps a bigger concern is that the dialogs are never removed from the DOM, so more and more just keep getting tacked on.
-        //It may be best to remove the dialog when it gets hidden
-        //Another approach is to always re-use the same dialog, but I don't see much benefit in that, especially if having to handle going between playlist and tracks scrape. And having two separate dialogs, one for tracks and one for playlist scrape, seems a bit cumberome too.
-    class ScrapeInProgressDialog {
-        constructor() {
-            this.dialog = document.createElement('dialog');
-            this.dialog.style.textAlign = 'center';
-            this.dialog.style.color = '#FFCC66';
-            this.dialog.style.backgroundColor = '#303030';
-            this.dialog.style.fontFamily = 'Gill Sans';
-
-            this.dialogText = document.createElement('h3');
-            this.dialogText.textContent = 'Scrape In Progress...';
-            this.dialogText.style.marginBottom = '5px';
-            
-            this.dialog.append(this.dialogText);
-            document.body.append(this.dialog);
-
-            this.dialog.showModal();
-        }
-
-        /**
-         * Updates the text displayed in the dialog
-         * @param {string} value The text string value to show in the dialog modal
-         */
-        set text(value) {
-            this.dialogText.textContent = value;
-        }
-
-        addCopyToClipboardPrompt(results) {
-            const form = document.createElement('form');
-            form.method = 'dialog';
-
-            const closeButton = new CustomButton('Close').button;
-            const clipboardButton = new CustomButton('Copy to Clipboard').button;
-
-            clipboardButton.addEventListener('click', () => {
-                
-                if (Array.isArray(results) === true) { // If a valid array was provided, create a csv of the playlist names
-                    let csv = '';
-                    for (const playlistTitle of results) {
-                        csv += playlistTitle + '\r\n';
-                    }
-
-                    navigator.clipboard.writeText(csv);
-                } else console.error("Tried to copy the list of playlists to the clipboard, but a valid array of playlist titles was not provided.");  
-            });
-
-            form.append(closeButton, clipboardButton);
-            this.dialog.append(form);
-        }
     }
     
     /**
@@ -582,6 +563,17 @@
             trackCountString = trackCountString.replace(/,/g, ""); //Remove any commas from the string (e.g. for counts > 999)
             return parseInt(trackCountString, 10); //Parse the string to get the track count value as an integer and return it
         } else console.error("Tried to convert a track count string to a number, but the value provided was not a string.");
+    }
+
+    function convertArrayToSingleColumnCSV(array) {
+        if (Array.isArray(array) === true) { // If a valid array was provided, convert it to a single column CSV
+            let csv = '';
+            for (const element of array) {
+                csv += element + '\r\n';
+            }
+
+            return csv;
+        } else throw Error("Tried to convert an array to a single-column CSV but a valid array was not provided.");  
     }
 
     init();
