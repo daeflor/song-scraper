@@ -30,6 +30,7 @@
 	- Update or remove 'catch' blocks that aren't actually handling errors at all.
 	- Fix up modules once Chrome 91 is out (end of May?)
 	- Maybe bring back DebugController usage, and update the extension icon whenever an error is hit.
+	- Convert some console.errors to throw new Errors where applicable.
 
 	- Could consider having different popup html files for different tracklists, if it makes sense to show significantly different options/UI for each.
 	- Would it be possible somehow to use an extension context menu to select multiple tracks and edit their info in Firestore (e.g. assign their genre)?
@@ -39,6 +40,7 @@
 		- Maybe it would be sufficient to block the loading of the track thumbnails..
 		- Actually it seems that downloading the tracklist content takes considerably less time than "Waiting (TTFB)" & work happening on the server side, and I don't know how to speed the latter up.
 	- Could update JSDOC callback documentation throughout code (https://jsdoc.app/tags-callback.html)
+	- Bug: It's possible for the tracklist name to overlap with the username if either of them are long enough.
 
 	Old:
 	- Could add support for and save lists for individual genres, for easier viewing/fixing

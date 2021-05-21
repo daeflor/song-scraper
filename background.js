@@ -28,14 +28,10 @@ if (firebase.apps.length === 0) { // If Firebase has not yet been initialized (i
     });
 }
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     if (info.menuItemId === 'contextMenu_scrapePlaylists') {
         chrome.tabs.sendMessage(tab.id, {greeting:'GetPlaylists'});
-    }
-});
-
-chrome.contextMenus.onClicked.addListener(async info => {
-    if (info.menuItemId === 'contextMenu_getGPMTracklists') {
+    } else if (info.menuItemId === 'contextMenu_getGPMTracklists') {
         const gpmTracklists = await getGPMTracklists();
         console.table(gpmTracklists);
     }
@@ -181,48 +177,26 @@ async function getTrackCountFromChromeSyncStorage(tracklistTitle) {
  * @returns {Promise} A promise with the resulting track count
  */
 async function getTrackCountFromGPMTracklistData(tracklistTitle){
-    const gpmLibraryKey = 'gpmLibraryData';
-    const storageItems = await /*chromeStorage.*/getKeyValuePairs('local', gpmLibraryKey);
-    const gpmLibraryData = storageItems[gpmLibraryKey];
+    const gpmLibraryData = await getGPMLibraryData();
     for (const tracklistKey in gpmLibraryData) {
         if (tracklistKey.includes("'" + tracklistTitle + "'")) {
-            console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryData[tracklistKey].length);
+            console.info("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryData[tracklistKey].length);
             return gpmLibraryData[tracklistKey].length;
         }
     }
-    console.warn("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
-    return undefined;
+    console.info("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
 }
-
-// /**
-//  * Returns a list of the names of all the tracklists stored in the exported GPM library data
-//  * @returns {Promise} A promise with the resulting array of tracklist names
-//  */
-//  async function getGPMTracklists(){
-//     const gpmLibraryKey = 'gpmLibraryData';
-//     const storageItems = await /*chromeStorage.*/getKeyValuePairs('local', gpmLibraryKey);
-//     const gpmLibraryData = storageItems[gpmLibraryKey];
-//     if (typeof gpmLibraryData !== 'undefined') {
-//         return Object.keys(gpmLibraryData);
-//     } else throw new Error("Tried to get a list of all tracklists stored in the exported GPM data, but no tracklists were found.");
-// }
 
 /**
  * Returns a list of the names of all the tracklists stored in the exported GPM library data
  * @returns {Promise} A promise with the resulting array of tracklist names
  */
 async function getGPMTracklists(){
-    try {
-        const gpmLibraryData = await getGPMLibraryData();
-        return Object.keys(gpmLibraryData).map(name => name.replace('ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_', '')/*.slice(1, name.length - 1)*/);
-    } catch (error) {
-        console.error(error);
-    }
-        //if (typeof gpmLibraryData !== 'undefined') {
-        
-    //} else throw new Error("Tried to get a list of all tracklists stored in the exported GPM data, but no tracklists were found.");
+    const gpmLibraryData = await getGPMLibraryData();
+    return Object.keys(gpmLibraryData).map(name => name.replace('ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_', '')); // Return a list of all the key names in the gpm library data object, but removing the prefix for better readability
 }
 
+//TODO this would be good to put in a module that both background and options scripts can access, once Chrome 91 releases.
 /**
  * Returns an object containing the the exported GPM library data
  * @returns {Promise} A promise with the resulting GPM library data object
