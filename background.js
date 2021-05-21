@@ -20,11 +20,24 @@ if (firebase.apps.length === 0) { // If Firebase has not yet been initialized (i
         title: "Get List of Playlists",
         documentUrlPatterns: ['https://music.youtube.com/library/playlists']
     });
+
+    chrome.contextMenus.create({
+        id: 'contextMenu_getGPMTracklists',
+        title: "Print List of GPM Tracklists to Console",
+        documentUrlPatterns: ['https://music.youtube.com/library/playlists']
+    });
 }
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
     if (info.menuItemId === 'contextMenu_scrapePlaylists') {
         chrome.tabs.sendMessage(tab.id, {greeting:'GetPlaylists'});
+    }
+});
+
+chrome.contextMenus.onClicked.addListener(async info => {
+    if (info.menuItemId === 'contextMenu_getGPMTracklists') {
+        const gpmTracklists = await getGPMTracklists();
+        console.table(gpmTracklists);
     }
 });
 
@@ -181,16 +194,58 @@ async function getTrackCountFromGPMTracklistData(tracklistTitle){
     return undefined;
 }
 
+// /**
+//  * Returns a list of the names of all the tracklists stored in the exported GPM library data
+//  * @returns {Promise} A promise with the resulting array of tracklist names
+//  */
+//  async function getGPMTracklists(){
+//     const gpmLibraryKey = 'gpmLibraryData';
+//     const storageItems = await /*chromeStorage.*/getKeyValuePairs('local', gpmLibraryKey);
+//     const gpmLibraryData = storageItems[gpmLibraryKey];
+//     if (typeof gpmLibraryData !== 'undefined') {
+//         return Object.keys(gpmLibraryData);
+//     } else throw new Error("Tried to get a list of all tracklists stored in the exported GPM data, but no tracklists were found.");
+// }
+
 /**
- * Clears the tracklist metadata which is cached in chrome local storage
+ * Returns a list of the names of all the tracklists stored in the exported GPM library data
+ * @returns {Promise} A promise with the resulting array of tracklist names
  */
-function clearCachedTracklistMetadata() { //TODO This is no longer being done. Is that fine?
-    chrome.storage.local.set ({currentTracklistMetadata: {}}, () => {
-        typeof chrome.runtime.lastError === 'undefined'
-        ? console.info("Background: Cleared cached tracklist metadata.")
-        : console.error(chrome.runtime.lastError.message)
-    });
+async function getGPMTracklists(){
+    try {
+        const gpmLibraryData = await getGPMLibraryData();
+        return Object.keys(gpmLibraryData).map(name => name.replace('ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_', '')/*.slice(1, name.length - 1)*/);
+    } catch (error) {
+        console.error(error);
+    }
+        //if (typeof gpmLibraryData !== 'undefined') {
+        
+    //} else throw new Error("Tried to get a list of all tracklists stored in the exported GPM data, but no tracklists were found.");
 }
+
+/**
+ * Returns an object containing the the exported GPM library data
+ * @returns {Promise} A promise with the resulting GPM library data object
+ */
+ async function getGPMLibraryData(){
+    const gpmLibraryKey = 'gpmLibraryData';
+    const storageItems = await /*chromeStorage.*/getKeyValuePairs('local', gpmLibraryKey);
+    const gpmLibraryData = storageItems[gpmLibraryKey];
+    if (typeof gpmLibraryData !== 'undefined') {
+        return gpmLibraryData;
+    } else throw new Error("Tried to fetch the GPM library data from local storage but it wasn't found.");
+}
+
+// /**
+//  * Clears the tracklist metadata which is cached in chrome local storage
+//  */
+// function clearCachedTracklistMetadata() { //TODO This is no longer being done. Is that fine?
+//     chrome.storage.local.set ({currentTracklistMetadata: {}}, () => {
+//         typeof chrome.runtime.lastError === 'undefined'
+//         ? console.info("Background: Cleared cached tracklist metadata.")
+//         : console.error(chrome.runtime.lastError.message)
+//     });
+// }
 
 //TODO this would be good to put in a module that both background and options scripts can access, once Chrome 91 releases.
 /**
