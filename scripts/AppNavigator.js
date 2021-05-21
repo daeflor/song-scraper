@@ -178,7 +178,7 @@ export function createTrackTable(tracklist, headerText, parentElement, options/*
     //Create a new table element, with the header row as a child
     const _table = window.Utilities.CreateNewElement('table', {attributes:{class:'trackTable'}, children:[_tr]});
 
-    if (Array.isArray(tracklist) === true) { // If the tracklist parameter provided is a valid array...       
+    if (typeof tracklist === 'object') { // If the tracklist parameter provided is a valid object...       
         tracklist.forEach( (track, key) => { // For each track in the tracklist...
             const trackPosition = (Array.isArray(tracklist) === true) ? key + 1 : key; // If the tracklist is stored in an array, the track position should be its index (or key) plus 1. If the tracklist is stored in a map, the track position is equal to the key value.
             const td = window.Utilities.CreateNewElement('td', {textContent:trackPosition}); // Create a new data cell for the track position
@@ -196,7 +196,7 @@ export function createTrackTable(tracklist, headerText, parentElement, options/*
                 }
             }
         });
-    } else console.error("Tried to create a track table but a valid tracks array was not provided.");
+    } else console.error("Tried to create a track table but a valid tracklist object was not provided.");
     //TODO could probably separate creating the track table itself from all the various other elements (e.g. header, description) that go along with it, to have smaller and easier-to-read functions
 
     let _tableBody = undefined;
