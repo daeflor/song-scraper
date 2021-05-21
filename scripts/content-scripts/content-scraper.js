@@ -29,15 +29,19 @@
     }
 
     class CustomButton {
-        element;
+        #buttonElement;
         constructor(text) {
-            this.element = document.createElement('button');
-            this.element.textContent= text;
-            this.element.style.margin = '10px';
-            this.element.style.color = '#505739';
-            this.element.style.backgroundColor = '#eae0c2';
-            this.element.style.padding = '10px';
-            this.element.style.borderRadius = '15px';
+            this.#buttonElement = document.createElement('button');
+            this.#buttonElement.textContent= text;
+            this.#buttonElement.style.margin = '10px';
+            this.#buttonElement.style.color = '#505739';
+            this.#buttonElement.style.backgroundColor = '#eae0c2';
+            this.#buttonElement.style.padding = '10px';
+            this.#buttonElement.style.borderRadius = '15px';
+        }
+
+        get element() {
+            return this.#buttonElement;
         }
     }
 
