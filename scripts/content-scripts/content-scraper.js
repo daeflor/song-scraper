@@ -144,20 +144,9 @@
                 message.response = tracksArray;
                 sendResponse(message);
             });
-
-            // GetPlaylists(results => {
-            //     message.response = results;
-            //     sendResponse(message);
-            // });
-
-            // message.response = await GetPlaylists();
-            // sendResponse(message);
-            
-            // message.response = GetPlaylists();
-            // sendResponse(message);
         }
         
-        return true; //Return true to keep the message channel open (so the callback can be called asynchronously)
+        return true; // Return true to keep the message channel open (so the callback can be called asynchronously)
     });
 
     chrome.runtime.onMessage.addListener(message => {
@@ -282,7 +271,7 @@
             }
 
             const endScrape = () => { // Set up the function to execute once the scrape & scroll process has either been successfully completed or timed out
-                allowManualScrolling(persistentElements.scrollContainer, true); // Allow the user to scroll manually again //TODO this should probably be a parameter
+                allowManualScrolling(persistentElements.scrollContainer, true); // Allow the user to scroll manually again //TODO the scrollContainer should probably be a parameter
                 observer.disconnect(); // Disconnect the mutation observer
                 resolve(results); // Resolve the promise along with the resulting array of scraped metadata
             }
@@ -290,13 +279,10 @@
             allowManualScrolling(persistentElements.scrollContainer, false); //Temporarily disable manual scrolling to avoid any interference from the user during the scrape process
             scrollToTopOfContainer(persistentElements.scrollContainer); //Scroll to the top of the tracklist, as an extra safety measure just to be certain that no tracks are missed in the scrape. (Note: This step likely isn't necessary in YTM since it appears the track row elements never get removed from the DOM no matter how far down a list you scroll).
 
-            //const _observer = new MutationObserver(_onTrackElementsLoaded); //Create a new mutation observer instance linked to the callback function defined above
-            //const observer = new MutationObserver(setTimeout.bind(null, scrapeLoadedElements, 100)); // Create a new mutation observer instance which triggers a scrape of the loaded elements after a brief delay (which allows time for all the sub-elements in the DOM to load).
             const observer = new MutationObserver(triggerDelayedScrape); // Create a new mutation observer instance which triggers a scrape of the loaded elements after a brief delay (which allows time for all the sub-elements in the DOM to load).
             const observerConfig = {childList: true}; // Set up the configuration options for the Mutation Observer to watch for changes to the element's childList
             observer.observe(elementContainer, observerConfig); // Start observing the container element for configured mutations (i.e. for any changes to its childList)
             
-            //setTimeout(scrapeLoadedElements, 100); // Wait a short amount of time to allow the page to scroll to the top of the tracklist, and then begin the scrape & scroll process
             triggerDelayedScrape(); // Wait a short amount of time to allow the page to scroll to the top of the tracklist, and then begin the scrape & scroll process
         });
     }
