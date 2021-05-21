@@ -29,39 +29,38 @@
     }
 
     class CustomButton {
+        element;
         constructor(text) {
-            this.buttonElement = document.createElement('button');
-            this.buttonElement.textContent= text;
-            this.buttonElement.style.margin = '10px';
-            this.buttonElement.style.color = '#505739';
-            this.buttonElement.style.backgroundColor = '#eae0c2';
-            this.buttonElement.style.padding = '10px';
-            this.buttonElement.style.borderRadius = '15px';
-        }
-
-        get button() {
-            return this.buttonElement;
+            this.element = document.createElement('button');
+            this.element.textContent= text;
+            this.element.style.margin = '10px';
+            this.element.style.color = '#505739';
+            this.element.style.backgroundColor = '#eae0c2';
+            this.element.style.padding = '10px';
+            this.element.style.borderRadius = '15px';
         }
     }
 
     class ScrapeInProgressDialog {
+        #dialog;
+        #dialogText;
         constructor() {
-            this.dialog = document.createElement('dialog');
-            this.dialog.style.textAlign = 'center';
-            this.dialog.style.color = '#FFCC66';
-            this.dialog.style.backgroundColor = '#303030';
-            this.dialog.style.fontFamily = 'Gill Sans';
+            this.#dialog = document.createElement('dialog');
+            this.#dialog.style.textAlign = 'center';
+            this.#dialog.style.color = '#FFCC66';
+            this.#dialog.style.backgroundColor = '#303030';
+            this.#dialog.style.fontFamily = 'Gill Sans';
 
-            this.dialog.addEventListener('close', () => this.dialog.remove());
+            this.#dialog.addEventListener('close', () => this.#dialog.remove());
 
-            this.dialogText = document.createElement('h3');
-            this.dialogText.textContent = 'Scrape In Progress...';
-            this.dialogText.style.marginBottom = '5px';
+            this.#dialogText = document.createElement('h3');
+            this.#dialogText.textContent = 'Scrape In Progress...';
+            this.#dialogText.style.marginBottom = '5px';
             
-            this.dialog.append(this.dialogText);
-            document.body.append(this.dialog);
+            this.#dialog.append(this.#dialogText);
+            document.body.append(this.#dialog);
 
-            this.dialog.showModal();
+            this.#dialog.showModal();
         }
 
         /**
@@ -69,7 +68,14 @@
          * @param {string} value The text string value to show in the dialog modal
          */
         set text(value) {
-            this.dialogText.textContent = value;
+            this.#dialogText.textContent = value;
+        }
+
+        /**
+         * Closes the dialog modal
+         */
+        close() {
+            this.#dialog.close();
         }
 
         /**
@@ -77,14 +83,14 @@
          * @param {string[]} results An array of strings that will be converted to a csv and copied to the clipboard if the corresponding button is pressed
          */
         addCopyToClipboardPrompt(results) {
-            const closeButton = new CustomButton('Close').button;
-            const clipboardButton = new CustomButton('Copy to Clipboard').button;
+            const closeButton = new CustomButton('Close').element;
+            const clipboardButton = new CustomButton('Copy to Clipboard').element;
             clipboardButton.addEventListener('click', () => navigator.clipboard.writeText(convertArrayToSingleColumnCSV(results)));
 
             const form = document.createElement('form');
             form.method = 'dialog';
             form.append(closeButton, clipboardButton);
-            this.dialog.append(form);
+            this.#dialog.append(form);
         }
     }
 
@@ -238,6 +244,24 @@
     }
 
     /**
+     * Extracts a list of tracks by scraping the track row elements in the DOM, and then passes the results along in the provided callback
+     * @param {Function} callback The function to execute once the list of tracks has been generated. The callback takes an array of Track Objects as its single parameter.
+     */
+     async function GetTracks(callback) {
+        const firstElementInList = document.querySelector('ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]'); // Find the first track element using query selector. This selector is used because it currently works across all valid tracklists.
+        if (firstElementInList instanceof Element === true) {
+            const elementContainer = firstElementInList.parentElement; // Get the container element
+            const expectedElementCount = getMetadatum(metadataNames.trackCount); // Fetch the official track count of the tracklist, if one exists. This will be undefined otherwise. 
+            const scrapeStartingIndex = getIndexOfElement(firstElementInList); // Get the index of the first element at which to begin the scrape, since it isn't always necessarily the first element in the container (i.e. can't assume it's 0)  
+            const scrapeMetadataFromElement = element => new Track(element); // Set up the function to execute on each element found in the list. In this case, track metadata will be extracted from the track element.
+            const dialog = new ScrapeInProgressDialog(); // Create a dialog modal to indicate that the scrape is in progress
+            const results = await scrapeElements(elementContainer, scrapeStartingIndex, scrapeMetadataFromElement, expectedElementCount); // Initiate the scrape & scroll process;
+            callback(results);
+            dialog.close();
+        } else console.error("Tried to scrape the tracklist, but the first element in the list couldn't be identified.");
+    }
+
+    /**
      * Runs through a process that scrolls through the given list of elements and scrapes metadata out of each of the elements
      * @param {Object} elementContainer The container element wrapping all the individual elements to scrape
      * @param {number} scrapeStartingIndex The index within the container element at which to begin the initial scrape
@@ -285,24 +309,6 @@
             
             triggerDelayedScrape(); // Wait a short amount of time to allow the page to scroll to the top of the tracklist, and then begin the scrape & scroll process
         });
-    }
-
-    /**
-     * Extracts a list of tracks by scraping the track row elements in the DOM, and then passes the results along in the provided callback
-     * @param {Function} callback The function to execute once the list of tracks has been generated. The callback takes an array of Track Objects as its single parameter.
-     */
-    async function GetTracks(callback) {
-        const firstElementInList = document.querySelector('ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]'); // Find the first track element using query selector. This selector is used because it currently works across all valid tracklists.
-        if (firstElementInList instanceof Element === true) {
-            const elementContainer = firstElementInList.parentElement; // Get the container element
-            const expectedElementCount = getMetadatum(metadataNames.trackCount); // Fetch the official track count of the tracklist, if one exists. This will be undefined otherwise. 
-            const scrapeStartingIndex = getIndexOfElement(firstElementInList); // Get the index of the first element at which to begin the scrape, since it isn't always necessarily the first element in the container (i.e. can't assume it's 0)  
-            const scrapeMetadataFromElement = element => new Track(element); // Set up the function to execute on each element found in the list. In this case, track metadata will be extracted from the track element.
-            const dialog = new ScrapeInProgressDialog(); // Create a dialog modal to indicate that the scrape is in progress
-            const results = await scrapeElements(elementContainer, scrapeStartingIndex, scrapeMetadataFromElement, expectedElementCount); // Initiate the scrape & scroll process;
-            callback(results);
-            dialog.dialog.close();
-        } else console.error("Tried to scrape the tracklist, but the first element in the list couldn't be identified.");
     }
 
     /**
