@@ -150,7 +150,7 @@
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.greeting === 'GetTracks') {
             console.info("Content Script: Received a request to retrieve a list of tracks from the DOM.");
-            GetTracks(tracksArray => {
+            getTracks(tracksArray => {
                 message.response = tracksArray;
                 sendResponse(message);
             });
@@ -251,7 +251,7 @@
      * Extracts a list of tracks by scraping the track row elements in the DOM, and then passes the results along in the provided callback
      * @param {Function} callback The function to execute once the list of tracks has been generated. The callback takes an array of Track Objects as its single parameter.
      */
-     async function GetTracks(callback) {
+     async function getTracks(callback) {
         const firstElementInList = document.querySelector('ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]'); // Find the first track element using query selector. This selector is used because it currently works across all valid tracklists.
         if (firstElementInList instanceof Element === true) {
             const elementContainer = firstElementInList.parentElement; // Get the container element
