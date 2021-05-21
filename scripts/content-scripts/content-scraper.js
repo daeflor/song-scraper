@@ -3,22 +3,22 @@
     /**
      * Creates a track object that contains properties for each piece of metadata scraped from the DOM
      */
-     class Track {
+    class Track {
         constructor(trackContainerElement) {
             if (currentApp === supportedApps.youTubeMusic) {
-                const _metadataElements = trackContainerElement.getElementsByTagName('yt-formatted-string');
+                const metadataElements = trackContainerElement.getElementsByTagName('yt-formatted-string');
 
-                if (typeof _metadataElements[0] === 'object') {
-                    this.title = _metadataElements[0].title;
+                if (typeof metadataElements[0] === 'object') {
+                    this.title = metadataElements[0].title;
                 } else console.error("Track title could not be retrieved from DOM.");
-                if (typeof _metadataElements[1] === 'object') {
-                    this.artist = _metadataElements[1].title;
+                if (typeof metadataElements[1] === 'object') {
+                    this.artist = metadataElements[1].title;
                 } else console.error("Artist could not be retrieved from DOM.");
-                if (typeof _metadataElements[2] === 'object') {
-                    this.album = _metadataElements[2].title;
+                if (typeof metadataElements[2] === 'object') {
+                    this.album = metadataElements[2].title;
                 } else console.error("Album could not be retrieved from DOM.");
-                if (typeof _metadataElements[3] === 'object') {
-                    this.duration = _metadataElements[3].title;
+                if (typeof metadataElements[3] === 'object') {
+                    this.duration = metadataElements[3].title;
                 } else console.error("Duration could not be retrieved from DOM.");
                 if (trackContainerElement.hasAttribute('unplayable_')) { //Note: <if (trackContainerElement.unplayable_ === true)> should work but it doesn't for some reason
                     this.unplayable = true;
@@ -27,7 +27,77 @@
             }
         }
     }
-    
+
+    class CustomButton {
+        #buttonElement;
+        constructor(text) {
+            this.#buttonElement = document.createElement('button');
+            this.#buttonElement.textContent= text;
+            this.#buttonElement.style.margin = '10px';
+            this.#buttonElement.style.color = '#505739';
+            this.#buttonElement.style.backgroundColor = '#eae0c2';
+            this.#buttonElement.style.padding = '10px';
+            this.#buttonElement.style.borderRadius = '15px';
+        }
+
+        get element() {
+            return this.#buttonElement;
+        }
+    }
+
+    class ScrapeInProgressDialog {
+        #dialog;
+        #dialogText;
+        constructor() {
+            this.#dialog = document.createElement('dialog');
+            this.#dialog.style.textAlign = 'center';
+            this.#dialog.style.color = '#FFCC66';
+            this.#dialog.style.backgroundColor = '#303030';
+            this.#dialog.style.fontFamily = 'Gill Sans';
+
+            this.#dialog.addEventListener('close', () => this.#dialog.remove());
+
+            this.#dialogText = document.createElement('h3');
+            this.#dialogText.textContent = 'Scrape In Progress...';
+            this.#dialogText.style.marginBottom = '5px';
+            
+            this.#dialog.append(this.#dialogText);
+            document.body.append(this.#dialog);
+
+            this.#dialog.showModal();
+        }
+
+        /**
+         * Updates the text displayed in the dialog
+         * @param {string} value The text string value to show in the dialog modal
+         */
+        set text(value) {
+            this.#dialogText.textContent = value;
+        }
+
+        /**
+         * Closes the dialog modal
+         */
+        close() {
+            this.#dialog.close();
+        }
+
+        /**
+         * Adds a form to the dialog that prompts the user to copy the provided data to the clipboard
+         * @param {string[]} results An array of strings that will be converted to a csv and copied to the clipboard if the corresponding button is pressed
+         */
+        addCopyToClipboardPrompt(results) {
+            const closeButton = new CustomButton('Close').element;
+            const clipboardButton = new CustomButton('Copy to Clipboard').element;
+            clipboardButton.addEventListener('click', () => navigator.clipboard.writeText(convertArrayToSingleColumnCSV(results)));
+
+            const form = document.createElement('form');
+            form.method = 'dialog';
+            form.append(closeButton, clipboardButton);
+            this.#dialog.append(form);
+        }
+    }
+
     const supportedApps = Object.freeze({ 
         youTubeMusic: 'ytm',
         googlePlayMusic: 'gpm'
@@ -79,14 +149,21 @@
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.greeting === 'GetTracks') {
-            console.info("Content Script: Received request to retrieve tracklist metadata.");
-            GetTracks(tracksArray => {
+            console.info("Content Script: Received a request to retrieve a list of tracks from the DOM.");
+            getTracks(tracksArray => {
                 message.response = tracksArray;
                 sendResponse(message);
             });
         }
         
-        return true; //Return true to keep the message channel open (so the callback can be called asynchronously)
+        return true; // Return true to keep the message channel open (so the callback can be called asynchronously)
+    });
+
+    chrome.runtime.onMessage.addListener(message => {
+        if (message.greeting === 'GetPlaylists') {
+            console.info("Content Script: Received a request to retrieve a list of playlists from the DOM.");
+            getPlaylists();
+        }
     });
 
     //TODO something that hasn't been considered is that a tracklist could change in the time between...
@@ -152,129 +229,91 @@
             _observer.observe(persistentElements.header, _observerConfig); //Start observing the specified element for configured mutations (i.e. for any changes to its childList)
         } else console.error("Tried observing the YTM header element for DOM mutations, but the element doesn't exist.");
     }
-
-    //TODO this could be updated to use async/await
-        //It could also be generalized to get the <elements> in a list (i.e. as opposed to speficially tracks)
-    function GetTracks(callback) {
-        const _firstTrack = document.querySelector("ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]"); //Find the first track element using query selector. This selector is used because it currently works across all valid tracklists.
-        if (typeof _firstTrack === 'object') {
-            const _tracksContainer = _firstTrack.parentElement; //Get the tracks container element
-            const _expectedTrackCount = getMetadatum(metadataNames.trackCount); //Fetch the official track count of the tracklist, if one exists. This will be undefined otherwise. 
-            let _scrapeStartingIndex = getIndexOfElement(_firstTrack); //Get the index of the first track element at which to begin the scrape, since it isn't always necessarily the first element in the track row container (i.e. can't assume it's 0)  
-            scrapeTracks(_tracksContainer, _scrapeStartingIndex, callback, _expectedTrackCount); //Initiate the scrape & scroll process
-        } else console.error("Tried to get scrape the tracks in the current tracklist, but the first track in the list couldn't be identified.");
+    
+    /**
+     * Extracts a list of all playlists by scraping the playlist elements in the DOM, and then displays a modal dialog with an option to copy the resulting list to the clipboard
+     */
+    async function getPlaylists() {
+        const firstElementInList = document.querySelector('ytmusic-two-row-item-renderer.style-scope.ytmusic-grid-renderer'); // Find the first track element using query selector.
+        if (firstElementInList instanceof Element === true) {
+            const elementContainer = firstElementInList.parentElement; // Get the container element
+            const scrapeStartingIndex = getIndexOfElement(firstElementInList) + 1; // The scrape should start at one greater than the index of the first element in the list. This is because the first element is the 'New playlist' button, which should be skipped. 
+            const scrapeMetadataFromElement = element => element.children[0].title;
+            const dialog = new ScrapeInProgressDialog();
+            const results = await scrapeElements(elementContainer, scrapeStartingIndex, scrapeMetadataFromElement); //Initiate the scrape & scroll process;
+            
+            dialog.text = 'List of Playlists Successfully Scraped!';
+            dialog.addCopyToClipboardPrompt(results);
+        } else console.error("Tried to scrape the list of playlists, but the first element in the list couldn't be identified.");
     }
 
     /**
-     * Runs through a process that scrolls through the current tracklist and scrapes the metadata out of all the track rows
-     * @param {Object} tracksContainer The element containing all the rows of track elements
-     * @param {number} scrapeStartingIndex The index within the tracks container at which to begin the initial scrape
-     * @param {function} callback The function to execute once the scrape process has ended, either due to successful completion or timeout
-     * @param {number} [expectedTrackCount] An optional parameter indicating the expected track count for the tracklist, if available
+     * Extracts a list of tracks by scraping the track row elements in the DOM, and then passes the results along in the provided callback
+     * @param {Function} callback The function to execute once the list of tracks has been generated. The callback takes an array of Track Objects as its single parameter.
      */
-    function scrapeTracks(tracksContainer, scrapeStartingIndex, callback, expectedTrackCount) {
-        const _trackElementCollection = tracksContainer.children;
-        const _trackMetadataArray = []; //Create an array to store the metadata for each scraped track in the tracklist
-        let _scrollingTimeoutID = undefined; //Variable tracking the timeout to end the scroll & scrape process, in case no changes to the track row container element are observed for a while
-        
-        // const t0 = performance.now();
-        // let tScrolled = undefined;
-        // let tLoaded = undefined;
-
-        const _scrapeLoadedTracks = function() { //Set up the function to scrape the set of tracks most recently loaded in the DOM
-            // tLoaded = performance.now();
-            // if (typeof tScrolled === 'number') {
-            //     console.log("Loading tracks from YTM took " + (tLoaded - tScrolled - 100) + " milliseconds");
-            // }
-
-            clearTimeout(_scrollingTimeoutID); //Since there are still track elements available to scrape, clear the timeout that would otherwise end the scrolling process after a few seconds. The timeout will be reset if the scrape isn't complete after the upcoming scrape.        
-            
-            for (let i = scrapeStartingIndex; i < (_trackElementCollection.length); i++) { //For each new track row loaded in the DOM...
-                _trackMetadataArray.push(new Track(_trackElementCollection[i])); //Scrape the metadata from the track element and add it to the metadata array
-            }
-
-            if (expectedTrackCount === _trackMetadataArray.length) { //If there is an expected track count and it matches the length of the metadata array...
-                _endScrape(); //End the scrape
-            } else { //Else, if the scrape isn't complete or the expected track count is unknown...
-                //const tScraped = performance.now();
-                //console.log("Scrape round took " + (tScraped - tLoaded) + " milliseconds + 100ms from timeout.");
-                
-                scrollToElement(_trackElementCollection[_trackElementCollection.length-1]); //Scroll to the last available child element in the tracks container
-                //tScrolled = performance.now();
-                scrapeStartingIndex = _trackElementCollection.length; //Set the starting index for the next scrape to be one greater than the index of the last child element from the previous scrape
-                _scrollingTimeoutID = setTimeout(_endScrape, 4000); //Set a timeout to end the scrolling if no new changes to the container element have been observed for a while. This avoids infinite scrolling when the expected track count is unknown, or if an unexpected issue is encountered.
-            }
-        }
-
-        const _endScrape = function() { //Set up the function to execute once the scrape & scroll process has either been successfully completed or timed out
-            allowManualScrolling(persistentElements.scrollContainer, true); //Allow the user to scroll manually again
-            _observer.disconnect(); //Disconnect the mutation observer
-            //const t1 = performance.now();
-            //console.log("Scrape took " + (t1 - t0) + " milliseconds.");
-            callback(_trackMetadataArray); //Execute the callback function, passing the tracks array as a parameter
-        }
-
-        allowManualScrolling(persistentElements.scrollContainer, false); //Temporarily disable manual scrolling to avoid any interference from the user during the scrape process
-        scrollToTopOfContainer(persistentElements.scrollContainer); //Scroll to the top of the tracklist, as an extra safety measure just to be certain that no tracks are missed in the scrape. (Note: This step likely isn't necessary in YTM since it appears the track row elements never get removed from the DOM no matter how far down a list you scroll).
-
-        //const _observer = new MutationObserver(_onTrackElementsLoaded); //Create a new mutation observer instance linked to the callback function defined above
-        const _observer = new MutationObserver(setTimeout.bind(null, _scrapeLoadedTracks, 100)); //Create a new mutation observer instance which triggers a scrape of the loaded track elements after a brief delay (which allows time all the elements (e.g. 'duration' metadata) in the DOM to load).
-        const _observerConfig = {childList: true}; //Set up the configuration options for the Mutation Observer to watch for changes to the element's childList
-        _observer.observe(tracksContainer, _observerConfig); //Start observing the tracks container element for configured mutations (i.e. for any changes to its childList)
-        
-        setTimeout(_scrapeLoadedTracks, 100); //Wait a short amount of time to allow the page to scroll to the top of the tracklist, and then begin the scrape & scroll process
+     async function getTracks(callback) {
+        const firstElementInList = document.querySelector('ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]'); // Find the first track element using query selector. This selector is used because it currently works across all valid tracklists.
+        if (firstElementInList instanceof Element === true) {
+            const elementContainer = firstElementInList.parentElement; // Get the container element
+            const expectedElementCount = getMetadatum(metadataNames.trackCount); // Fetch the official track count of the tracklist, if one exists. This will be undefined otherwise. 
+            const scrapeStartingIndex = getIndexOfElement(firstElementInList); // Get the index of the first element at which to begin the scrape, since it isn't always necessarily the first element in the container (i.e. can't assume it's 0)  
+            const scrapeMetadataFromElement = element => new Track(element); // Set up the function to execute on each element found in the list. In this case, track metadata will be extracted from the track element.
+            const dialog = new ScrapeInProgressDialog(); // Create a dialog modal to indicate that the scrape is in progress
+            const results = await scrapeElements(elementContainer, scrapeStartingIndex, scrapeMetadataFromElement, expectedElementCount); // Initiate the scrape & scroll process;
+            callback(results);
+            dialog.close();
+        } else console.error("Tried to scrape the tracklist, but the first element in the list couldn't be identified.");
     }
 
-    // //
+    /**
+     * Runs through a process that scrolls through the given list of elements and scrapes metadata out of each of the elements
+     * @param {Object} elementContainer The container element wrapping all the individual elements to scrape
+     * @param {number} scrapeStartingIndex The index within the container element at which to begin the initial scrape
+     * @param {function} scrapeElementFunction The function to execute on each individual element to extract metadata from it
+     * @param {number} [expectedElementCount] An optional parameter indicating the expected element count for the list, if available
+     * @returns {Promise} A promise with an array of the metadata scraped from each element
+     */
+    function scrapeElements(elementContainer, scrapeStartingIndex, scrapeElementFunction, expectedElementCount) {
+        return new Promise(resolve => {
+            const elementCollection = elementContainer.children;
+            const results = []; // Create an array to store the metadata scraped from each element in the list
+            let scrollingTimeoutID = undefined; // Variable tracking the timeout to end the scroll & scrape process, in case no changes to the container element are observed for a while
 
-    // //This approach scrapes all available track elements and then removes them from the DOM.
-    // //This automatically triggers a new set of tracks to be loaded in without any extra work (it's as if the user scrolled to the bottom of the tracklist manually)
-    // //Brief testing determined that this approach is slightly faster, but it requires the user to refresh the page to get their tracklist back to normal.
-    // function scrapeAndRemoveTracks(tracksContainer, scrapeStartingIndex, callback, expectedTrackCount) {
-    //     const _trackElementCollection = tracksContainer.children;
-    //     const _trackMetadataArray = []; //Create an array to store the metadata for each scraped track in the tracklist
-    //     let _scrollingTimeoutID = undefined; //Variable tracking the timeout to end the scroll & scrape process, in case no changes to the track row container element are observed for a while
-    
-    //     const t0 = performance.now();
+            const triggerDelayedScrape = (delay=100) => setTimeout(scrapeLoadedElements, delay); // Set up the function to trigger a scrape of the loaded element after a brief delay. This allows time for all the sub-elements in the DOM to load.
 
-    //     const _scrapeLoadedTracks = function() { //Set up the function to scrape the set of tracks most recently loaded in the DOM
-    //         clearTimeout(_scrollingTimeoutID); //Since there are still track elements available to scrape, clear the timeout that would otherwise end the scrolling process after a few seconds. The timeout will be reset if the scrape isn't complete after the upcoming scrape.        
+            const scrapeLoadedElements = () => { // Set up the function to scrape the set of elements most recently loaded in the DOM
+                clearTimeout(scrollingTimeoutID); // Since there are still elements available to scrape, clear the timeout that would otherwise end the scrolling process after a few seconds. The timeout will be reset if the scrape isn't complete after the upcoming scrape.        
+                
+                for (let i = scrapeStartingIndex; i < (elementCollection.length); i++) { // For each new element loaded in the DOM...
+                    results.push(scrapeElementFunction(elementCollection[i])); // Scrape the metadata from the element and add it to the metadata array
+                }
+
+                if (results.length === expectedElementCount) { // If there is an expected element count and it matches the length of the metadata array...
+                    // Note: This currently works for the 'Your Likes' list even though the expected/displayed track count is incorrect. This is is because the displayed track count is bigger than the actual one. If it was the other way around, it's possible the resulting scraped tracklist could be incorrect.
+                    endScrape(); // End the scrape
+                } else { // Else, if the scrape isn't complete or the expected element count is unknown...
+                    scrollToElement(elementCollection[elementCollection.length-1]); // Scroll to the last available child element in the container
+                    scrapeStartingIndex = elementCollection.length; // Set the starting index for the next scrape to be one greater than the index of the last child element from the previous scrape
+                    scrollingTimeoutID = setTimeout(endScrape, 2500); // Set a timeout to end the scrolling if no new changes to the container element have been observed for a while. This avoids infinite scrolling when the expected element count is unknown, or if an unexpected issue is encountered.
+                }
+            }
+
+            const endScrape = () => { // Set up the function to execute once the scrape & scroll process has either been successfully completed or timed out
+                allowManualScrolling(persistentElements.scrollContainer, true); // Allow the user to scroll manually again //TODO the scrollContainer should probably be a parameter
+                observer.disconnect(); // Disconnect the mutation observer
+                resolve(results); // Resolve the promise along with the resulting array of scraped metadata
+            }
+
+            allowManualScrolling(persistentElements.scrollContainer, false); //Temporarily disable manual scrolling to avoid any interference from the user during the scrape process
+            scrollToTopOfContainer(persistentElements.scrollContainer); //Scroll to the top of the tracklist, as an extra safety measure just to be certain that no tracks are missed in the scrape. (Note: This step likely isn't necessary in YTM since it appears the track row elements never get removed from the DOM no matter how far down a list you scroll).
+
+            const observer = new MutationObserver(triggerDelayedScrape); // Create a new mutation observer instance which triggers a scrape of the loaded elements after a brief delay (which allows time for all the sub-elements in the DOM to load).
+            const observerConfig = {childList: true}; // Set up the configuration options for the Mutation Observer to watch for changes to the element's childList
+            observer.observe(elementContainer, observerConfig); // Start observing the container element for configured mutations (i.e. for any changes to its childList)
             
-    //         for (let i = scrapeStartingIndex; i < (_trackElementCollection.length); i++) { //For each new track row loaded in the DOM...
-    //             _trackMetadataArray.push(new Track(_trackElementCollection[i])); //Scrape the metadata from the track element and add it to the metadata array
-    //         }
-
-    //         if (expectedTrackCount === _trackMetadataArray.length) { //If there is an expected track count and it matches the length of the metadata array...
-    //             _endScrape(); //End the scrape
-    //         } else { //Else, if the scrape isn't complete or the expected track count is unknown...
-    //             //scrollToElement(_trackElementCollection[_trackElementCollection.length-1]); //Scroll to the last available child element in the tracks container
-    //             //scrapeStartingIndex = _trackElementCollection.length; //Set the starting index for the next scrape to be one greater than the index of the last child element from the previous scrape
-    //             tracksContainer.innerHTML = '';
-    //             scrapeStartingIndex = 0;
-    //             _scrollingTimeoutID = setTimeout(_endScrape, 4000); //Set a timeout to end the scrolling if no new changes to the container element have been observed for a while. This avoids infinite scrolling when the expected track count is unknown, or if an unexpected issue is encountered.
-    //         }
-    //     }
-
-    //     const _endScrape = function() { //Set up the function to execute once the scrape & scroll process has either been successfully completed or timed out
-    //         allowManualScrolling(persistentElements.scrollContainer, true); //Allow the user to scroll manually again
-    //         _observer.disconnect(); //Disconnect the mutation observer
-    //         const t1 = performance.now();
-    //         console.log("Scrape took " + (t1 - t0) + " milliseconds.");
-    //         callback(_trackMetadataArray); //Execute the callback function, passing the tracks array as a parameter
-    //     }
-
-    //     allowManualScrolling(persistentElements.scrollContainer, false); //Temporarily disable manual scrolling to avoid any interference from the user during the scrape process
-    //     scrollToTopOfContainer(persistentElements.scrollContainer); //Scroll to the top of the tracklist, as an extra safety measure just to be certain that no tracks are missed in the scrape. (Note: This step likely isn't necessary in YTM since it appears the track row elements never get removed from the DOM no matter how far down a list you scroll).
-
-    //     //const _observer = new MutationObserver(_onTrackElementsLoaded); //Create a new mutation observer instance linked to the callback function defined above
-    //     const _observer = new MutationObserver(setTimeout.bind(null, _scrapeLoadedTracks, 100)); //Create a new mutation observer instance which triggers a scrape of the loaded track elements after a brief delay (which allows time all the elements (e.g. 'duration' metadata) in the DOM to load).
-    //     const _observerConfig = {childList: true}; //Set up the configuration options for the Mutation Observer to watch for changes to the element's childList
-    //     _observer.observe(tracksContainer, _observerConfig); //Start observing the tracks container element for configured mutations (i.e. for any changes to its childList)
-        
-    //     setTimeout(_scrapeLoadedTracks, 100); //Wait a short amount of time to allow the page to scroll to the top of the tracklist, and then begin the scrape & scroll process
-    // }
-
-    // //
+            triggerDelayedScrape(); // Wait a short amount of time to allow the page to scroll to the top of the tracklist, and then begin the scrape & scroll process
+        });
+    }
 
     /**
      * Gets the index of the provided element within it's parent element's list of children
@@ -414,6 +453,17 @@
             trackCountString = trackCountString.replace(/,/g, ""); //Remove any commas from the string (e.g. for counts > 999)
             return parseInt(trackCountString, 10); //Parse the string to get the track count value as an integer and return it
         } else console.error("Tried to convert a track count string to a number, but the value provided was not a string.");
+    }
+
+    function convertArrayToSingleColumnCSV(array) {
+        if (Array.isArray(array) === true) { // If a valid array was provided, convert it to a single column CSV
+            let csv = '';
+            for (const element of array) {
+                csv += element + '\r\n';
+            }
+
+            return csv;
+        } else throw Error("Tried to convert an array to a single-column CSV but a valid array was not provided.");  
     }
 
     init();

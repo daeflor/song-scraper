@@ -4,7 +4,7 @@ import * as appStorage from './scripts/modules/StorageManager.js';
 async function updatePreferencesScreenUI() {
     const comparisonMethod = await appStorage.getPreferencesFromChromeSyncStorage('Comparison Method');
     const optionToCheck = document.getElementById(comparisonMethod);
-    if (optionToCheck instanceof Element) {
+    if (optionToCheck instanceof Element === true) {
         optionToCheck.checked = true;
     }
 }

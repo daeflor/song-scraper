@@ -183,8 +183,9 @@ ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', async functi
             //ViewRenderer.unhideElement(ViewRenderer.tracktables.stored); 
         } else { // Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
             const storedTracks = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
-            UIController.createTrackTable(storedTracks, 'Stored YTM Tracklist', ViewRenderer.tracktables.stored);
-            // TODO this interaction with ViewRenderer is WIP
+            if (Array.isArray(storedTracks) === true) {
+                UIController.createTrackTable(storedTracks, 'Stored YTM Tracklist', ViewRenderer.tracktables.stored);
+            } else console.info("Tried to display the stored tracklist, but the tracklist could not be found in storage.");
         }
         //TODO Implement:
         //UIController.triggerUITransition('CheckboxChecked');
