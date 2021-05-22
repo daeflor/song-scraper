@@ -20,11 +20,20 @@ if (firebase.apps.length === 0) { // If Firebase has not yet been initialized (i
         title: "Get List of Playlists",
         documentUrlPatterns: ['https://music.youtube.com/library/playlists']
     });
+
+    chrome.contextMenus.create({
+        id: 'contextMenu_getGPMTracklists',
+        title: "Print List of GPM Tracklists to Console",
+        documentUrlPatterns: ['https://music.youtube.com/library/playlists']
+    });
 }
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     if (info.menuItemId === 'contextMenu_scrapePlaylists') {
         chrome.tabs.sendMessage(tab.id, {greeting:'GetPlaylists'});
+    } else if (info.menuItemId === 'contextMenu_getGPMTracklists') {
+        const gpmTracklists = await getGPMTracklists();
+        console.table(gpmTracklists);
     }
 });
 
@@ -168,29 +177,49 @@ async function getTrackCountFromChromeSyncStorage(tracklistTitle) {
  * @returns {Promise} A promise with the resulting track count
  */
 async function getTrackCountFromGPMTracklistData(tracklistTitle){
-    const gpmLibraryKey = 'gpmLibraryData';
-    const storageItems = await /*chromeStorage.*/getKeyValuePairs('local', gpmLibraryKey);
-    const gpmLibraryData = storageItems[gpmLibraryKey];
+    const gpmLibraryData = await getGPMLibraryData();
     for (const tracklistKey in gpmLibraryData) {
         if (tracklistKey.includes("'" + tracklistTitle + "'")) {
-            console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryData[tracklistKey].length);
+            console.info("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryData[tracklistKey].length);
             return gpmLibraryData[tracklistKey].length;
         }
     }
-    console.warn("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
-    return undefined;
+    console.info("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
 }
 
 /**
- * Clears the tracklist metadata which is cached in chrome local storage
+ * Returns a list of the names of all the tracklists stored in the exported GPM library data
+ * @returns {Promise} A promise with the resulting array of tracklist names
  */
-function clearCachedTracklistMetadata() { //TODO This is no longer being done. Is that fine?
-    chrome.storage.local.set ({currentTracklistMetadata: {}}, () => {
-        typeof chrome.runtime.lastError === 'undefined'
-        ? console.info("Background: Cleared cached tracklist metadata.")
-        : console.error(chrome.runtime.lastError.message)
-    });
+async function getGPMTracklists(){
+    const gpmLibraryData = await getGPMLibraryData();
+    return Object.keys(gpmLibraryData).map(name => name.replace('ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_', '')); // Return a list of all the key names in the gpm library data object, but removing the prefix for better readability
 }
+
+//TODO this would be good to put in a module that both background and options scripts can access, once Chrome 91 releases.
+/**
+ * Returns an object containing the the exported GPM library data
+ * @returns {Promise} A promise with the resulting GPM library data object
+ */
+ async function getGPMLibraryData(){
+    const gpmLibraryKey = 'gpmLibraryData';
+    const storageItems = await /*chromeStorage.*/getKeyValuePairs('local', gpmLibraryKey);
+    const gpmLibraryData = storageItems[gpmLibraryKey];
+    if (typeof gpmLibraryData !== 'undefined') {
+        return gpmLibraryData;
+    } else throw new Error("Tried to fetch the GPM library data from local storage but it wasn't found.");
+}
+
+// /**
+//  * Clears the tracklist metadata which is cached in chrome local storage
+//  */
+// function clearCachedTracklistMetadata() { //TODO This is no longer being done. Is that fine?
+//     chrome.storage.local.set ({currentTracklistMetadata: {}}, () => {
+//         typeof chrome.runtime.lastError === 'undefined'
+//         ? console.info("Background: Cleared cached tracklist metadata.")
+//         : console.error(chrome.runtime.lastError.message)
+//     });
+// }
 
 //TODO this would be good to put in a module that both background and options scripts can access, once Chrome 91 releases.
 /**
