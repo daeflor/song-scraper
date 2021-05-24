@@ -188,11 +188,7 @@ export function createTrackTable(tracklist, headerText, parentElement, options/*
             for (const column of _columnsToIncludeInTrackTable) { // For each additional column in the Track Table...
                 if (typeof column === 'string') { // If the current column's name is a valid string...
                     const trackMetadatum = track[column.toLowerCase()]; // Convert the column name string to lower case and use that value to extract the corresponding metadatum value for the track
-                    if (typeof trackMetadatum !== 'undefined') { // If the track's metadatum for the current column exists
-                        _tr.append(window.Utilities.CreateNewElement('td', {textContent:trackMetadatum})); // Append to the row a new cell containing the metadatum value
-                    } else if (column !== 'Unplayable') { //Print a warning log if the metadata is undefined, except for the 'Unplayable' value, where this is expected.
-                        console.warn("A piece of track metadata was encountered that is blank, false, or undefined, and so it was skipped over. This does not include the 'Unplayable' column. This likley indicates that an issue was encountered. Current column is: " + column);
-                    }
+                    _tr.append(window.Utilities.CreateNewElement('td', {textContent:trackMetadatum ?? ''})); // Append to the row a new cell containing the metadatum value, or a blank string if the metadatum has a falsy value. (For example, in the common case of the 'unplayable' value not being set, or the less common case where an unplayable track doesn't have a piece of metadata specified, such as the duration).
                 }
             }
         });
@@ -218,9 +214,11 @@ function compareDurationStrings(duration1, duration2) {
     if (typeof duration1 === 'string' && typeof duration2 === 'string') {
         const differenceInSeconds = convertDurationStringToSeconds(duration1) - convertDurationStringToSeconds(duration2);
         return (differenceInSeconds >= -2 && differenceInSeconds <= 2) ? true : false;
-    } else console.error("Tried to compare two duration strings, but the parameters provided were not both of type string.");
+    } else {
+        console.warn("Tried to compare two duration strings, but the parameters provided were not both of type string. This could indicate that an issue was encountered, or that the track doesn't have a duration specified in its metadata.");
+        return false;
+    }
 }
-
 function compareTracks(track1, track2, collator) {
     if (typeof(track1) === 'object' && typeof(track2) === 'object' && typeof collator === 'object') {
         return (collator.compare(track1.title, track2.title) === 0 &&

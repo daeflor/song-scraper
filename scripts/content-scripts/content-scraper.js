@@ -7,19 +7,23 @@
         constructor(trackContainerElement) {
             if (currentApp === supportedApps.youTubeMusic) {
                 const metadataElements = trackContainerElement.getElementsByTagName('yt-formatted-string');
-
-                if (typeof metadataElements[0] === 'object') {
+                if (metadataElements[0] instanceof Element === true) {
                     this.title = metadataElements[0].title;
                 } else console.error("Track title could not be retrieved from DOM.");
-                if (typeof metadataElements[1] === 'object') {
+
+                if (metadataElements[1] instanceof Element === true) {
                     this.artist = metadataElements[1].title;
                 } else console.error("Artist could not be retrieved from DOM.");
-                if (typeof metadataElements[2] === 'object') {
+
+                if (metadataElements[2] instanceof Element === true) {
                     this.album = metadataElements[2].title;
                 } else console.error("Album could not be retrieved from DOM.");
-                if (typeof metadataElements[3] === 'object') {
+
+                if (metadataElements[3] instanceof Element === true) {
                     this.duration = metadataElements[3].title;
-                } else console.error("Duration could not be retrieved from DOM.");
+                } else console.warn("Duration could not be retrieved from DOM.");
+                //this.duration = metadataElements[3]?.title || '';
+
                 if (trackContainerElement.hasAttribute('unplayable_')) { //Note: <if (trackContainerElement.unplayable_ === true)> should work but it doesn't for some reason
                     this.unplayable = true;
                     console.info("Encountered an unplayable track with title: " + this.title);

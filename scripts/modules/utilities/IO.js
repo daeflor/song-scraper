@@ -66,7 +66,7 @@ export function convertObjectMapsToCsv(maps, keysToInclude) {
 
             mapEntries.forEach(iterator => { // For each map iterator... 
                 const currentEntry = iterator.next().value; // Get the next entry from the iterator
-                const currentIndex = currentEntry?.[0] ?? ''; // Use the entry's key as an 'index' value to print alongside the actual object data. If the key is falsy, then just use a blank string
+                const currentIndex = currentEntry?.[0] ?? ''; // Use the entry's key as an 'index' value to print alongside the actual object data. If the key is falsy, then just use a blank string. (Note: the blank/empty cells are added so that if one of the tables has fewer columns than the other, they both still display properly side-by-side in a spreadsheet viewer).
                 const currentObject = currentEntry?.[1]; // Get the current object from the entry's value
 
                 valuesInCurrentRow.push(currentIndex); // Add the 'index' to the array of values to include in the current row
