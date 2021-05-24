@@ -43,8 +43,9 @@ export function convertObjectMapsToCsv(maps, keysToInclude) {
             if (map instanceof Map === true && map.size > 0) { //If the map contains data...
                 mapEntries.push(map.entries()); // Get a new Iterator for the map which will be used later to extract each element's data
                 
-                valuesInHeaderRow.push(key); // Use the map key as the name to appear in the header row for this map
-                keysToInclude.forEach(() => valuesInHeaderRow.push('')); // Add empty values to the header row equal to the number of values in the list of keys (column names) to include
+                valuesInHeaderRow.push('', key); // Use the map key as the name to appear in the header row for this map. (Note: this is added in the second column of the table (after an empty column) so that the index column can have a short width in spreadsheet editors).
+                for (let i = 0; i < keysToInclude.length - 1; i++) valuesInHeaderRow.push(''); // Add empty values to the header row equal to the number of values in the list of keys (column names) to include minus 1, because of the empty column included before table name (see above).
+                //keysToInclude.forEach(() => valuesInHeaderRow.push('')); // Add empty values to the header row equal to the number of values in the list of keys (column names) to include
 
                 valuesInSecondaryHeaderRow.push('index'); // Add an index column before the rest of the column names
                 valuesInSecondaryHeaderRow = valuesInSecondaryHeaderRow.concat(keysToInclude); // Add the set of included keys to the values that will be used to create columns for the csv's header row
