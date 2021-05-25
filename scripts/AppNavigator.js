@@ -207,7 +207,7 @@ function compareDurationStrings(duration1, duration2) {
         return (differenceInSeconds >= -2 && differenceInSeconds <= 2) ? true : false;
     } else {
         console.warn("Tried to compare two duration strings, but the parameters provided were not both of type string. This could indicate that an issue was encountered, or that the track doesn't have a duration specified in its metadata.");
-        return false;
+        return (duration1 === duration2) // Return true if the non-string duration values match (e.g. they are both undefined), otherwise return false
     }
 }
 function compareTracks(track1, track2, collator) {
@@ -379,9 +379,9 @@ function convertDurationStringToSeconds(duration) {
             case 3: //Track is more than an hour but less than a day long
                 return _splitDurationIntegers[0]*3600 + _splitDurationIntegers[1]*60 + _splitDurationIntegers[2];
             default:
-                console.warn("Tried to extract a seconds integer value from a duration string, but the duration is not in a supported format (e.g. the duration may be longer than 24 hours).");
+                throw new Error("Tried to extract a seconds integer value from a duration string, but the duration is not in a supported format (e.g. the duration may be longer than 24 hours).");
         }
-    } else console.error ("Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
+    } else throw new Error("Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
 }
 
 //TODO this should be a module instead (or move the few different remaining helper functions here into other already-existing modules as applicable)
