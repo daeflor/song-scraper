@@ -28,10 +28,11 @@ function createCommaSeparatedStringFromArray(array) {
  * Converts multiple maps of objects to a csv
  * @param {Object} maps A map of maps. The contents of each map of which will be printed side-by-side
  * @param {string[]} keysToInclude An array to indicate the specific object keys which should be included in the csv file, and the order in which to output them.
+ * @param {string} [tableName] An optional name to include in the first row of the CSV
  * @returns {string} The CSV generated from the data in the provided maps
  */
-export function convertObjectMapsToCsv(maps, keysToInclude) {
-    let csv = ''; // Begin with a blank string for the CSV
+export function convertObjectMapsToCsv(maps, keysToInclude, tableName) {
+    let csv = (typeof tableName === 'string') ? ',"' + tableName + '"\r\n' : ''; // If a table name is provided, use that as the value for the first row in the CSV; otherwise start with a blank string. (Note: the table name is added in the second column of the table (after an empty column) so that the index column can have a short width in spreadsheet editors).
 
     if (maps instanceof Map === true && Array.isArray(keysToInclude) === true) { // If the parameters provided are both valid...
         const mapEntries = []; // Create an array to hold the Map Iterators for any maps provided that aren't empty.
@@ -79,7 +80,7 @@ export function convertObjectMapsToCsv(maps, keysToInclude) {
             
             csv += createCommaSeparatedStringFromArray(valuesInCurrentRow) + '\r\n'; // Create a comma-separated string from the array of recorded values and append the resulting string to the CSV string, followed by a newline character to indicate the end of the current row
         }
-    } else console.error ("Tried to convert map data to a csv, but invalid parameters were provided. Expected an array of maps and an array of keys to use for the column names.");
+    } else throw new Error("Tried to convert map data to a csv, but invalid parameters were provided. Expected an array of maps and an array of keys to use for the column names.");
 
     return csv;
 }

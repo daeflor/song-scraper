@@ -128,7 +128,7 @@ ViewRenderer.buttons.copyToClipboard.addEventListener('click', function() {
     ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
     const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV.
-    const csv = IO.convertObjectMapsToCsv(SESSION_STATE.tracklist.deltas, includedProperties);
+    const csv = IO.convertObjectMapsToCsv(SESSION_STATE.tracklist.deltas, includedProperties, SESSION_STATE.tracklist.title);
 
     navigator.clipboard.writeText(csv)
         .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
