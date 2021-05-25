@@ -134,14 +134,28 @@ input[type='checkbox'] {
 	
 	white-space: nowrap;
 	border: 1px solid black;
+	table-layout: fixed;
+	width: 100%;
 }
 
 td {
-	max-width: 212px;
-	min-width: 100%;
+	/* max-width: 212px;
+	min-width: 100%; */
 	text-overflow: ellipsis; 
 	overflow-x: hidden;
 	padding-right: 5px;
+}
+
+th.index {
+	width: 5%;
+}
+
+th.duration {
+	width: 8%;
+}
+
+th.unplayable {
+	width: 10%;
 }
 
 #buttons {

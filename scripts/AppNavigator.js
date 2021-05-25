@@ -161,17 +161,15 @@ export function createTrackTable(tracklist, headerText, parentElement, options/*
     let _tr = document.createElement('tr');
 
     //Added a header column to the track table for the track index
-    let _th = document.createElement('th');
-    _th.textContent = 'Index';
-    _tr.appendChild(_th);
+    let th = window.Utilities.CreateNewElement('th', {textContent:'Index', attributes:{class:'index'}});
+    _tr.append(th);
 
     //For each additional column that should be included in the Track Table...
     for (let i = 0; i < _columnsToIncludeInTrackTable.length; i++) { 
         //If the key's value is a string, use it to add a header column to the track table
         if (typeof _columnsToIncludeInTrackTable[i] === 'string') {
-            _th = document.createElement('th');
-            _th.textContent = _columnsToIncludeInTrackTable[i];
-            _tr.appendChild(_th);
+            th = window.Utilities.CreateNewElement('th', {textContent:_columnsToIncludeInTrackTable[i], attributes:{class:_columnsToIncludeInTrackTable[i].toLocaleLowerCase()}});
+            _tr.append(th);
         }
     }
 
@@ -187,7 +185,8 @@ export function createTrackTable(tracklist, headerText, parentElement, options/*
 
             for (const column of _columnsToIncludeInTrackTable) { // For each additional column in the Track Table...
                 if (typeof column === 'string') { // If the current column's name is a valid string...
-                    const trackMetadatum = track[column.toLowerCase()]; // Convert the column name string to lower case and use that value to extract the corresponding metadatum value for the track
+                    const metadatumKey = column.toLowerCase();
+                    const trackMetadatum = track[metadatumKey]; // Convert the column name string to lower case and use that value to extract the corresponding metadatum value for the track
                     _tr.append(window.Utilities.CreateNewElement('td', {textContent:trackMetadatum ?? ''})); // Append to the row a new cell containing the metadatum value, or a blank string if the metadatum has a falsy value. (For example, in the common case of the 'unplayable' value not being set, or the less common case where an unplayable track doesn't have a piece of metadata specified, such as the duration).
                 }
             }
@@ -405,6 +404,7 @@ window.Utilities = (function() {
         if (typeof type === 'string') { //If a valid element type was provided...
             const _element = document.createElement(type); //Create a new element of the specified type
 
+            //TODO could make this more user-friendly for setting classes, since that is one of the more common use-cases.
             if (typeof options === 'object') { //If an options object was provided...
                 if (typeof options.attributes === 'object') { //If an attributes property was provided...                    
                     // for (let i = 0; i < options.attributes.length; i++) {
