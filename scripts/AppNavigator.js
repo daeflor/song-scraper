@@ -156,47 +156,39 @@ export function createTrackTable(tracklist, headerText, parentElement, options/*
     //TODO Should all or some of this be done in ViewRenderer instead?
 
     //TODO A nice-to-have in the future would be to omit any header/column (e.g. 'Unplayable') if there are zero displayable values for that metadatum
-    const _columnsToIncludeInTrackTable = ['Title', 'Artist', 'Album', 'Duration', 'Unplayable']; //TODO This is currently hard-coded. Should eventually be a param, probably. Although it would be good to have a default set of keys to fall back to.
+    const columnNames = ['Title', 'Artist', 'Album', 'Duration', 'Unplayable']; //TODO This is currently hard-coded. Should eventually be a param, probably. Although it would be good to have a default set of keys to fall back to.
+    const includedMetadataKeys = [];
 
-    let _tr = document.createElement('tr');
+    // Create the table element, the header row, and the header cell for the 'Index' column
+    let th = window.Utilities.CreateNewElement('th', {textContent:'Index', attributes:{class:'index'}}); // Create a new th element for the 'Index' column
+    let tr = window.Utilities.CreateNewElement('tr', {children:[th]}); // Create a new row element to use as a header row, with the 'Index' th cell as a child
+    const _table = window.Utilities.CreateNewElement('table', {attributes:{class:'trackTable'}, children:[tr]}); // Create a new table element, with the header row as a child
 
-    //Added a header column to the track table for the track index
-    let th = window.Utilities.CreateNewElement('th', {textContent:'Index', attributes:{class:'index'}});
-    _tr.append(th);
-
-    //For each additional column that should be included in the Track Table...
-    for (let i = 0; i < _columnsToIncludeInTrackTable.length; i++) { 
-        //If the key's value is a string, use it to add a header column to the track table
-        if (typeof _columnsToIncludeInTrackTable[i] === 'string') {
-            th = window.Utilities.CreateNewElement('th', {textContent:_columnsToIncludeInTrackTable[i], attributes:{class:_columnsToIncludeInTrackTable[i].toLocaleLowerCase()}});
-            _tr.append(th);
-        }
+    // Add a header cell for each column that should be included after the Index (i.e. track position)
+    for (let i = 0; i < columnNames.length; i++) { 
+        if (typeof columnNames[i] === 'string') {
+            includedMetadataKeys.push(columnNames[i].toLowerCase()); // Add a lower case copy of the column name to the includedMetadataKeys array, which will be used later to access each track's properties
+            th = window.Utilities.CreateNewElement('th', {textContent:columnNames[i], attributes:{class:includedMetadataKeys[i]}});
+            tr.append(th);
+        } else throw new Error("Tried to create a track table with non-string header cells, but only strings are accepted for header cells.");
     }
 
-    //Create a new table element, with the header row as a child
-    const _table = window.Utilities.CreateNewElement('table', {attributes:{class:'trackTable'}, children:[_tr]});
-
     if (typeof tracklist === 'object') { // If the tracklist parameter provided is a valid object...       
-        tracklist.forEach( (track, key) => { // For each track in the tracklist...
-            const trackPosition = (Array.isArray(tracklist) === true) ? key + 1 : key; // If the tracklist is stored in an array, the track position should be its index (or key) plus 1. If the tracklist is stored in a map, the track position is equal to the key value.
+        tracklist.forEach( (track, index) => { // For each track in the tracklist...
+            const trackPosition = (Array.isArray(tracklist) === true) ? index + 1 : index; // If the tracklist is stored in an array, the track position should be its index (or key) plus 1. If the tracklist is stored in a map, the track position is equal to the key value.
             const td = window.Utilities.CreateNewElement('td', {textContent:trackPosition}); // Create a new data cell for the track position
-            _tr = window.Utilities.CreateNewElement('tr', {children:[td]}); // Create a new row for the track, adding the index cell to the new row      
-            _table.appendChild(_tr); // Add the new row to the table
+            tr = window.Utilities.CreateNewElement('tr', {children:[td]}); // Create a new row for the track, adding the index cell to the new row      
+            _table.append(tr); // Add the new row to the table
 
-            for (const column of _columnsToIncludeInTrackTable) { // For each additional column in the Track Table...
-                if (typeof column === 'string') { // If the current column's name is a valid string...
-                    const metadatumKey = column.toLowerCase();
-                    const trackMetadatum = track[metadatumKey]; // Convert the column name string to lower case and use that value to extract the corresponding metadatum value for the track
-                    _tr.append(window.Utilities.CreateNewElement('td', {textContent:trackMetadatum ?? ''})); // Append to the row a new cell containing the metadatum value, or a blank string if the metadatum has a falsy value. (For example, in the common case of the 'unplayable' value not being set, or the less common case where an unplayable track doesn't have a piece of metadata specified, such as the duration).
-                }
+            for (const metadataKey of includedMetadataKeys) { // For each additional column in the Track Table...
+                tr.append(window.Utilities.CreateNewElement('td', {textContent:track[metadataKey] ?? ''})); // Append to the row a new cell containing the metadatum value, or a blank string if the metadatum has a falsy value. (For example, in the common case of the 'unplayable' value not being set, or the less common case where an unplayable track doesn't have a piece of metadata specified, such as the duration).
             }
         });
-    } else console.error("Tried to create a track table but a valid tracklist object was not provided.");
+    } else throw new Error("Tried to create a track table but a valid tracklist object was not provided.");
     //TODO could probably separate creating the track table itself from all the various other elements (e.g. header, description) that go along with it, to have smaller and easier-to-read functions
 
     let _tableBody = undefined;
-    if (_table.childElementCount === 1) //If the table has no tracks in it (i.e. the child count is 1, because of the header row)...
-    {
+    if (_table.childElementCount === 1) { //If the table has no tracks in it (i.e. the child count is 1, because of the header row)...
         //Create a new element for a description of the empty track table
         _tableBody = window.Utilities.CreateNewElement('p', {attributes:{class:'indent'}});
         _tableBody.textContent = _descriptionIfEmpty;
