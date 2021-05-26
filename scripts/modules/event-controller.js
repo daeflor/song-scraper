@@ -12,6 +12,8 @@ import * as appStorage from './StorageManager.js';
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
 import * as IO from './utilities/IO.js';
 
+import getGPMTracklistTitle from '../Configuration/tracklist-title-mapping.js'
+
 //TODO could consider adding to and/or removing from EventController so that it's the central place for all event-driven logic
     //i.e. EventController should dictate & be aware of all events & reactions throughout the app (not sure about auth...)
     //But it shouldn't necessarily handle any in-depth / area-specific logic. It should hand that off to the scripts designated specifically for that and then just get back the results and act on them.
@@ -279,7 +281,7 @@ async function getStoredTracksYTM(tracklistTitle) {
 async function getStoredTracksGPM(tracklistTitle) {
     // If the GPM tracks array for the current tracklist has previously been fetched, return that array. Otherwise, fetch it from local storage and then return it
     if (Array.isArray(SESSION_STATE.tracklist.tracks.gpm) === false) {
-        SESSION_STATE.tracklist.tracks.gpm = await appStorage.retrieveGPMTracklistFromLocalStorage(tracklistTitle);
+        SESSION_STATE.tracklist.tracks.gpm = await appStorage.retrieveGPMTracklistFromLocalStorage(getGPMTracklistTitle(tracklistTitle));
     }
     
     return SESSION_STATE.tracklist.tracks.gpm; 
