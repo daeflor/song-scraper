@@ -1,5 +1,6 @@
 import * as ViewRenderer from './ViewRenderer.js';
 import * as UIController from '../AppNavigator.js';
+import getDeltaTracklists from './tracklist-comparison-utilities.js';
 import * as Messenger from './utilities/messenger.js';
 //import sendMessage from './MessageController.js';
 //import logOut from './AuthController.js' //TODO use or remove this, as desired
@@ -236,7 +237,7 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
             }
             
             if (typeof tracksUsedForDelta !== 'undefined') {
-                SESSION_STATE.tracklist.deltas = UIController.getDeltaTracklists(SESSION_STATE.tracklist.tracks.scraped, tracksUsedForDelta); // Generate delta tracklists based on the scraped and stored tracklists
+                SESSION_STATE.tracklist.deltas = getDeltaTracklists(SESSION_STATE.tracklist.tracks.scraped, tracksUsedForDelta); // Generate delta tracklists based on the scraped and stored tracklists
                 UIController.triggerUITransition('AddDeltaTrackTables', {deltaTracklists: SESSION_STATE.tracklist.deltas, appUsedForDelta: appUsedForDelta});
                 //UIController.triggerUITransition('DisplayTrackTable', {tableName: 'deltas'});
                 //ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
