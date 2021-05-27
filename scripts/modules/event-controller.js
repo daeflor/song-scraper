@@ -12,6 +12,8 @@ import * as appStorage from './StorageManager.js';
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
 import * as IO from './utilities/IO.js';
 
+import getGPMTracklistTitle from '../Configuration/tracklist-title-mapping.js'
+
 //TODO could consider adding to and/or removing from EventController so that it's the central place for all event-driven logic
     //i.e. EventController should dictate & be aware of all events & reactions throughout the app (not sure about auth...)
     //But it shouldn't necessarily handle any in-depth / area-specific logic. It should hand that off to the scripts designated specifically for that and then just get back the results and act on them.
@@ -128,7 +130,7 @@ ViewRenderer.buttons.copyToClipboard.addEventListener('click', function() {
     ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
     const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV.
-    const csv = IO.convertObjectMapsToCsv(SESSION_STATE.tracklist.deltas, includedProperties);
+    const csv = IO.convertObjectMapsToCsv(SESSION_STATE.tracklist.deltas, includedProperties, SESSION_STATE.tracklist.title);
 
     navigator.clipboard.writeText(csv)
         .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
@@ -279,7 +281,7 @@ async function getStoredTracksYTM(tracklistTitle) {
 async function getStoredTracksGPM(tracklistTitle) {
     // If the GPM tracks array for the current tracklist has previously been fetched, return that array. Otherwise, fetch it from local storage and then return it
     if (Array.isArray(SESSION_STATE.tracklist.tracks.gpm) === false) {
-        SESSION_STATE.tracklist.tracks.gpm = await appStorage.retrieveGPMTracklistFromLocalStorage(tracklistTitle);
+        SESSION_STATE.tracklist.tracks.gpm = await appStorage.retrieveGPMTracklistFromLocalStorage(getGPMTracklistTitle(tracklistTitle));
     }
     
     return SESSION_STATE.tracklist.tracks.gpm; 

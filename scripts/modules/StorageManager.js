@@ -47,7 +47,7 @@ export function retrieveTracksFromFirestore(tracklistTitle) {
                 if (doc.exists) {
                     resolve(doc.data().tracks);
                 } else {
-                    console.warn("Tried retrieving tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
+                    console.info("Tried retrieving tracklist data from Firestore but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
                     resolve(undefined);
                 }
             });

@@ -3,10 +3,11 @@ import * as appStorage from './scripts/modules/StorageManager.js';
 
 async function updatePreferencesScreenUI() {
     const comparisonMethod = await appStorage.getPreferencesFromChromeSyncStorage('Comparison Method');
-    const optionToCheck = document.getElementById(comparisonMethod);
-    if (optionToCheck instanceof Element === true) {
-        optionToCheck.checked = true;
-    }
+    
+    const checkboxToEnable = document.getElementById(comparisonMethod); // Get the DOM checkbox element matching the found preference
+    if (checkboxToEnable instanceof Element === true) { // If a valid checkbox element was found, check it
+        checkboxToEnable.checked = true;
+    } else throw Error("Tried to update the preferences selection UI based on data found in storage, but failed to find a corresponding checkbox element in the DOM.");
 }
 
 /**

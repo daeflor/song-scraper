@@ -28,10 +28,11 @@ function createCommaSeparatedStringFromArray(array) {
  * Converts multiple maps of objects to a csv
  * @param {Object} maps A map of maps. The contents of each map of which will be printed side-by-side
  * @param {string[]} keysToInclude An array to indicate the specific object keys which should be included in the csv file, and the order in which to output them.
+ * @param {string} [tableName] An optional name to include in the first row of the CSV
  * @returns {string} The CSV generated from the data in the provided maps
  */
-export function convertObjectMapsToCsv(maps, keysToInclude) {
-    let csv = ''; // Begin with a blank string for the CSV
+export function convertObjectMapsToCsv(maps, keysToInclude, tableName) {
+    let csv = (typeof tableName === 'string') ? ',"' + tableName + '"\r\n' : ''; // If a table name is provided, use that as the value for the first row in the CSV; otherwise start with a blank string. (Note: the table name is added in the second column of the table (after an empty column) so that the index column can have a short width in spreadsheet editors).
 
     if (maps instanceof Map === true && Array.isArray(keysToInclude) === true) { // If the parameters provided are both valid...
         const mapEntries = []; // Create an array to hold the Map Iterators for any maps provided that aren't empty.
@@ -43,8 +44,9 @@ export function convertObjectMapsToCsv(maps, keysToInclude) {
             if (map instanceof Map === true && map.size > 0) { //If the map contains data...
                 mapEntries.push(map.entries()); // Get a new Iterator for the map which will be used later to extract each element's data
                 
-                valuesInHeaderRow.push(key); // Use the map key as the name to appear in the header row for this map
-                keysToInclude.forEach(() => valuesInHeaderRow.push('')); // Add empty values to the header row equal to the number of values in the list of keys (column names) to include
+                valuesInHeaderRow.push('', key); // Use the map key as the name to appear in the header row for this map. (Note: this is added in the second column of the table (after an empty column) so that the index column can have a short width in spreadsheet editors).
+                for (let i = 0; i < keysToInclude.length - 1; i++) valuesInHeaderRow.push(''); // Add empty values to the header row equal to the number of values in the list of keys (column names) to include minus 1, because of the empty column included before table name (see above).
+                //keysToInclude.forEach(() => valuesInHeaderRow.push('')); // Add empty values to the header row equal to the number of values in the list of keys (column names) to include
 
                 valuesInSecondaryHeaderRow.push('index'); // Add an index column before the rest of the column names
                 valuesInSecondaryHeaderRow = valuesInSecondaryHeaderRow.concat(keysToInclude); // Add the set of included keys to the values that will be used to create columns for the csv's header row
@@ -65,7 +67,7 @@ export function convertObjectMapsToCsv(maps, keysToInclude) {
 
             mapEntries.forEach(iterator => { // For each map iterator... 
                 const currentEntry = iterator.next().value; // Get the next entry from the iterator
-                const currentIndex = currentEntry?.[0] ?? ''; // Use the entry's key as an 'index' value to print alongside the actual object data. If the key is falsy, then just use a blank string
+                const currentIndex = currentEntry?.[0] ?? ''; // Use the entry's key as an 'index' value to print alongside the actual object data. If the key is falsy, then just use a blank string. (Note: the blank/empty cells are added so that if one of the tables has fewer columns than the other, they both still display properly side-by-side in a spreadsheet viewer).
                 const currentObject = currentEntry?.[1]; // Get the current object from the entry's value
 
                 valuesInCurrentRow.push(currentIndex); // Add the 'index' to the array of values to include in the current row
@@ -78,7 +80,7 @@ export function convertObjectMapsToCsv(maps, keysToInclude) {
             
             csv += createCommaSeparatedStringFromArray(valuesInCurrentRow) + '\r\n'; // Create a comma-separated string from the array of recorded values and append the resulting string to the CSV string, followed by a newline character to indicate the end of the current row
         }
-    } else console.error ("Tried to convert map data to a csv, but invalid parameters were provided. Expected an array of maps and an array of keys to use for the column names.");
+    } else throw Error("Tried to convert map data to a csv, but invalid parameters were provided. Expected an array of maps and an array of keys to use for the column names.");
 
     return csv;
 }
