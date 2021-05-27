@@ -80,7 +80,7 @@ export function convertObjectMapsToCsv(maps, keysToInclude, tableName) {
             
             csv += createCommaSeparatedStringFromArray(valuesInCurrentRow) + '\r\n'; // Create a comma-separated string from the array of recorded values and append the resulting string to the CSV string, followed by a newline character to indicate the end of the current row
         }
-    } else throw new Error("Tried to convert map data to a csv, but invalid parameters were provided. Expected an array of maps and an array of keys to use for the column names.");
+    } else throw Error("Tried to convert map data to a csv, but invalid parameters were provided. Expected an array of maps and an array of keys to use for the column names.");
 
     return csv;
 }

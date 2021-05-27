@@ -3,10 +3,24 @@ import * as appStorage from './scripts/modules/StorageManager.js';
 
 async function updatePreferencesScreenUI() {
     const comparisonMethod = await appStorage.getPreferencesFromChromeSyncStorage('Comparison Method');
-    const optionToCheck = document.getElementById(comparisonMethod);
-    if (optionToCheck instanceof Element === true) {
-        optionToCheck.checked = true;
-    }
+    
+    // // If a valid preference string was found in storage, find the corresponding checkbox element in the DOM. Otherwise, default to the 'Prefer YTM' checkbox element.
+    // const checkboxToEnable = (typeof comparisonMethod === 'string') 
+    // ? document.getElementById(comparisonMethod)
+    // : document.getElementById('preferYTM');
+
+    // if (checkboxToEnable instanceof Element === true) { // If a valid checkbox element was found, check it
+    //     checkboxToEnable.checked = true;
+    // } else throw Error("Tried to update the preferences selection UI based on data found in storage, but failed to find a corresponding checkbox element in the DOM.");
+
+    // if (typeof comparisonMethod === 'string') { // If a valid preference string was found in storage...
+        const optionToCheck = document.getElementById(comparisonMethod); // Get the DOM checkbox element matching the found preference
+        if (optionToCheck instanceof Element === true) { // If a valid checkbox element was found, check it
+            optionToCheck.checked = true;
+        } else throw Error("Tried to update the preferences selection UI based on data found in storage, but failed to find a corresponding checkbox element in the DOM.");
+    // } else { // Else, if no preferred comparison method was set in storage
+
+    // }
 }
 
 /**

@@ -2,6 +2,7 @@
 self.importScripts('/node_modules/firebase/firebase-app.js'); //Import the Firebase App before any other Firebase libraries
 self.importScripts('/node_modules/firebase/firebase-auth.js'); //Import the Firebase Auth library
 self.importScripts('/scripts/Configuration/config-old.js');
+//import firebaseConfig from '/scripts/Configuration/Config.js'; //Import the app's config object needed to initialize Firebase
 self.importScripts('/scripts/modules/utilities/chrome-storage-promises-old-format.js');
 console.info("Starting service worker");
 
@@ -10,22 +11,32 @@ const ICON_PATHS = Object.freeze({
     disabled: 'Images/icon_disabled.png'
 });
 
-if (firebase.apps.length === 0) { // If Firebase has not yet been initialized (i.e. if the extension was just installed)...
-    firebase.initializeApp(firebaseConfig); // Initialize Firebase
-    firebase.auth(); // "Initialize" Firebase auth - TODO this is janky. It doesn't really seem necessary to do this, given how we're using firebase elsewhere in this script. Not including this triggers a warning when Firebase auth is first reference later in this script, however (nested under other listeners).
-    chrome.action.disable(); // Disable the extension's icons on all tabs
-
+chrome.runtime.onInstalled.addListener(async function() {
     chrome.contextMenus.create({
         id: 'contextMenu_scrapePlaylists',
         title: "Get List of Playlists",
         documentUrlPatterns: ['https://music.youtube.com/library/playlists']
     });
-
     chrome.contextMenus.create({
         id: 'contextMenu_getGPMTracklists',
         title: "Print List of GPM Tracklists to Console",
         documentUrlPatterns: ['https://music.youtube.com/library/playlists']
     });
+
+    let preferencesObject = await getPreferencesFromChromeSyncStorage();
+    if (typeof preferencesObject !== 'object') {
+        console.info("There were no user preferences set Chrome sync storage, so setting default values. 'Comparison Method: Prefer YTM'.");
+        preferencesObject = {'Comparison Method':'preferYTM'};
+        /*chromeStorage.*/set('sync', {preferences:preferencesObject});
+    }
+});
+
+if (firebase.apps.length === 0) { // If Firebase has not yet been initialized (i.e. if the extension was just installed)...
+    console.info("Initializing Firebase, since it wasn't already initialized.");
+    
+    firebase.initializeApp(firebaseConfig); // Initialize Firebase
+    firebase.auth(); // "Initialize" Firebase auth - TODO this is janky. It doesn't really seem necessary to do this, given how we're using firebase elsewhere in this script. Not including this triggers a warning when Firebase auth is first reference later in this script, however (nested under other listeners).
+    chrome.action.disable(); // Disable the extension's icons on all tabs
 }
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
@@ -193,7 +204,9 @@ async function getTrackCountFromGPMTracklistData(tracklistTitle){
  */
 async function getGPMTracklists(){
     const gpmLibraryData = await getGPMLibraryData();
-    return Object.keys(gpmLibraryData).map(name => name.replace('ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_', '')); // Return a list of all the key names in the gpm library data object, but removing the prefix for better readability
+    if (gpmLibraryData != null) {
+        return Object.keys(gpmLibraryData).map(name => name.replace('ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_', '')); // Return a list of all the key names in the gpm library data object, but removing the prefix for better readability
+    } else console.warn("Tried to fetch the list of GPM tracklists from local storage, but they couldn't be found.");
 }
 
 //TODO this would be good to put in a module that both background and options scripts can access, once Chrome 91 releases.
@@ -207,7 +220,7 @@ async function getGPMTracklists(){
     const gpmLibraryData = storageItems[gpmLibraryKey];
     if (typeof gpmLibraryData !== 'undefined') {
         return gpmLibraryData;
-    } else throw new Error("Tried to fetch the GPM library data from local storage but it wasn't found.");
+    } else console.warn("Tried to fetch the GPM library data from local storage but it wasn't found.");
 }
 
 // /**

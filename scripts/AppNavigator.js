@@ -184,7 +184,7 @@ export function createTrackTable(tracklist, headerText, parentElement, options/*
                 tr.append(window.Utilities.CreateNewElement('td', {textContent:track[metadataKey] ?? ''})); // Append to the row a new cell containing the metadatum value, or a blank string if the metadatum has a falsy value. (For example, in the common case of the 'unplayable' value not being set, or the less common case where an unplayable track doesn't have a piece of metadata specified, such as the duration).
             }
         });
-    } else throw new Error("Tried to create a track table but a valid tracklist object was not provided.");
+    } else throw Error("Tried to create a track table but a valid tracklist object was not provided.");
     //TODO could probably separate creating the track table itself from all the various other elements (e.g. header, description) that go along with it, to have smaller and easier-to-read functions
 
     let _tableBody = undefined;
@@ -379,9 +379,9 @@ function convertDurationStringToSeconds(duration) {
             case 3: //Track is more than an hour but less than a day long
                 return _splitDurationIntegers[0]*3600 + _splitDurationIntegers[1]*60 + _splitDurationIntegers[2];
             default:
-                throw new Error("Tried to extract a seconds integer value from a duration string, but the duration is not in a supported format (e.g. the duration may be longer than 24 hours).");
+                throw Error("Tried to extract a seconds integer value from a duration string, but the duration is not in a supported format (e.g. the duration may be longer than 24 hours).");
         }
-    } else throw new Error("Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
+    } else throw Error("Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
 }
 
 //TODO this should be a module instead (or move the few different remaining helper functions here into other already-existing modules as applicable)
