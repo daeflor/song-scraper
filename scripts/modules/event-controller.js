@@ -108,43 +108,21 @@ ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', async functi
     //TODO when tracklist data is stored, would it make sense to update the extension icon? I think it could help
 });
 
-//TODO the events below are all very similar and could probably be merged.
-
 // Button Pressed: Download Scraped Tracks
 ViewRenderer.buttons.downloadScrapedTracks.addEventListener('click', function() {
-    const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV
-    const csv = IO.convertArrayOfObjectsToCsv(SESSION_STATE.tracklist.tracks.scraped, includedProperties);
-    const filename = 'Tracklist_Scraped_' + SESSION_STATE.tracklist.title;
-
-    IO.downloadTextFile(csv, filename, 'csv');
+    triggerCSVDownload(SESSION_STATE.tracklist.tracks.scraped, 'Tracklist_Scraped_' + SESSION_STATE.tracklist.title);
 });
 
 // Button Pressed: Download Stored GPM Tracks
 ViewRenderer.buttons.downloadGPMTracks.addEventListener('click', async function() {
     const storedTracks = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
-
-    if (Array.isArray(storedTracks) === true) {
-        const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV
-        const csv = IO.convertArrayOfObjectsToCsv(storedTracks, includedProperties);
-        const filename = 'Tracklist_GPM_' + SESSION_STATE.tracklist.title;
-
-        IO.downloadTextFile(csv, filename, 'csv');
-    } else console.info("Tried to download the GPM tracklist, but the tracklist could not be found in storage.");
-    //TODO maybe update the UI (e.g. button icon) if the tracklist couldn't be found in storage
+    triggerCSVDownload(storedTracks, 'Tracklist_GPM_' + SESSION_STATE.tracklist.title);
 });
 
 // Button Pressed: Download Stored YTM Tracks
 ViewRenderer.buttons.downloadStoredTracks.addEventListener('click', async function() {
     const storedTracks = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
-
-    if (Array.isArray(storedTracks) === true) {
-        const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV
-        const csv = IO.convertArrayOfObjectsToCsv(storedTracks, includedProperties);
-        const filename = 'Tracklist_YTM_' + SESSION_STATE.tracklist.title;
-
-        IO.downloadTextFile(csv, filename, 'csv');
-    } else console.info("Tried to download the stored tracklist, but the tracklist could not be found in storage.");
-    //TODO maybe update the UI (e.g. button icon) if the tracklist couldn't be found in storage
+    triggerCSVDownload(storedTracks, 'Tracklist_YTM_' + SESSION_STATE.tracklist.title);
 });
 
 //TODO the events below are all very similar and could probably be merged. The only tricky part is that some are async and some aren't, and one uses maps instead of arrays
@@ -271,6 +249,23 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
         ViewRenderer.hideElement(ViewRenderer.tracktables.deltas);
     }
 });
+
+/***** Helper Functions *****/
+
+/**
+ * Triggers a download of a CSV file generated from the provided tracks array
+ * @param {Object[]} tracksArray The array of Track objects to convert to a CSV file
+ * @param {string} filename The desired name of the CSV file
+ */
+ function triggerCSVDownload(tracksArray, filename) {    
+    if (Array.isArray(tracksArray) === true) {
+        const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV
+        const csv = IO.convertArrayOfObjectsToCsv(tracksArray, includedProperties);
+
+        IO.downloadTextFile(csv, filename, 'csv');
+    } else console.info("Tried to download a tracklist, but the tracklist could not be found in storage.");
+    //TODO maybe update the UI (e.g. button icon) if the tracklist couldn't be found in storage
+}
 
 ///////////
 
