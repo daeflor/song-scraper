@@ -85,45 +85,37 @@ export function convertObjectMapsToCsv(maps, keysToInclude, tableName) {
     return csv;
 }
 
+//TODO now that this just converts an array of objects to a CSV, does it still belong in IO?.js
 /**
- * Converts an array of objects to a CSV file and then downloads the file locally
+ * Converts an array of objects to a CSV
  * @param {Object[]} array An array of objects to convert to CSV
- * @param {string} filename The name of the file to download
- * @param {string[]} [objectKeysToInclude] An optional array to indicate the specific object keys which should be included in the CSV, and the order in which to output them. If none is provided, all keys for every object will be outputted.
+ * @param {string[]} [keysToInclude] An optional array to indicate the specific object keys which should be included in the CSV, and the order in which to output them. If none is provided, all keys for every object will be outputted, and there will be no header row.
  */
-export function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=null) {
-    let _csv = ''; //Begin with a blank string for the CSV
+ export function convertArrayOfObjectsToCsv(array, keysToInclude=null) {
+    let csv = ''; //Begin with a blank string for the CSV
     
     //If a list of object keys to include was provided...
-    if (objectKeysToInclude != null) {
+    if (keysToInclude != null) {
         //Create a header row for the CSV file using the object keys, followed by a newline character to indicate the end of the row
-        _csv += createCommaSeparatedStringFromArray(objectKeysToInclude) + '\r\n';
+        csv += createCommaSeparatedStringFromArray(keysToInclude) + '\r\n';
     }
 
-    //If a valid array was provided...
-    if (Array.isArray(array) === true) {
-        //For each object in the array...
-        for (let i = 0; i < array.length; i++) {
-            const _currentObject = array[i]; //For better readability, track the current object in the objects array
-            let _valuesInCurrentObject = []; //Create an array to contain all the values for the current object that are going to be included in the CSV
+    if (Array.isArray(array) === true) { // If a valid array was provided...
+        array.forEach(object => { // For each object in the array...
+            const valuesInCurrentObject = []; // Create an array to contain all the values for the current object that are going to be included in the CSV
 
-            //If a list of specific keys to use wasn't provided, use all of the object's keys
-            objectKeysToInclude = objectKeysToInclude || Object.keys(_currentObject);
+            keysToInclude = keysToInclude ?? Object.keys(object); // If a list of specific keys to use wasn't provided, use all of the object's keys
 
-            //For each key that should be included in the CSV output...
-            for (let j = 0; j < objectKeysToInclude.length; j++) { 
-                //If the value that matches the current key isn't falsy (e.g. undefined), use that value, otherwise set it to a blank string so that the column is still included in the CSV row later
-                const _currentValue = _currentObject[objectKeysToInclude[j]] || '';
-                //Add the key's value to the array of values to include in the CSV row later
-                _valuesInCurrentObject.push(_currentValue);      
+            for (let j = 0; j < keysToInclude.length; j++) { // For each key that should be included in the CSV output...
+                const currentValue = object[keysToInclude[j]] ?? ''; // If the value that matches the current key isn't falsy (e.g. undefined), use that value, otherwise set it to a blank string so that the column is still included in the CSV row later
+                valuesInCurrentObject.push(currentValue); // Add the key's value to the array of values to include in the CSV row      
             }
 
-            //Create a comma-separated string from the array of recorded values and append the resulting string to the CSV string, followed by a newline character to indicate the end of the current row
-            _csv += createCommaSeparatedStringFromArray(_valuesInCurrentObject) + '\r\n';
-        }
-    }
+            csv += createCommaSeparatedStringFromArray(valuesInCurrentObject) + '\r\n'; // Create a comma-separated string from the array of recorded values and append the resulting string to the existing CSV string, followed by a newline character to indicate the end of the current row
+        });
+    } else throw Error("Tried to convert an array of objects to a CSV, but a valid array was not provided.");
 
-    downloadTextFile(_csv, filename, 'csv');
+    return csv;
 }
 
 /**
@@ -132,7 +124,7 @@ export function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=
  * @param {string} [filename] The name of the file. Defaults to 'download'.
  * @param {string} [fileType] The type/extension of the file. Defaults to 'csv'.
  */
-function downloadTextFile(data, filename = 'download', fileType = 'csv') {
+export function downloadTextFile(data, filename = 'download', fileType = 'csv') {
     if (data.length > 0) { //If there is data to download...
         //Create a new link DOM element to use to trigger a download of the file locally
         const link = document.createElement('a');

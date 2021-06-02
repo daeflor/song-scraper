@@ -1,6 +1,7 @@
 import * as ViewRenderer from './ViewRenderer.js';
 import * as UIController from '../AppNavigator.js';
-import getDeltaTracklists from './tracklist-comparison-utilities.js';
+//import getDeltaTracklists from './tracklist-comparison-utilities.js';
+import * as tracklistComparisonUtils from './tracklist-comparison-utilities.js';
 import * as Messenger from './utilities/messenger.js';
 //import sendMessage from './MessageController.js';
 //import logOut from './AuthController.js' //TODO use or remove this, as desired
@@ -76,7 +77,7 @@ ViewRenderer.buttons.logOut.addEventListener('click', function() {
 ViewRenderer.buttons.options.addEventListener('click', () => chrome.runtime.openOptionsPage());
 
 // Button Pressed: Scrape Current Tracklist
-ViewRenderer.buttons.scrape.addEventListener('click', function() {
+ViewRenderer.buttons.scrape.addEventListener('click', function() {    
     UIController.triggerUITransition('StartScrape');
     Messenger.sendMessageToContentScripts('GetTracks', tracksArray => {
         if (Array.isArray(tracksArray) === true) { //If the response received is an array... 
@@ -107,49 +108,94 @@ ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', async functi
     //TODO when tracklist data is stored, would it make sense to update the extension icon? I think it would help
 });
 
-// Button Pressed: Export Scraped Tracklist 
-ViewRenderer.buttons.exportScrapedMetadata.addEventListener('click', function() {
-    const filename = 'TracklistAfterScrape_' + SESSION_STATE.tracklist.title;
-    const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV.
-    IO.convertArrayOfObjectsToCsv(SESSION_STATE.tracklist.tracks.scraped, filename, includedProperties);
+//TODO the events below are all very similar and could probably be merged.
+
+// Button Pressed: Download Scraped Tracks
+ViewRenderer.buttons.downloadScrapedTracks.addEventListener('click', function() {
+    const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV
+    const csv = IO.convertArrayOfObjectsToCsv(SESSION_STATE.tracklist.tracks.scraped, includedProperties);
+    const filename = 'Tracklist_Scraped_' + SESSION_STATE.tracklist.title;
+
+    IO.downloadTextFile(csv, filename, 'csv');
 });
 
-// Button Pressed: Export Stored GPM Tracklist 
-ViewRenderer.buttons.exportStoredMetadata.addEventListener('click', async function() {
+// Button Pressed: Download Stored GPM Tracks
+ViewRenderer.buttons.downloadGPMTracks.addEventListener('click', async function() {
     const storedTracks = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
-    const filename = 'TracklistBefore_' + SESSION_STATE.tracklist.title;
-    const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV.
-    IO.convertArrayOfObjectsToCsv(storedTracks, filename, includedProperties); 
-    //TODO it's unclear that convertArrayOfObjectsToCsv triggers a download, while convertObjectMapsToCsv (used below) does not
-        //Should standardize this to have them both just return a CSV, and have the download be triggered separately
+
+    if (Array.isArray(storedTracks) === true) {
+        const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV
+        const csv = IO.convertArrayOfObjectsToCsv(storedTracks, includedProperties);
+        const filename = 'Tracklist_GPM_' + SESSION_STATE.tracklist.title;
+
+        IO.downloadTextFile(csv, filename, 'csv');
+    } else console.info("Tried to download the GPM tracklist, but the tracklist could not be found in storage.");
+    //TODO maybe update the UI (e.g. button icon) if the tracklist couldn't be found in storage
 });
 
-//TODO maybe put little download buttons next to the clipboard button, which can be used to download the csv for each tracklist
+// Button Pressed: Download Stored YTM Tracks
+ViewRenderer.buttons.downloadStoredTracks.addEventListener('click', async function() {
+    const storedTracks = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
 
-// Button Pressed: Copy to Clipboard
-ViewRenderer.buttons.copyToClipboard.addEventListener('click', function() {
-    ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
+    if (Array.isArray(storedTracks) === true) {
+        const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV
+        const csv = IO.convertArrayOfObjectsToCsv(storedTracks, includedProperties);
+        const filename = 'Tracklist_YTM_' + SESSION_STATE.tracklist.title;
+
+        IO.downloadTextFile(csv, filename, 'csv');
+    } else console.info("Tried to download the stored tracklist, but the tracklist could not be found in storage.");
+    //TODO maybe update the UI (e.g. button icon) if the tracklist couldn't be found in storage
+});
+
+//TODO the events below are all very similar and could probably be merged. The only tricky part is that some are async and some aren't, and one uses maps instead of arrays
+
+// Button Pressed: Copy Scraped Tracks to Clipboard
+ViewRenderer.buttons.copyToClipboardScrapedTracks.addEventListener('click', function() {
+    ViewRenderer.buttons.copyToClipboardScrapedTracks.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
-    const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV.
-    const csv = IO.convertObjectMapsToCsv(SESSION_STATE.tracklist.deltas, includedProperties, SESSION_STATE.tracklist.title);
+    const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV
+    const csv = IO.convertArrayOfObjectsToCsv(SESSION_STATE.tracklist.tracks.scraped, includedProperties);
 
     navigator.clipboard.writeText(csv)
-        .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboard.firstElementChild.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
-              () => console.error("Failed to copy delta tracklist CSV to clipboard."));
+        .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboardScrapedTracks.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
+              () => console.error("Failed to copy CSV to clipboard."));
 });
 
-// // Button Pressed: Export Selected Lists
-// ViewRenderer.buttons.exportSelectedLists.addEventListener('click', function() {
-//     if (ViewRenderer.checkboxes.scrapedTrackTable.checked === true) {
+// Button Pressed: Copy Stored (YTM) Tracks to Clipboard
+ViewRenderer.buttons.copyToClipboardStoredTracks.addEventListener('click', async function() {
+    ViewRenderer.buttons.copyToClipboardStoredTracks.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
+    
+    const storedTracks = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
 
-//     }
-//     if (ViewRenderer.checkboxes.storedTrackTable.checked === true) {
+    if (Array.isArray(storedTracks) === true) {
+        const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV
+        const csv = IO.convertArrayOfObjectsToCsv(storedTracks, includedProperties);
 
-//     }
-//     if (ViewRenderer.checkboxes.deltaTrackTables.checked === true) {
-//         UIController.downloadDeltaListAsCSV();
-//     }
-// });
+        navigator.clipboard.writeText(csv)
+            .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboardStoredTracks.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
+                    () => console.error("Failed to copy CSV to clipboard."));
+    } else console.info("Tried to copy the stored tracklist to the clipboard, but the tracklist could not be found in storage.");
+    //TODO maybe update the UI (e.g. button icon) if the tracklist couldn't be found in storage
+        //Right now it stays in the pending state, which isn't so bad.
+});
+
+// Button Pressed: Copy Delta Track Tables to Clipboard
+ViewRenderer.buttons.copyToClipboardDeltaTrackTables.addEventListener('click', async function() {
+    ViewRenderer.buttons.copyToClipboardDeltaTrackTables.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
+    
+    const deltaTracklists = await getDeltaTracklists();
+
+    if (deltaTracklists instanceof Map === true) {
+        const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV.
+        const csv = IO.convertObjectMapsToCsv(deltaTracklists, includedProperties, title);
+
+        navigator.clipboard.writeText(csv)
+            .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboardDeltaTrackTables.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
+                () => console.error("Failed to copy CSV to clipboard."));
+    } else console.info("Tried to copy the delta track tables to the clipboard, but the delta tracklists could not be generated. This is likely because there is no tracklist available in storage with which to compare the scraped tracklist.");
+    //TODO maybe update the UI (e.g. button icon) if the tracklist couldn't be found in storage
+        //Right now it stays in the pending state, which isn't so bad.
+});
 
 //TODO it does seem like the 3 listeners below could all be merged into one somehow, since they all follow the exact same pattern
     //Would just need to know how to map/link from a checkbox to a tracktable and to a UI controller callback/function
@@ -169,11 +215,31 @@ ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() 
         //UIController.triggerUITransition('CheckboxChecked');
     } else { // Else, if the checkbox is unchecked, hide the track table element
         ViewRenderer.hideElement(ViewRenderer.tracktables.scraped);
+        //ViewRenderer.hideElement(ViewRenderer.buttons.copyToClipboardScrapedMetadata);
 
         //TODO Still need to implement this:
             //If (allCheckboxesUnchecked() === true) {
             //     UIController.triggerUITransition('AllCheckboxesUnchecked');
             // }
+    }
+});
+
+// Checkbox Value Changed: Stored GPM Track Table
+ViewRenderer.checkboxes.gpmTrackTable.addEventListener('change', async function() {
+    // If the checkbox is checked, display the stored GPM tracks for the current tracklist; Otherwise hide the track table
+    if (ViewRenderer.checkboxes.gpmTrackTable.checked === true) {
+        if (ViewRenderer.tracktables.gpm.childElementCount > 0) { // If a track table DOM element has previously been created...
+            UIController.triggerUITransition('DisplayTrackTable', {tableName: 'gpm'}); // Show the existing element
+        } else { // Else, if a track table element doesn't exist yet, create a new one using the data from storage and add it to the DOM
+            const storedTracks = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+            if (Array.isArray(storedTracks) === true) {
+                //TODO I don't like that Event Controller has to specify the parent element when calling this function. It doesn't make much sense.
+                    //Maybe could set a 'parentElement' variable before all this logic, so it can also be used in the check above
+                UIController.createTrackTable(storedTracks, 'Stored GPM Tracklist', ViewRenderer.tracktables.gpm);
+            } else console.info("Tried to display the stored tracklist, but the tracklist could not be found in storage.");
+        }
+    } else { // Else, if the checkbox is unchecked, hide the track table element
+        ViewRenderer.hideElement(ViewRenderer.tracktables.gpm); //TODO this should be handled by UI Controller
     }
 });
 
@@ -219,33 +285,16 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
             //ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
             //TODO should probably trigger a UI transition instead of calling ViewRenderer functions directly
         } else { // Else, if the track table elements dont exist yet...      
-            const comparisonMethod = await appStorage.getPreferencesFromChromeSyncStorage('Comparison Method');
-            console.log("Comparison method found in user's preferences: " + comparisonMethod);
-
-            let tracksUsedForDelta = undefined;
-            let appUsedForDelta = 'YTM';
-
-            // If the selected comparison method is to use YouTube Music only or whenever possible, get the tracks from Firestore
-            if (comparisonMethod === 'alwaysYTM' || comparisonMethod === 'preferYTM') {
-                tracksUsedForDelta = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
-            }
-
-            // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the tracklist was not found in the YTM stored tracks, get the tracks from the GPM data in Chrome local storage
-            if (comparisonMethod === 'alwaysGPM' || (comparisonMethod === 'preferYTM' && typeof tracksUsedForDelta === 'undefined')) {
-                tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
-                appUsedForDelta = 'GPM';
-            }
             
-            if (typeof tracksUsedForDelta !== 'undefined') {
-                SESSION_STATE.tracklist.deltas = getDeltaTracklists(SESSION_STATE.tracklist.tracks.scraped, tracksUsedForDelta); // Generate delta tracklists based on the scraped and stored tracklists
-                UIController.triggerUITransition('AddDeltaTrackTables', {deltaTracklists: SESSION_STATE.tracklist.deltas, appUsedForDelta: appUsedForDelta});
-                //UIController.triggerUITransition('DisplayTrackTable', {tableName: 'deltas'});
-                //ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
-            }
+            const deltaTracklists = await getDeltaTracklists();
+
+            if (deltaTracklists instanceof Map === true) {
+                UIController.triggerUITransition('AddDeltaTrackTables', {deltaTracklists: deltaTracklists});
+            } else console.info("Tried to display the delta track tables, but the delta tracklists could not be generated. This is likely because there is no tracklist available in storage with which to compare the scraped tracklist.");
         }
     } else { // Else, if the checkbox is unchecked, hide the track table elements
         ViewRenderer.hideElement(ViewRenderer.tracktables.deltas);
-        ViewRenderer.hideElement(ViewRenderer.buttons.copyToClipboard);
+        //ViewRenderer.hideElement(ViewRenderer.buttons.copyToClipboard);
         //TODO Still need to implement this:
             //If (allCheckboxesUnchecked() === true) {
             //     UIController.triggerUITransition('AllCheckboxesUnchecked');
@@ -257,6 +306,8 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
 
 //TODO I think this is just here temporarily. I don't think I like the event-controller containing functions like this.
     //Could these go in StorageManager instead?
+
+//TODO could each of the below be an instance of a custom class?
 /**
  * Returns the YTM tracks array that matches the given tracklist title, if one exists
  * @param {string} tracklistTitle The title of the tracklist to look for
@@ -286,4 +337,38 @@ async function getStoredTracksGPM(tracklistTitle) {
     }
     
     return SESSION_STATE.tracklist.tracks.gpm; 
+}
+
+/**
+ * Get a map containing the delta tracklists
+ * @returns {Promise} A promise with a map containing the various delta tracklists (Added, Removed, Unplayable)
+ */
+async function getDeltaTracklists() {
+    if (SESSION_STATE.tracklist.deltas instanceof Map === false) {
+        const comparisonMethod = await appStorage.getPreferencesFromChromeSyncStorage('Comparison Method');
+        console.info("Comparison method found in user's preferences: " + comparisonMethod);
+
+        let tracksUsedForDelta = undefined;
+        let appUsedForDelta = 'YTM';
+
+        // If the selected comparison method is to use YouTube Music only or whenever possible, get the tracks from Firestore
+        if (comparisonMethod === 'alwaysYTM' || comparisonMethod === 'preferYTM') {
+            tracksUsedForDelta = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
+        }
+
+        // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the tracklist was not found in the YTM stored tracks, get the tracks from the GPM data in Chrome local storage
+        if (comparisonMethod === 'alwaysGPM' || (comparisonMethod === 'preferYTM' && typeof tracksUsedForDelta === 'undefined')) {
+            tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+            appUsedForDelta = 'GPM';
+        }
+
+        // If a valid array of tracks was found in storage, use that to compare with the scraped tracks & generate the deltas, and update the deltas checkbox label accordingly
+        if (Array.isArray(tracksUsedForDelta) === true) {
+            SESSION_STATE.tracklist.deltas = tracklistComparisonUtils.generateDeltaTracklists(SESSION_STATE.tracklist.tracks.scraped, tracksUsedForDelta); // Generate delta tracklists based on the scraped and stored tracklists
+            UIController.triggerUITransition('UpdateDeltaLabel', {appUsedForDelta: appUsedForDelta});
+            //TODO it would be nice to update the checkbox label earlier in the UX flow than this...
+        }
+    }
+
+    return SESSION_STATE.tracklist.deltas;
 }

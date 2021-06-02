@@ -65,7 +65,9 @@ export function triggerUITransition(transition, options) {
         ViewRenderer.unhideElement(ViewRenderer.divs.tracktables);
         //ViewRenderer.enableElement(ViewRenderer.buttons.scrape);
         ViewRenderer.enableElement(ViewRenderer.buttons.storeScrapedMetadata);
-        ViewRenderer.enableElement(ViewRenderer.buttons.exportScrapedMetadata);
+        ViewRenderer.enableElement(ViewRenderer.buttons.downloadScrapedTracks);
+        ViewRenderer.enableElement(ViewRenderer.buttons.copyToClipboardScrapedTracks);
+        ViewRenderer.enableElement(ViewRenderer.buttons.copyToClipboardDeltaTrackTables);
         ViewRenderer.enableElement(ViewRenderer.checkboxes.scrapedTrackTable);
         ViewRenderer.enableElement(ViewRenderer.checkboxes.deltaTrackTables);
         ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Save Scraped Metadata to Storage');
@@ -84,6 +86,8 @@ export function triggerUITransition(transition, options) {
     } else if (transition === 'StorageFailed') {
         ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Failed to store tracklist data!');
         ViewRenderer.updateElementColor(ViewRenderer.buttons.storeScrapedMetadata, '#cc3300');
+    } else if (transition === 'UpdateDeltaLabel') {
+        ViewRenderer.labels.deltas.childNodes[0].textContent = 'Delta Track Tables (' + options.appUsedForDelta + ')';
     } else if (transition === 'AddDeltaTrackTables') {
         if (options?.deltaTracklists instanceof Map === true) {
             // Create a track table for the list of 'Added Tracks'
@@ -98,17 +102,11 @@ export function triggerUITransition(transition, options) {
             
                 //TODO maybe put a flag here indicating whether or not the 'Unplayable' column should be included, and then send that when creating the 'Added' & 'Removed' track tables.
             }
-
-            ViewRenderer.labels.deltas.childNodes[0].textContent = 'Delta Track Tables (' + options.appUsedForDelta + ')';
-            ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
         } else console.error("Tried to add delta track tables to the DOM, but a valid map of source tracklists was not provided");
     } else if (transition === 'DisplayTrackTable') {
         if (typeof options?.tableName === 'string') {
             ViewRenderer.unhideElement(ViewRenderer.tracktables[options.tableName]); // Show the existing elements
-            if (options.tableName === 'deltas') { // TODO this check here is probably temporary
-                ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
-            }
-        } else console.log("Tried to show a track table, but a valid table name was not provided.");
+        } else console.error("Tried to show a track table, but a valid table name was not provided.");
     }
 }
 

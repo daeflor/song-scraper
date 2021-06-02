@@ -1,4 +1,4 @@
-export default function getDeltaTracklists(scrapedTracklist, storedTracklist) {
+export function generateDeltaTracklists(scrapedTracklist, storedTracklist) {
     if (Array.isArray(scrapedTracklist) === true && Array.isArray(storedTracklist) === true) {
         const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
         
@@ -42,14 +42,14 @@ export default function getDeltaTracklists(scrapedTracklist, storedTracklist) {
     } else console.error("Tried to get delta tracklists, but the parameters provided were invalid. Expected two tracklist arrays (scraped & stored).");
 }
 
-function compareTracks(track1, track2, collator) {
+export function compareTracks(track1, track2, collator) {
     if (typeof(track1) === 'object' && typeof(track2) === 'object' && typeof collator === 'object') {
         return (collator.compare(track1.title, track2.title) === 0 &&
         collator.compare(track1.artist, track2.artist) === 0 &&
         collator.compare(track1.album, track2.album) === 0 &&
         compareDurationStrings(track1.duration, track2.duration) === true)
             ? true : false;
-    } else console.error("Tried to compare two tracks but the parameters provided are not valid. Parameters provided: " + [...arguments]);
+    } else throw Error("Tried to compare two tracks but the parameters provided are not valid. Parameters provided: " + [...arguments]);
 }
 
 function compareDurationStrings(duration1, duration2) {

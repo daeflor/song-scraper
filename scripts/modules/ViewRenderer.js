@@ -22,13 +22,16 @@ export const buttons = Object.freeze({
     options: document.getElementById('btnOptions'),
     scrape: document.getElementById('btnScrape'),
     storeScrapedMetadata: document.getElementById('btnStoreScrapedMetadata'),
-    exportScrapedMetadata: document.getElementById('btnExportScrapedMetadata'),
-    exportStoredMetadata: document.getElementById('btnExportStoredMetadataForCurrentTracklist'),
-    exportSelectedLists: document.getElementById('btnExportSelectedLists'),
-    copyToClipboard: document.getElementById('btnCopyToClipboard')
+    downloadScrapedTracks: document.getElementById('btnDownloadScrapedTracks'),
+    downloadStoredTracks: document.getElementById('btnDownloadStoredTracks'),
+    downloadGPMTracks: document.getElementById('btnDownloadGPMTracks'),
+    copyToClipboardScrapedTracks: document.getElementById('btnCopyToClipboardScrapedTracks'),
+    copyToClipboardStoredTracks: document.getElementById('btnCopyToClipboardStoredTracks'),
+    copyToClipboardDeltaTrackTables: document.getElementById('btnCopyToClipboardDeltaTrackTables')
 });
 
 export const checkboxes = Object.freeze({
+    gpmTrackTable: document.getElementById('checkboxStoredGPMTrackTable'),
     storedTrackTable: document.getElementById('checkboxStoredTrackTable'),
     scrapedTrackTable: document.getElementById('checkboxScrapedTrackTable'),
     deltaTrackTables: document.getElementById('checkboxDeltaTrackTables')
@@ -39,6 +42,7 @@ export const checkboxes = Object.freeze({
 export const tracktables = {
     scraped: document.getElementById('trackTableScraped'),
     stored: document.getElementById('trackTableStored'),
+    gpm: document.getElementById('trackTableGPM'),
     deltas: document.getElementById('trackTableDeltas')
 };
 
