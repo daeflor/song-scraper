@@ -169,7 +169,7 @@ ViewRenderer.buttons.copyToClipboardDeltaTrackTables.addEventListener('click', a
 
         navigator.clipboard.writeText(csv)
             .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboardDeltaTrackTables.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
-                () => console.error("Failed to copy CSV to clipboard."));
+                  () => console.error("Failed to copy CSV to clipboard."));
     } else console.info("Tried to copy the delta track tables to the clipboard, but the delta tracklists could not be generated. This is likely because there is no tracklist available in storage with which to compare the scraped tracklist.");
     //TODO maybe update the UI (e.g. button icon) if the tracklist couldn't be found in storage
         //Right now it stays in the pending state, which isn't so bad.
@@ -178,58 +178,110 @@ ViewRenderer.buttons.copyToClipboardDeltaTrackTables.addEventListener('click', a
 //TODO it does seem like the 3 listeners below could all be merged into one somehow, since they all follow the exact same pattern
     //Would just need to know how to map/link from a checkbox to a tracktable and to a UI controller callback/function
 
-// Checkbox Value Changed: Scraped Track Table
-ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() {
-    // If the checkbox is checked, display the scraped tracklist metadata; Otherwise hide it
-    if (ViewRenderer.checkboxes.scrapedTrackTable.checked === true) {
-        if (ViewRenderer.tracktables.scraped.childElementCount > 0) { // If a track table DOM element has previously been created...
-            UIController.triggerUITransition('DisplayTrackTable', {tableName: 'scraped'}); // Show the existing element
-        } else { // Else, if a track table element doesn't exist yet, create a new one using the scraped metadata and add it to the DOM
-            UIController.createTrackTable(SESSION_STATE.tracklist.tracks.scraped, 'Scraped Tracklist', ViewRenderer.tracktables.scraped);
+    /**
+     * Displays/Adds or hides the specified track table in the UI, depending on the provided data
+     * @param {Object[] | Map} tracksData An array of Track objects or a map of arrays of track objects
+     * @param {string} trackTableTitle The title of the track table to display in its header in the popup UI
+     * @param {Element} trackTableElement The track table container element which should be displayed
+     * @param {boolean} checked Indicates whether the checkbox is checked or unchecked
+     */
+function reactToCheckboxChange(tracksData, trackTableTitle, trackTableElement, checked) {
+    // If the checkbox is checked, display the corresponding track table; Otherwise hide the track table
+    if (checked === true) {
+        if (trackTableElement.childElementCount > 0) { // If a track table DOM element has previously been created...
+            UIController.triggerUITransition('DisplayTrackTable', {trackTableElement: trackTableElement}); // Show the existing element
+        } else { // Else, if a track table element doesn't exist yet, create a new one using the provided data and add it to the DOM
+            //const storedTracks = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+            if (typeof tracksData !== 'undefined') {
+                //TODO I don't like that Event Controller has to specify the parent element when calling this function. It doesn't make much sense.
+                    //Maybe it would help to have a mapping from checkbox element to tracktable element, and from tracktable element to tracktable title
+                UIController.createTrackTable(tracksData, trackTableTitle, trackTableElement);
+            } else console.info("Tried to display a track table, but the tracklist could not be found.");
         }
     } else { // Else, if the checkbox is unchecked, hide the track table element
-        ViewRenderer.hideElement(ViewRenderer.tracktables.scraped);
-        //TODO this should be a triggerUITransition call
+        ViewRenderer.hideElement(trackTableElement); //TODO this should be handled by UI Controller
     }
+}
+
+// Checkbox Value Changed: Scraped Track Table
+ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() {
+    reactToCheckboxChange(SESSION_STATE.tracklist.tracks.scraped, 'Scraped Tracklist', ViewRenderer.tracktables.scraped, this.checked);
 });
 
 // Checkbox Value Changed: Stored GPM Track Table
 ViewRenderer.checkboxes.gpmTrackTable.addEventListener('change', async function() {
-    // If the checkbox is checked, display the stored GPM tracks for the current tracklist; Otherwise hide the track table
-    if (ViewRenderer.checkboxes.gpmTrackTable.checked === true) {
-        if (ViewRenderer.tracktables.gpm.childElementCount > 0) { // If a track table DOM element has previously been created...
-            UIController.triggerUITransition('DisplayTrackTable', {tableName: 'gpm'}); // Show the existing element
-        } else { // Else, if a track table element doesn't exist yet, create a new one using the data from storage and add it to the DOM
-            const storedTracks = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
-            if (Array.isArray(storedTracks) === true) {
-                //TODO I don't like that Event Controller has to specify the parent element when calling this function. It doesn't make much sense.
-                    //Maybe could set a 'parentElement' variable before all this logic, so it can also be used in the check above
-                UIController.createTrackTable(storedTracks, 'Stored GPM Tracklist', ViewRenderer.tracktables.gpm);
-            } else console.info("Tried to display the stored tracklist, but the tracklist could not be found in storage.");
-        }
-    } else { // Else, if the checkbox is unchecked, hide the track table element
-        ViewRenderer.hideElement(ViewRenderer.tracktables.gpm); //TODO this should be handled by UI Controller
-    }
+    const storedTracks = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+    reactToCheckboxChange(storedTracks, 'Stored GPM Tracklist', ViewRenderer.tracktables.gpm, this.checked);
 });
 
 // Checkbox Value Changed: Stored YTM Track Table
 ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', async function() {
-    // If the checkbox is checked, display the stored metadata for the current tracklist; Otherwise hide it
-    if (ViewRenderer.checkboxes.storedTrackTable.checked === true) {
-        if (ViewRenderer.tracktables.stored.childElementCount > 0) { // If a track table DOM element has previously been created...
-            UIController.triggerUITransition('DisplayTrackTable', {tableName: 'stored'}); // Show the existing element
-        } else { // Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
-            const storedTracks = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
-            if (Array.isArray(storedTracks) === true) {
-                UIController.createTrackTable(storedTracks, 'Stored YTM Tracklist', ViewRenderer.tracktables.stored);
-            } else console.info("Tried to display the stored tracklist, but the tracklist could not be found in storage.");
-        }
-    } else { // Else, if the checkbox is unchecked, hide the track table element
-        ViewRenderer.hideElement(ViewRenderer.tracktables.stored);
-    }
+    const storedTracks = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
+    reactToCheckboxChange(storedTracks, 'Stored YTM Tracklist', ViewRenderer.tracktables.stored, this.checked);
 });
 
-// TODO need to handle the case where there is no stored tracklist (e.g. because this is the first time the track was scraped)
+// // TODO could better handle the case where there is no stored tracklist (e.g. because this is the first time the track was scraped)
+//     // Could consider leaving the checkbox disabled unless both tracklists (scraped & stored) exist
+//     // But would also be nice to have some feedback about this, such as a message showing up when the checkbox is pressed, indicating a delta cannot yet be displayed
+// // Checkbox Value Changed: Delta Tracklists
+// ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async function() {
+//     const storedTracks = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
+//     reactToCheckboxChange(storedTracks, 'Stored YTM Tracklist', ViewRenderer.tracktables.deltas, this.checked);
+// });
+
+
+// // Checkbox Value Changed: Scraped Track Table
+// ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() {
+//     // If the checkbox is checked, display the scraped tracklist metadata; Otherwise hide it
+//     if (ViewRenderer.checkboxes.scrapedTrackTable.checked === true) {
+//         if (ViewRenderer.tracktables.scraped.childElementCount > 0) { // If a track table DOM element has previously been created...
+//             UIController.triggerUITransition('DisplayTrackTable', {tableName: 'scraped'}); // Show the existing element
+//         } else { // Else, if a track table element doesn't exist yet, create a new one using the scraped metadata and add it to the DOM
+//             UIController.createTrackTable(SESSION_STATE.tracklist.tracks.scraped, 'Scraped Tracklist', ViewRenderer.tracktables.scraped);
+//         }
+//     } else { // Else, if the checkbox is unchecked, hide the track table element
+//         ViewRenderer.hideElement(ViewRenderer.tracktables.scraped);
+//         //TODO this should be a triggerUITransition call
+//     }
+// });
+
+// // Checkbox Value Changed: Stored GPM Track Table
+// ViewRenderer.checkboxes.gpmTrackTable.addEventListener('change', async function() {
+//     // If the checkbox is checked, display the stored GPM tracks for the current tracklist; Otherwise hide the track table
+//     if (ViewRenderer.checkboxes.gpmTrackTable.checked === true) {
+//         if (ViewRenderer.tracktables.gpm.childElementCount > 0) { // If a track table DOM element has previously been created...
+//             UIController.triggerUITransition('DisplayTrackTable', {tableName: 'gpm'}); // Show the existing element
+//         } else { // Else, if a track table element doesn't exist yet, create a new one using the data from storage and add it to the DOM
+//             const storedTracks = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+//             if (Array.isArray(storedTracks) === true) {
+//                 //TODO I don't like that Event Controller has to specify the parent element when calling this function. It doesn't make much sense.
+//                     //Maybe could set a 'parentElement' variable before all this logic, so it can also be used in the check above
+//                 UIController.createTrackTable(storedTracks, 'Stored GPM Tracklist', ViewRenderer.tracktables.gpm);
+//             } else console.info("Tried to display the stored tracklist, but the tracklist could not be found in storage.");
+//         }
+//     } else { // Else, if the checkbox is unchecked, hide the track table element
+//         ViewRenderer.hideElement(ViewRenderer.tracktables.gpm); //TODO this should be handled by UI Controller
+//     }
+// });
+
+// // Checkbox Value Changed: Stored YTM Track Table
+// ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', async function() {
+//     // If the checkbox is checked, display the stored metadata for the current tracklist; Otherwise hide it
+//     if (ViewRenderer.checkboxes.storedTrackTable.checked === true) {
+//         if (ViewRenderer.tracktables.stored.childElementCount > 0) { // If a track table DOM element has previously been created...
+//             UIController.triggerUITransition('DisplayTrackTable', {tableName: 'stored'}); // Show the existing element
+//         } else { // Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
+//             const storedTracks = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
+//             if (Array.isArray(storedTracks) === true) {
+//                 UIController.createTrackTable(storedTracks, 'Stored YTM Tracklist', ViewRenderer.tracktables.stored);
+//             } else console.info("Tried to display the stored tracklist, but the tracklist could not be found in storage.");
+//         }
+//     } else { // Else, if the checkbox is unchecked, hide the track table element
+//         ViewRenderer.hideElement(ViewRenderer.tracktables.stored);
+//     }
+// });
+
+// TODO could better handle the case where there is no stored tracklist (e.g. because this is the first time the track was scraped)
     // Could consider leaving the checkbox disabled unless both tracklists (scraped & stored) exist
     // But would also be nice to have some feedback about this, such as a message showing up when the checkbox is pressed, indicating a delta cannot yet be displayed
 // Checkbox Value Changed: Delta Tracklists
@@ -284,9 +336,9 @@ async function getStoredTracksYTM(tracklistTitle) {
         SESSION_STATE.tracklist.tracks.stored = await appStorage.retrieveTracksFromFirestore(tracklistTitle);
     }
 
-    return SESSION_STATE.tracklist.tracks.stored; 
+    return SESSION_STATE.tracklist.tracks.stored;
     // SESSION_STATE.tracklist.tracks.stored = SESSION_STATE.tracklist.tracks.stored ?? await appStorage.retrieveTracksFromFirestore(tracklistTitle);
-    // return SESSION_STATE.tracklist.tracks.stored; 
+    // return SESSION_STATE.tracklist.tracks.stored;
 }
 
 //TODO could merge the YTM & GPM functions (above and below) but not sure if that would actually be helpful
