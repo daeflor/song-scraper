@@ -5,7 +5,7 @@ import * as ViewRenderer from './modules/ViewRenderer.js';
 /**
  * Updates the UI as specified by the transition parameter
  * @param {string} transition The type of transition that the UI should undergo
- * @param {Object} [options] An optional object to provide additional parameters needed to fulfill the UI transition. Accepted properties: tracklistTitle, username, deltaTracklists, tableName
+ * @param {Object} [options] An optional object to provide additional parameters needed to fulfill the UI transition. Accepted properties: tracklistTitle, username, deltaTracklists, trackTableElement
  */
 export function triggerUITransition(transition, options) {
     //TODO a switch might be nice here
@@ -104,9 +104,12 @@ export function triggerUITransition(transition, options) {
             }
         } else console.error("Tried to add delta track tables to the DOM, but a valid map of source tracklists was not provided");
     } else if (transition === 'DisplayTrackTable') {
-        if (typeof options?.tableName === 'string') {
-            ViewRenderer.unhideElement(ViewRenderer.tracktables[options.tableName]); // Show the existing elements
+        if (options?.trackTableElement instanceof Element === true) {
+            ViewRenderer.unhideElement(options.trackTableElement); // Show the existing elements
         } else console.error("Tried to show a track table, but a valid table name was not provided.");
+        // if (typeof options?.tableName === 'string') {
+        //     ViewRenderer.unhideElement(ViewRenderer.tracktables[options.tableName]); // Show the existing elements
+        // } else console.error("Tried to show a track table, but a valid table name was not provided.");
     }
 }
 
