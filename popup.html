@@ -41,6 +41,7 @@
       <button type='button' id='btnRevert' class='popupButton' type='button' disabled=true>Revert Stored Tracklist to Backup</button>
     </div>
     <div id='checkboxes' hidden=true>
+      
       <!-- Stored GPM Tracks -->
       <input type="checkbox" id="checkboxStoredGPMTrackTable">
       <label for="checkboxStoredGPMTrackTable"> Stored GPM Track Table
@@ -60,21 +61,7 @@
         <button type='button' id='btnDownloadStoredTracks' class='btn btnSmall autoHeight popupButton material-icons-round'>
           file_download
         </button>
-        <!-- <div>
-          <button type='button' id='btnCopyToClipboardStoredTracks' class='btn btnSmall autoHeight popupButton material-icons-round' disabled=true>
-            content_paste
-          </button>
-          <button type='button' id='btnDownloadStoredTracks' class='btn btnSmall autoHeight popupButton material-icons-round' disabled=true>
-            file_download
-          </button>
-        </div> -->
-        <!-- <br>
-        <button type='button' id='btnCopyToClipboardX' class='btn'>
-          <span class='btnSmall autoHeight popupButton material-icons-round'>content_paste</span>
-        </button> -->
       </label>
-<!--       
-      <br> -->
       
       <!-- Scraped Tracks -->
       <input type="checkbox" id="checkboxScrapedTrackTable" disabled=true>
@@ -86,14 +73,6 @@
         <button type='button' id='btnDownloadScrapedTracks' class='btn btnSmall autoHeight popupButton material-icons-round' disabled=true>
           file_download
         </button>
-        <!-- <div>
-          <button type='button' id='btnCopyToClipboardScrapedTracks' class='btn btnSmall autoHeight popupButton material-icons-round' disabled=true>
-            content_paste
-          </button>
-          <button type='button' id='btnDownloadScrapedTracks' class='btn btnSmall autoHeight popupButton material-icons-round' disabled=true>
-            file_download
-          </button>
-        </div> -->
       </label>
 
       <!-- Delta Track Tables -->
@@ -103,9 +82,6 @@
         <button type='button' id='btnCopyToClipboardDeltaTrackTables' class='btn btnSmall autoHeight popupButton material-icons-round' disabled=true>
           content_paste
         </button>
-        <!-- <button type='button' id='btnCopyToClipboard' class='btn' hidden=true>
-          <span class='btnSmall autoHeight popupButton material-icons-round'>content_paste</span>
-        </button>  -->
       </label>
 
       <input type="checkbox" id="checkboxTracksNotInPlaylists" disabled=true>
@@ -114,26 +90,7 @@
       <input type="checkbox" id="checkboxTracksNotInLibrary" disabled=true>
       <label for="checkboxTracksNotInLibrary"> Tracks not in Library</label>
     </div>
-    <!-- <div id='utilityButtons' hidden=true>
-      <button type='button' id='btnCopyToClipboardX' class='btn'>
-        <span class='btnSmall autoHeight popupButton material-icons-round'>content_paste</span>
-      </button> 
-      <button type='button' id='btnCopyToClipboardY' class='btn'>
-        <span class='btnSmall autoHeight popupButton material-icons-round'>content_paste</span>
-      </button> 
-      <button type='button' id='btnCopyToClipboardScrapedMetadataxx' class='btn'>
-        <span class='btnSmall autoHeight popupButton material-icons-round'>content_paste</span>
-      </button> 
-      <button type='button' id='btnCopyToClipboardxxy' class='btn'>
-        <span class='btnSmall autoHeight popupButton material-icons-round'>content_paste</span>
-      </button> 
-      <button type='button' id='btnCopyToClipboardZ' class='btn'>
-        <span class='btnSmall autoHeight popupButton material-icons-round'>content_paste</span>
-      </button> 
-      <button type='button' id='btnCopyToClipboardA' class='btn'>
-        <span class='btnSmall autoHeight popupButton material-icons-round'>content_paste</span>
-      </button> 
-    </div> -->
+
     <div id='tracktables'>
       <div id='trackTableScraped'></div>
       <div id='trackTableStored'></div>

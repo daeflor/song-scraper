@@ -105,7 +105,7 @@ ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', async functi
         UIController.triggerUITransition('StorageFailed');
         console.error(error);
     }
-    //TODO when tracklist data is stored, would it make sense to update the extension icon? I think it would help
+    //TODO when tracklist data is stored, would it make sense to update the extension icon? I think it could help
 });
 
 //TODO the events below are all very similar and could probably be merged.
@@ -206,21 +206,12 @@ ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() 
     if (ViewRenderer.checkboxes.scrapedTrackTable.checked === true) {
         if (ViewRenderer.tracktables.scraped.childElementCount > 0) { // If a track table DOM element has previously been created...
             UIController.triggerUITransition('DisplayTrackTable', {tableName: 'scraped'}); // Show the existing element
-            //ViewRenderer.unhideElement(ViewRenderer.tracktables.scraped); 
         } else { // Else, if a track table element doesn't exist yet, create a new one using the scraped metadata and add it to the DOM
             UIController.createTrackTable(SESSION_STATE.tracklist.tracks.scraped, 'Scraped Tracklist', ViewRenderer.tracktables.scraped);
-            // TODO this interaction with ViewRenderer is WIP
         }
-        //TODO Implement:
-        //UIController.triggerUITransition('CheckboxChecked');
     } else { // Else, if the checkbox is unchecked, hide the track table element
         ViewRenderer.hideElement(ViewRenderer.tracktables.scraped);
-        //ViewRenderer.hideElement(ViewRenderer.buttons.copyToClipboardScrapedMetadata);
-
-        //TODO Still need to implement this:
-            //If (allCheckboxesUnchecked() === true) {
-            //     UIController.triggerUITransition('AllCheckboxesUnchecked');
-            // }
+        //TODO this should be a triggerUITransition call
     }
 });
 
@@ -249,22 +240,14 @@ ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', async functi
     if (ViewRenderer.checkboxes.storedTrackTable.checked === true) {
         if (ViewRenderer.tracktables.stored.childElementCount > 0) { // If a track table DOM element has previously been created...
             UIController.triggerUITransition('DisplayTrackTable', {tableName: 'stored'}); // Show the existing element
-            //ViewRenderer.unhideElement(ViewRenderer.tracktables.stored); 
         } else { // Else, if a track table element doesn't exist yet, create a new one using the metadata from storage and add it to the DOM
             const storedTracks = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
             if (Array.isArray(storedTracks) === true) {
                 UIController.createTrackTable(storedTracks, 'Stored YTM Tracklist', ViewRenderer.tracktables.stored);
             } else console.info("Tried to display the stored tracklist, but the tracklist could not be found in storage.");
         }
-        //TODO Implement:
-        //UIController.triggerUITransition('CheckboxChecked');
     } else { // Else, if the checkbox is unchecked, hide the track table element
         ViewRenderer.hideElement(ViewRenderer.tracktables.stored);
-
-        //TODO Still need to implement this:
-            //If (allCheckboxesUnchecked() === true) {
-            //     UIController.triggerUITransition('AllCheckboxesUnchecked');
-            // }
     }
 });
 
@@ -275,17 +258,9 @@ ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', async functi
 ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async function() {
     // If the checkbox is checked, display the delta tracklists metadata; Otherwise hide them
     if (ViewRenderer.checkboxes.deltaTrackTables.checked === true) {
-
-        //UIController.triggerUITransition('DisplayDeltaTrackTables');
-
-        if (ViewRenderer.tracktables.deltas.childElementCount > 0) { // If the track table DOM elements have previously been created...
-            
+        if (ViewRenderer.tracktables.deltas.childElementCount > 0) { // If the track table DOM elements have previously been created...        
             UIController.triggerUITransition('DisplayTrackTable', {tableName: 'deltas'});
-            //ViewRenderer.unhideElement(ViewRenderer.tracktables.deltas); // Show the existing elements
-            //ViewRenderer.unhideElement(ViewRenderer.buttons.copyToClipboard);
-            //TODO should probably trigger a UI transition instead of calling ViewRenderer functions directly
         } else { // Else, if the track table elements dont exist yet...      
-            
             const deltaTracklists = await getDeltaTracklists();
 
             if (deltaTracklists instanceof Map === true) {
@@ -294,11 +269,6 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
         }
     } else { // Else, if the checkbox is unchecked, hide the track table elements
         ViewRenderer.hideElement(ViewRenderer.tracktables.deltas);
-        //ViewRenderer.hideElement(ViewRenderer.buttons.copyToClipboard);
-        //TODO Still need to implement this:
-            //If (allCheckboxesUnchecked() === true) {
-            //     UIController.triggerUITransition('AllCheckboxesUnchecked');
-            // }
     }
 });
 
