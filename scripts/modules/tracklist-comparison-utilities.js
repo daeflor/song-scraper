@@ -79,3 +79,56 @@ function convertDurationStringToSeconds(duration) {
         }
     } else throw Error("Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
 }
+
+/**
+ * Filters the provided tracklist based on the criteria provided
+ * @param {Object[]} tracklist The array of track objects on which to apply the filters 
+ * @param {Object[]} filters An array of tracklist filter objects, each of which should include an array of tracks to filter out. An optional 'matchAlbumOnly' property can be set to indicate whether or not a matching album name is sufficient to filter out the tracks in the corresponding tracks array. If false, all track metadata will be checked when matching the tracks in the corresponding filter array with those in the original tracklist.
+ * @param {Object[]} filters.tracks An array of tracks to filter out
+ * @param {boolean} filters.matchAlbumOnly Indicates whether or not a matching album name is sufficient to filter out the tracks in the corresponding tracks array. If false, all track metadata will be checked when matching.
+ * @returns {Object[]} An array of the remaining tracks from the original tracklist that didn't get filtered out
+ */
+ export function filterTracklist(tracklist, filters) {    
+    // Declare a variable to keep track of the songs from the original tracklist that don't get matched when a filter is applied
+    let unmatchedTracks = undefined;
+
+    // For each filter provided, set up the corresponding comparison function and use it to test every track in the filter against every track from the original tracklist that has not yet been filtered out.
+    for (const filter of filters) {
+        // If this is the first filter being applied, it should be applied to the original full tracklist. Otherwise, it should be applied to the list of tracks that have not yet been matched after applying the previous filters.
+        const tracksToBeFiltered = unmatchedTracks ?? tracklist;
+        
+        // Set the unmatchedTracks variable to a new array, so that it will only include the tracks that make it through the upcoming filter
+        unmatchedTracks = [];
+        
+        // Set up the function that should be used to compare tracks in the tracklist with those that are part of the current filter. The comparison function will either only check for matching albums, or it will check all of a track's metadata when looking for a match.
+        let comparisonFunction = undefined;
+
+        if (filter.matchAlbumOnly === true) {
+            console.log("Only matching album data.");
+            comparisonFunction = (track1, track2) => (track1.album === track2.album);
+        } else {
+            console.log("Using all track metadata to find a match.");
+            const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
+            comparisonFunction = (track1, track2) => tracklistComparisonUtils.compareTracks(track1, track2, collator);
+        }
+
+        // Check every track that has yet to be filtered out against every track in the current filter. If there is no match, add the track (former) to the array of unmatched tracks.
+        for (const track of tracksToBeFiltered) {
+            let trackMatched = false;
+
+            for (const trackToFilterOut of filter.tracks) {
+                if (comparisonFunction(track, trackToFilterOut) === true) {
+                    trackMatched = true;
+                    break;
+                }
+            }
+
+            if (trackMatched === false) {
+                unmatchedTracks.push(track);
+            }
+        }
+    }
+
+    // Return the final list of unmatched tracks that still remain after all filters have been applied
+    return unmatchedTracks;
+}
