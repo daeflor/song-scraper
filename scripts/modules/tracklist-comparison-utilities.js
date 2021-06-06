@@ -1,3 +1,5 @@
+import * as appStorage from './StorageManager.js';
+
 export function generateDeltaTracklists(scrapedTracklist, storedTracklist) {
     if (Array.isArray(scrapedTracklist) === true && Array.isArray(storedTracklist) === true) {
         const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
@@ -109,7 +111,7 @@ function convertDurationStringToSeconds(duration) {
         } else {
             console.log("Using all track metadata to find a match.");
             const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
-            comparisonFunction = (track1, track2) => tracklistComparisonUtils.compareTracks(track1, track2, collator);
+            comparisonFunction = (track1, track2) => compareTracks(track1, track2, collator);
         }
 
         // Check every track that has yet to be filtered out against every track in the current filter. If there is no match, add the track (former) to the array of unmatched tracks.
@@ -131,4 +133,43 @@ function convertDurationStringToSeconds(duration) {
 
     // Return the final list of unmatched tracks that still remain after all filters have been applied
     return unmatchedTracks;
+}
+
+//TODO the function below isn't exactly a 'comparison' utility. Does it still belong here?
+
+/**
+ * Adds playlist data to each track in the list provided. The playlist value will be a comma-separated string of playlist names in which the track appears.
+ * @param {Object[]} tracks An array of track objects
+ * @param {string[]} excludedPlaylists An array of playlist names which should be ignored
+ * @returns 
+ */
+export async function addPlaylistDataToTracks(tracks, excludedPlaylists) {
+    const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
+
+    //TODO may be better to pass the list of playlists, because fetching playlist names works differently for GPM and YTM
+    const playlists = await appStorage.retrieveTracklistsFromFireStore(['playlist', 'auto']);
+
+    for (const track of tracks) {
+        track.playlists = '';
+
+        for (const playlist of playlists) {
+            if (playlist.legacy !== true && excludedPlaylists.includes(playlist.title) !== true) { //TODO wouldn't it be good to also exclude COMMON playlist here?
+                for (const currentTrack of playlist.tracks) {
+                    if (compareTracks(track, currentTrack, collator) === true) {  
+                        (track.playlists.length == 0)
+                        ? track.playlists += ('"' + playlist.title)
+                        : track.playlists += (', ' + playlist.title);
+                    }
+                }
+            }
+        }
+
+        if (track.playlists.length > 0) {
+            track.playlists += '"';
+        }
+    }
+
+    console.log("There are " + tracks.length + " songs in the list provided.");
+    console.table(tracks);
+    //return tracks; // TODO a return isn't really needed since it's just the original array param that is modified.
 }
