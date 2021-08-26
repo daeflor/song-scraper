@@ -298,7 +298,7 @@
                 } else { // Else, if the scrape isn't complete or the expected element count is unknown...
                     scrollToElement(elementCollection[elementCollection.length-1]); // Scroll to the last available child element in the container
                     scrapeStartingIndex = elementCollection.length; // Set the starting index for the next scrape to be one greater than the index of the last child element from the previous scrape
-                    scrollingTimeoutID = setTimeout(endScrape, 2500); // Set a timeout to end the scrolling if no new changes to the container element have been observed for a while. This avoids infinite scrolling when the expected element count is unknown, or if an unexpected issue is encountered.
+                    scrollingTimeoutID = setTimeout(endScrape, 10000); // Set a timeout to end the scrolling if no new changes to the container element have been observed for a while. This avoids infinite scrolling when the expected element count is unknown, or if an unexpected issue is encountered.
                 }
             }
 
