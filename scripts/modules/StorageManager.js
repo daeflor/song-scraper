@@ -2,10 +2,29 @@
     //Then, any files that have a dependency on firebase (e.g. Auth, Storage, etc.) can just import that module
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 import '/node_modules/firebase/firebase-firestore.js'; //Import the Cloud Firestore library
-
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
 
-let _firestoreDatabase = undefined;
+/**
+ * Get a reference to the tracklist collection for the currently signed-in user
+ * @returns {Object} A reference to the tracklist collection for the currently signed-in user
+ */
+function getReferenceToUserTracklistCollection() {
+    const userId = firebase.auth().currentUser.uid;
+    return firebase.firestore().collection('users').doc(userId).collection('tracklists');
+}
+
+/**
+ * Retrives the current user's tracklists of the specified type from Firestore
+ * @param {string[]} [tracklistTypes] An optional array of strings specifying the types of tracklists to retrieve from Firestore. Supported values are: playlist, auto, all, uploads. If not specified, all of the user's tracklists are retrieved.
+ * @returns {Promise} A promise with an array of tracklist objects matching the given types
+ */
+export async function retrieveTracklistsFromFireStore(tracklistTypes = ['all', 'auto', 'playlist', 'uploads']) {
+    const playlistData = await getReferenceToUserTracklistCollection().where("type", "in", tracklistTypes).get();
+
+    if (Array.isArray(playlistData?.docs) === true) {
+        return playlistData.docs.map(doc => doc.data());
+    } else throw Error("An error was encountered when trying to retrieve all playlists from Firestore.");
+}
 
 /**
  * Stores the provided tracklist data in Firestore and then executes the provided callback
@@ -69,7 +88,7 @@ export async function retrieveGPMTracklistFromLocalStorage(tracklistTitle){
     const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
     const gpmLibraryData = storageItems[gpmLibraryKey];
     for (const tracklistKey in gpmLibraryData) {
-        if (tracklistKey.includes("'" + tracklistTitle + "'")) {
+        if (tracklistKey.includes("'" + tracklistTitle + "'") === true) {
             //console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryData[tracklistKey].length);
             return gpmLibraryData[tracklistKey];
         }
