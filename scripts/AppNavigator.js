@@ -307,7 +307,7 @@ window.Utilities = (function() {
     //TODO Move this out of the general Utilities section and into somewhere more applicable
         //This one could maybe go into the storage manager?
     function sendRequest_LoadGooglePlayMusicExportData(callback) {
-        const _filepath = "ExportedData/LocalStorageExport_2020-10-12-10-30PM_ThumbsUpDuplicatedAsYourLikes.txt";
+        const _filepath = "ExportedData/LocalStorageExport_2020-10-12-10-30PM_ThumbsUpDuplicatedAsYourLikes_FINAL.txt";
         IO.loadTextFileViaXMLHttpRequest(_filepath, callback, true);
     }
 
