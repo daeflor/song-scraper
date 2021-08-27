@@ -26,7 +26,7 @@ function createCommaSeparatedStringFromArray(array) {
 
 /**
  * Converts multiple maps of objects to a csv
- * @param {Object} maps A map of maps. The contents of each map of which will be printed side-by-side
+ * @param {Object} maps A map of maps. The contents of each sub-map will be printed side-by-side (vertically) in the csv
  * @param {string[]} keysToInclude An array to indicate the specific object keys which should be included in the csv file, and the order in which to output them.
  * @param {string} [tableName] An optional name to include in the first row of the CSV
  * @returns {string} The CSV generated from the data in the provided maps
@@ -54,8 +54,6 @@ export function convertObjectMapsToCsv(maps, keysToInclude, tableName) {
                 if (map.size > largestMapSize) { // If the size of the current map is larger than the previously recorded largest size...
                     largestMapSize = map.size; // Update the largest size
                 }
-            } else { // Else, if the map is empty or isn't a valid map...
-                maps.delete(key); // Delete the map, so it isn't considered during future loops/checks
             }
         });
 
