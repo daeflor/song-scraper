@@ -165,7 +165,7 @@ ViewRenderer.buttons.copyToClipboardDeltaTrackTables.addEventListener('click', a
 
     if (deltaTracklists instanceof Map === true) {
         const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV.
-        const csv = IO.convertObjectMapsToCsv(deltaTracklists, includedProperties, title);
+        const csv = IO.convertObjectMapsToCsv(deltaTracklists, includedProperties, SESSION_STATE.tracklist.title);
 
         navigator.clipboard.writeText(csv)
             .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboardDeltaTrackTables.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
@@ -197,7 +197,10 @@ ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', async functi
     // But would also be nice to have some feedback about this, such as a message showing up when the checkbox is pressed, indicating a delta cannot yet be displayed
 // Checkbox Value Changed: Delta Tracklists
 ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async function() {
+    //TODO I'm trying to get the delta tracklists here even if the checkbox was 'unchecked', which doesn't make much sense.
+        //Should try to do this more efficiently
     const deltaTracklists = await getDeltaTracklists();
+
     reactToCheckboxChange(deltaTracklists, ViewRenderer.tracktables.deltas, this.checked);
 });
 
@@ -238,7 +241,7 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
             } else if (tracksData instanceof Map === true) {
                 //TODO might be helpful to make this work more consistently for deltas vs stored/scraped tracklists. (e.g. have them both or neither use triggerUITransition, separate the creation of the track tables from adding them to the DOM, etc.)
                 UIController.triggerUITransition('AddDeltaTrackTables', {deltaTracklists: tracksData});
-            } else console.info("Tried to display a track table, but the no tracks data was provided. This is likely because there is no matching tracklist available in storage.");
+            } else console.info("Tried to display a track table, but no tracks data was provided. This is likely because there is no matching tracklist available in storage.");
         }
     } else { // Else, if the checkbox is unchecked, hide the track table element
         ViewRenderer.hideElement(trackTableElement); //TODO this should be handled by UI Controller (i.e. this should be a triggerUITransition call)
@@ -276,7 +279,10 @@ async function getStoredTracksYTM(tracklistTitle) {
 async function getStoredTracksGPM(tracklistTitle) {
     // If the GPM tracks array for the current tracklist has previously been fetched, return that array. Otherwise, fetch it from local storage and then return it
     if (Array.isArray(SESSION_STATE.tracklist.tracks.gpm) === false) {
-        SESSION_STATE.tracklist.tracks.gpm = await appStorage.retrieveGPMTracklistFromLocalStorage(getGPMTracklistTitle(tracklistTitle));
+
+        // if (tracklistTitle === 'Uploaded Songs') {
+        //     SESSION_STATE.tracklist.tracks.gpm = await tracklistComparisonUtils.generateListOfUploadedGPMTracks();
+        /* } else */ SESSION_STATE.tracklist.tracks.gpm = await appStorage.retrieveGPMTracklistFromLocalStorage(getGPMTracklistTitle(tracklistTitle));
     }
     
     return SESSION_STATE.tracklist.tracks.gpm; 
@@ -311,7 +317,7 @@ async function getDeltaTracklists() {
             UIController.triggerUITransition('UpdateDeltaLabel', {appUsedForDelta: appUsedForDelta});
             //TODO it would be nice to update the checkbox label earlier in the UX flow than this...
         }
-    }
-
+    } else console.info("Tracklist Delta map already exists so a new one won't be created.");
+                    
     return SESSION_STATE.tracklist.deltas;
 }
