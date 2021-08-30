@@ -280,9 +280,13 @@ async function getStoredTracksGPM(tracklistTitle) {
     // If the GPM tracks array for the current tracklist has previously been fetched, return that array. Otherwise, fetch it from local storage and then return it
     if (Array.isArray(SESSION_STATE.tracklist.tracks.gpm) === false) {
 
-        // if (tracklistTitle === 'Uploaded Songs') {
-        //     SESSION_STATE.tracklist.tracks.gpm = await tracklistComparisonUtils.generateListOfUploadedGPMTracks();
-        /* } else */ SESSION_STATE.tracklist.tracks.gpm = await appStorage.retrieveGPMTracklistFromLocalStorage(getGPMTracklistTitle(tracklistTitle));
+        // If the desired tracklist is the list of songs uploaded to GPM, some special steps need to be taken, since this specific tracklist wasn't stored in the exported GPM data
+        if (tracklistTitle === 'Uploaded Songs') {
+            SESSION_STATE.tracklist.tracks.gpm = await tracklistComparisonUtils.generateListOfUploadedGPMTracks();
+        } else { // Else, get the exact GPM tracklist title and use it to fetch the tracklist from local storage
+            const tracklistTitle = getGPMTracklistTitle(tracklistTitle); // Use the YTM to GPM tracklist title mapping to get the exact GPM tracklist title
+            SESSION_STATE.tracklist.tracks.gpm = await appStorage.retrieveGPMTracklistFromLocalStorage(tracklistTitle); // Fetch the GPM tracklist from local storage
+        }
     }
     
     return SESSION_STATE.tracklist.tracks.gpm; 
@@ -321,3 +325,4 @@ async function getDeltaTracklists() {
                     
     return SESSION_STATE.tracklist.deltas;
 }
+

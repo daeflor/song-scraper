@@ -148,9 +148,6 @@ function convertDurationStringToSeconds(duration) {
 export async function generateListOfUploadedGPMTracks() {
     //TODO it may make the most sense to just add this data to the 'gpmLibraryData' object in Local Storage, and avoid any special steps moving forward.
     const gpmLibraryData = await getGPMLibraryData();
-    // const gpmLibraryKey = 'gpmLibraryData';
-    // const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
-    // const gpmLibraryData = storageItems[gpmLibraryKey];
     
     const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
     const comparisonFunction = (track1, track2) => compareTracks(track1, track2, collator);
