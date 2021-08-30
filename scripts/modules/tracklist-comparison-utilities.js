@@ -210,6 +210,30 @@ export async function addPlaylistDataToTracks(tracks, playlists, excludedPlaylis
     console.table(tracks);
 }
 
+/**
+ * Returns an array of filter objects, based on the given parameters, which can then be applied to other tracklists to filter out the specified tracks as applicable.
+ * @param  {...any} filterOptions Any number of filter options, each of which should either be a string representing a tracklist title (in YTM) or be an object with a 'tracklist' property that contains such a string. If the latter is used, an optional 'matchAlbumOnly' property can also be provided, indicating that a matching album name is sufficient to filter out the tracks in the corresponding tracklist.
+ * @returns {Promise} A promise with the resulting array of filter objects
+ */
+export async function createTracklistFilters(...filterOptions) {
+    const tracklistFilters = []; // Create a new array to contain the various filter objects that will be created based on the given parameters
+
+    for (const filterOption of filterOptions) {
+        const filterObject = {}; // For each filter option provided, create a new filter object
+
+        if (typeof filterOption === 'string') { // If the filter option is a string (i.e. the name of a tracklist)...
+            filterObject.tracks = await appStorage.retrieveTracksFromFirestore(filterOption); // Retrieve the corresponding tracks array from firestore & add it to the filter object
+        } else if (filterOption.hasOwnProperty('tracklist') === true) { // If the filter option is an object...
+            filterObject.tracks = await appStorage.retrieveTracksFromFirestore(filterOption.tracklist); // Retrieve the corresponding tracks array from firestore & add it to the filter object
+            filterObject.matchAlbumOnly = filterOption.matchAlbumOnly; // Assume the 'matchAlbumOnly' property was set on the filter option, and add it to the new filter object
+        } else throw Error("One of the filter options provided was not in a supported format. Expecting either a string or an object with a 'tracklist' property.");
+
+        tracklistFilters.push(filterObject); // Add the new filter object to the array of filter objects.
+    }
+
+    return tracklistFilters;
+}
+
 //TODO this is duplicated here because of Chromium bug 1194681
 /**
  * Returns an object containing the the exported GPM library data
