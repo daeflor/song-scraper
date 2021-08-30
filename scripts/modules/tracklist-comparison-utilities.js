@@ -1,4 +1,5 @@
-import * as appStorage from './StorageManager.js';
+//import * as appStorage from './StorageManager.js';
+import * as chromeStorage from './utilities/chrome-storage-promises.js'
 
 export function generateDeltaTracklists(scrapedTracklist, storedTracklist) {
     if (Array.isArray(scrapedTracklist) === true && Array.isArray(storedTracklist) === true) {
@@ -94,71 +95,110 @@ function convertDurationStringToSeconds(duration) {
     // Declare a variable to keep track of the songs from the original tracklist that don't get matched when a filter is applied
     let unmatchedTracks = undefined;
 
-    // For each filter provided, set up the corresponding comparison function and use it to test every track in the filter against every track from the original tracklist that has not yet been filtered out.
-    for (const filter of filters) {
-        // If this is the first filter being applied, it should be applied to the original full tracklist. Otherwise, it should be applied to the list of tracks that have not yet been matched after applying the previous filters.
-        const tracksToBeFiltered = unmatchedTracks ?? tracklist;
-        
-        // Set the unmatchedTracks variable to a new array, so that it will only include the tracks that make it through the upcoming filter
-        unmatchedTracks = [];
-        
-        // Set up the function that should be used to compare tracks in the tracklist with those that are part of the current filter. The comparison function will either only check for matching albums, or it will check all of a track's metadata when looking for a match.
-        let comparisonFunction = undefined;
+    if (Array.isArray(tracklist) === true && Array.isArray(filters) === true) {
+        // For each filter provided, set up the corresponding comparison function and use it to test every track in the filter against every track from the original tracklist that has not yet been filtered out.
+        for (const filter of filters) {
+            // If this is the first filter being applied, it should be applied to the original full tracklist. Otherwise, it should be applied to the list of tracks that have not yet been matched after applying the previous filters.
+            const tracksToBeFiltered = unmatchedTracks ?? tracklist;
 
-        if (filter.matchAlbumOnly === true) {
-            console.log("Only matching album data.");
-            comparisonFunction = (track1, track2) => (track1.album === track2.album);
-        } else {
-            console.log("Using all track metadata to find a match.");
-            const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
-            comparisonFunction = (track1, track2) => compareTracks(track1, track2, collator);
-        }
+            // Set the unmatchedTracks variable to a new array, so that it will only include the tracks that make it through the upcoming filter
+            unmatchedTracks = [];
 
-        // Check every track that has yet to be filtered out against every track in the current filter. If there is no match, add the track (former) to the array of unmatched tracks.
-        for (const track of tracksToBeFiltered) {
-            let trackMatched = false;
+            // Set up the function that should be used to compare tracks in the tracklist with those that are part of the current filter. The comparison function will either only check for matching albums, or it will check all of a track's metadata when looking for a match.
+            let comparisonFunction = undefined;
 
-            for (const trackToFilterOut of filter.tracks) {
-                if (comparisonFunction(track, trackToFilterOut) === true) {
-                    trackMatched = true;
-                    break;
+            if (filter.matchAlbumOnly === true) {
+                console.log("Only matching album data.");
+                comparisonFunction = (track1, track2) => (track1.album === track2.album);
+            } else {
+                console.log("Using all track metadata to find a match.");
+                const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
+                comparisonFunction = (track1, track2) => compareTracks(track1, track2, collator);
+            }
+
+            // Check every track that has yet to be filtered out against every track in the current filter. If there is no match, add the track (former) to the array of unmatched tracks.
+            for (const track of tracksToBeFiltered) {
+                let trackMatched = false;
+
+                for (const trackToFilterOut of filter.tracks) {
+                    if (comparisonFunction(track, trackToFilterOut) === true) {
+                        trackMatched = true;
+                        break;
+                    }
+                }
+
+                if (trackMatched === false) {
+                    unmatchedTracks.push(track);
                 }
             }
-
-            if (trackMatched === false) {
-                unmatchedTracks.push(track);
-            }
         }
-    }
+    } else throw Error("One of the provided parameters is invalid. The 'tracklist' and 'filters' parameters should both be arrays of objects.");
 
     // Return the final list of unmatched tracks that still remain after all filters have been applied
     return unmatchedTracks;
 }
 
-//TODO the function below isn't exactly a 'comparison' utility. Does it still belong here?
+//TODO the functions below aren't exactly 'comparison' utilities. Do they still belong here?
+
+/**
+ * Generate a list of tracks uploaded to GPM by removing any 'Added from Subscription' from the list of 'All Music'.
+ * Note that this list of tracks is now/currently stored in Chrome local storage as well, under the key 'gpmLibraryData_UploadedSongs'.
+ * @returns {Promise} A promise with the array of uploaded track objects
+ */
+export async function generateListOfUploadedGPMTracks() {
+    //TODO it may make the most sense to just add this data to the 'gpmLibraryData' object in Local Storage, and avoid any special steps moving forward.
+    const gpmLibraryData = await getGPMLibraryData();
+    // const gpmLibraryKey = 'gpmLibraryData';
+    // const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
+    // const gpmLibraryData = storageItems[gpmLibraryKey];
+    
+    const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
+    const comparisonFunction = (track1, track2) => compareTracks(track1, track2, collator);
+    const uploadedTracks = []
+
+    for (const trackInLibrary of gpmLibraryData["ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_'ALL MUSIC'"]) {
+        
+        let trackMatched = false;
+        
+        for (const trackFromSubscription of gpmLibraryData["ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_'ADDED FROM MY SUBSCRIPTION'"]) {
+            if (comparisonFunction(trackInLibrary, trackFromSubscription) === true) {
+                trackMatched = true;
+                break;
+            }
+        }
+
+        if (trackMatched === false) {
+            uploadedTracks.push(trackInLibrary);
+        }
+    }
+    
+    // const objectToStore = {'gpmLibraryData_UploadedSongs': uploadedTracks};
+    // await chromeStorage.set('local', objectToStore);
+
+    return uploadedTracks;
+}
 
 /**
  * Adds playlist data to each track in the list provided. The playlist value will be a comma-separated string of playlist names in which the track appears.
  * @param {Object[]} tracks An array of track objects
- * @param {string[]} excludedPlaylists An array of playlist names which should be ignored
+ * @param {Objet[]} playlists A list of playlist data objects, each of which should contain a 'title' string and a 'tracks' array
+ * @param {string[]} excludedPlaylistTitles An array of playlist names which should be ignored when adding playlist data to each track
  * @returns 
  */
-export async function addPlaylistDataToTracks(tracks, excludedPlaylists) {
+export async function addPlaylistDataToTracks(tracks, playlists, excludedPlaylistTitles) {
     const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
-
-    //TODO may be better to pass the list of playlists, because fetching playlist names works differently for GPM and YTM
-    const playlists = await appStorage.retrieveTracklistsFromFireStore(['playlist', 'auto']);
 
     for (const track of tracks) {
         track.playlists = '';
 
         for (const playlist of playlists) {
-            if (playlist.legacy !== true && excludedPlaylists.includes(playlist.title) !== true) { //TODO wouldn't it be good to also exclude COMMON playlist here?
+            if (playlist.legacy !== true && excludedPlaylistTitles.includes(playlist.title) !== true) {
                 for (const currentTrack of playlist.tracks) {
                     if (compareTracks(track, currentTrack, collator) === true) {  
                         (track.playlists.length == 0)
                         ? track.playlists += ('"' + playlist.title)
                         : track.playlists += (', ' + playlist.title);
+                        break;
                     }
                 }
             }
@@ -169,7 +209,17 @@ export async function addPlaylistDataToTracks(tracks, excludedPlaylists) {
         }
     }
 
-    console.log("There are " + tracks.length + " songs in the list provided.");
+    console.info("There are " + tracks.length + " songs in the list provided.");
     console.table(tracks);
-    //return tracks; // TODO a return isn't really needed since it's just the original array param that is modified.
+}
+
+//TODO this is duplicated here because of Chromium bug 1194681
+/**
+ * Returns an object containing the the exported GPM library data
+ * @returns {Promise} A promise with the resulting GPM library data object
+ */
+ async function getGPMLibraryData(){
+    const gpmLibraryKey = 'gpmLibraryData';
+    const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
+    return storageItems[gpmLibraryKey];
 }
