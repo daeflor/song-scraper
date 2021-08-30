@@ -1,4 +1,4 @@
-//import * as appStorage from './StorageManager.js';
+import * as appStorage from './StorageManager.js';
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
 
 export function generateDeltaTracklists(scrapedTracklist, storedTracklist) {
@@ -212,21 +212,34 @@ export async function addPlaylistDataToTracks(tracks, playlists, excludedPlaylis
 
 /**
  * Returns an array of filter objects, based on the given parameters, which can then be applied to other tracklists to filter out the specified tracks as applicable.
+ * @param {string} app Indicates which app the filters should be created for. Accepted values are 'ytm' and 'gpm'.
  * @param  {...any} filterOptions Any number of filter options, each of which should either be a string representing a tracklist title (in YTM) or be an object with a 'tracklist' property that contains such a string. If the latter is used, an optional 'matchAlbumOnly' property can also be provided, indicating that a matching album name is sufficient to filter out the tracks in the corresponding tracklist.
  * @returns {Promise} A promise with the resulting array of filter objects
  */
-export async function createTracklistFilters(...filterOptions) {
+export async function createTracklistFilters(app, ...filterOptions) {
     const tracklistFilters = []; // Create a new array to contain the various filter objects that will be created based on the given parameters
 
     for (const filterOption of filterOptions) {
         const filterObject = {}; // For each filter option provided, create a new filter object
+        let tracklistTitle = undefined;
 
         if (typeof filterOption === 'string') { // If the filter option is a string (i.e. the name of a tracklist)...
-            filterObject.tracks = await appStorage.retrieveTracksFromFirestore(filterOption); // Retrieve the corresponding tracks array from firestore & add it to the filter object
-        } else if (filterOption.hasOwnProperty('tracklist') === true) { // If the filter option is an object...
-            filterObject.tracks = await appStorage.retrieveTracksFromFirestore(filterOption.tracklist); // Retrieve the corresponding tracks array from firestore & add it to the filter object
-            filterObject.matchAlbumOnly = filterOption.matchAlbumOnly; // Assume the 'matchAlbumOnly' property was set on the filter option, and add it to the new filter object
-        } else throw Error("One of the filter options provided was not in a supported format. Expecting either a string or an object with a 'tracklist' property.");
+            tracklistTitle = filterOption; // Use the filter option as the tracklist title, which will later be used to fetch the tracks array from storage
+            //filterObject.tracks = await appStorage.retrieveTracksFromFirestore(filterOption); // Retrieve the corresponding tracks array from firestore & add it to the filter object
+        } else if (filterOption.hasOwnProperty('tracklistTitle') === true) { // If the filter option is an object with a 'tracklistTitle' property
+            tracklistTitle = filterOption.tracklistTitle; // Use the filter option's 'tracklistTitle' property as the tracklist title, which will later be used to fetch the tracks array from storage
+            //filterObject.tracks = await appStorage.retrieveTracksFromFirestore(filterOption.tracklist); // Retrieve the corresponding tracks array from firestore & add it to the filter object
+            //filterObject.matchAlbumOnly = filterOption.matchAlbumOnly; // Assume the 'matchAlbumOnly' property was set on the filter option, and add it to the new filter object
+        } else throw Error("One of the filter options provided was not in a supported format. Expected either a string or an object with a 'tracklist' property.");
+
+        //TODO there should be a slightly more concise way to do this, perhaps by abstracting the 'retrieval' of tracklists to a helper function, and just passing along the 'app' parameter value.
+        if (app === 'ytm') {
+            filterObject.tracks = await appStorage.retrieveTracksFromFirestore(tracklistTitle); // Retrieve the tracks array from firestore & add it to the filter object
+        } else if (app === 'gpm') {
+            filterObject.tracks = await appStorage.retrieveGPMTracklistFromLocalStorage(tracklistTitle); // Retrieve the tracks array from local storage & add it to the filter object
+        } else throw Error("An invalid app type was provided. Accepted values are 'ytm' and 'gpm'.");
+
+        filterObject.matchAlbumOnly = filterOption.matchAlbumOnly; // Apply the 'matchAlbumOnly' property value from the provided filter option to the new filter object. If no value was provided, then it will be undefined and ignored later.
 
         tracklistFilters.push(filterObject); // Add the new filter object to the array of filter objects.
     }
