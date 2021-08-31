@@ -50,6 +50,29 @@ export async function storeTracklistInFirestore(tracklistTitle, tracklistType, t
 }
 
 /**
+ * Retrieves the tracklist data object stored in Firestore that matches the provided tracklist title, if it exists
+ * @param {string} tracklistTitle The title of the tracklist to retrieve
+ * @returns {Promise} A promise with the tracklist data object matching the provided tracklist title, if it exists
+ */
+ export async function retrieveTracklistDataFromFirestore(tracklistTitle) {
+    if (typeof tracklistTitle === 'string') {
+        const tracklistCollectionReference = getReferenceToUserTracklistCollection();
+        const tracklistDocumentReference = tracklistCollectionReference.doc(tracklistTitle);
+
+        const tracklistDocument = await tracklistDocumentReference.get();
+        console.log(tracklistDocument);
+
+        if (tracklistDocument.exists) {
+            console.log(tracklistDocument.data());
+            console.log(tracklistDocument.data().tracks);
+            return tracklistDocument.data();
+        } else {
+            console.info("Tried retrieving tracklist data from Firestore but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
+        }
+    } else throw Error("Tried to retrieve tracklist data from Firestore, but a valid string was not provided for the tracklist title.");
+}
+
+/**
  * Retrieves the tracks array stored in Firestore that matches the provided tracklist title, if it exists
  * @param {string} tracklistTitle The title of the tracklist to retrieve
  * @returns {Promise} A promise with the tracks array matching the provided tracklist title, if it exists
