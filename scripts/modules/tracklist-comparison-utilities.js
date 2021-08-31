@@ -180,9 +180,8 @@ export async function generateListOfUploadedGPMTracks() {
  * @param {Object[]} tracks An array of track objects
  * @param {Objet[]} playlists A list of playlist data objects, each of which should contain a 'title' string and a 'tracks' array
  * @param {string[]} excludedPlaylistTitles An array of playlist names which should be ignored when adding playlist data to each track
- * @returns 
  */
-export async function addPlaylistDataToTracks(tracks, playlists, excludedPlaylistTitles) {
+export function addPlaylistDataToTracks(tracks, playlists, excludedPlaylistTitles) {
     const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
 
     for (const track of tracks) {
@@ -234,7 +233,7 @@ export async function createTracklistFilters(app, ...filterOptions) {
 
         //TODO there should be a slightly more concise way to do this, perhaps by abstracting the 'retrieval' of tracklists to a helper function, and just passing along the 'app' parameter value.
         if (app === 'ytm') {
-            filterObject.tracks = await appStorage.retrieveTracksFromFirestore(tracklistTitle); // Retrieve the tracks array from firestore & add it to the filter object
+            filterObject.tracks = await appStorage.retrieveTracksArrayFromFirestore(tracklistTitle); // Retrieve the tracks array from firestore & add it to the filter object
         } else if (app === 'gpm') {
             filterObject.tracks = await appStorage.retrieveGPMTracklistFromLocalStorage(tracklistTitle); // Retrieve the tracks array from local storage & add it to the filter object
         } else throw Error("An invalid app type was provided. Accepted values are 'ytm' and 'gpm'.");

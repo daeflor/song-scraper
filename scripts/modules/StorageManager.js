@@ -77,24 +77,11 @@ export async function storeTracklistInFirestore(tracklistTitle, tracklistType, t
  * @param {string} tracklistTitle The title of the tracklist to retrieve
  * @returns {Promise} A promise with the tracks array matching the provided tracklist title, if it exists
  */
-export function retrieveTracksFromFirestore(tracklistTitle) {
-    return new Promise((resolve, reject) => {
-        if (typeof tracklistTitle === 'string') {
-            const userId = firebase.auth().currentUser.uid;
-            const tracklistCollection = firebase.firestore().collection('users').doc(userId).collection('tracklists');
-            //const _tracklistKey = tracklistType + "_'" + tracklistTitle + "'";
-            const currentTracklistDocument = tracklistCollection.doc(tracklistTitle);
-        
-            currentTracklistDocument.get().then(doc => {
-                if (doc.exists) {
-                    resolve(doc.data().tracks);
-                } else {
-                    console.info("Tried retrieving tracklist data from Firestore but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
-                    resolve(undefined);
-                }
-            });
-        } else reject (Error("Tried to retrieve tracks from Firestore, but a valid string was not provided for the tracklist title."));
-    });
+ export async function retrieveTracksArrayFromFirestore(tracklistTitle) {
+    if (typeof tracklistTitle === 'string') {
+        const tracklistData = await retrieveTracklistDataFromFirestore(tracklistTitle);
+        return tracklistData.tracks;
+    } else throw Error("Tried to retrieve a tracks array from Firestore, but a valid string was not provided for the tracklist title.");
 }
 
 //TODO since almost the exact same logic is used to get the GPM tracks array as the track count (in background script),

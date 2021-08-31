@@ -262,7 +262,7 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
 async function getStoredTracksYTM(tracklistTitle) {
     // If the YTM tracks array for the current tracklist has previously been fetched, return that array. Otherwise, fetch it from Firestore and then return it
     if (Array.isArray(SESSION_STATE.tracklist.tracks.stored) === false) {
-        SESSION_STATE.tracklist.tracks.stored = await appStorage.retrieveTracksFromFirestore(tracklistTitle);
+        SESSION_STATE.tracklist.tracks.stored = await appStorage.retrieveTracksArrayFromFirestore(tracklistTitle);
     }
 
     return SESSION_STATE.tracklist.tracks.stored;
