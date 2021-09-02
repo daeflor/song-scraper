@@ -14,19 +14,6 @@ function getReferenceToUserTracklistCollection() {
 }
 
 /**
- * Retrives the current user's tracklists of the specified type from Firestore
- * @param {string[]} [tracklistTypes] An optional array of strings specifying the types of tracklists to retrieve from Firestore. Supported values are: playlist, auto, all, uploads. If not specified, all of the user's tracklists are retrieved.
- * @returns {Promise} A promise with an array of tracklist objects matching the given types
- */
-export async function retrieveTracklistsFromFireStore(tracklistTypes = ['all', 'auto', 'playlist', 'uploads']) {
-    const playlistData = await getReferenceToUserTracklistCollection().where("type", "in", tracklistTypes).get();
-
-    if (Array.isArray(playlistData?.docs) === true) {
-        return playlistData.docs.map(doc => doc.data());
-    } else throw Error("An error was encountered when trying to retrieve all playlists from Firestore.");
-}
-
-/**
  * Stores the provided tracklist data in Firestore and then executes the provided callback
  * @param {string} tracklistTitle The tracklist title
  * @param {string} tracklistType The tracklist type
@@ -50,25 +37,36 @@ export async function storeTracklistInFirestore(tracklistTitle, tracklistType, t
 }
 
 /**
- * Retrieves the tracklist data object stored in Firestore that matches the provided tracklist title, if it exists
- * @param {string} tracklistTitle The title of the tracklist to retrieve
- * @returns {Promise} A promise with the tracklist data object matching the provided tracklist title, if it exists
+ * Retrives the current user's tracklists of the specified type from Firestore
+ * @param {string[]} [tracklistTypes] An optional array of strings specifying the types of tracklists to retrieve from Firestore. Supported values are: playlist, auto, all, uploads. If not specified, all of the user's tracklists are retrieved.
+ * @returns {Promise} A promise with an array of tracklist objects matching the given types
  */
- export async function retrieveTracklistDataFromFirestore(tracklistTitle) {
-    if (typeof tracklistTitle === 'string') {
-        const tracklistCollectionReference = getReferenceToUserTracklistCollection();
-        const tracklistDocumentReference = tracklistCollectionReference.doc(tracklistTitle);
+ export async function retrieveTracklistDataFromFireStoreByType(tracklistTypes = ['all', 'auto', 'playlist', 'uploads']) {
+    //TODO the 'all' type name is confusing. Maybe 'subscription' or 'added' would be clearer.
+    const playlistData = await getReferenceToUserTracklistCollection().where("type", "in", tracklistTypes).get();
 
-        const tracklistDocument = await tracklistDocumentReference.get();
-        console.log(tracklistDocument);
+    if (Array.isArray(playlistData?.docs) === true) {
+        return playlistData.docs.map(doc => doc.data());
+    } else throw Error("An error was encountered when trying to retrieve all playlists from Firestore.");
+}
 
-        if (tracklistDocument.exists) {
-            console.log(tracklistDocument.data());
-            console.log(tracklistDocument.data().tracks);
-            return tracklistDocument.data();
-        } else {
-            console.info("Tried retrieving tracklist data from Firestore but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
-        }
+/**
+ * Retrieves the tracklist data object or objects stored in Firestore matching the provided tracklist title(s), if they exist
+ * @param {...string} tracklistTitles Any number of titles of tracklists to retrieve
+ * @returns {Promise} A promise with the tracklist data object, or array of tracklist data objects, matching the provided tracklist title(s)
+ */
+ export async function retrieveTracklistDataFromFirestoreByTitle(...tracklistTitles) {
+    if (tracklistTitles.length > 0) { // At least one tracklist title needs to be provided
+        const querySnapshot = await getReferenceToUserTracklistCollection().where("title", "in", tracklistTitles).get();
+        if (Array.isArray(querySnapshot?.docs) === true) {
+            // Get an array of tracklist data objects from the array of documents in the query snapshot
+            const tracklists = querySnapshot.docs.map(doc => doc.data());
+            
+            // If there is only a single tracklist in the results, return the tracklist object. Otherwise return the array of tracklist objects.
+            if (tracklists.length === 1) {
+                return tracklists[0];
+            } else return tracklists;
+        } else throw Error("An error was encountered when trying to retrieve tracklists from Firestore. No documents matched the given parameters.");
     } else throw Error("Tried to retrieve tracklist data from Firestore, but a valid string was not provided for the tracklist title.");
 }
 
@@ -79,7 +77,7 @@ export async function storeTracklistInFirestore(tracklistTitle, tracklistType, t
  */
  export async function retrieveTracksArrayFromFirestore(tracklistTitle) {
     if (typeof tracklistTitle === 'string') {
-        const tracklistData = await retrieveTracklistDataFromFirestore(tracklistTitle);
+        const tracklistData = await retrieveTracklistDataFromFirestoreByTitle(tracklistTitle);
         return tracklistData.tracks;
     } else throw Error("Tried to retrieve a tracks array from Firestore, but a valid string was not provided for the tracklist title.");
 }
