@@ -285,7 +285,7 @@ async function getStoredTracksGPM(tracklistTitle) {
             SESSION_STATE.tracklist.tracks.gpm = await tracklistComparisonUtils.generateListOfUploadedGPMTracks();
         } else { // Else, get the exact GPM tracklist title and use it to fetch the tracklist from local storage
             const tracklistTitle = getGPMTracklistTitle(tracklistTitle); // Use the YTM to GPM tracklist title mapping to get the exact GPM tracklist title
-            SESSION_STATE.tracklist.tracks.gpm = await appStorage.retrieveGPMTracklistFromLocalStorage(tracklistTitle); // Fetch the GPM tracklist from local storage
+            SESSION_STATE.tracklist.tracks.gpm = await appStorage.retrieveGPMTracksArrayFromChromeLocalStorage(tracklistTitle); // Fetch the GPM tracklist from local storage
         }
     }
     
