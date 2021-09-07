@@ -89,51 +89,51 @@ function convertDurationStringToSeconds(duration) {
  * @param {Object[]} tracklistsToFilterOut An array of tracklist objects, each of which should include an array of tracks to filter out. An optional 'sampler' property set to true indicates that a matching album name is sufficient to filter out the tracks in the corresponding tracks array. If false or unspecified, all track metadata will be checked when matching the tracks.
  * @returns {Object[]} An array of the remaining tracks from the original tracklist that didn't get filtered out
  */
- export function filterTracklist(unfilteredTracks, tracklistsToFilterOut) {     //TODO this should probably use rest params
-    // Declare a variable to keep track of the songs from the original tracklist that don't get matched when a filter is applied
-    let unmatchedTracks = undefined;
+function filterOutTracklists(unfilteredTracks, tracklistsToFilterOut) {
+     // The array of tracks that have not been matched with any from the provided tracklists. Initially set to the original list of tracks provided.
+    let unmatchedTracks = unfilteredTracks; 
 
     if (Array.isArray(unfilteredTracks) === true && Array.isArray(tracklistsToFilterOut) === true) {
-        // For each filter provided, set up the corresponding comparison function and use it to test every track in the filter against every track from the original tracklist that has not yet been filtered out.
-        for (const filter of tracklistsToFilterOut) {
-            // If this is the first filter being applied, it should be applied to the original full tracklist. Otherwise, it should be applied to the list of tracks that have not yet been matched after applying the previous filters.
-            const tracksToBeFiltered = unmatchedTracks ?? unfilteredTracks;
-
-            // Set the unmatchedTracks variable to a new array, so that it will only include the tracks that make it through the upcoming filter
-            unmatchedTracks = [];
-
-            // Set up the function that should be used to compare tracks in the tracklist with those that are part of the current filter. The comparison function will either only check for matching albums, or it will check all of a track's metadata when looking for a match.
-            let comparisonFunction = undefined;
-
-            if (filter.sampler === true) {
-                // Only use the tracks' album metadatum when comparing tracks
-                comparisonFunction = (track1, track2) => (track1.album === track2.album);
-            } else {
-                // Set up a collator to look for string differences, ignoring capitalization, to run a comparison between tracks that checks all of their respective metadata 
-                const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); 
-                comparisonFunction = (track1, track2) => compareTracks(track1, track2, collator);
-            }
-
-            //TODO could use helper addValueToArrayIfUnique here
-            // Check every track that has yet to be filtered out against every track in the current filter. If there is no match, add the track (former) to the array of unmatched tracks.
-            for (const track of tracksToBeFiltered) {
-                let trackMatched = false;
-
-                for (const trackToFilterOut of filter.tracks) {
-                    if (comparisonFunction(track, trackToFilterOut) === true) {
-                        trackMatched = true;
-                        break;
-                    }
-                }
-
-                if (trackMatched === false) {
-                    unmatchedTracks.push(track);
-                }
-            }
+        // For each tracklist provided, filter out any tracks that match any from the list of so-far unmatched tracks.
+        for (const tracklist of tracklistsToFilterOut) {
+            // After filtering out the current tracklist, the resulting array will become the new list of pared down, unmatched tracks, which will be used when applying any further filters.
+            unmatchedTracks = filterOutTracklist(unmatchedTracks, tracklist);
         }
     } else throw Error("One of the provided parameters is invalid. The 'unfilteredTracks' and 'tracklistsToFilterOut' parameters should both be arrays of objects.");
 
     // Return the final list of unmatched tracks that still remain after all filters have been applied
+    return unmatchedTracks;
+}
+
+function filterOutTracklist(unfilteredTracks, tracklist) {
+    let comparisonFunction = undefined; // The function that should be used to compare tracks in the unfiltered list to those that are part of the specified tracklist. The comparison function will either only check for matching albums, or it will check all of a track's metadata when looking for a match.
+    let unmatchedTracks = [];
+
+    if (tracklist.sampler === true) {
+        // If the tracklist is a 'sampler', only use the tracks' album metadatum when comparing tracks
+        comparisonFunction = (track1, track2) => (track1.album === track2.album);
+    } else {
+        // Set up a collator to look for string differences, ignoring capitalization, to run a comparison between tracks that checks all of their respective metadata 
+        const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); 
+        comparisonFunction = (track1, track2) => compareTracks(track1, track2, collator);
+    }
+
+    // Check every unfiltered track against every track in the specified tracklist. If there is no match, add the track (former) to the array of unmatched tracks.
+    for (const track of unfilteredTracks) {
+        let trackMatched = false;
+
+        for (const trackToFilterOut of tracklist.tracks) {
+            if (comparisonFunction(track, trackToFilterOut) === true) {
+                trackMatched = true;
+                break;
+            }
+        }
+
+        if (trackMatched === false) {
+            unmatchedTracks.push(track);
+        }
+    }
+
     return unmatchedTracks;
 }
 
@@ -242,7 +242,7 @@ export async function getFilteredTracksWithTracklistMapping(app, initialTracklis
     } else throw Error("An invalid app parameter was specified. Accepted values are 'ytm' and 'gpm'.");
 
     // Filter all the tracks from the specified tracklists out of the initial tracklist
-    const filteredTracks = filterTracklist(unfilteredTracks, tracklistsToFilterOut); 
+    const filteredTracks = filterOutTracklists(unfilteredTracks, tracklistsToFilterOut); 
 
     //TODO One flaw here is that the initialTracklist should also always get excluded from the new 'playlist' mapping property, but currently 
         //this isn't explicitly done. It works in the YTM 'added from subscription' case, because that list is not a 'playlist'. But if in the future, 
