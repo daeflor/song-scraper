@@ -83,12 +83,12 @@ export async function storeTracklistInFirestore(tracklistTitle, tracklistType, t
 }
 
 /**
- * Generates GPM tracklist data object or objects from the tracks arrays stored in Chrome local storage matching the provided tracklist title(s), or for all tracklists if no title parameters are provided.
- * @param  {...string} tracklistTitles Any number of titles of tracklists to retrieve. If no titles are provided, all stored tracklists will be retrieved.
+ * Generates GPM tracklist data object or objects from the tracks arrays stored in Chrome local storage matching the provided tracklist title(s), or for all playlists (i.e. excluding 'All Songs' lists) if no title parameters are provided.
+ * @param  {...string} tracklistTitles Any number of titles of tracklists to retrieve. If no titles are provided, all stored playlists (i.e. excluding 'All Songs' lists) will be retrieved.
  * @returns {Promise} A promise with the tracklist data object, or array of tracklist data objects, matching the provided tracklist title(s)
  */
 export async function retrieveGPMTracklistDataFromChromeLocalStorageByTitle(...tracklistTitles) {
-    //TODO avoid this repetetiveness 
+    //TODO avoid this repetitiveness 
     const gpmLibraryKey = 'gpmLibraryData'; //TODO shouldn't this be global?
     const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
     const gpmLibraryData = storageItems[gpmLibraryKey];
@@ -96,13 +96,13 @@ export async function retrieveGPMTracklistDataFromChromeLocalStorageByTitle(...t
     const tracklists = [];
 
     for (const tracklist in gpmLibraryData) {
-        //if (tracklist.includes('ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_' === true))
         if (tracklist.length >= 43) { // If the tracklist name is at least long enough to include the standard prefix used in the GPM storage format... (this excludes certain playlists like 'Backup' and legacy ones)
             // Extract the actual tracklist title from the key used in GPM storage
             const tracklistTitle = tracklist.substring(43, tracklist.length-1); 
 
-            // If either no tracklist titles were provided, or a provided title matches the current tracklist title...
-            if (tracklistTitles.length === 0 || tracklistTitles.includes(tracklistTitle) === true) { 
+            // If either a provided title matches the current tracklist title, or no tracklist titles were provided and the current tracklist is a playlist (i.e. excluding comprehensive lists like 'All Music')...
+            if (tracklistTitles.includes(tracklistTitle) === true || 
+               (tracklistTitles.length === 0 && ['ADDED FROM MY SUBSCRIPTION', 'ALL MUSIC', 'Songs'].includes(tracklistTitle) === false)) { 
                 // Create a new tracklist data object including the title and tracks array, and add it to the list
                 tracklists.push({title:tracklistTitle, tracks:gpmLibraryData[tracklist]}); 
             }
