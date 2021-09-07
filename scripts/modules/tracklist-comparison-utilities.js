@@ -83,23 +83,21 @@ function convertDurationStringToSeconds(duration) {
     } else throw Error("Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
 }
 
-//TODO: Rename the 'initialTracklist' parameter to more clearly indicate that it should be an array of tracks, not a tracklist object
-//Required properties for each object are: 'tracks' (an array of track objects), 'title' 
 /**
  * Filters the provided tracklist based on the criteria provided
- * @param {Object[]} initialTracklist The starting array of track objects on which to apply the filters 
+ * @param {Object[]} unfilteredTracks The starting/unfiltered array of track objects on which to apply the filters 
  * @param {Object[]} tracklistsToFilterOut An array of tracklist objects, each of which should include an array of tracks to filter out. An optional 'sampler' property set to true indicates that a matching album name is sufficient to filter out the tracks in the corresponding tracks array. If false or unspecified, all track metadata will be checked when matching the tracks.
  * @returns {Object[]} An array of the remaining tracks from the original tracklist that didn't get filtered out
  */
- export function filterTracklist(initialTracklist, tracklistsToFilterOut) {     //TODO this should probably use rest params
+ export function filterTracklist(unfilteredTracks, tracklistsToFilterOut) {     //TODO this should probably use rest params
     // Declare a variable to keep track of the songs from the original tracklist that don't get matched when a filter is applied
     let unmatchedTracks = undefined;
 
-    if (Array.isArray(initialTracklist) === true && Array.isArray(tracklistsToFilterOut) === true) {
+    if (Array.isArray(unfilteredTracks) === true && Array.isArray(tracklistsToFilterOut) === true) {
         // For each filter provided, set up the corresponding comparison function and use it to test every track in the filter against every track from the original tracklist that has not yet been filtered out.
         for (const filter of tracklistsToFilterOut) {
             // If this is the first filter being applied, it should be applied to the original full tracklist. Otherwise, it should be applied to the list of tracks that have not yet been matched after applying the previous filters.
-            const tracksToBeFiltered = unmatchedTracks ?? initialTracklist;
+            const tracksToBeFiltered = unmatchedTracks ?? unfilteredTracks;
 
             // Set the unmatchedTracks variable to a new array, so that it will only include the tracks that make it through the upcoming filter
             unmatchedTracks = [];
@@ -111,12 +109,12 @@ function convertDurationStringToSeconds(duration) {
                 // Only use the tracks' album metadatum when comparing tracks
                 comparisonFunction = (track1, track2) => (track1.album === track2.album);
             } else {
-                // Set up a collator to look for string differences, ignoring capitalization, to run the comparison between tracks
-                console.info("Using all track metadata to find a match.");
+                // Set up a collator to look for string differences, ignoring capitalization, to run a comparison between tracks that checks all of their respective metadata 
                 const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); 
                 comparisonFunction = (track1, track2) => compareTracks(track1, track2, collator);
             }
 
+            //TODO could use helper addValueToArrayIfUnique here
             // Check every track that has yet to be filtered out against every track in the current filter. If there is no match, add the track (former) to the array of unmatched tracks.
             for (const track of tracksToBeFiltered) {
                 let trackMatched = false;
@@ -133,7 +131,7 @@ function convertDurationStringToSeconds(duration) {
                 }
             }
         }
-    } else throw Error("One of the provided parameters is invalid. The 'initialTracklist' and 'tracklistsToFilterOut' parameters should both be arrays of objects.");
+    } else throw Error("One of the provided parameters is invalid. The 'unfilteredTracks' and 'tracklistsToFilterOut' parameters should both be arrays of objects.");
 
     // Return the final list of unmatched tracks that still remain after all filters have been applied
     return unmatchedTracks;
