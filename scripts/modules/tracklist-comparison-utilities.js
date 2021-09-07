@@ -105,6 +105,10 @@ function filterOutTracklists(unfilteredTracks, tracklistsToFilterOut) {
     return unmatchedTracks;
 }
 
+//TODO JSDOC
+//TODO would it make more sense to have both params be a tracklist, rather than one a tracks array and one a tracklist.
+//TODO would it be better if this didn't return the unmatched tracks array and instead just modified the original?
+    //I think it would be neater, but would need some param/variable renaming to make it clear what's going on.
 function filterOutTracklist(unfilteredTracks, tracklist) {
     let comparisonFunction = undefined; // The function that should be used to compare tracks in the unfiltered list to those that are part of the specified tracklist. The comparison function will either only check for matching albums, or it will check all of a track's metadata when looking for a match.
     let unmatchedTracks = [];
@@ -144,34 +148,11 @@ function filterOutTracklist(unfilteredTracks, tracklist) {
  * Note that this list of tracks is now/currently stored in Chrome local storage as well, under the key 'gpmLibraryData_UploadedSongs'.
  * @returns {Promise} A promise with the array of uploaded track objects
  */
+//TODO it may make the most sense to just add this data to the 'gpmLibraryData' object in Local Storage, and avoid any special steps moving forward.
 export async function generateListOfUploadedGPMTracks() {
-    //TODO it may make the most sense to just add this data to the 'gpmLibraryData' object in Local Storage, and avoid any special steps moving forward.
-    const gpmLibraryData = await getGPMLibraryData();
-    
-    const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
-    const comparisonFunction = (track1, track2) => compareTracks(track1, track2, collator);
-    const uploadedTracks = []
-
-    //TODO could use new function(s) in Storage Manager here
-        //As well as addValueToArrayIfUnique
-    for (const trackInLibrary of gpmLibraryData["ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_'ALL MUSIC'"]) {
-        
-        let trackMatched = false;
-        
-        for (const trackFromSubscription of gpmLibraryData["ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_'ADDED FROM MY SUBSCRIPTION'"]) {
-            if (comparisonFunction(trackInLibrary, trackFromSubscription) === true) {
-                trackMatched = true;
-                break;
-            }
-        }
-
-        if (trackMatched === false) {
-            uploadedTracks.push(trackInLibrary);
-        }
-    }
-    
-    // const objectToStore = {'gpmLibraryData_UploadedSongs': uploadedTracks};
-    // await chromeStorage.set('local', objectToStore);
+    const allTracks = await appStorage.retrieveGPMTracksArrayFromChromeLocalStorage('ALL MUSIC'); // Retrieve the array of all tracks in the GPM library
+    const subscribedTracks = await appStorage.retrieveGPMTracklistDataFromChromeLocalStorageByTitle('ADDED FROM MY SUBSCRIPTION'); // Retrieve the tracklist of subscribed GPM tracks
+    const uploadedTracks = filterOutTracklist(allTracks, subscribedTracks); // Generate a list of uploaded GPM tracks by starting with the list of all tracks and filtering out any that are in the list of subscribed tracks
 
     return uploadedTracks;
 }
