@@ -83,23 +83,23 @@ function convertDurationStringToSeconds(duration) {
     } else throw Error("Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
 }
 
+//TODO: Rename the 'initialTracklist' parameter to more clearly indicate that it should be an array of tracks, not a tracklist object
+//Required properties for each object are: 'tracks' (an array of track objects), 'title' 
 /**
  * Filters the provided tracklist based on the criteria provided
- * @param {Object[]} tracklist The array of track objects on which to apply the filters 
- * @param {Object[]} filters An array of tracklist filter objects, each of which should include an array of tracks to filter out. An optional 'matchAlbumOnly' property can be set to indicate whether or not a matching album name is sufficient to filter out the tracks in the corresponding tracks array. If false, all track metadata will be checked when matching the tracks in the corresponding filter array with those in the original tracklist.
- * @param {Object[]} filters.tracks An array of tracks to filter out
- * @param {boolean} filters.matchAlbumOnly Indicates whether or not a matching album name is sufficient to filter out the tracks in the corresponding tracks array. If false, all track metadata will be checked when matching.
+ * @param {Object[]} initialTracklist The starting array of track objects on which to apply the filters 
+ * @param {Object[]} tracklistsToFilterOut An array of tracklist objects, each of which should include an array of tracks to filter out. An optional 'sampler' property set to true indicates that a matching album name is sufficient to filter out the tracks in the corresponding tracks array. If false or unspecified, all track metadata will be checked when matching the tracks.
  * @returns {Object[]} An array of the remaining tracks from the original tracklist that didn't get filtered out
  */
- export function filterTracklist(tracklist, filters) {    
+ export function filterTracklist(initialTracklist, tracklistsToFilterOut) {     //TODO this should probably use rest params
     // Declare a variable to keep track of the songs from the original tracklist that don't get matched when a filter is applied
     let unmatchedTracks = undefined;
 
-    if (Array.isArray(tracklist) === true && Array.isArray(filters) === true) {
+    if (Array.isArray(initialTracklist) === true && Array.isArray(tracklistsToFilterOut) === true) {
         // For each filter provided, set up the corresponding comparison function and use it to test every track in the filter against every track from the original tracklist that has not yet been filtered out.
-        for (const filter of filters) {
+        for (const filter of tracklistsToFilterOut) {
             // If this is the first filter being applied, it should be applied to the original full tracklist. Otherwise, it should be applied to the list of tracks that have not yet been matched after applying the previous filters.
-            const tracksToBeFiltered = unmatchedTracks ?? tracklist;
+            const tracksToBeFiltered = unmatchedTracks ?? initialTracklist;
 
             // Set the unmatchedTracks variable to a new array, so that it will only include the tracks that make it through the upcoming filter
             unmatchedTracks = [];
@@ -107,12 +107,13 @@ function convertDurationStringToSeconds(duration) {
             // Set up the function that should be used to compare tracks in the tracklist with those that are part of the current filter. The comparison function will either only check for matching albums, or it will check all of a track's metadata when looking for a match.
             let comparisonFunction = undefined;
 
-            if (filter.matchAlbumOnly === true) {
-                console.log("Only matching album data.");
+            if (filter.sampler === true) {
+                // Only use the tracks' album metadatum when comparing tracks
                 comparisonFunction = (track1, track2) => (track1.album === track2.album);
             } else {
-                console.log("Using all track metadata to find a match.");
-                const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
+                // Set up a collator to look for string differences, ignoring capitalization, to run the comparison between tracks
+                console.info("Using all track metadata to find a match.");
+                const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); 
                 comparisonFunction = (track1, track2) => compareTracks(track1, track2, collator);
             }
 
@@ -132,7 +133,7 @@ function convertDurationStringToSeconds(duration) {
                 }
             }
         }
-    } else throw Error("One of the provided parameters is invalid. The 'tracklist' and 'filters' parameters should both be arrays of objects.");
+    } else throw Error("One of the provided parameters is invalid. The 'initialTracklist' and 'tracklistsToFilterOut' parameters should both be arrays of objects.");
 
     // Return the final list of unmatched tracks that still remain after all filters have been applied
     return unmatchedTracks;
@@ -153,6 +154,8 @@ export async function generateListOfUploadedGPMTracks() {
     const comparisonFunction = (track1, track2) => compareTracks(track1, track2, collator);
     const uploadedTracks = []
 
+    //TODO could use new function(s) in Storage Manager here
+        //As well as addValueToArrayIfUnique
     for (const trackInLibrary of gpmLibraryData["ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_'ALL MUSIC'"]) {
         
         let trackMatched = false;
@@ -179,16 +182,16 @@ export async function generateListOfUploadedGPMTracks() {
  * Adds playlist data to each track in the list provided. The playlist value will be a comma-separated string of playlist names in which the track appears.
  * @param {Object[]} tracks An array of track objects
  * @param {Objet[]} playlists A list of playlist data objects, each of which should contain a 'title' string and a 'tracks' array
- * @param {string[]} excludedPlaylistTitles An array of playlist names which should be ignored when adding playlist data to each track
+ * @param {...string} excludedTracklistTitles Any number of tracklist titles that can be skipped when adding tracklist data to each track
  */
-export function addPlaylistDataToTracks(tracks, playlists, excludedPlaylistTitles) {
+export function addTracklistMappingToTracks(tracks, playlists, ...excludedTracklistTitles) {
     const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
 
     for (const track of tracks) {
         track.playlists = '';
 
         for (const playlist of playlists) {
-            if (playlist.legacy !== true && excludedPlaylistTitles.includes(playlist.title) !== true) {
+            if (playlist.legacy !== true && excludedTracklistTitles.includes(playlist.title) !== true) {
                 for (const currentTrack of playlist.tracks) {
                     if (compareTracks(track, currentTrack, collator) === true) {  
                         (track.playlists.length == 0)
@@ -206,7 +209,6 @@ export function addPlaylistDataToTracks(tracks, playlists, excludedPlaylistTitle
     }
 
     console.info("There are " + tracks.length + " songs in the list provided.");
-    console.table(tracks);
 }
 
 /**
@@ -244,6 +246,53 @@ export async function createTracklistFilters(app, ...filterOptions) {
     }
 
     return tracklistFilters;
+}
+
+/**
+ * Generates a filtered tracklist, with each track including a list of all the tracklists in which it appears
+ * @param {string} app The app to which the initial tracklist belongs. Accepted values are 'ytm' and 'gpm'.
+ * @param {string} initialTracklistTitle The title of the initial tracklist to fetch from storage
+ * @param  {...string} tracklistTitlesToFilterOut Any number of titles of tracklists to use as filters. If a track appears in any of these tracklists, it will be filtered out. 
+ * @returns {Promise} A promise with an array of track objects that have passed the filter criteria, each of which will include a new string property that lists all the tracklists in which the track appears
+ */
+export async function getFilteredTracksWithTracklistMapping(app, initialTracklistTitle, ...tracklistTitlesToFilterOut) {
+    let unfilteredTracks = undefined; // The initial tracks array before having any filters applied on it
+    let tracklistsToFilterOut = undefined; // The list of tracklists whose tracks should all be filtered out of the initial tracklist
+    let allTracklists = undefined; // A list of all tracklists, which will be used when adding tracklist data to the filtered tracklist. Each track object will include a list of all tracklists in which that track appears.
+    
+    if (app === 'ytm') {
+        // Fetch the initial tracks array from Firestore
+        unfilteredTracks = await appStorage.retrieveTracksArrayFromFirestore(initialTracklistTitle);
+
+        // Fetch the tracklists from Firestore which contain tracks that should be filtered out from the initial list
+        tracklistsToFilterOut = await appStorage.retrieveTracklistDataFromFirestoreByTitle(...tracklistTitlesToFilterOut);
+
+        // Get a list of all tracklists which should be used to add tracklist data to the tracks. (i.e. Each of these tracklists' titles will appear alongside the track in the final table, if that track is included in the tracklist)
+        allTracklists = await appStorage.retrieveTracklistDataFromFireStoreByType(['playlist', 'auto']);
+    } else if (app === 'gpm') {
+        // Fetch the initial tracks array from Chrome Local Storage
+        unfilteredTracks = await appStorage.retrieveGPMTracksArrayFromChromeLocalStorage(initialTracklistTitle);
+
+        // Fetch the GPM tracklists from Chrome Local Storage which contain tracks that should be filtered out from the initial list
+        tracklistsToFilterOut = await appStorage.retrieveGPMTracklistDataFromChromeLocalStorageByTitle(...tracklistTitlesToFilterOut);
+
+        // Get a list of all tracklists which should be used to add tracklist data to the tracks. (i.e. Each of these tracklists' titles will appear alongside the track in the final table, if that track is included in the tracklist)
+        allTracklists = await appStorage.retrieveGPMTracklistDataFromChromeLocalStorageByTitle();
+    } else throw Error("An invalid app parameter was specified. Accepted values are 'ytm' and 'gpm'.");
+
+    // Filter all the tracks from the specified tracklists out of the initial tracklist
+    const filteredTracks = filterTracklist(unfilteredTracks, tracklistsToFilterOut); 
+
+    //TODO One flaw here is that the initialTracklist should also always get excluded from the new 'playlist' mapping property, but currently 
+        //this isn't explicitly done. It works in the YTM 'added from subscription' case, because that list is not a 'playlist'. But if in the future, 
+        //there is a desire to use an actual playlist as the initial tracklist, every track in the final list would include that playlist in its 'playlist' property/column.
+        //Should be solvable by just pushing the initialTracklistTitle into ...tracklistTitlesToFilterOut
+
+    // Add a new property to each track, which is string of all the tracklists in which the track appears, exluding the ones specified
+    addTracklistMappingToTracks(filteredTracks, allTracklists, ...tracklistTitlesToFilterOut); 
+    //TODO Maybe this step should not be handled in this function and should just be called separately instead.
+
+    return filteredTracks;
 }
 
 //TODO this is duplicated here because of Chromium bug 1194681
