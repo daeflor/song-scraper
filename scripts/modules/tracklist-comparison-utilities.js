@@ -230,10 +230,8 @@ export async function getFilteredTracksWithTracklistMapping(app, initialTracklis
     // Filter all the tracks from the specified tracklists out of the initial tracklist
     const filteredTracks = filterOutTracklists(unfilteredTracks, tracklistsToFilterOut); 
 
-    //TODO One flaw here is that the initialTracklist should also always get excluded from the new 'playlist' mapping property, but currently 
-        //this isn't explicitly done. It works in the YTM 'added from subscription' case, because that list is not a 'playlist'. But if in the future, 
-        //there is a desire to use an actual playlist as the initial tracklist, every track in the final list would include that playlist in its 'playlist' property/column.
-        //Should be solvable by just pushing the initialTracklistTitle into ...tracklistTitlesToFilterOut
+    // Add the title of the original tracklist to the list of tracklist titles to exclude from the tracklist mapping. (Without this step, the title of the original tracklist would appear next to every track in the final track table, which is unnecessary info).
+    tracklistTitlesToFilterOut.push(initialTracklistTitle);
 
     // Add a new property to each track, which is string of all the tracklists in which the track appears, exluding the ones specified
     addTracklistMappingToTracks(filteredTracks, allTracklists, ...tracklistTitlesToFilterOut); 
