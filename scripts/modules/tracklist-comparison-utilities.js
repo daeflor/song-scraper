@@ -105,10 +105,15 @@ function filterOutTracklists(unfilteredTracks, tracklistsToFilterOut) {
     return unmatchedTracks;
 }
 
-//TODO JSDOC
 //TODO would it make more sense to have both params be a tracklist, rather than one a tracks array and one a tracklist.
 //TODO would it be better if this didn't return the unmatched tracks array and instead just modified the original?
     //I think it would be neater, but would need some param/variable renaming to make it clear what's going on.
+/**
+ * Generates a pared down list of tracks, with those from the original tracks array only included if they don't match any in the provided tracklist.
+ * @param {Object[]} unfilteredTracks The initial/unfiltered array of track objects before applying any filter
+ * @param {Object} tracklist The tracklist object which contains tracks that should be filtered out of the original tracklist
+ * @returns {Object[]} An array of the remaining tracks from the original tracklist that didn't get filtered out
+ */
 function filterOutTracklist(unfilteredTracks, tracklist) {
     let comparisonFunction = undefined; // The function that should be used to compare tracks in the unfiltered list to those that are part of the specified tracklist. The comparison function will either only check for matching albums, or it will check all of a track's metadata when looking for a match.
     let unmatchedTracks = [];
