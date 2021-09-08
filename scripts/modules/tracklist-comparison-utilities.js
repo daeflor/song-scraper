@@ -144,33 +144,47 @@ export async function generateListOfUploadedGPMTracks() {
 /**
  * Adds playlist data to each track in the list provided. The playlist value will be a comma-separated string of playlist names in which the track appears.
  * @param {Object[]} tracks An array of track objects
- * @param {Objet[]} playlists A list of playlist data objects, each of which should contain a 'title' string and a 'tracks' array
+ * @param {Objet[]} tracklists A list of tracklist objects, each of which should contain at least a 'title' string and a 'tracks' array
  * @param {...string} excludedTracklistTitles Any number of tracklist titles that can be skipped when adding tracklist data to each track
  */
-export function addTracklistMappingToTracks(tracks, playlists, ...excludedTracklistTitles) {
-    const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
-    //TODO might want to consider doing an album comparison for sampler tracklists
+export function addTracklistMappingToTracks(tracks, tracklists, ...excludedTracklistTitles) {   
+    // Set up a collator to look for string differences, ignoring capitalization, to run a comparison between tracks that checks all of their respective metadata 
+    const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); 
 
-    for (const track of tracks) {
-        track.playlists = '';
+    if (Array.isArray(tracks) === true && Array.isArray(tracklists) === true) {
+        for (const track of tracks) {
+            for (const tracklist of tracklists) {
+                if (tracklist.legacy !== true && excludedTracklistTitles.includes(tracklist.title) !== true) {
 
-        for (const playlist of playlists) {
-            if (playlist.legacy !== true && excludedTracklistTitles.includes(playlist.title) !== true) {
-                for (const currentTrack of playlist.tracks) {
-                    if (compareTracks(track, currentTrack, collator) === true) {  
-                        (track.playlists.length == 0)
-                        ? track.playlists += ('"' + playlist.title)
-                        : track.playlists += (', ' + playlist.title);
-                        break;
-                    }
+                    // let comparisonFunction = undefined; // The function that should be used to compare tracks in the list to those in every other tracklist. The comparison function will either only check for matching albums, or it will check all of a track's metadata when looking for a match.
+
+                    // if (tracklist.sampler === true) {
+                    //     // If the tracklist is a 'sampler', only use the tracks' album metadatum when comparing tracks
+                    //     comparisonFunction = (track1, track2) => (track1.album === track2.album);
+                    // } else {
+                    //     // Set up a collator to look for string differences, ignoring capitalization, to run a comparison between tracks that checks all of their respective metadata 
+                    //     const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); 
+                    //     comparisonFunction = (track1, track2) => compareTracks(track1, track2, collator);
+                    // }
+
+                    if (Array.isArray(tracklist.tracks) === true) {
+                        for (const currentTrack of tracklist.tracks) {
+                            if (compareTracks(track, currentTrack, collator) === true) {  
+                                (typeof track.playlists === 'undefined')
+                                ? track.playlists = '"' + tracklist.title
+                                : track.playlists += (', ' + tracklist.title);
+                                break;
+                            }
+                        }
+                    } else throw Error("Tried to iterate through a tracklist's tracks, but it doesn't have a valid 'tracks' array property.");
                 }
             }
-        }
 
-        if (track.playlists.length > 0) {
-            track.playlists += '"';
+            if (typeof track.playlists === 'string') {
+                track.playlists += '"';
+            }
         }
-    }
+    } else throw Error("Tried to add a tracklist mapping to a list of tracks, but the parameters provided were invalid. Expected an array of tracks and an array of tracklist objects.");
 
     console.info("There are " + tracks.length + " songs in the list provided.");
 }
