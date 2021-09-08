@@ -83,33 +83,8 @@ function convertDurationStringToSeconds(duration) {
     } else throw Error("Tried to convert a duration string into a seconds integer value, but the duration provided was not in string format.");
 }
 
-/**
- * Filters the provided tracklist based on the criteria provided
- * @param {Object[]} unfilteredTracks The starting/unfiltered array of track objects on which to apply the filters 
- * @param {Object[]} tracklistsToFilterOut An array of tracklist objects, each of which should include an array of tracks to filter out. An optional 'sampler' property set to true indicates that a matching album name is sufficient to filter out the tracks in the corresponding tracks array. If false or unspecified, all track metadata will be checked when matching the tracks.
- * @returns {Object[]} An array of the remaining tracks from the original tracklist that didn't get filtered out
- */
-function filterOutTracklists(unfilteredTracks, tracklistsToFilterOut) {
-     // The array of tracks that have not been matched with any from the provided tracklists. Initially set to the original list of tracks provided.
-    let unmatchedTracks = unfilteredTracks; 
-
-    if (Array.isArray(unfilteredTracks) === true && Array.isArray(tracklistsToFilterOut) === true) {
-        // For each tracklist provided, filter out any tracks that match any from the list of so-far unmatched tracks.
-        for (const tracklist of tracklistsToFilterOut) {
-            // After filtering out the current tracklist, the resulting array will become the new list of pared down, unmatched tracks, which will be used when applying any further filters.
-            unmatchedTracks = filterOutTracklist(unmatchedTracks, tracklist);
-        }
-    } else throw Error("One of the provided parameters is invalid. The 'unfilteredTracks' and 'tracklistsToFilterOut' parameters should both be arrays of objects.");
-
-    // Return the final list of unmatched tracks that still remain after all filters have been applied
-    return unmatchedTracks;
-}
-
-//TODO would it make more sense to have both params be a tracklist, rather than one a tracks array and one a tracklist.
-    //That actually wouldn't work, since the list of unmatched tracks that gets passed as the first param doesn't always correspond to a tracklist (sometimes it's a pared down version of a tracklist that has already had filters applied)
-
 //TODO would it be better if this didn't return the unmatched tracks array and instead just modified the original?
-    //I think it would be neater, but would need some param/variable renaming to make it clear what's going on.
+    //I think it might be neater, but would need some param/variable renaming to make it clear what's going on.
 /**
  * Generates a pared down list of tracks, with those from the original tracks array only included if they don't match any in the provided tracklist.
  * @param {Object[]} unfilteredTracks The initial/unfiltered array of track objects before applying any filter
@@ -120,7 +95,7 @@ function filterOutTracklist(unfilteredTracks, tracklist) {
     let comparisonFunction = undefined; // The function that should be used to compare tracks in the unfiltered list to those that are part of the specified tracklist. The comparison function will either only check for matching albums, or it will check all of a track's metadata when looking for a match.
     let unmatchedTracks = [];
 
-    if (tracklist.sampler === true) {
+    if (tracklist?.sampler === true) {
         // If the tracklist is a 'sampler', only use the tracks' album metadatum when comparing tracks
         comparisonFunction = (track1, track2) => (track1.album === track2.album);
     } else {
@@ -129,23 +104,23 @@ function filterOutTracklist(unfilteredTracks, tracklist) {
         comparisonFunction = (track1, track2) => compareTracks(track1, track2, collator);
     }
 
-    //TODO add error checking here for the params
-
     // Check every unfiltered track against every track in the specified tracklist. If there is no match, add the track (former) to the array of unmatched tracks.
-    for (const track of unfilteredTracks) {
-        let trackMatched = false;
+    if (Array.isArray(unfilteredTracks) === true && Array.isArray(tracklist?.tracks) === true) {
+        for (const track of unfilteredTracks) {
+            let trackMatched = false;
 
-        for (const trackToFilterOut of tracklist.tracks) {
-            if (comparisonFunction(track, trackToFilterOut) === true) {
-                trackMatched = true;
-                break;
+            for (const trackToFilterOut of tracklist.tracks) {
+                if (comparisonFunction(track, trackToFilterOut) === true) {
+                    trackMatched = true;
+                    break;
+                }
+            }
+
+            if (trackMatched === false) {
+                unmatchedTracks.push(track);
             }
         }
-
-        if (trackMatched === false) {
-            unmatchedTracks.push(track);
-        }
-    }
+    } else throw Error ("Invalid parameters provided. Expected an array of tracks and a tracklist object.");
 
     return unmatchedTracks;
 }
@@ -213,7 +188,6 @@ export async function getFilteredTracksWithTracklistMappingYTM(initialTracklistT
     // Get a list of all tracklists which should be used to add tracklist data to the tracks. (i.e. Each of these tracklists' titles will appear alongside the track in the final table, if that track is included in the tracklist)
     const allTracklists = await appStorage.retrieveTracklistDataFromFireStoreByType(['playlist', 'auto']);
 
-    //TODO Consider renaming unmatchedTracks. The name needs to be vague enough that it works for both when the list is still unfiltered and when it has been fully filtered. unmatchedTracks may make the most sense, but there may be something better.
     // Fetch the initial tracks array from Firestore
     let unmatchedTracks = await appStorage.retrieveTracksArrayFromFirestore(initialTracklistTitle);
 
@@ -263,51 +237,6 @@ export async function getFilteredTracksWithTracklistMappingYTM(initialTracklistT
     addTracklistMappingToTracks(unmatchedTracks, allTracklists, initialTracklistTitle, ...tracklistTitlesToFilterOut); 
 
     return unmatchedTracks;
-}
-
-/**
- * Generates a filtered tracklist, with each track including a list of all the tracklists in which it appears
- * @param {string} app The app to which the initial tracklist belongs. Accepted values are 'ytm' and 'gpm'.
- * @param {string} initialTracklistTitle The title of the initial tracklist to fetch from storage
- * @param  {...string} tracklistTitlesToFilterOut Any number of titles of tracklists to use as filters. If a track appears in any of these tracklists, it will be filtered out. 
- * @returns {Promise} A promise with an array of track objects that have passed the filter criteria, each of which will include a new string property that lists all the tracklists in which the track appears
- */
-export async function getFilteredTracksWithTracklistMapping(app, initialTracklistTitle, ...tracklistTitlesToFilterOut) {
-    let unfilteredTracks = undefined; // The initial tracks array before having any filters applied on it
-    let tracklistsToFilterOut = undefined; // The list of tracklists whose tracks should all be filtered out of the initial tracklist
-    let allTracklists = undefined; // A list of all tracklists, which will be used when adding tracklist data to the filtered tracklist. Each track object will include a list of all tracklists in which that track appears.
-    
-    if (app === 'ytm') {
-        // Fetch the initial tracks array from Firestore
-        unfilteredTracks = await appStorage.retrieveTracksArrayFromFirestore(initialTracklistTitle);
-
-        // Fetch the tracklists from Firestore which contain tracks that should be filtered out from the initial list
-        tracklistsToFilterOut = await appStorage.retrieveTracklistDataFromFirestoreByTitle(...tracklistTitlesToFilterOut);
-
-        // Get a list of all tracklists which should be used to add tracklist data to the tracks. (i.e. Each of these tracklists' titles will appear alongside the track in the final table, if that track is included in the tracklist)
-        allTracklists = await appStorage.retrieveTracklistDataFromFireStoreByType(['playlist', 'auto']);
-    } else if (app === 'gpm') {
-        // Fetch the initial tracks array from Chrome Local Storage
-        unfilteredTracks = await appStorage.retrieveGPMTracksArrayFromChromeLocalStorage(initialTracklistTitle);
-
-        // Fetch the GPM tracklists from Chrome Local Storage which contain tracks that should be filtered out from the initial list
-        tracklistsToFilterOut = await appStorage.retrieveGPMTracklistDataFromChromeLocalStorageByTitle(...tracklistTitlesToFilterOut);
-
-        // Get a list of all tracklists which should be used to add tracklist data to the tracks. (i.e. Each of these tracklists' titles will appear alongside the track in the final table, if that track is included in the tracklist)
-        allTracklists = await appStorage.retrieveGPMTracklistDataFromChromeLocalStorageByTitle();
-    } else throw Error("An invalid app parameter was specified. Accepted values are 'ytm' and 'gpm'.");
-
-    // Filter all the tracks from the specified tracklists out of the initial tracklist
-    const filteredTracks = filterOutTracklists(unfilteredTracks, tracklistsToFilterOut); 
-
-    // Add the title of the original tracklist to the list of tracklist titles to exclude from the tracklist mapping. (Without this step, the title of the original tracklist would appear next to every track in the final track table, which is unnecessary info).
-    tracklistTitlesToFilterOut.push(initialTracklistTitle);
-
-    // Add a new property to each track, which is a string of all the tracklists in which the track appears, exluding the ones specified
-    addTracklistMappingToTracks(filteredTracks, allTracklists, ...tracklistTitlesToFilterOut); 
-    //TODO Maybe this step should not be handled in this function and should just be called separately instead.
-
-    return filteredTracks;
 }
 
 //TODO this is duplicated here because of Chromium bug 1194681
