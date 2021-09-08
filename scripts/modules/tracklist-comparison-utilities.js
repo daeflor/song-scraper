@@ -155,18 +155,6 @@ export function addTracklistMappingToTracks(tracks, tracklists, ...excludedTrack
         for (const track of tracks) {
             for (const tracklist of tracklists) {
                 if (tracklist.legacy !== true && excludedTracklistTitles.includes(tracklist.title) !== true) {
-
-                    // let comparisonFunction = undefined; // The function that should be used to compare tracks in the list to those in every other tracklist. The comparison function will either only check for matching albums, or it will check all of a track's metadata when looking for a match.
-
-                    // if (tracklist.sampler === true) {
-                    //     // If the tracklist is a 'sampler', only use the tracks' album metadatum when comparing tracks
-                    //     comparisonFunction = (track1, track2) => (track1.album === track2.album);
-                    // } else {
-                    //     // Set up a collator to look for string differences, ignoring capitalization, to run a comparison between tracks that checks all of their respective metadata 
-                    //     const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); 
-                    //     comparisonFunction = (track1, track2) => compareTracks(track1, track2, collator);
-                    // }
-
                     if (Array.isArray(tracklist.tracks) === true) {
                         for (const currentTrack of tracklist.tracks) {
                             if (compareTracks(track, currentTrack, collator) === true) {  
