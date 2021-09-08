@@ -106,6 +106,8 @@ function filterOutTracklists(unfilteredTracks, tracklistsToFilterOut) {
 }
 
 //TODO would it make more sense to have both params be a tracklist, rather than one a tracks array and one a tracklist.
+    //That actually wouldn't work, since the list of unmatched tracks that gets passed as the first param doesn't always correspond to a tracklist (sometimes it's a pared down version of a tracklist that has already had filters applied)
+
 //TODO would it be better if this didn't return the unmatched tracks array and instead just modified the original?
     //I think it would be neater, but would need some param/variable renaming to make it clear what's going on.
 /**
@@ -126,6 +128,8 @@ function filterOutTracklist(unfilteredTracks, tracklist) {
         const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); 
         comparisonFunction = (track1, track2) => compareTracks(track1, track2, collator);
     }
+
+    //TODO add error checking here for the params
 
     // Check every unfiltered track against every track in the specified tracklist. If there is no match, add the track (former) to the array of unmatched tracks.
     for (const track of unfilteredTracks) {
@@ -170,6 +174,7 @@ export async function generateListOfUploadedGPMTracks() {
  */
 export function addTracklistMappingToTracks(tracks, playlists, ...excludedTracklistTitles) {
     const collator = new Intl.Collator(undefined, {usage: 'search', sensitivity: 'accent'}); // Set up a collator to look for string differences, ignoring capitalization
+    //TODO might want to consider doing an album comparison for sampler tracklists
 
     for (const track of tracks) {
         track.playlists = '';
@@ -193,6 +198,71 @@ export function addTracklistMappingToTracks(tracks, playlists, ...excludedTrackl
     }
 
     console.info("There are " + tracks.length + " songs in the list provided.");
+}
+
+/**
+ * Generates a filtered YTM tracklist, with each track including a list of all the tracklists in which it appears
+ * @param {string} initialTracklistTitle The title of the initial tracklist to fetch from storage
+ * @param  {...string} tracklistTitlesToFilterOut Any number of titles of tracklists to use as filters. If a track appears in any of these tracklists, it will be filtered out from the original tracklist.
+ * @returns {Promise} A promise with an array of track objects that have passed the filter criteria, each of which will include a new string property that lists all the tracklists in which the track appears
+ */
+export async function getFilteredTracksWithTracklistMappingYTM(initialTracklistTitle, ...tracklistTitlesToFilterOut) {
+    // Fetch the tracklists from Firestore which contain tracks that should be filtered out from the initial list
+    const tracklistsToFilterOut = await appStorage.retrieveTracklistDataFromFirestoreByTitle(...tracklistTitlesToFilterOut);
+
+    // Get a list of all tracklists which should be used to add tracklist data to the tracks. (i.e. Each of these tracklists' titles will appear alongside the track in the final table, if that track is included in the tracklist)
+    const allTracklists = await appStorage.retrieveTracklistDataFromFireStoreByType(['playlist', 'auto']);
+
+    //TODO Consider renaming unmatchedTracks. The name needs to be vague enough that it works for both when the list is still unfiltered and when it has been fully filtered. unmatchedTracks may make the most sense, but there may be something better.
+    // Fetch the initial tracks array from Firestore
+    let unmatchedTracks = await appStorage.retrieveTracksArrayFromFirestore(initialTracklistTitle);
+
+    // If a single tracklist to filter out was provided, use it to filter out any matching tracks from the original list of tracks. 
+    // If there are multiple tracklists to filter out, do the same for each tracklist, each time paring the original list down further. 
+    if (tracklistsToFilterOut.hasOwnProperty('tracks') === true) {
+        unmatchedTracks = filterOutTracklist(unmatchedTracks, tracklist);
+    } else if (Array.isArray(tracklistsToFilterOut) === true) { 
+        tracklistsToFilterOut.forEach(tracklist => {
+            unmatchedTracks = filterOutTracklist(unmatchedTracks, tracklist);
+        });
+    } else throw Error("Failed to retrieve a supported tracklist or tracklists to filter out. Expected either an array or an object with a 'tracks' property.");
+    
+    // Add a new property to each track, which is a string of all the tracklists in which the track appears, exluding the ones specified. The list of tracklist titles to omit should include the title of the original tracklist, otherwise this title would appear next to every track in the final track table, which is unnecessary info.
+    addTracklistMappingToTracks(unmatchedTracks, allTracklists, initialTracklistTitle, ...tracklistTitlesToFilterOut); 
+
+    return unmatchedTracks;
+}
+
+/**
+ * Generates a filtered GPM tracklist, with each track including a list of all the tracklists in which it appears
+ * @param {string} initialTracklistTitle The title of the initial tracklist to fetch from storage
+ * @param  {...string} tracklistTitlesToFilterOut Any number of titles of tracklists to use as filters. If a track appears in any of these tracklists, it will be filtered out from the original tracklist.
+ * @returns {Promise} A promise with an array of track objects that have passed the filter criteria, each of which will include a new string property that lists all the tracklists in which the track appears
+ */
+ export async function getFilteredTracksWithTracklistMappingGPM(initialTracklistTitle, ...tracklistTitlesToFilterOut) {
+    // Fetch the GPM tracklists from Chrome Local Storage which contain tracks that should be filtered out from the initial list
+    const tracklistsToFilterOut = await appStorage.retrieveGPMTracklistDataFromChromeLocalStorageByTitle(...tracklistTitlesToFilterOut);
+
+    // Get a list of all tracklists which should be used to add tracklist data to the tracks. (i.e. Each of these tracklists' titles will appear alongside the track in the final table, if that track is included in the tracklist)
+    const allTracklists = await appStorage.retrieveGPMTracklistDataFromChromeLocalStorageByTitle();
+
+    // Fetch the initial tracks array from Chrome Local Storage
+    let unmatchedTracks = await appStorage.retrieveGPMTracksArrayFromChromeLocalStorage(initialTracklistTitle);
+
+    // If a single tracklist to filter out was provided, use it to filter out any matching tracks from the original list of tracks. 
+    // If there are multiple tracklists to filter out, do the same for each tracklist, each time paring the original list down further. 
+    if (tracklistsToFilterOut.hasOwnProperty('tracks') === true) {
+        unmatchedTracks = filterOutTracklist(unmatchedTracks, tracklist);
+    } else if (Array.isArray(tracklistsToFilterOut) === true) { 
+        tracklistsToFilterOut.forEach(tracklist => {
+            unmatchedTracks = filterOutTracklist(unmatchedTracks, tracklist);
+        });
+    } else throw Error("Failed to retrieve a supported tracklist or tracklists to filter out. Expected either an array or an object with a 'tracks' property.");
+    
+    // Add a new property to each track, which is a string of all the tracklists in which the track appears, exluding the ones specified. The list of tracklist titles to omit should include the title of the original tracklist, otherwise this title would appear next to every track in the final track table, which is unnecessary info.
+    addTracklistMappingToTracks(unmatchedTracks, allTracklists, initialTracklistTitle, ...tracklistTitlesToFilterOut); 
+
+    return unmatchedTracks;
 }
 
 /**
@@ -233,7 +303,7 @@ export async function getFilteredTracksWithTracklistMapping(app, initialTracklis
     // Add the title of the original tracklist to the list of tracklist titles to exclude from the tracklist mapping. (Without this step, the title of the original tracklist would appear next to every track in the final track table, which is unnecessary info).
     tracklistTitlesToFilterOut.push(initialTracklistTitle);
 
-    // Add a new property to each track, which is string of all the tracklists in which the track appears, exluding the ones specified
+    // Add a new property to each track, which is a string of all the tracklists in which the track appears, exluding the ones specified
     addTracklistMappingToTracks(filteredTracks, allTracklists, ...tracklistTitlesToFilterOut); 
     //TODO Maybe this step should not be handled in this function and should just be called separately instead.
 
