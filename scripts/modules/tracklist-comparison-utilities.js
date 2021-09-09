@@ -196,7 +196,7 @@ export async function getFilteredTracksWithTracklistMappingYTM(initialTracklistT
     // If a single tracklist to filter out was provided, use it to filter out any matching tracks from the original list of tracks. 
     // If there are multiple tracklists to filter out, do the same for each tracklist, each time paring the original list down further. 
     if (tracklistsToFilterOut.hasOwnProperty('tracks') === true) {
-        unmatchedTracks = filterOutTracklist(unmatchedTracks, tracklist);
+        unmatchedTracks = filterOutTracklist(unmatchedTracks, tracklistsToFilterOut);
     } else if (Array.isArray(tracklistsToFilterOut) === true) { 
         tracklistsToFilterOut.forEach(tracklist => {
             unmatchedTracks = filterOutTracklist(unmatchedTracks, tracklist);
