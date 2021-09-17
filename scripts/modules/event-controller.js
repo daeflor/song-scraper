@@ -136,19 +136,19 @@ ViewRenderer.buttons.downloadStoredTracks.addEventListener('click', async functi
 
 // Button Pressed: Copy Scraped Tracks to Clipboard
 ViewRenderer.buttons.copyToClipboardScrapedTracks.addEventListener('click', function() {
-    ViewRenderer.buttons.copyToClipboardScrapedTracks.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
+    this.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
     const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV
     const csv = IO.convertArrayOfObjectsToCsv(SESSION_STATE.tracklist.tracks.scraped, includedProperties);
 
     navigator.clipboard.writeText(csv)
-        .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboardScrapedTracks.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
+        .then(() => setTimeout(() => this.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
               () => console.error("Failed to copy CSV to clipboard."));
 });
 
 // Button Pressed: Copy Stored (YTM) Tracks to Clipboard
 ViewRenderer.buttons.copyToClipboardStoredTracks.addEventListener('click', async function() {
-    ViewRenderer.buttons.copyToClipboardStoredTracks.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
+    this.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
     const storedTracks = await getStoredTracksYTM(SESSION_STATE.tracklist.title);
 
@@ -157,7 +157,7 @@ ViewRenderer.buttons.copyToClipboardStoredTracks.addEventListener('click', async
         const csv = IO.convertArrayOfObjectsToCsv(storedTracks, includedProperties);
 
         navigator.clipboard.writeText(csv)
-            .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboardStoredTracks.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
+            .then(() => setTimeout(() => this.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
                     () => console.error("Failed to copy CSV to clipboard."));
     } else console.info("Tried to copy the stored tracklist to the clipboard, but the tracklist could not be found in storage.");
     //TODO maybe update the UI (e.g. button icon) if the tracklist couldn't be found in storage
@@ -166,7 +166,7 @@ ViewRenderer.buttons.copyToClipboardStoredTracks.addEventListener('click', async
 
 // Button Pressed: Copy Delta Track Tables to Clipboard
 ViewRenderer.buttons.copyToClipboardDeltaTrackTables.addEventListener('click', async function() {
-    ViewRenderer.buttons.copyToClipboardDeltaTrackTables.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
+    this.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
     const deltaTracklists = await getDeltaTracklists();
 
@@ -175,7 +175,7 @@ ViewRenderer.buttons.copyToClipboardDeltaTrackTables.addEventListener('click', a
         const csv = IO.convertObjectMapsToCsv(deltaTracklists, includedProperties, SESSION_STATE.tracklist.title);
 
         navigator.clipboard.writeText(csv)
-            .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboardDeltaTrackTables.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
+            .then(() => setTimeout(() => this.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
                   () => console.error("Failed to copy CSV to clipboard."));
     } else console.info("Tried to copy the delta track tables to the clipboard, but the delta tracklists could not be generated. This is likely because there is no tracklist available in storage with which to compare the scraped tracklist.");
     //TODO maybe update the UI (e.g. button icon) if the tracklist couldn't be found in storage
