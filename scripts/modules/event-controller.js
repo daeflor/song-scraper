@@ -178,8 +178,8 @@ ViewRenderer.buttons.copyToClipboardDeltaTrackTables.addEventListener('click', a
 });
 
 // Button Pressed: Copy Tracks Not In Common to Clipboard
-ViewRenderer.buttons.copyToClipboardTracksNotInCommon.addEventListener('click', async function() {
-    ViewRenderer.buttons.copyToClipboardTracksNotInCommon.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
+ViewRenderer.buttons.copyToClipboardTracksNotInCommonFromLibrary.addEventListener('click', async function() {
+    ViewRenderer.buttons.copyToClipboardTracksNotInCommonFromLibrary.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
     const tracksNotInCommon = await tracklistComparisonUtils.getFilteredTracksWithTracklistMappingYTM('Added from YouTube Music', 'Common', ...customTracklists.getNonCommonTracklists());
     //TODO this only covers the tracks that are in the Library (i.e. Added from YTM Subscription) but not in Common. It doesn't cover tracks which may be included only in other playlists but not in Common.
@@ -190,7 +190,7 @@ ViewRenderer.buttons.copyToClipboardTracksNotInCommon.addEventListener('click', 
     const csv = IO.convertArrayOfObjectsToCsv(tracksNotInCommon, includedProperties);
 
     navigator.clipboard.writeText(csv)
-        .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboardTracksNotInCommon.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
+        .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboardTracksNotInCommonFromLibrary.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
               () => console.error("Failed to copy CSV to clipboard."));
 });
 
@@ -227,12 +227,12 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
 //TODO Consider displaying the delta tracklists by default once a scrape has been completed
 
 // Checkbox Value Changed: Tracks Not In Common
-ViewRenderer.checkboxes.tracksNotInCommon.addEventListener('change', async function() {
+ViewRenderer.checkboxes.tracksNotInCommonFromLibrary.addEventListener('change', async function() {
     const tracksNotInCommon = await tracklistComparisonUtils.getFilteredTracksWithTracklistMappingYTM('Added from YouTube Music', 'Common', ...customTracklists.getNonCommonTracklists());
     //TODO this only covers the tracks that are in the Library (i.e. Added from YTM Subscription) but not in Common. It doesn't cover tracks which may be included only in other playlists but not in Common.
     //TODO this doesn't fully work because you can't pass track table columns here and so the new 'playlist' field/column gets omitted.
 
-    reactToCheckboxChange(tracksNotInCommon, ViewRenderer.tracktables.tracksNotInCommon, this.checked, 'Tracks missing from the Common playlist');
+    reactToCheckboxChange(tracksNotInCommon, ViewRenderer.tracktables.tracksNotInCommonFromLibrary, this.checked, 'Tracks missing from the Common playlist');
 });
 
 /***** Helper Functions *****/

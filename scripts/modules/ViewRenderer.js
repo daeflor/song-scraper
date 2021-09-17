@@ -28,7 +28,9 @@ export const buttons = Object.freeze({
     copyToClipboardScrapedTracks: document.getElementById('btnCopyToClipboardScrapedTracks'),
     copyToClipboardStoredTracks: document.getElementById('btnCopyToClipboardStoredTracks'),
     copyToClipboardDeltaTrackTables: document.getElementById('btnCopyToClipboardDeltaTrackTables'),
-    copyToClipboardTracksNotInCommon: document.getElementById('btnCopyToClipboardTracksNotInCommon')
+    copyToClipboardTracksNotInCommonFromLibrary: document.getElementById('btnCopyToClipboardTracksNotInCommonFromLibrary'),
+    copyToClipboardTracksNotInCommonFromPlaylists: document.getElementById('btnCopyToClipboardTracksNotInCommonFromPlaylists'),
+    copyToClipboardTracksNotInCommonGPM: document.getElementById('btnCopyToClipboardTracksNotInCommonGPM')
 });
 
 export const checkboxes = Object.freeze({
@@ -36,7 +38,9 @@ export const checkboxes = Object.freeze({
     storedTrackTable: document.getElementById('checkboxStoredTrackTable'),
     scrapedTrackTable: document.getElementById('checkboxScrapedTrackTable'),
     deltaTrackTables: document.getElementById('checkboxDeltaTrackTables'),
-    tracksNotInCommon: document.getElementById('checkboxTracksNotInCommon')
+    tracksNotInCommonFromLibrary: document.getElementById('checkboxTracksNotInCommonFromLibrary'),
+    tracksNotInCommonFromPlaylists: document.getElementById('checkboxTracksNotInCommonFromPlaylists'),
+    tracksNotInCommonGPM: document.getElementById('checkboxTracksNotInCommonGPM')
 });
 
 //TODO It could be a bit confusing that these are all also divs, not actual 'tables'
@@ -46,7 +50,9 @@ export const tracktables = {
     stored: document.getElementById('trackTableStored'),
     gpm: document.getElementById('trackTableGPM'),
     deltas: document.getElementById('trackTableDeltas'),
-    tracksNotInCommon: document.getElementById('trackTableNotInCommon')
+    tracksNotInCommonFromLibrary: document.getElementById('trackTableNotInCommonFromLibrary'),
+    tracksNotInCommonFromPlaylists: document.getElementById('trackTableNotInCommonFromPlaylists'),
+    tracksNotInCommonGPM: document.getElementById('trackTableNotInCommonGPM')
 };
 
 export const labels = {
