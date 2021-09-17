@@ -14,6 +14,8 @@ import * as appStorage from './StorageManager.js';
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
 import * as IO from './utilities/IO.js';
 
+import * as customTracklists from '../Configuration/custom-tracklists.js';
+
 import getGPMTracklistTitle from '../Configuration/tracklist-title-mapping.js'
 
 //TODO could consider adding to and/or removing from EventController so that it's the central place for all event-driven logic
@@ -175,6 +177,25 @@ ViewRenderer.buttons.copyToClipboardDeltaTrackTables.addEventListener('click', a
         //Right now it stays in the pending state, which isn't so bad.
 });
 
+// Button Pressed: Copy Tracks Not In Common to Clipboard
+ViewRenderer.buttons.copyToClipboardTracksNotInCommon.addEventListener('click', async function() {
+    ViewRenderer.buttons.copyToClipboardTracksNotInCommon.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
+    
+    const tracksNotInCommon = await tracklistComparisonUtils.getFilteredTracksWithTracklistMappingYTM('Added from YouTube Music', 'Common', ...customTracklists.getNonCommonTracklists());
+    //TODO this only covers the tracks that are in the Library (i.e. Added from YTM Subscription) but not in Common. It doesn't cover tracks which may be included only in other playlists but not in Common.
+    //TODO this is duplicated with the logic when the checkbox is pressed. This list of tracks is being calculated each time either checkbox or button is interacted with, instead of being persisted. 
+
+    //TODO If you swap the places of 'unplayable' and 'playlists' (which would be convenient), it doesn't output correctly. Needs investigation.
+    const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable', 'playlists']; // Set the track properties which should be used when generating the CSV
+    const csv = IO.convertArrayOfObjectsToCsv(tracksNotInCommon, includedProperties);
+
+    navigator.clipboard.writeText(csv)
+        .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboardTracksNotInCommon.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
+              () => console.error("Failed to copy CSV to clipboard."));
+});
+
+//TODO I think it would be more intuitive to have the checkbox section above the download/clipboard button sections
+
 // Checkbox Value Changed: Scraped Track Table
 ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() {
     reactToCheckboxChange(SESSION_STATE.tracklist.tracks.scraped, ViewRenderer.tracktables.scraped, this.checked, 'Scraped Tracklist');
@@ -202,6 +223,16 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
     const deltaTracklists = await getDeltaTracklists();
 
     reactToCheckboxChange(deltaTracklists, ViewRenderer.tracktables.deltas, this.checked);
+});
+//TODO Consider displaying the delta tracklists by default once a scrape has been completed
+
+// Checkbox Value Changed: Tracks Not In Common
+ViewRenderer.checkboxes.tracksNotInCommon.addEventListener('change', async function() {
+    const tracksNotInCommon = await tracklistComparisonUtils.getFilteredTracksWithTracklistMappingYTM('Added from YouTube Music', 'Common', ...customTracklists.getNonCommonTracklists());
+    //TODO this only covers the tracks that are in the Library (i.e. Added from YTM Subscription) but not in Common. It doesn't cover tracks which may be included only in other playlists but not in Common.
+    //TODO this doesn't fully work because you can't pass track table columns here and so the new 'playlist' field/column gets omitted.
+
+    reactToCheckboxChange(tracksNotInCommon, ViewRenderer.tracktables.tracksNotInCommon, this.checked, 'Tracks missing from the Common playlist');
 });
 
 /***** Helper Functions *****/

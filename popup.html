@@ -87,8 +87,13 @@
         </button>
       </label>
 
-      <input type="checkbox" id="checkboxTracksNotInPlaylists" disabled=true>
-      <label for="checkboxTracksNotInPlaylists"> Tracks not in Playlists</label>
+      <input type="checkbox" id="checkboxTracksNotInCommon">
+      <label for="checkboxTracksNotInCommon"> Tracks not in Common
+        <br>
+        <button type='button' id='btnCopyToClipboardTracksNotInCommon' class='btn btnSmall autoHeight popupButton material-icons-round'>
+          content_paste
+        </button>
+      </label>
 
       <input type="checkbox" id="checkboxTracksNotInLibrary" disabled=true>
       <label for="checkboxTracksNotInLibrary"> Tracks not in Library</label>
@@ -99,6 +104,7 @@
       <div id='trackTableStored'></div>
       <div id='trackTableGPM'></div>
       <div id='trackTableDeltas'></div>
+      <div id='trackTableNotInCommon'></div>
     </div>
 
     <!-- TODO clean this up-->

@@ -27,14 +27,16 @@ export const buttons = Object.freeze({
     downloadGPMTracks: document.getElementById('btnDownloadGPMTracks'),
     copyToClipboardScrapedTracks: document.getElementById('btnCopyToClipboardScrapedTracks'),
     copyToClipboardStoredTracks: document.getElementById('btnCopyToClipboardStoredTracks'),
-    copyToClipboardDeltaTrackTables: document.getElementById('btnCopyToClipboardDeltaTrackTables')
+    copyToClipboardDeltaTrackTables: document.getElementById('btnCopyToClipboardDeltaTrackTables'),
+    copyToClipboardTracksNotInCommon: document.getElementById('btnCopyToClipboardTracksNotInCommon')
 });
 
 export const checkboxes = Object.freeze({
     gpmTrackTable: document.getElementById('checkboxStoredGPMTrackTable'),
     storedTrackTable: document.getElementById('checkboxStoredTrackTable'),
     scrapedTrackTable: document.getElementById('checkboxScrapedTrackTable'),
-    deltaTrackTables: document.getElementById('checkboxDeltaTrackTables')
+    deltaTrackTables: document.getElementById('checkboxDeltaTrackTables'),
+    tracksNotInCommon: document.getElementById('checkboxTracksNotInCommon')
 });
 
 //TODO It could be a bit confusing that these are all also divs, not actual 'tables'
@@ -43,7 +45,8 @@ export const tracktables = {
     scraped: document.getElementById('trackTableScraped'),
     stored: document.getElementById('trackTableStored'),
     gpm: document.getElementById('trackTableGPM'),
-    deltas: document.getElementById('trackTableDeltas')
+    deltas: document.getElementById('trackTableDeltas'),
+    tracksNotInCommon: document.getElementById('trackTableNotInCommon')
 };
 
 export const labels = {
