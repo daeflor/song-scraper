@@ -33,6 +33,11 @@ const SESSION_STATE = {
             gpm: undefined
         },
         deltas: undefined
+    },
+    tracksNotInCommon: {
+        fromLibrary: undefined,
+        fromPlaylists: undefined,
+        fromGPM: undefined
     }
 }
 
@@ -179,18 +184,17 @@ ViewRenderer.buttons.copyToClipboardDeltaTrackTables.addEventListener('click', a
 
 // Button Pressed: Copy Tracks Not In Common to Clipboard
 ViewRenderer.buttons.copyToClipboardTracksNotInCommonFromLibrary.addEventListener('click', async function() {
-    ViewRenderer.buttons.copyToClipboardTracksNotInCommonFromLibrary.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
+    this.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
-    const tracksNotInCommon = await tracklistComparisonUtils.getFilteredTracksWithTracklistMappingYTM('Added from YouTube Music', 'Common', ...customTracklists.getNonCommonTracklists());
+    const tracksNotInCommon = await getTracksNotInCommonFromLibrary();
     //TODO this only covers the tracks that are in the Library (i.e. Added from YTM Subscription) but not in Common. It doesn't cover tracks which may be included only in other playlists but not in Common.
-    //TODO this is duplicated with the logic when the checkbox is pressed. This list of tracks is being calculated each time either checkbox or button is interacted with, instead of being persisted. 
 
     //TODO If you swap the places of 'unplayable' and 'playlists' (which would be convenient), it doesn't output correctly. Needs investigation.
     const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable', 'playlists']; // Set the track properties which should be used when generating the CSV
     const csv = IO.convertArrayOfObjectsToCsv(tracksNotInCommon, includedProperties);
 
     navigator.clipboard.writeText(csv)
-        .then(() => setTimeout(() => ViewRenderer.buttons.copyToClipboardTracksNotInCommonFromLibrary.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
+        .then(() => setTimeout(() => this.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
               () => console.error("Failed to copy CSV to clipboard."));
 });
 
@@ -228,7 +232,7 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
 
 // Checkbox Value Changed: Tracks Not In Common
 ViewRenderer.checkboxes.tracksNotInCommonFromLibrary.addEventListener('change', async function() {
-    const tracksNotInCommon = await tracklistComparisonUtils.getFilteredTracksWithTracklistMappingYTM('Added from YouTube Music', 'Common', ...customTracklists.getNonCommonTracklists());
+    const tracksNotInCommon = await getTracksNotInCommonFromLibrary();
     //TODO this only covers the tracks that are in the Library (i.e. Added from YTM Subscription) but not in Common. It doesn't cover tracks which may be included only in other playlists but not in Common.
     //TODO this doesn't fully work because you can't pass track table columns here and so the new 'playlist' field/column gets omitted.
 
@@ -355,5 +359,18 @@ async function getDeltaTracklists() {
     } else console.info("Tracklist Delta map already exists so a new one won't be created.");
                     
     return SESSION_STATE.tracklist.deltas;
+}
+
+/**
+ * Returns the array of tracks from the YTM Library that aren't in the Common playlist
+ * @returns {Promise} A promise containing the array of tracks
+ */
+ async function getTracksNotInCommonFromLibrary() {
+    // If the list of tracks has previously been calculated, return that array. Otherwise, calculate it, save it for future reference, and return it
+    if (Array.isArray(SESSION_STATE.tracksNotInCommon.fromLibrary) === false) {
+        SESSION_STATE.tracksNotInCommon.fromLibrary = await tracklistComparisonUtils.getFilteredTracksWithTracklistMappingYTM('Added from YouTube Music', 'Common', ...customTracklists.getNonCommonTracklists());
+    }
+
+    return SESSION_STATE.tracksNotInCommon.fromLibrary;
 }
 
