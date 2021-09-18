@@ -189,8 +189,7 @@ ViewRenderer.buttons.copyToClipboardTracksNotInCommonFromLibrary.addEventListene
     const tracksNotInCommon = await getTracksNotInCommonFromLibrary();
     //TODO this only covers the tracks that are in the Library (i.e. Added from YTM Subscription) but not in Common. It doesn't cover tracks which may be included only in other playlists but not in Common.
 
-    //TODO If you swap the places of 'unplayable' and 'playlists' (which would be convenient), it doesn't output correctly. Needs investigation.
-    const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable', 'playlists']; // Set the track properties which should be used when generating the CSV
+    const includedProperties = ['title', 'artist', 'album', 'duration', 'playlists', 'unplayable']; // Set the track properties which should be used when generating the CSV
     const csv = IO.convertArrayOfObjectsToCsv(tracksNotInCommon, includedProperties);
 
     navigator.clipboard.writeText(csv)
@@ -207,6 +206,7 @@ ViewRenderer.buttons.copyToClipboardTracksNotInCommonGPM.addEventListener('click
     const includedProperties = ['title', 'artist', 'album', 'duration', 'playlists']; // Set the track properties which should be used when generating the CSV
     const csv = IO.convertArrayOfObjectsToCsv(tracksNotInCommon, includedProperties);
 
+    //TODO consolidate this logic which is repeated a lot.
     navigator.clipboard.writeText(csv)
         .then(() => setTimeout(() => this.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
               () => console.error("Failed to copy CSV to clipboard."));
@@ -396,7 +396,7 @@ async function getDeltaTracklists() {
     // If the list of tracks has previously been calculated, return that array. Otherwise, calculate it, save it for future reference, and return it
     if (Array.isArray(SESSION_STATE.tracksNotInCommon.fromGPM) === false) {
         SESSION_STATE.tracksNotInCommon.fromGPM = await tracklistComparisonUtils.getFilteredTracksWithTracklistMappingGPM(
-            'ADDED FROM MY SUBSCRIPTION', 'Your Likes', ...customTracklists.getCommonPlaylistsGPM(), ...customTracklists.getNonCommonPlaylistsGPM());
+            'ADDED FROM MY SUBSCRIPTION', ...customTracklists.getCommonPlaylistsGPM(), ...customTracklists.getNonCommonPlaylistsGPM());
     }
 
     return SESSION_STATE.tracksNotInCommon.fromGPM;

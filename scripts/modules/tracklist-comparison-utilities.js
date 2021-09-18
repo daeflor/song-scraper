@@ -157,19 +157,15 @@ export function addTracklistMappingToTracks(tracks, tracklists, ...excludedTrack
                 if (tracklist.legacy !== true && excludedTracklistTitles.includes(tracklist.title) !== true) {
                     if (Array.isArray(tracklist.tracks) === true) {
                         for (const currentTrack of tracklist.tracks) {
-                            if (compareTracks(track, currentTrack, collator) === true) {  
+                            if (compareTracks(track, currentTrack, collator) === true) {
                                 (typeof track.playlists === 'undefined')
-                                ? track.playlists = '"' + tracklist.title
+                                ? track.playlists = tracklist.title
                                 : track.playlists += (', ' + tracklist.title);
                                 break;
                             }
                         }
                     } else throw Error("Tried to iterate through a tracklist's tracks, but it doesn't have a valid 'tracks' array property.");
                 }
-            }
-
-            if (typeof track.playlists === 'string') {
-                track.playlists += '"';
             }
         }
     } else throw Error("Tried to add a tracklist mapping to a list of tracks, but the parameters provided were invalid. Expected an array of tracks and an array of tracklist objects.");

@@ -6,20 +6,23 @@
  */
 function createCommaSeparatedStringFromArray(array) {
     if (Array.isArray(array) === true) { 
-        let _string = ''; //Start with a blank string
+        let csvString = ''; //Start with a blank string
 
-        for (let i = 0; i < array.length-1; i++) { // For each element in the array except the last one... 
-            if (typeof array[i] === 'string') { // If the element's value type is a string...
-                _string += '"' + array[i] + '",'; // Include double-quotes around the output string, followed by a comma to indicate the end of the current element/value
-            } else { // Otherwise, output the value without quotes, followed by a comma to indicate the end of the current element/value
-                _string += array[i] + ',';
+        for (let i = 0; i < array.length; i++) { // For each element in the array...            
+            // Append the element's value to the string. If the element's value type is a string, include double quotes around it
+            (typeof array[i] === 'string')
+            ? csvString += '"' + array[i] + '"'
+            : csvString += array[i];
+
+            // If the current element isn't the last one in the array, append a comma to indicate the end of the current element/value
+            if (i < array.length-1) {
+                csvString += ',';
             }
         }
+        
+        return csvString;
 
-        _string += array[array.length-1]; // Add the array's last value to the string
-        return _string;
-
-    } else console.error("Request received to create a comma-separated string but an array of values was not provided.");
+    } else throw Error("Request received to create a comma-separated string but an array of values was not provided.");
 }
 
 //** Publicly-Exposed Utility Functions **//
