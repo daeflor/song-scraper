@@ -31,7 +31,7 @@ export const buttons = Object.freeze({
     copyToClipboardTracksNotInCommonFromLibrary: document.getElementById('btnCopyToClipboardTracksNotInCommonFromLibrary'),
     copyToClipboardTracksNotInCommonFromPlaylists: document.getElementById('btnCopyToClipboardTracksNotInCommonFromPlaylists'),
     copyToClipboardTracksNotInCommonGPM: document.getElementById('btnCopyToClipboardTracksNotInCommonGPM')
-});
+}); //TODO maybe separate the clipboard buttons into their own object. (e.g. clipboardButtons.scrapedTracks OR buttons.clipboard.scrapedTracks instead of buttons.copyToClipboardScrapedTracks)
 
 export const checkboxes = Object.freeze({
     gpmTrackTable: document.getElementById('checkboxStoredGPMTrackTable'),
@@ -40,7 +40,8 @@ export const checkboxes = Object.freeze({
     deltaTrackTables: document.getElementById('checkboxDeltaTrackTables'),
     tracksNotInCommonFromLibrary: document.getElementById('checkboxTracksNotInCommonFromLibrary'),
     tracksNotInCommonFromPlaylists: document.getElementById('checkboxTracksNotInCommonFromPlaylists'),
-    tracksNotInCommonGPM: document.getElementById('checkboxTracksNotInCommonGPM')
+    tracksNotInCommonGPM: document.getElementById('checkboxTracksNotInCommonGPM'),
+    tracksOnlyInCommon: document.getElementById('checkboxTracksOnlyInCommon')
 });
 
 //TODO It could be a bit confusing that these are all also divs, not actual 'tables'
@@ -52,7 +53,8 @@ export const tracktables = {
     deltas: document.getElementById('trackTableDeltas'),
     tracksNotInCommonFromLibrary: document.getElementById('trackTableNotInCommonFromLibrary'),
     tracksNotInCommonFromPlaylists: document.getElementById('trackTableNotInCommonFromPlaylists'),
-    tracksNotInCommonGPM: document.getElementById('trackTableNotInCommonGPM')
+    tracksNotInCommonGPM: document.getElementById('trackTableNotInCommonGPM'),
+    tracksOnlyInCommon: document.getElementById('trackTableOnlyInCommon')
 };
 
 export const labels = {

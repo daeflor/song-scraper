@@ -87,7 +87,9 @@ export function triggerUITransition(transition, options) {
         ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Failed to store tracklist data!');
         ViewRenderer.updateElementColor(ViewRenderer.buttons.storeScrapedMetadata, '#cc3300');
     } else if (transition === 'UpdateDeltaLabel') {
-        ViewRenderer.labels.deltas.childNodes[0].textContent = 'Delta Track Tables (' + options.appUsedForDelta + ')';
+        //TODO Should this logic be within a function that includes error checking?
+            //This file shouldn't be directly updating UI elements this way
+        ViewRenderer.labels.deltas.childNodes[0].textContent = 'Track Deltas (' + options.appUsedForDelta + ')';
     } else if (transition === 'AddDeltaTrackTables') {
         if (options?.deltaTracklists instanceof Map === true) {
             // Create a track table for the list of 'Added Tracks'

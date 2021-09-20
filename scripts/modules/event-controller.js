@@ -253,6 +253,13 @@ ViewRenderer.checkboxes.tracksNotInCommonFromLibrary.addEventListener('change', 
     reactToCheckboxChange(tracksNotInCommon, ViewRenderer.tracktables.tracksNotInCommonFromLibrary, this.checked, 'Tracks missing from the Common playlist');
 });
 
+// Checkbox Value Changed: Tracks Only In Common
+ViewRenderer.checkboxes.tracksOnlyInCommon.addEventListener('change', async function() {
+    const filteredTracks = await tracklistComparisonUtils.getFilteredTracksWithTracklistMappingYTM('Common', 'Uploaded Songs', ...customTracklists.getCommonPlaylists());
+
+    reactToCheckboxChange(filteredTracks, ViewRenderer.tracktables.tracksOnlyInCommon, this.checked, 'Tracks in the Common playlist missing from others');
+});
+
 /***** Helper Functions *****/
 
 /**
@@ -374,6 +381,8 @@ async function getDeltaTracklists() {
                     
     return SESSION_STATE.tracklist.deltas;
 }
+
+//The two functions below don't really belong in this file
 
 /**
  * Returns the array of tracks from the YTM Library that aren't in the Common playlist

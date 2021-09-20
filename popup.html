@@ -82,7 +82,7 @@
         
         <br>
         <input type="checkbox" id="checkboxDeltaTrackTables" disabled=true>
-        <label for="checkboxDeltaTrackTables" id="labelDeltaTrackTables"> Delta Track Tables</label>
+        <label for="checkboxDeltaTrackTables" id="labelDeltaTrackTables"> Track Deltas</label>
         <button type='button' id='btnCopyToClipboardDeltaTrackTables' class='btn btnSmall autoHeight popupButton material-icons-round' disabled=true>
           content_paste
         </button>
@@ -113,6 +113,14 @@
         </button>
       </div>
 
+      <!-- Miscellaneous -->
+      <div class="checkboxColumn">
+        Miscellaneous
+        <br>
+        <input type="checkbox" id="checkboxTracksOnlyInCommon">
+        <label for="checkboxTracksOnlyInCommon"> Tracks only in Common</label>
+      </div>
+
     </div>
 
     <div id='tracktables'>
@@ -123,6 +131,7 @@
       <div id='trackTableNotInCommonFromLibrary'></div>
       <div id='trackTableNotInCommonFromPlaylists'></div>
       <div id='trackTableNotInCommonGPM'></div>
+      <div id='trackTableOnlyInCommon'></div>
     </div>
 
     <!-- TODO clean this up-->
