@@ -199,6 +199,7 @@ export async function getFilteredTracksWithTracklistMappingYTM(initialTracklistT
         });
     } else throw Error("Failed to retrieve a supported tracklist or tracklists to filter out. Expected either an array or an object with a 'tracks' property.");
     
+    //TODO could use map() to turn an array of tracklist data to an array of tracklist titles, to pass as the last parameter here, if we end up receiving tracklist data in this function (above) instead of tracklist titles
     // Add a new property to each track, which is a string of all the tracklists in which the track appears, exluding the ones specified. The list of tracklist titles to omit should include the title of the original tracklist, otherwise this title would appear next to every track in the final track table, which is unnecessary info.
     addTracklistMappingToTracks(unmatchedTracks, allTracklists, initialTracklistTitle, ...tracklistTitlesToFilterOut); 
 

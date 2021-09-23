@@ -42,6 +42,7 @@ export async function storeTracklistInFirestore(tracklistTitle, tracklistType, t
  * @returns {Promise} A promise with an array of tracklist objects matching the given types
  */
  export async function retrieveTracklistDataFromFireStoreByType(tracklistTypes = ['all', 'auto', 'playlist', 'uploads']) {
+    //TODO would it be better if this used Rest parameters
     //TODO the 'all' type name is confusing. Maybe 'subscription' or 'added' would be clearer.
     const playlistData = await getReferenceToUserTracklistCollection().where("type", "in", tracklistTypes).get();
 
