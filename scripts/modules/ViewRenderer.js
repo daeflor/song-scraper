@@ -22,16 +22,26 @@ export const buttons = Object.freeze({
     options: document.getElementById('btnOptions'),
     scrape: document.getElementById('btnScrape'),
     storeScrapedMetadata: document.getElementById('btnStoreScrapedMetadata'),
-    exportScrapedMetadata: document.getElementById('btnExportScrapedMetadata'),
-    exportStoredMetadata: document.getElementById('btnExportStoredMetadataForCurrentTracklist'),
-    exportSelectedLists: document.getElementById('btnExportSelectedLists'),
-    copyToClipboard: document.getElementById('btnCopyToClipboard')
-});
+    downloadScrapedTracks: document.getElementById('btnDownloadScrapedTracks'),
+    downloadStoredTracks: document.getElementById('btnDownloadStoredTracks'),
+    downloadGPMTracks: document.getElementById('btnDownloadGPMTracks'),
+    copyToClipboardScrapedTracks: document.getElementById('btnCopyToClipboardScrapedTracks'),
+    copyToClipboardStoredTracks: document.getElementById('btnCopyToClipboardStoredTracks'),
+    copyToClipboardDeltaTrackTables: document.getElementById('btnCopyToClipboardDeltaTrackTables'),
+    copyToClipboardTracksNotInCommonFromLibrary: document.getElementById('btnCopyToClipboardTracksNotInCommonFromLibrary'),
+    copyToClipboardTracksNotInCommonFromPlaylists: document.getElementById('btnCopyToClipboardTracksNotInCommonFromPlaylists'),
+    copyToClipboardTracksNotInCommonGPM: document.getElementById('btnCopyToClipboardTracksNotInCommonGPM')
+}); //TODO maybe separate the clipboard buttons into their own object. (e.g. clipboardButtons.scrapedTracks OR buttons.clipboard.scrapedTracks instead of buttons.copyToClipboardScrapedTracks)
 
 export const checkboxes = Object.freeze({
+    gpmTrackTable: document.getElementById('checkboxStoredGPMTrackTable'),
     storedTrackTable: document.getElementById('checkboxStoredTrackTable'),
     scrapedTrackTable: document.getElementById('checkboxScrapedTrackTable'),
-    deltaTrackTables: document.getElementById('checkboxDeltaTrackTables')
+    deltaTrackTables: document.getElementById('checkboxDeltaTrackTables'),
+    tracksNotInCommonFromLibrary: document.getElementById('checkboxTracksNotInCommonFromLibrary'),
+    tracksNotInCommonFromPlaylists: document.getElementById('checkboxTracksNotInCommonFromPlaylists'),
+    tracksNotInCommonGPM: document.getElementById('checkboxTracksNotInCommonGPM'),
+    tracksOnlyInCommon: document.getElementById('checkboxTracksOnlyInCommon')
 });
 
 //TODO It could be a bit confusing that these are all also divs, not actual 'tables'
@@ -39,7 +49,12 @@ export const checkboxes = Object.freeze({
 export const tracktables = {
     scraped: document.getElementById('trackTableScraped'),
     stored: document.getElementById('trackTableStored'),
-    deltas: document.getElementById('trackTableDeltas')
+    gpm: document.getElementById('trackTableGPM'),
+    deltas: document.getElementById('trackTableDeltas'),
+    tracksNotInCommonFromLibrary: document.getElementById('trackTableNotInCommonFromLibrary'),
+    tracksNotInCommonFromPlaylists: document.getElementById('trackTableNotInCommonFromPlaylists'),
+    tracksNotInCommonGPM: document.getElementById('trackTableNotInCommonGPM'),
+    tracksOnlyInCommon: document.getElementById('trackTableOnlyInCommon')
 };
 
 export const labels = {

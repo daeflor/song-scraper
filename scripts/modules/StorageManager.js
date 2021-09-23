@@ -2,10 +2,16 @@
     //Then, any files that have a dependency on firebase (e.g. Auth, Storage, etc.) can just import that module
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 import '/node_modules/firebase/firebase-firestore.js'; //Import the Cloud Firestore library
-
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
 
-let _firestoreDatabase = undefined;
+/**
+ * Get a reference to the tracklist collection for the currently signed-in user
+ * @returns {Object} A reference to the tracklist collection for the currently signed-in user
+ */
+function getReferenceToUserTracklistCollection() {
+    const userId = firebase.auth().currentUser.uid;
+    return firebase.firestore().collection('users').doc(userId).collection('tracklists');
+}
 
 /**
  * Stores the provided tracklist data in Firestore and then executes the provided callback
@@ -31,28 +37,83 @@ export async function storeTracklistInFirestore(tracklistTitle, tracklistType, t
 }
 
 /**
+ * Retrives the current user's tracklists of the specified type from Firestore
+ * @param {string[]} [tracklistTypes] An optional array of strings specifying the types of tracklists to retrieve from Firestore. Supported values are: playlist, auto, all, uploads. If not specified, all of the user's tracklists are retrieved.
+ * @returns {Promise} A promise with an array of tracklist objects matching the given types
+ */
+ export async function retrieveTracklistDataFromFireStoreByType(tracklistTypes = ['all', 'auto', 'playlist', 'uploads']) {
+    //TODO would it be better if this used Rest parameters
+    //TODO the 'all' type name is confusing. Maybe 'subscription' or 'added' would be clearer.
+    const playlistData = await getReferenceToUserTracklistCollection().where("type", "in", tracklistTypes).get();
+
+    if (Array.isArray(playlistData?.docs) === true) {
+        return playlistData.docs.map(doc => doc.data());
+    } else throw Error("An error was encountered when trying to retrieve all playlists from Firestore.");
+}
+
+/**
+ * Retrieves the tracklist data object or objects stored in Firestore matching the provided tracklist title(s), if they exist
+ * @param {...string} tracklistTitles Any number of titles of tracklists to retrieve
+ * @returns {Promise} A promise with the tracklist data object, or array of tracklist data objects, matching the provided tracklist title(s)
+ */
+ export async function retrieveTracklistDataFromFirestoreByTitle(...tracklistTitles) {
+    if (tracklistTitles.length > 0) { // At least one tracklist title needs to be provided
+        const querySnapshot = await getReferenceToUserTracklistCollection().where("title", "in", tracklistTitles).get();
+        if (Array.isArray(querySnapshot?.docs) === true) {
+            // Get an array of tracklist data objects from the array of documents in the query snapshot
+            const tracklists = querySnapshot.docs.map(doc => doc.data());
+            
+            // If there is only a single tracklist in the results, return the tracklist object. Otherwise return the array of tracklist objects.
+            if (tracklists.length === 1) {
+                return tracklists[0];
+            } else return tracklists;
+        } else throw Error("An error was encountered when trying to retrieve tracklists from Firestore. No documents matched the given parameters.");
+    } else throw Error("Tried to retrieve tracklist data from Firestore, but a valid string was not provided for the tracklist title.");
+}
+
+/**
  * Retrieves the tracks array stored in Firestore that matches the provided tracklist title, if it exists
  * @param {string} tracklistTitle The title of the tracklist to retrieve
  * @returns {Promise} A promise with the tracks array matching the provided tracklist title, if it exists
  */
-export function retrieveTracksFromFirestore(tracklistTitle) {
-    return new Promise((resolve, reject) => {
-        if (typeof tracklistTitle === 'string') {
-            const userId = firebase.auth().currentUser.uid;
-            const tracklistCollection = firebase.firestore().collection('users').doc(userId).collection('tracklists');
-            //const _tracklistKey = tracklistType + "_'" + tracklistTitle + "'";
-            const currentTracklistDocument = tracklistCollection.doc(tracklistTitle);
-        
-            currentTracklistDocument.get().then(doc => {
-                if (doc.exists) {
-                    resolve(doc.data().tracks);
-                } else {
-                    console.info("Tried retrieving tracklist data from Firestore but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
-                    resolve(undefined);
-                }
-            });
-        } else reject (Error("Tried to retrieve tracks from Firestore, but a valid string was not provided for the tracklist title."));
-    });
+ export async function retrieveTracksArrayFromFirestore(tracklistTitle) {
+    if (typeof tracklistTitle === 'string') {
+        const tracklistData = await retrieveTracklistDataFromFirestoreByTitle(tracklistTitle);
+        return tracklistData.tracks;
+    } else throw Error("Tried to retrieve a tracks array from Firestore, but a valid string was not provided for the tracklist title.");
+}
+
+/**
+ * Generates GPM tracklist data object or objects from the tracks arrays stored in Chrome local storage matching the provided tracklist title(s), or for all playlists (i.e. excluding 'All Songs' lists) if no title parameters are provided.
+ * @param  {...string} tracklistTitles Any number of titles of tracklists to retrieve. If no titles are provided, all stored playlists (i.e. excluding 'All Songs' lists) will be retrieved.
+ * @returns {Promise} A promise with the tracklist data object, or array of tracklist data objects, matching the provided tracklist title(s)
+ */
+export async function retrieveGPMTracklistDataFromChromeLocalStorageByTitle(...tracklistTitles) {
+    //TODO avoid this repetitiveness 
+    const gpmLibraryKey = 'gpmLibraryData'; //TODO shouldn't this be global?
+    const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
+    const gpmLibraryData = storageItems[gpmLibraryKey];
+
+    const tracklists = [];
+
+    for (const tracklist in gpmLibraryData) {
+        if (tracklist.length >= 43) { // If the tracklist name is at least long enough to include the standard prefix used in the GPM storage format... (this excludes certain playlists like 'Backup' and legacy ones)
+            // Extract the actual tracklist title from the key used in GPM storage
+            const tracklistTitle = tracklist.substring(43, tracklist.length-1); 
+
+            // If either a provided title matches the current tracklist title, or no tracklist titles were provided and the current tracklist is a playlist (i.e. excluding comprehensive lists like 'All Music')...
+            if (tracklistTitles.includes(tracklistTitle) === true || 
+               (tracklistTitles.length === 0 && ['ADDED FROM MY SUBSCRIPTION', 'ALL MUSIC', 'Songs'].includes(tracklistTitle) === false)) { 
+                // Create a new tracklist data object including the title and tracks array, and add it to the list
+                tracklists.push({title:tracklistTitle, tracks:gpmLibraryData[tracklist]}); 
+            }
+        }
+    }
+
+    // If there is only a single tracklist in the results, return the tracklist object. Otherwise return the array of tracklist objects.
+    if (tracklists.length === 1) {
+        return tracklists[0];
+    } else return tracklists;
 }
 
 //TODO since almost the exact same logic is used to get the GPM tracks array as the track count (in background script),
@@ -64,12 +125,12 @@ export function retrieveTracksFromFirestore(tracklistTitle) {
  * @param {string} tracklistTitle The title of the tracklist to retrieve
  * @returns {Promise} A promise with the tracks array, if it's found
  */
-export async function retrieveGPMTracklistFromLocalStorage(tracklistTitle){
+ export async function retrieveGPMTracksArrayFromChromeLocalStorage(tracklistTitle){
     const gpmLibraryKey = 'gpmLibraryData';
     const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
     const gpmLibraryData = storageItems[gpmLibraryKey];
     for (const tracklistKey in gpmLibraryData) {
-        if (tracklistKey.includes("'" + tracklistTitle + "'")) {
+        if (tracklistKey.includes("'" + tracklistTitle + "'") === true) {
             //console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryData[tracklistKey].length);
             return gpmLibraryData[tracklistKey];
         }
@@ -82,6 +143,7 @@ export async function retrieveGPMTracklistFromLocalStorage(tracklistTitle){
     //One for Firebase related logic
     //One for chrome storage related logic
     //One for chrome storage utility/helper functions?
+    //One for Legacy App Storage? (i.e. GPM)
 
 /**
  * Stores the provided track count for the given tracklist in chrome sync storage

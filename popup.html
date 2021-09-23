@@ -25,6 +25,9 @@
           <button type='button' id='btnOptions' class='btn'>
             <span class='autoHeight popupButton headerButton material-icons-round'>settings</span>
           </button> 
+          <!-- <button type='button' id='btnTest' class='btn'>
+            <span class='autoHeight popupButton headerButton material-icons-round'>new_releases</span>
+          </button>  -->
         </li>
       </ul>
     </div>
@@ -39,32 +42,96 @@
       <button type='button' id='btnScrape' class='popupButton'>Scrape Current Tracklist</button>
       <button type='button' id='btnStoreScrapedMetadata' class='popupButton' disabled=true>Save Scraped Metadata to Storage</button>
       <button type='button' id='btnRevert' class='popupButton' type='button' disabled=true>Revert Stored Tracklist to Backup</button>
-      <button type='button' id='btnExportStoredMetadataForCurrentTracklist' class='popupButton'>Export Stored GPM Tracklist</button>
-      <button type='button' id='btnExportScrapedMetadata' class='popupButton' disabled=true>Export Scraped Tracklist</button>
-      <button type='button' id='btnExportSelectedLists' class='popupButton' disabled=true>Export Selected Lists</button>
     </div>
+    
     <div id='checkboxes' hidden=true>
-      <input type="checkbox" id="checkboxStoredGPMTrackTable" disabled=true>
-      <label for="checkboxStoredGPMTrackTable"> Stored GPM Track Table</label><br>
-      <input type="checkbox" id="checkboxStoredTrackTable">
-      <label for="checkboxStoredTrackTable"> Stored YTM Track Table</label><br>
-      <input type="checkbox" id="checkboxScrapedTrackTable" disabled=true>
-      <label for="checkboxScrapedTrackTable"> Scraped Track Table</label><br>
-      <input type="checkbox" id="checkboxDeltaTrackTables" disabled=true>
-      <label for="checkboxDeltaTrackTables" id="labelDeltaTrackTables"> Delta Track Tables
-        <button type='button' id='btnCopyToClipboard' class='btn' hidden=true>
-          <span class='btnSmall autoHeight popupButton material-icons-round'>content_paste</span>
-        </button> 
-      </label><br>
-      <input type="checkbox" id="checkboxTracksNotInPlaylists" disabled=true>
-      <label for="checkboxTracksNotInPlaylists"> Tracks not in Playlists</label><br>
-      <input type="checkbox" id="checkboxTracksNotInLibrary" disabled=true>
-      <label for="checkboxTracksNotInLibrary"> Tracks not in Library</label><br><br>
+
+      <!-- Stored Track Tables-->
+      <div class="checkboxColumn">
+        Track Tables
+        <br>
+        <input type="checkbox" id="checkboxStoredTrackTable">
+        <label for="checkboxStoredTrackTable"> YTM</label>
+        <button type='button' id='btnCopyToClipboardStoredTracks' class='btn btnSmall autoHeight popupButton material-icons-round'>
+          content_paste
+        </button>
+        <button type='button' id='btnDownloadStoredTracks' class='btn btnSmall autoHeight popupButton material-icons-round'>
+          file_download
+        </button>
+        
+        <br>
+        <input type="checkbox" id="checkboxStoredGPMTrackTable">
+        <label for="checkboxStoredGPMTrackTable"> GPM</label>
+        <button type='button' id='btnDownloadGPMTracks' class='btn btnSmall autoHeight popupButton material-icons-round'>
+          file_download
+        </button>
+      </div>
+
+      <!-- Results From Scrape -->
+      <div class="checkboxColumn">
+        Results from Scrape
+        <br>
+        <input type="checkbox" id="checkboxScrapedTrackTable" disabled=true>
+        <label for="checkboxScrapedTrackTable"> Scraped Tracks</label>
+        <button type='button' id='btnCopyToClipboardScrapedTracks' class='btn btnSmall autoHeight popupButton material-icons-round' disabled=true>
+          content_paste
+        </button>
+        <button type='button' id='btnDownloadScrapedTracks' class='btn btnSmall autoHeight popupButton material-icons-round' disabled=true>
+          file_download
+        </button>
+        
+        <br>
+        <input type="checkbox" id="checkboxDeltaTrackTables" disabled=true>
+        <label for="checkboxDeltaTrackTables" id="labelDeltaTrackTables"> Track Deltas</label>
+        <button type='button' id='btnCopyToClipboardDeltaTrackTables' class='btn btnSmall autoHeight popupButton material-icons-round' disabled=true>
+          content_paste
+        </button>
+      </div>
+
+      <!-- Tracks Missing From Common-->
+      <div class="checkboxColumn">
+        Not in Common
+        <br>
+        <input type="checkbox" id="checkboxTracksNotInCommonFromLibrary">
+        <label for="checkboxTracksNotInCommonFromLibrary"> From YTM Library</label>
+        <button type='button' id='btnCopyToClipboardTracksNotInCommonFromLibrary' class='btn btnSmall autoHeight popupButton material-icons-round'>
+          content_paste
+        </button>
+        
+        <br>
+        <input type="checkbox" id="checkboxTracksNotInCommonFromPlaylists" disabled=true>
+        <label for="checkboxTracksNotInCommonFromPlaylists"> From YTM Playlists</label>
+        <button type='button' id='btnCopyToClipboardTracksNotInCommonFromPlaylists' class='btn btnSmall autoHeight popupButton material-icons-round' disabled=true>
+          content_paste
+        </button>
+
+        <br>
+        <input type="checkbox" id="checkboxTracksNotInCommonGPM" disabled=true>
+        <label for="checkboxTracksNotInCommonGPM"> From GPM Library</label>
+        <button type='button' id='btnCopyToClipboardTracksNotInCommonGPM' class='btn btnSmall autoHeight popupButton material-icons-round'>
+          content_paste
+        </button>
+      </div>
+
+      <!-- Miscellaneous -->
+      <div class="checkboxColumn">
+        Miscellaneous
+        <br>
+        <input type="checkbox" id="checkboxTracksOnlyInCommon">
+        <label for="checkboxTracksOnlyInCommon"> Tracks only in Common</label>
+      </div>
+
     </div>
+
     <div id='tracktables'>
       <div id='trackTableScraped'></div>
       <div id='trackTableStored'></div>
+      <div id='trackTableGPM'></div>
       <div id='trackTableDeltas'></div>
+      <div id='trackTableNotInCommonFromLibrary'></div>
+      <div id='trackTableNotInCommonFromPlaylists'></div>
+      <div id='trackTableNotInCommonGPM'></div>
+      <div id='trackTableOnlyInCommon'></div>
     </div>
 
     <!-- TODO clean this up-->

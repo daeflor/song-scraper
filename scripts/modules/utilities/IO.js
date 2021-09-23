@@ -6,27 +6,30 @@
  */
 function createCommaSeparatedStringFromArray(array) {
     if (Array.isArray(array) === true) { 
-        let _string = ''; //Start with a blank string
+        let csvString = ''; //Start with a blank string
 
-        for (let i = 0; i < array.length-1; i++) { // For each element in the array except the last one... 
-            if (typeof array[i] === 'string') { // If the element's value type is a string...
-                _string += '"' + array[i] + '",'; // Include double-quotes around the output string, followed by a comma to indicate the end of the current element/value
-            } else { // Otherwise, output the value without quotes, followed by a comma to indicate the end of the current element/value
-                _string += array[i] + ',';
+        for (let i = 0; i < array.length; i++) { // For each element in the array...            
+            // Append the element's value to the string. If the element's value type is a string, include double quotes around it
+            (typeof array[i] === 'string')
+            ? csvString += '"' + array[i] + '"'
+            : csvString += array[i];
+
+            // If the current element isn't the last one in the array, append a comma to indicate the end of the current element/value
+            if (i < array.length-1) {
+                csvString += ',';
             }
         }
+        
+        return csvString;
 
-        _string += array[array.length-1]; // Add the array's last value to the string
-        return _string;
-
-    } else console.error("Request received to create a comma-separated string but an array of values was not provided.");
+    } else throw Error("Request received to create a comma-separated string but an array of values was not provided.");
 }
 
 //** Publicly-Exposed Utility Functions **//
 
 /**
  * Converts multiple maps of objects to a csv
- * @param {Object} maps A map of maps. The contents of each map of which will be printed side-by-side
+ * @param {Object} maps A map of maps. The contents of each sub-map will be printed side-by-side (vertically) in the csv
  * @param {string[]} keysToInclude An array to indicate the specific object keys which should be included in the csv file, and the order in which to output them.
  * @param {string} [tableName] An optional name to include in the first row of the CSV
  * @returns {string} The CSV generated from the data in the provided maps
@@ -54,8 +57,6 @@ export function convertObjectMapsToCsv(maps, keysToInclude, tableName) {
                 if (map.size > largestMapSize) { // If the size of the current map is larger than the previously recorded largest size...
                     largestMapSize = map.size; // Update the largest size
                 }
-            } else { // Else, if the map is empty or isn't a valid map...
-                maps.delete(key); // Delete the map, so it isn't considered during future loops/checks
             }
         });
 
@@ -85,45 +86,37 @@ export function convertObjectMapsToCsv(maps, keysToInclude, tableName) {
     return csv;
 }
 
+//TODO now that this just converts an array of objects to a CSV, does it still belong in IO?.js
 /**
- * Converts an array of objects to a CSV file and then downloads the file locally
+ * Converts an array of objects to a CSV
  * @param {Object[]} array An array of objects to convert to CSV
- * @param {string} filename The name of the file to download
- * @param {string[]} [objectKeysToInclude] An optional array to indicate the specific object keys which should be included in the CSV, and the order in which to output them. If none is provided, all keys for every object will be outputted.
+ * @param {string[]} [keysToInclude] An optional array to indicate the specific object keys which should be included in the CSV, and the order in which to output them. If none is provided, all keys for every object will be outputted, and there will be no header row.
  */
-export function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=null) {
-    let _csv = ''; //Begin with a blank string for the CSV
+ export function convertArrayOfObjectsToCsv(array, keysToInclude=null) {
+    let csv = ''; //Begin with a blank string for the CSV
     
     //If a list of object keys to include was provided...
-    if (objectKeysToInclude != null) {
+    if (keysToInclude != null) {
         //Create a header row for the CSV file using the object keys, followed by a newline character to indicate the end of the row
-        _csv += createCommaSeparatedStringFromArray(objectKeysToInclude) + '\r\n';
+        csv += createCommaSeparatedStringFromArray(keysToInclude) + '\r\n';
     }
 
-    //If a valid array was provided...
-    if (Array.isArray(array) === true) {
-        //For each object in the array...
-        for (let i = 0; i < array.length; i++) {
-            const _currentObject = array[i]; //For better readability, track the current object in the objects array
-            let _valuesInCurrentObject = []; //Create an array to contain all the values for the current object that are going to be included in the CSV
+    if (Array.isArray(array) === true) { // If a valid array was provided...
+        array.forEach(object => { // For each object in the array...
+            const valuesInCurrentObject = []; // Create an array to contain all the values for the current object that are going to be included in the CSV
 
-            //If a list of specific keys to use wasn't provided, use all of the object's keys
-            objectKeysToInclude = objectKeysToInclude || Object.keys(_currentObject);
+            keysToInclude = keysToInclude ?? Object.keys(object); // If a list of specific keys to use wasn't provided, use all of the object's keys
 
-            //For each key that should be included in the CSV output...
-            for (let j = 0; j < objectKeysToInclude.length; j++) { 
-                //If the value that matches the current key isn't falsy (e.g. undefined), use that value, otherwise set it to a blank string so that the column is still included in the CSV row later
-                const _currentValue = _currentObject[objectKeysToInclude[j]] || '';
-                //Add the key's value to the array of values to include in the CSV row later
-                _valuesInCurrentObject.push(_currentValue);      
+            for (let j = 0; j < keysToInclude.length; j++) { // For each key that should be included in the CSV output...
+                const currentValue = object[keysToInclude[j]] ?? ''; // If the value that matches the current key isn't falsy (e.g. undefined), use that value, otherwise set it to a blank string so that the column is still included in the CSV row later
+                valuesInCurrentObject.push(currentValue); // Add the key's value to the array of values to include in the CSV row      
             }
 
-            //Create a comma-separated string from the array of recorded values and append the resulting string to the CSV string, followed by a newline character to indicate the end of the current row
-            _csv += createCommaSeparatedStringFromArray(_valuesInCurrentObject) + '\r\n';
-        }
-    }
+            csv += createCommaSeparatedStringFromArray(valuesInCurrentObject) + '\r\n'; // Create a comma-separated string from the array of recorded values and append the resulting string to the existing CSV string, followed by a newline character to indicate the end of the current row
+        });
+    } else throw Error("Tried to convert an array of objects to a CSV, but a valid array was not provided.");
 
-    downloadTextFile(_csv, filename, 'csv');
+    return csv;
 }
 
 /**
@@ -132,7 +125,7 @@ export function convertArrayOfObjectsToCsv(array, filename, objectKeysToInclude=
  * @param {string} [filename] The name of the file. Defaults to 'download'.
  * @param {string} [fileType] The type/extension of the file. Defaults to 'csv'.
  */
-function downloadTextFile(data, filename = 'download', fileType = 'csv') {
+export function downloadTextFile(data, filename = 'download', fileType = 'csv') {
     if (data.length > 0) { //If there is data to download...
         //Create a new link DOM element to use to trigger a download of the file locally
         const link = document.createElement('a');
