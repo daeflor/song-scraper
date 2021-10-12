@@ -190,12 +190,26 @@ ViewRenderer.buttons.copyToClipboardDeltaTrackTables.addEventListener('click', a
         //Right now it stays in the pending state, which isn't so bad.
 });
 
+//TODO the functions below have a lot of duplicated code that could be consolidated
 // Button Pressed: Copy to Clipboard - Tracks Not In Common From Library
 ViewRenderer.buttons.copyToClipboardTracksNotInCommonFromLibrary.addEventListener('click', async function() {
     this.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
     const tracksNotInCommon = await getTracksNotInCommonFromLibrary();
-    //TODO this only covers the tracks that are in the Library (i.e. Added from YTM Subscription) but not in Common. It doesn't cover tracks which may be included only in other playlists but not in Common.
+
+    const includedProperties = ['title', 'artist', 'album', 'duration', 'playlists', 'unplayable']; // Set the track properties which should be used when generating the CSV
+    const csv = IO.convertArrayOfObjectsToCsv(tracksNotInCommon, includedProperties);
+
+    navigator.clipboard.writeText(csv)
+        .then(() => setTimeout(() => this.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
+              () => console.error("Failed to copy CSV to clipboard."));
+});
+
+// Button Pressed: Copy to Clipboard - Tracks Not In Common From Playlists
+ViewRenderer.buttons.copyToClipboardTracksNotInCommonFromPlaylists.addEventListener('click', async function() {
+    this.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
+    
+    const tracksNotInCommon = await getTracksNotInCommonFromPlaylists();
 
     const includedProperties = ['title', 'artist', 'album', 'duration', 'playlists', 'unplayable']; // Set the track properties which should be used when generating the CSV
     const csv = IO.convertArrayOfObjectsToCsv(tracksNotInCommon, includedProperties);
@@ -390,7 +404,7 @@ async function getDeltaTracklists() {
     return SESSION_STATE.tracklist.deltas;
 }
 
-//The two functions below don't really belong in this file
+//The functions below don't really belong in this file
 
 /**
  * Returns the array of tracks from the YTM Library that aren't in the Common playlist
@@ -400,9 +414,23 @@ async function getDeltaTracklists() {
     // If the list of tracks has previously been calculated, return that array. Otherwise, calculate it, save it for future reference, and return it
     if (Array.isArray(SESSION_STATE.tracksNotInCommon.fromLibrary) === false) {
         SESSION_STATE.tracksNotInCommon.fromLibrary = await tracklistComparisonUtils.getFilteredTracksWithTracklistMappingYTM('Added from YouTube Music', 'Common', ...customTracklists.getNonCommonPlaylists());
+        //TODO after generating the list of tracks, consider filtering out any where the only 'playlist' containing them is 'Your Likes'
     }
 
     return SESSION_STATE.tracksNotInCommon.fromLibrary;
+}
+
+/**
+ * Returns the array of tracks from YTM playlists that aren't in the Common playlist
+ * @returns {Promise} A promise containing the array of tracks
+ */
+ async function getTracksNotInCommonFromPlaylists() {
+    // If the list of tracks has previously been calculated, return that array. Otherwise, calculate it, save it for future reference, and return it
+    if (Array.isArray(SESSION_STATE.tracksNotInCommon.fromPlaylists) === false) {
+        SESSION_STATE.tracksNotInCommon.fromPlaylists = await tracklistComparisonUtils.getTracksNotInCommonFromPlaylists();
+    }
+
+    return SESSION_STATE.tracksNotInCommon.fromPlaylists;
 }
 
 /**

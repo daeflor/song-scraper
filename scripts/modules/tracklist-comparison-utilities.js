@@ -1,5 +1,6 @@
 import * as appStorage from './StorageManager.js';
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
+import * as customTracklists from '../Configuration/custom-tracklists.js'; //TODO would be nice to not have to import this here AND in EventController
 
 export function generateDeltaTracklists(scrapedTracklist, storedTracklist) {
     if (Array.isArray(scrapedTracklist) === true && Array.isArray(storedTracklist) === true) {
@@ -154,7 +155,7 @@ export function addTracklistMappingToTracks(tracks, tracklists, ...excludedTrack
     if (Array.isArray(tracks) === true && Array.isArray(tracklists) === true) {
         for (const track of tracks) {
             for (const tracklist of tracklists) {
-                if (tracklist.legacy !== true && excludedTracklistTitles.includes(tracklist.title) !== true) {
+                if (/*tracklist.type !== 'legacy' && */excludedTracklistTitles.includes(tracklist.title) !== true) {
                     if (Array.isArray(tracklist.tracks) === true) {
                         for (const currentTrack of tracklist.tracks) {
                             if (compareTracks(track, currentTrack, collator) === true) {
@@ -204,6 +205,39 @@ export async function getFilteredTracksWithTracklistMappingYTM(initialTracklistT
     addTracklistMappingToTracks(unmatchedTracks, allTracklists, initialTracklistTitle, ...tracklistTitlesToFilterOut); 
 
     return unmatchedTracks;
+}
+
+export async function getTracksNotInCommonFromPlaylists() {
+    // Get all tracklist objects where the tracklist type is 'playlist'
+    const allPlaylists = await appStorage.retrieveTracklistDataFromFireStoreByType(['playlist']);
+
+    // Get a list of all playlist names that should not be used when generating the list of tracks that needs to be filtered down further
+    const playlistTitlesToExclude = ['Common', 'Hot Jams', ...customTracklists.getAllNonCommonPlaylists()];
+
+    // Begin with an empty array for the list of tracks that need to be filtered
+    let tracksToBeFiltered = [];
+
+    // For each playlist object, excluding the ones which should be omitted (as specified above), add all of the playlist's tracks to the overall list of tracks that needs to be filtered down further
+    for (const playlist of allPlaylists) {
+        if (playlistTitlesToExclude.includes(playlist.title) !== true) {
+            tracksToBeFiltered.push(...(playlist.tracks));
+        }
+    }
+
+    // Get all tracklist objects that are known to contain tracks which need to be filtered out of the list of tracks generated above
+    const tracklistsToFilterOut = await appStorage.retrieveTracklistDataFromFirestoreByTitle('Common', ...customTracklists.getNonCommonSamplerPlaylists());
+
+    // For each tracklist to filter out, use it to filter out any matching tracks from the original list of tracks, each time paring the original list down further. 
+    if (Array.isArray(tracklistsToFilterOut) === true) { 
+        tracklistsToFilterOut.forEach(tracklist => {
+            tracksToBeFiltered = filterOutTracklist(tracksToBeFiltered, tracklist);
+        });
+    } else throw Error("Failed to retrieve an array of tracklists to filter out. Expected an array of tracklist objects.");
+    
+    // Add a new property to each track, which is a string of all the tracklists in which the track appears, exluding the ones specified. The list of tracklist titles to omit should include the title of the original tracklist, otherwise this title would appear next to every track in the final track table, which is unnecessary info.
+    addTracklistMappingToTracks(tracksToBeFiltered, allPlaylists, playlistTitlesToExclude); 
+
+    return tracksToBeFiltered;
 }
 
 /**
