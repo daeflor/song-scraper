@@ -11,7 +11,7 @@ import * as Messenger from './utilities/messenger.js';
 //import logOut from './AuthController.js' //TODO use or remove this, as desired
 
 //Authentication
-//Due to Chromium Bug 1247690, manual authentication via Chrome Identity API is currently used instead of the Firebase Auth UI flow
+//Due to Chromium Bug 1255412, manual authentication via Chrome Identity API is currently used instead of the Firebase Auth UI flow
 //import * as Auth from '../auth/firebase-ui-auth.js'
 import * as Auth from '../auth/firebase-manual-auth.js'
 
