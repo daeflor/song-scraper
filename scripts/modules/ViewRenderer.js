@@ -17,7 +17,7 @@ export const divs = Object.freeze({
 });
 
 export const buttons = Object.freeze({
-    //logIn: document.getElementById('btnLogIn'),
+    logIn: document.getElementById('btnLogIn'), //This manual log-in button is only necessary due to Chromium Bug 1247690 blocking the Firebase Auth UI flow
     logOut: document.getElementById('btnLogOut'),
     options: document.getElementById('btnOptions'),
     scrape: document.getElementById('btnScrape'),

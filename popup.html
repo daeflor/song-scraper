@@ -34,9 +34,10 @@
 
     <div id='status' class='statusText'>Loading...</div>
     <div id='auth' hidden='true'>
-      <!-- <button type='button' id='btnLogIn' class='btnAuth'>
+      <!--This manual log-in button is only necessary due to Chromium Bug 1247690 blocking the Firebase Auth UI flow-->
+      <button type='button' id='btnLogIn'> 
         <span class='autoHeight popupButton material-icons-round'>login</span>
-      </button>  -->
+      </button> 
     </div>
     <div id='buttons' hidden=true class='menu'>
       <button type='button' id='btnScrape' class='popupButton'>Scrape Current Tracklist</button>

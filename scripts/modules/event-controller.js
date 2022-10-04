@@ -1,17 +1,29 @@
+/***** Imports *****/
+//UI & App Navigation Controllers
 import * as ViewRenderer from './ViewRenderer.js';
 import * as UIController from '../AppNavigator.js';
+
+//Utilities
 //import getDeltaTracklists from './tracklist-comparison-utilities.js';
 import * as tracklistComparisonUtils from './tracklist-comparison-utilities.js';
 import * as Messenger from './utilities/messenger.js';
 //import sendMessage from './MessageController.js';
 //import logOut from './AuthController.js' //TODO use or remove this, as desired
-import * as Auth from '../auth/firebase-ui-auth.js'
 
+//Authentication
+//Due to Chromium Bug 1247690, manual authentication via Chrome Identity API is currently used instead of the Firebase Auth UI flow
+//import * as Auth from '../auth/firebase-ui-auth.js'
+import * as Auth from '../auth/firebase-manual-auth.js'
+
+//Firebase Configuration
 import firebaseConfig from '../Configuration/Config.js'; //Import the app's config object needed to initialize Firebase
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 
+//Storage
 import * as appStorage from './StorageManager.js';
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
+
+//Other
 import * as IO from './utilities/IO.js';
 
 import * as customTracklists from '../Configuration/custom-tracklists.js';
@@ -61,15 +73,11 @@ Auth.listenForAuthStateChange(async () => { // TODO this name is a bit misleadin
     }
 });
 
-// // Button Pressed: Log In
-// ViewRenderer.buttons.logIn.addEventListener('click', function() {
-//     //TODO when the button gets clicked once, it should get disabled, to ensure it doesn't accidentally get clicked again
-//     Auth.logIn();
-//     // Messenger.sendMessageToExtension('GetAuthToken', token => {
-//     //     const credential = firebase.auth.GoogleAuthProvider.credential(null, token); 
-//     //     firebase.auth().signInWithCredential(credential); //TODO could use some error checking here (e.g. a 'catch' block)
-//     // });
-// });
+// Button Pressed: Log In
+ViewRenderer.buttons.logIn.addEventListener('click', function() {
+    //TODO when the button gets clicked once, it should get disabled, to ensure it doesn't accidentally get clicked again
+    Auth.logIn();
+});
 
 // Button Pressed: Log Out
 ViewRenderer.buttons.logOut.addEventListener('click', function() {

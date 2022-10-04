@@ -16,6 +16,9 @@
 
 ** Upcoming To-Do List **
 
+	2022: 
+	- Consider upgrading to Firebase SDK 9
+
 	2021:
 	- Maybe exclude the 'unplayable' column from tracktables when empty (see TODO)
 	- Maybe change Import names in EventController (and other places?)?
