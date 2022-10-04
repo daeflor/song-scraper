@@ -21,9 +21,7 @@ import '/node_modules/firebase/firebase-auth.js'; //Import the Firebase Auth lib
 }
 
 export function logIn() {
-//TODO when the button gets clicked once, it should get disabled, to ensure it doesn't accidentally get clicked again
     chrome.identity.getAuthToken({interactive: true}, token => {
-        //console.log("Retrieved token: " + token);
         //Generating a firebase auth credential takes either an id token (1st param) or access token (2nd param)
             //Since the token we get from chrome.identity is an access token, we have to pass that as the 2nd parameter. 
         const credential = firebase.auth.GoogleAuthProvider.credential(null, token); 

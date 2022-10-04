@@ -52,9 +52,13 @@ input[type='checkbox'] {
 	padding: 0px 1px 0px 1px;
 }
 
-/* #auth {
-	text-align: center;
-} */
+/*This style section is only necessary because a manual log-in button is currently being used due to Chromium Bug 1247690*/
+#btnLogIn {
+	display: block;
+  	margin: auto;
+	background-color: inherit;
+	border: none;
+}
 
 #title {
 	display: flex;
