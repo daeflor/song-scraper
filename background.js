@@ -4,7 +4,7 @@
 //Firebase Configuration
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 import '/node_modules/firebase/firebase-auth.js'; //Import the Firebase Auth library
-import firebaseConfig from '/scripts/Configuration/Config.js'; //Import the app's config object needed to initialize Firebase
+import firebaseConfig from '/scripts/Configuration/config.js'; //Import the app's config object needed to initialize Firebase
 
 //Utilities
 import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'

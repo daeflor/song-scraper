@@ -16,7 +16,7 @@ import * as Messenger from './utilities/messenger.js';
 import * as Auth from '../auth/firebase-manual-auth.js'
 
 //Firebase Configuration
-import firebaseConfig from '../Configuration/Config.js'; //Import the app's config object needed to initialize Firebase
+import firebaseConfig from '../Configuration/config.js'; //Import the app's config object needed to initialize Firebase
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 
 //Storage
