@@ -4,7 +4,6 @@
 
 	- Hit an issue where the same song showed up under Removed and Added, for unknown reasons. May be resolved by showing all info for the songs that have been removed/added. 
 	- First time saving playlist very briefly shows the added/removed section before hiding it.
-	- The popup is sometimes cut off. (Should be bypassed now).
 	- If multiple playlists have the same name, their info will likely just get overridden. 
 	- The comparison can be wrong about which specific track was removed from a playlist. This happens when there were duplicates and only the earlier (lower index) of the two tracks was removed. 
 	- Getting playlist name currently doesn't work if there's a hyphen in the name 
