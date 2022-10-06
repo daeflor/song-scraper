@@ -1,9 +1,14 @@
+/***** Imports *****/
 //TODO once Chrome 91 is released and ES6 modules can be used (supposedly), consider splitting up background.js into various files (e.g. background-event-controller.js and others)
-self.importScripts('/node_modules/firebase/firebase-app.js'); //Import the Firebase App before any other Firebase libraries
-self.importScripts('/node_modules/firebase/firebase-auth.js'); //Import the Firebase Auth library
-self.importScripts('/scripts/Configuration/config-old.js');
-//import firebaseConfig from '/scripts/Configuration/Config.js'; //Import the app's config object needed to initialize Firebase
-self.importScripts('/scripts/modules/utilities/chrome-storage-promises-old-format.js');
+
+//Firebase Configuration
+import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
+import '/node_modules/firebase/firebase-auth.js'; //Import the Firebase Auth library
+import firebaseConfig from '/scripts/Configuration/config.js'; //Import the app's config object needed to initialize Firebase
+
+//Utilities
+import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'
+
 console.info("Starting service worker");
 
 const ICON_PATHS = Object.freeze({
@@ -25,9 +30,9 @@ chrome.runtime.onInstalled.addListener(async function() {
 
     let preferencesObject = await getPreferencesFromChromeSyncStorage();
     if (typeof preferencesObject !== 'object') {
-        console.info("There were no user preferences set Chrome sync storage, so setting default values. 'Comparison Method: Prefer YTM'.");
+        console.info("There were no user preferences set in Chrome sync storage, so setting default values. 'Comparison Method: Prefer YTM'.");
         preferencesObject = {'Comparison Method':'preferYTM'};
-        /*chromeStorage.*/set('sync', {preferences:preferencesObject});
+        chromeStorage.set('sync', {preferences:preferencesObject});
     }
 });
 
@@ -178,7 +183,7 @@ async function getPreviousTrackCount(tracklistTitle) {
  */
 async function getTrackCountFromChromeSyncStorage(tracklistTitle) {
     const userKey = 'trackCounts_' + firebase.auth().currentUser.uid;
-    const storageItems = await /*chromeStorage.*/getKeyValuePairs('sync', userKey);
+    const storageItems = await chromeStorage.getKeyValuePairs('sync', userKey);
     return storageItems[userKey]?.[tracklistTitle];
 }
 
@@ -216,7 +221,7 @@ async function getGPMTracklists(){
  */
  async function getGPMLibraryData(){
     const gpmLibraryKey = 'gpmLibraryData';
-    const storageItems = await /*chromeStorage.*/getKeyValuePairs('local', gpmLibraryKey);
+    const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
     const gpmLibraryData = storageItems[gpmLibraryKey];
     if (typeof gpmLibraryData !== 'undefined') {
         return gpmLibraryData;
@@ -242,7 +247,7 @@ async function getGPMTracklists(){
  */
 async function getPreferencesFromChromeSyncStorage(preference) {
     const preferencesKey = 'preferences';
-    const storageItems = await /*chromeStorage.*/getKeyValuePairs('sync', preferencesKey);
+    const storageItems = await chromeStorage.getKeyValuePairs('sync', preferencesKey);
     return (typeof preference === 'undefined')
     ? storageItems[preferencesKey]
     : storageItems[preferencesKey]?.[preference];

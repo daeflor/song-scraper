@@ -18,6 +18,7 @@
 
 	2022: 
 	- Consider upgrading to Firebase SDK 9
+	- Are access-firestore.js, static.js, and sandbox.js being used? I believed these were committed in error in commit 158ec62
 
 	2021:
 	- Maybe exclude the 'unplayable' column from tracktables when empty (see TODO)
