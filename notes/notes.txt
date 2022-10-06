@@ -35,7 +35,16 @@
 	- Fix up modules once Chrome 91 is out (end of May?)
 	- Maybe bring back DebugController usage, and update the extension icon whenever an error is hit.
 	- Convert some console.errors to throw new Errors where applicable.
+	- Could use the list of scraped playlists to notify if there are any playlists that haven't been stored in Firestore.
+	- Could have a context menu for when you click on a track (not sure the context menu actually knows the element it's been clicked on) that scrubs through all stored playlists and lists the ones that contain that track.
+		- YTM overrides the right-click context menu, so this might not work anyway.
+		- Could possibly add a new button to the custom YTM context menu.
+	- Could have an option/toggle to select whether or not a difference in track position should result in two tracks not matching.
+	- Maybe have just a few playlists to cover a few really broad set of genres for albums added to library (e.g. Added Scores, Added Common, Added Other (New Age, World, etc.)). If these playlists are primarly for tracking, and there's only one track included per album, they don't need to be so granular anymore.
+	- Need to address the issue where multiple open YTM tabs can lead to the wrong tracklist getting fetched from, or worse, stored in Firestore 
+	- What if the extension itself kept track of songs that have been removed (without replacements) from each playlist, rather than manually keeping an external list.
 
+	- Bug: Opening a valid tracklist page in another tab will result in the icon not getting set correctly (it will just remain as 'login')
 	- Could consider having different popup html files for different tracklists, if it makes sense to show significantly different options/UI for each.
 	- Would it be possible somehow to use an extension context menu to select multiple tracks and edit their info in Firestore (e.g. assign their genre)?
 	- It would probably also be possible to accomplish this ^ by inserting some DOM elements into tracklists. (e.g. add checkboxes to every track row and a buton / text field to set the genre, as one example/option)
@@ -45,6 +54,11 @@
 		- Actually it seems that downloading the tracklist content takes considerably less time than "Waiting (TTFB)" & work happening on the server side, and I don't know how to speed the latter up.
 	- Could update JSDOC callback documentation throughout code (https://jsdoc.app/tags-callback.html)
 	- Bug: It's possible for the tracklist name to overlap with the username if either of them are long enough.
+	- Including track position in saved/stored tracklists may help create simpler/clearer code in a variety of places.
+	- Bug: if you have multiple YTM tracklist tabs open and switch between them without refreshing the page, the extension will use incorrect cached metadata and it will become a mess.
+	- Does it make sense to store a list of unique tracks across all playlists (including Added from Subscription & Uploaded)? Each track could include a list of all playlists to which it belongs. This would help to know which playlists are affected when a track's metadata or status changes. There would be non-trivial overhead to keep this up-to-date every time scraped data is saved in storage.
+		- An alternative approach could be to have a 'Track' screen, which could have an option to 'list all playlists' to which the track belongs, which would then scrub through all stored playlists and present the most up-to-date data available. One problem is that finding a track in a tracktable in the popup is not that easy. Having the ability to select a song from the YTM page itself would be preferable, but not trivial.
+	- Does it make sense to have some method to mark a song's genre in the extension's UI, which then gets stored in Firestore with the rest of the metadata?
 
 	Old:
 	- Could add support for and save lists for individual genres, for easier viewing/fixing
