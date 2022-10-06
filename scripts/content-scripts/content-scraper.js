@@ -121,15 +121,6 @@
         title: 'tracklistTitle',
         trackCount: 'trackCount'
     });
-    
-    // const persistentElements = Object.freeze({
-    //     header: {
-    //         ytm: document.getElementById('header')
-    //     },
-    //     scrollContainer: {
-    //         ytm: document.body
-    //     }
-    // });
 
     const persistentElements = {
         header: undefined,
@@ -148,6 +139,7 @@
             persistentElements.header = document.getElementById('header'); //Note: there are typically at least two elements with ID 'header' in YTM pages, but the one containing tracklist metadata seems to consistently be the first one in the DOM, so this is the easiest/fastest way to fetch it.
             persistentElements.scrollContainer = document.body; //Set the scroll container element as applicable, for future reference
             observeHeaderElementMutations(); //Begin observing the YTM Header element for DOM mutations
+            scrapeTracklistMetadata(); //Scrape the header element for tracklist metadata. (This needs to be manually triggered the first time the content script runs e.g. on page refresh)
         } else console.error("Tried to initialize data in the content scraper script, but the host was not recognized.");        
     }
 
@@ -188,50 +180,42 @@
             //...and then only fetch the tracklist title & track count on demand later (i.e. when the popup is opened)...
             //...using the pre-set type to dictate how and whether or not to try to get that info
 
-    function observeHeaderElementMutations() {
-        //const _elementToObserve = document.getElementById('header'); //Note: there are typically at least two elements with ID 'header' in YTM pages, but the one containing tracklist metadata seems to consistently be the first one in the DOM, so this is the easiest/fastest way to fetch it.
-
-        //Set up the callback to execute whenever a mutation of the pre-specified type is observed (i.e. the observed element's childList is modified)
-        const _onMutationObserved = (mutationsList, observer) => {    
-            console.info("The header element's childList was modified. Looking for metadata.");
-
-            if (currentApp === supportedApps.youTubeMusic) {
-                //Create an object to store and transmit the current tracklist metadata so it can be easily accessed across the extension
-                const _tracklistMetadata = {
-                    type: undefined,
-                    title: undefined,
-                    trackCount: undefined
-                };
-
-                //Scrape and record the current tracklist metadata based on specific URL conditions and the metadata element
-                if (window.location.search.startsWith('?list=LM')) {
-                    _tracklistMetadata.type = supportedTracklistTypes.autoPlaylist;
-                    _tracklistMetadata.title = 'Your Likes';
-                    _tracklistMetadata.trackCount = getMetadatum(metadataNames.trackCount);
-                } else if (window.location.search.startsWith('?list=PL')) {
-                    _tracklistMetadata.type = supportedTracklistTypes.playlist;
-                    _tracklistMetadata.title = getMetadatum(metadataNames.title);
-                    _tracklistMetadata.trackCount = getMetadatum(metadataNames.trackCount); 
-                }
-
-                if (typeof _tracklistMetadata.type === 'string') { //If a valid tracklist type was set (i.e. the current page is a valid tracklist)...
-                    //TODO would it be better to store each piece of metadata individually instead of in a single object?
-                        //That way, if we want to just update partial data (e.g. type in background script) we can do that with just a set, without needing an initial get.            
-                    chrome.storage.local.set ({currentTracklistMetadata: _tracklistMetadata}, () => { //Cache the metadata in local storage
-                        if (typeof chrome.runtime.error === 'undefined') {
-                            const _message = { greeting: 'TracklistMetadataUpdated', currentTracklistMetadata: _tracklistMetadata };
-                            chrome.runtime.sendMessage(_message); //Send the metadata to the extension's service worker so it can update the icon accordingly
-                        } else console.error("Error encountered while attempting to store metadata in local storage: " + chrome.runtime.lastError.message);
-                    });
-                }
-            }
-        };
-    
-        const _observer = new MutationObserver(_onMutationObserved); //Create a new mutation observer instance linked to the callback function defined above
+    function observeHeaderElementMutations() {    
+        const _observer = new MutationObserver(scrapeTracklistMetadata); //Create a new mutation observer instance linked to the callback function defined above
         const _observerConfig = {childList: true, subtree: false}; //Set up the configuration options for the Mutation Observer
         if (typeof persistentElements.header === 'object') { //If the element to observe actually exists in the DOM...
             _observer.observe(persistentElements.header, _observerConfig); //Start observing the specified element for configured mutations (i.e. for any changes to its childList)
         } else console.error("Tried observing the YTM header element for DOM mutations, but the element doesn't exist.");
+    }
+
+    function scrapeTracklistMetadata() {
+        if (currentApp === supportedApps.youTubeMusic) {
+            console.info("Scraping 'header' element in DOM for tracklist metadata.");
+            //Create an object to store and transmit the current tracklist metadata so it can be easily accessed across the extension
+            const tracklistMetadata = {type: undefined, title: undefined, trackCount: undefined};
+
+            //Scrape and record the current tracklist metadata based on the URL
+            if (window.location.search.startsWith('?list=LM')) {
+                tracklistMetadata.type = supportedTracklistTypes.autoPlaylist;
+                tracklistMetadata.title = 'Your Likes';
+                tracklistMetadata.trackCount = scrapeTrackCount();
+            } else if (window.location.search.startsWith('?list=PL')) {
+                tracklistMetadata.type = supportedTracklistTypes.playlist;
+                tracklistMetadata.title = scrapeTracklistTitle();
+                tracklistMetadata.trackCount = scrapeTrackCount();
+            }
+
+            if (typeof tracklistMetadata.type === 'string') { //If a valid tracklist type was set (i.e. the current page is a valid tracklist)...
+                //TODO would it be better to store each piece of metadata individually instead of in a single object?
+                    //That way, if we want to just update partial data (e.g. type in background script) we can do that with just a set, without needing an initial get.            
+                chrome.storage.local.set ({currentTracklistMetadata: tracklistMetadata}, () => { //Cache the metadata in local storage
+                    if (typeof chrome.runtime.error === 'undefined') {
+                        const message = { greeting: 'TracklistMetadataUpdated', currentTracklistMetadata: tracklistMetadata };
+                        chrome.runtime.sendMessage(message); //Send the metadata to the extension's service worker so it can update the icon accordingly
+                    } else console.error("Error encountered while attempting to store metadata in local storage: " + chrome.runtime.lastError.message);
+                });
+            }
+        }
     }
     
     /**
@@ -259,7 +243,7 @@
         const firstElementInList = document.querySelector('ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]'); // Find the first track element using query selector. This selector is used because it currently works across all valid tracklists.
         if (firstElementInList instanceof Element === true) {
             const elementContainer = firstElementInList.parentElement; // Get the container element
-            const expectedElementCount = getMetadatum(metadataNames.trackCount); // Fetch the official track count of the tracklist, if one exists. This will be undefined otherwise. 
+            const expectedElementCount = scrapeTrackCount(); // Fetch the official track count of the tracklist, if one exists. This will be undefined otherwise. 
             const scrapeStartingIndex = getIndexOfElement(firstElementInList); // Get the index of the first element at which to begin the scrape, since it isn't always necessarily the first element in the container (i.e. can't assume it's 0)  
             const scrapeMetadataFromElement = element => new Track(element); // Set up the function to execute on each element found in the list. In this case, track metadata will be extracted from the track element.
             const dialog = new ScrapeInProgressDialog(); // Create a dialog modal to indicate that the scrape is in progress
@@ -370,23 +354,23 @@
         else console.error('There is no valid element to scroll to');
     }
 
-    //TODO I'm not convinced it's more readable having this be a single function rather than two dedicated functions
     /**
-     * Gets a piece of metadata based on the name provided
-     * @param {string} name The name of the metadatum to look for. Supported names are included in the 'metadataNames' object.
-     * @returns {*} The value of the piece of metadata requested 
+     * Gets the tracklist track count by scraping it from the DOM
+     * @returns {number} the track count of the current tracklist
      */
-    function getMetadatum(name) {
+    function scrapeTrackCount() {
+        if (currentApp === supportedApps.youTubeMusic && window.location.pathname === '/playlist') {
+            return getTrackCountFromElement(persistentElements.header.getElementsByClassName('second-subtitle')[0]);
+        }
+    }
+
+    /**
+     * Gets the tracklist title by scraping it from the DOM
+     * @returns {string} the title of the current tracklist
+     */
+     function scrapeTracklistTitle() {
         if (currentApp === supportedApps.youTubeMusic) {
-            //const _element = getElement(name); //Get the DOM element based on the name provided
-            switch(name) {
-                case metadataNames.title: 
-                    return getTracklistTitleFromElement(persistentElements.header.getElementsByClassName('title')[0]);//(_element);
-                case metadataNames.trackCount: 
-                    return (window.location.pathname === '/playlist') ? getTrackCountFromElement(persistentElements.header.getElementsByClassName('second-subtitle')[0]) : undefined;
-                default:
-                    console.error("Tried to get a piece of metadata but an invalid metadatum name was provided. Name provided: " + name);
-            }
+            return getTracklistTitleFromElement(persistentElements.header.getElementsByClassName('title')[0]);
         }
     }
 
