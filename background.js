@@ -8,6 +8,7 @@ import firebaseConfig from '/scripts/Configuration/config.js'; //Import the app'
 
 //Utilities
 import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'
+import getGPMLibraryData from './scripts/modules/utilities/gpm-utilities.js'
 
 console.info("Starting service worker");
 
@@ -194,6 +195,8 @@ async function getTrackCountFromChromeSyncStorage(tracklistTitle) {
  */
 async function getTrackCountFromGPMTracklistData(tracklistTitle){
     const gpmLibraryData = await getGPMLibraryData();
+
+    //TODO it may make more sense for the logic below to be in the gpm-utilities file, not here, but the tracklist title would have to be passed along
     for (const tracklistKey in gpmLibraryData) {
         if (tracklistKey.includes("'" + tracklistTitle + "'")) {
             console.info("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryData[tracklistKey].length);
@@ -212,20 +215,6 @@ async function getGPMTracklists(){
     if (gpmLibraryData != null) {
         return Object.keys(gpmLibraryData).map(name => name.replace('ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_', '')); // Return a list of all the key names in the gpm library data object, but removing the prefix for better readability
     } else console.warn("Tried to fetch the list of GPM tracklists from local storage, but they couldn't be found.");
-}
-
-//TODO this would be good to put in a module that both background and options scripts can access, once Chrome 91 releases.
-/**
- * Returns an object containing the the exported GPM library data
- * @returns {Promise} A promise with the resulting GPM library data object
- */
- async function getGPMLibraryData(){
-    const gpmLibraryKey = 'gpmLibraryData';
-    const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
-    const gpmLibraryData = storageItems[gpmLibraryKey];
-    if (typeof gpmLibraryData !== 'undefined') {
-        return gpmLibraryData;
-    } else console.warn("Tried to fetch the GPM library data from local storage but it wasn't found.");
 }
 
 // /**

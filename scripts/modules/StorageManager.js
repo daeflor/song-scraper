@@ -3,6 +3,7 @@
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 import '/node_modules/firebase/firebase-firestore.js'; //Import the Cloud Firestore library
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
+import getGPMLibraryData from './utilities/gpm-utilities.js'
 
 /**
  * Get a reference to the tracklist collection for the currently signed-in user
@@ -89,13 +90,10 @@ export async function storeTracklistInFirestore(tracklistTitle, tracklistType, t
  * @returns {Promise} A promise with the tracklist data object, or array of tracklist data objects, matching the provided tracklist title(s)
  */
 export async function retrieveGPMTracklistDataFromChromeLocalStorageByTitle(...tracklistTitles) {
-    //TODO avoid this repetitiveness 
-    const gpmLibraryKey = 'gpmLibraryData'; //TODO shouldn't this be global?
-    const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
-    const gpmLibraryData = storageItems[gpmLibraryKey];
-
+    const gpmLibraryData = await getGPMLibraryData();
     const tracklists = [];
 
+    //TODO should some of this logic be moved to new gpm utilities file?
     for (const tracklist in gpmLibraryData) {
         if (tracklist.length >= 43) { // If the tracklist name is at least long enough to include the standard prefix used in the GPM storage format... (this excludes certain playlists like 'Backup' and legacy ones)
             // Extract the actual tracklist title from the key used in GPM storage
@@ -116,19 +114,15 @@ export async function retrieveGPMTracklistDataFromChromeLocalStorageByTitle(...t
     } else return tracklists;
 }
 
-//TODO since almost the exact same logic is used to get the GPM tracks array as the track count (in background script),
-    //...it may make sense to make a single helper function that does this and re-use that.
+//TODO This logic has now been moved to gpm utilities files. But an additional change could be made:
     //It could possibly return either the tracks array or the track count, depending on what is requested
-    //Should wait until Chrome 91 comes out to see if it addresses Chromium Bug 824647
 /**
  * Retrieves GPM tracklist data from chrome local storage that matches the provided tracklist title
  * @param {string} tracklistTitle The title of the tracklist to retrieve
  * @returns {Promise} A promise with the tracks array, if it's found
  */
  export async function retrieveGPMTracksArrayFromChromeLocalStorage(tracklistTitle){
-    const gpmLibraryKey = 'gpmLibraryData';
-    const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
-    const gpmLibraryData = storageItems[gpmLibraryKey];
+    const gpmLibraryData = await getGPMLibraryData();
     for (const tracklistKey in gpmLibraryData) {
         if (tracklistKey.includes("'" + tracklistTitle + "'") === true) {
             //console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryData[tracklistKey].length);
