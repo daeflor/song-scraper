@@ -348,7 +348,6 @@ async function getStoredTracksYTM(tracklistTitle) {
     // return SESSION_STATE.tracklist.tracks.stored;
 }
 
-//TODO could merge the YTM & GPM functions (above and below) but not sure if that would actually be helpful
 /**
  * Returns the GPM tracks array that matches the given tracklist title, if one exists
  * @param {string} tracklistTitle The title of the tracklist to look for

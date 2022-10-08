@@ -144,8 +144,8 @@ export async function generateListOfUploadedGPMTracks() {
 
 /**
  * Adds playlist data to each track in the list provided. The playlist value will be a comma-separated string of playlist names in which the track appears.
- * @param {Object[]} tracks An array of track objects
- * @param {Objet[]} tracklists A list of tracklist objects, each of which should contain at least a 'title' string and a 'tracks' array
+ * @param {Object[]} tracks An array of track objects, each of which will have playlist data added to it
+ * @param {Objet[]} tracklists A list of tracklist objects, each of which should contain at least a 'title' string and a 'tracks' array. Each track in the 'tracks' parameter will be checked to see if it is included in any of these tracklists.
  * @param {...string} excludedTracklistTitles Any number of tracklist titles that can be skipped when adding tracklist data to each track
  */
 export function addTracklistMappingToTracks(tracks, tracklists, ...excludedTracklistTitles) {   
@@ -207,11 +207,16 @@ export async function getFilteredTracksWithTracklistMappingYTM(initialTracklistT
     return unmatchedTracks;
 }
 
+/**
+ * Generates a filtered list of tracks from YTM playlists which are missing from Common, with each track including a list of all the playlists in which it appears
+ * @returns {Promise} A promise with an array of track objects that have passed the filter criteria, each of which will include a new string property that lists all the tracklists in which the track appears
+ */
 export async function getTracksNotInCommonFromPlaylists() {
     // Get all tracklist objects where the tracklist type is 'playlist'
     const allPlaylists = await appStorage.retrieveTracklistDataFromFireStoreByType(['playlist']);
 
     // Get a list of all playlist names that should not be used when generating the list of tracks that needs to be filtered down further
+    //TODO tmi. Can more of this be moved into custom-tracklists.js?
     const playlistTitlesToExclude = ['Common', 'Hot Jams', ...customTracklists.getAllNonCommonPlaylists()];
 
     // Begin with an empty array for the list of tracks that need to be filtered
@@ -270,15 +275,4 @@ export async function getTracksNotInCommonFromPlaylists() {
     addTracklistMappingToTracks(unmatchedTracks, allTracklists, initialTracklistTitle, ...tracklistTitlesToFilterOut); 
 
     return unmatchedTracks;
-}
-
-//TODO this is duplicated here because of Chromium bug 1194681
-/**
- * Returns an object containing the the exported GPM library data
- * @returns {Promise} A promise with the resulting GPM library data object
- */
- async function getGPMLibraryData(){
-    const gpmLibraryKey = 'gpmLibraryData';
-    const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
-    return storageItems[gpmLibraryKey];
 }
