@@ -28,7 +28,7 @@
         "identity"
     ],
     "content_security_policy":{
-        "extension_pages": "default-src 'none'; script-src 'self'; connect-src https://*.googleapis.com; style-src-elem https://cdn.firebase.com https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https://www.gstatic.com; style-src 'unsafe-inline'; script-src-elem 'self' https://apis.google.com/; frame-src https://song-scraper.firebaseapp.com/"
+        "extension_pages": "default-src 'none'; script-src 'self'; script-src-elem 'self' https://apis.google.com/; connect-src https://*.googleapis.com; style-src-elem https://cdn.firebase.com https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https://www.gstatic.com; style-src 'unsafe-inline'; frame-src https://song-scraper.firebaseapp.com/"
     },
     "options_ui": {
         "page": "options.html",
