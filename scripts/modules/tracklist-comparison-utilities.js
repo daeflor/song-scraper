@@ -1,5 +1,4 @@
 import * as appStorage from './StorageManager.js';
-import * as chromeStorage from './utilities/chrome-storage-promises.js'
 import * as customTracklists from '../Configuration/custom-tracklists.js'; //TODO would be nice to not have to import this here AND in EventController
 
 export function generateDeltaTracklists(scrapedTracklist, storedTracklist) {
@@ -92,7 +91,7 @@ function convertDurationStringToSeconds(duration) {
  * @param {Object} tracklist The tracklist object which contains tracks that should be filtered out of the original tracklist
  * @returns {Object[]} An array of the remaining tracks from the original tracklist that didn't get filtered out
  */
-function filterOutTracklist(unfilteredTracks, tracklist) {
+export function filterOutTracklist(unfilteredTracks, tracklist) {
     let comparisonFunction = undefined; // The function that should be used to compare tracks in the unfiltered list to those that are part of the specified tracklist. The comparison function will either only check for matching albums, or it will check all of a track's metadata when looking for a match.
     let unmatchedTracks = [];
 

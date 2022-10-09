@@ -7,8 +7,8 @@ import '/node_modules/firebase/firebase-auth.js'; //Import the Firebase Auth lib
 import firebaseConfig from '/scripts/Configuration/config.js'; //Import the app's config object needed to initialize Firebase
 
 //Utilities
+import * as gpmStorage from '/scripts/storage/gpm-storage.js'
 import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'
-import getGPMLibraryData from './scripts/modules/utilities/gpm-utilities.js'
 
 console.info("Starting service worker");
 
@@ -49,7 +49,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     if (info.menuItemId === 'contextMenu_scrapePlaylists') {
         chrome.tabs.sendMessage(tab.id, {greeting:'GetPlaylists'});
     } else if (info.menuItemId === 'contextMenu_getGPMTracklists') {
-        const gpmTracklists = await getGPMTracklists();
+        const gpmTracklists = await gpmStorage.getTracklistTitles();
         console.table(gpmTracklists);
     }
 });
@@ -170,7 +170,7 @@ async function getPreviousTrackCount(tracklistTitle) {
 
     // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the track count was not found in Chrome sync storage, get the track count from the GPM data in Chrome local storage
     if (comparisonMethod === 'alwaysGPM' || (comparisonMethod === 'preferYTM' && typeof trackCount === 'undefined')) {
-        trackCount = await getTrackCountFromGPMTracklistData(tracklistTitle);
+        trackCount = await gpmStorage.getTrackCount(tracklistTitle);
         trackCountSourcePrefix = 'G';
     }
 
@@ -186,35 +186,6 @@ async function getTrackCountFromChromeSyncStorage(tracklistTitle) {
     const userKey = 'trackCounts_' + firebase.auth().currentUser.uid;
     const storageItems = await chromeStorage.getKeyValuePairs('sync', userKey);
     return storageItems[userKey]?.[tracklistTitle];
-}
-
-/**
- * Returns the track count for the given tracklist stored in the exported GPM library data, if available
- * @param {string} tracklistTitle The title of the tracklist
- * @returns {Promise} A promise with the resulting track count
- */
-async function getTrackCountFromGPMTracklistData(tracklistTitle){
-    const gpmLibraryData = await getGPMLibraryData();
-
-    //TODO it may make more sense for the logic below to be in the gpm-utilities file, not here, but the tracklist title would have to be passed along
-    for (const tracklistKey in gpmLibraryData) {
-        if (tracklistKey.includes("'" + tracklistTitle + "'")) {
-            console.info("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryData[tracklistKey].length);
-            return gpmLibraryData[tracklistKey].length;
-        }
-    }
-    console.info("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
-}
-
-/**
- * Returns a list of the names of all the tracklists stored in the exported GPM library data
- * @returns {Promise} A promise with the resulting array of tracklist names
- */
-async function getGPMTracklists(){
-    const gpmLibraryData = await getGPMLibraryData();
-    if (gpmLibraryData != null) {
-        return Object.keys(gpmLibraryData).map(name => name.replace('ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_', '')); // Return a list of all the key names in the gpm library data object, but removing the prefix for better readability
-    } else console.warn("Tried to fetch the list of GPM tracklists from local storage, but they couldn't be found.");
 }
 
 // /**

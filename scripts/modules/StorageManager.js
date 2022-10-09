@@ -3,7 +3,7 @@
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 import '/node_modules/firebase/firebase-firestore.js'; //Import the Cloud Firestore library
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
-import getGPMLibraryData from './utilities/gpm-utilities.js'
+import { getGPMLibraryData } from '/scripts/storage/gpm-storage.js'
 
 /**
  * Get a reference to the tracklist collection for the currently signed-in user
@@ -101,7 +101,7 @@ export async function retrieveGPMTracklistDataFromChromeLocalStorageByTitle(...t
 
             // If either a provided title matches the current tracklist title, or no tracklist titles were provided and the current tracklist is a playlist (i.e. excluding comprehensive lists like 'All Music')...
             if (tracklistTitles.includes(tracklistTitle) === true || 
-               (tracklistTitles.length === 0 && ['ADDED FROM MY SUBSCRIPTION', 'ALL MUSIC', 'Songs'].includes(tracklistTitle) === false)) { 
+            (tracklistTitles.length === 0 && ['ADDED FROM MY SUBSCRIPTION', 'ALL MUSIC', 'Songs'].includes(tracklistTitle) === false)) { 
                 // Create a new tracklist data object including the title and tracks array, and add it to the list
                 tracklists.push({title:tracklistTitle, tracks:gpmLibraryData[tracklist]}); 
             }
@@ -121,7 +121,7 @@ export async function retrieveGPMTracklistDataFromChromeLocalStorageByTitle(...t
  * @param {string} tracklistTitle The title of the tracklist to retrieve
  * @returns {Promise} A promise with the tracks array, if it's found
  */
- export async function retrieveGPMTracksArrayFromChromeLocalStorage(tracklistTitle){
+export async function retrieveGPMTracksArrayFromChromeLocalStorage(tracklistTitle){
     const gpmLibraryData = await getGPMLibraryData();
     for (const tracklistKey in gpmLibraryData) {
         if (tracklistKey.includes("'" + tracklistTitle + "'") === true) {
