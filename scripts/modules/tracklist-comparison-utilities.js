@@ -1,5 +1,6 @@
 import * as appStorage from './StorageManager.js';
 import * as customTracklists from '../Configuration/custom-tracklists.js'; //TODO would be nice to not have to import this here AND in EventController
+import { getTracksArray as getGPMTracksArray } from '../storage/gpm-storage.js';
 
 export function generateDeltaTracklists(scrapedTracklist, storedTracklist) {
     if (Array.isArray(scrapedTracklist) === true && Array.isArray(storedTracklist) === true) {
@@ -134,7 +135,7 @@ export function filterOutTracklist(unfilteredTracks, tracklist) {
  */
 //TODO it may make the most sense to just add this data to the 'gpmLibraryData' object in Local Storage, and avoid any special steps moving forward.
 export async function generateListOfUploadedGPMTracks() {
-    const allTracks = await appStorage.retrieveGPMTracksArrayFromChromeLocalStorage('ALL MUSIC'); // Retrieve the array of all tracks in the GPM library
+    const allTracks = await getGPMTracksArray('ALL MUSIC'); // Retrieve the array of all tracks in the GPM library
     const subscribedTracks = await appStorage.retrieveGPMTracklistDataFromChromeLocalStorageByTitle('ADDED FROM MY SUBSCRIPTION'); // Retrieve the tracklist of subscribed GPM tracks
     const uploadedTracks = filterOutTracklist(allTracks, subscribedTracks); // Generate a list of uploaded GPM tracks by starting with the list of all tracks and filtering out any that are in the list of subscribed tracks
 
@@ -258,7 +259,7 @@ export async function getTracksNotInCommonFromPlaylists() {
     const allTracklists = await appStorage.retrieveGPMTracklistDataFromChromeLocalStorageByTitle();
 
     // Fetch the initial tracks array from Chrome Local Storage
-    let unmatchedTracks = await appStorage.retrieveGPMTracksArrayFromChromeLocalStorage(initialTracklistTitle);
+    let unmatchedTracks = await getTracksArray(initialTracklistTitle);
 
     // If a single tracklist to filter out was provided, use it to filter out any matching tracks from the original list of tracks. 
     // If there are multiple tracklists to filter out, do the same for each tracklist, each time paring the original list down further. 

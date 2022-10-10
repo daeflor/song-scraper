@@ -22,13 +22,11 @@ import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App befor
 //Storage
 import * as appStorage from './StorageManager.js';
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
+import { getTracksArray as getGPMTracksArray } from '../storage/gpm-storage.js';
 
 //Other
 import * as IO from './utilities/IO.js';
-
 import * as customTracklists from '../Configuration/custom-tracklists.js';
-
-import getGPMTracklistTitle from '../Configuration/tracklist-title-mapping.js'
 
 //TODO could consider adding to and/or removing from EventController so that it's the central place for all event-driven logic
     //i.e. EventController should dictate & be aware of all events & reactions throughout the app (not sure about auth...)
@@ -41,8 +39,7 @@ const SESSION_STATE = {
         type: undefined,
         tracks: {
             scraped: undefined,
-            stored: undefined, // TODO: maybe call this ytm instead of stored?
-            gpm: undefined
+            stored: undefined // TODO: maybe call this ytm instead of stored?
         },
         deltas: undefined
     },
@@ -130,7 +127,7 @@ ViewRenderer.buttons.downloadScrapedTracks.addEventListener('click', function() 
 
 // Button Pressed: Download Stored GPM Tracks
 ViewRenderer.buttons.downloadGPMTracks.addEventListener('click', async function() {
-    const storedTracks = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+    const storedTracks = await getGPMTracksArray(SESSION_STATE.tracklist.title); //TODO calling this without the context that it's from gpm-storage.js is not great for readability. Could import the fnc as getGPMTracksArray, perhaps
     triggerCSVDownload(storedTracks, 'Tracklist_GPM_' + SESSION_STATE.tracklist.title);
 });
 
@@ -243,7 +240,8 @@ ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() 
 
 // Checkbox Value Changed: Stored GPM Track Table
 ViewRenderer.checkboxes.gpmTrackTable.addEventListener('change', async function() {
-    const storedTracks = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+    //TODO it's a bit silly to get the tracks array even in the case when the checkbox is unchecked.
+    const storedTracks = await getGPMTracksArray(SESSION_STATE.tracklist.title);
     reactToCheckboxChange(storedTracks, ViewRenderer.tracktables.gpm, this.checked, 'Stored GPM Tracklist');
 });
 
@@ -349,27 +347,6 @@ async function getStoredTracksYTM(tracklistTitle) {
 }
 
 /**
- * Returns the GPM tracks array that matches the given tracklist title, if one exists
- * @param {string} tracklistTitle The title of the tracklist to look for
- * @returns {Promise} A promise containing the GPM tracks array matching the tracklist title, if one exists
- */
-async function getStoredTracksGPM(tracklistTitle) {
-    // If the GPM tracks array for the current tracklist has previously been fetched, return that array. Otherwise, fetch it from local storage and then return it
-    if (Array.isArray(SESSION_STATE.tracklist.tracks.gpm) === false) {
-
-        // If the desired tracklist is the list of songs uploaded to GPM, some special steps need to be taken, since this specific tracklist wasn't stored in the exported GPM data
-        if (tracklistTitle === 'Uploaded Songs') {
-            SESSION_STATE.tracklist.tracks.gpm = await tracklistComparisonUtils.generateListOfUploadedGPMTracks();
-        } else { // Else, get the exact GPM tracklist title and use it to fetch the tracklist from local storage
-            const gpmTracklistTitle = getGPMTracklistTitle(tracklistTitle); // Use the YTM to GPM tracklist title mapping to get the exact GPM tracklist title
-            SESSION_STATE.tracklist.tracks.gpm = await appStorage.retrieveGPMTracksArrayFromChromeLocalStorage(gpmTracklistTitle); // Fetch the GPM tracklist from local storage
-        }
-    }
-    
-    return SESSION_STATE.tracklist.tracks.gpm; 
-}
-
-/**
  * Get a map containing the delta tracklists
  * @returns {Promise} A promise with a map containing the various delta tracklists (Added, Removed, Unplayable)
  */
@@ -388,7 +365,7 @@ async function getDeltaTracklists() {
 
         // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the tracklist was not found in the YTM stored tracks, get the tracks from the GPM data in Chrome local storage
         if (comparisonMethod === 'alwaysGPM' || (comparisonMethod === 'preferYTM' && typeof tracksUsedForDelta === 'undefined')) {
-            tracksUsedForDelta = await getStoredTracksGPM(SESSION_STATE.tracklist.title);
+            tracksUsedForDelta = await getGPMTracksArray(SESSION_STATE.tracklist.title);
             appUsedForDelta = 'GPM';
         }
 

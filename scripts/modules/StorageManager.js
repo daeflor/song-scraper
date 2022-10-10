@@ -114,25 +114,6 @@ export async function retrieveGPMTracklistDataFromChromeLocalStorageByTitle(...t
     } else return tracklists;
 }
 
-//TODO This logic has now been moved to gpm utilities files. But an additional change could be made:
-    //It could possibly return either the tracks array or the track count, depending on what is requested
-/**
- * Retrieves GPM tracklist data from chrome local storage that matches the provided tracklist title
- * @param {string} tracklistTitle The title of the tracklist to retrieve
- * @returns {Promise} A promise with the tracks array, if it's found
- */
-export async function retrieveGPMTracksArrayFromChromeLocalStorage(tracklistTitle){
-    const gpmLibraryData = await getGPMLibraryData();
-    for (const tracklistKey in gpmLibraryData) {
-        if (tracklistKey.includes("'" + tracklistTitle + "'") === true) {
-            //console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryData[tracklistKey].length);
-            return gpmLibraryData[tracklistKey];
-        }
-    }
-    console.warn("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
-    return undefined;
-}
-
 //TODO could have a storage directory that contains multiple files, maybe:
     //One for Firebase related logic
     //One for chrome storage related logic

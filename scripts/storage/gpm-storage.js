@@ -1,11 +1,10 @@
 import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'
 import getGPMTracklistTitle from '/scripts/Configuration/tracklist-title-mapping.js'
-import { filterOutTracklist } from '/scripts/modules/tracklist-comparison-utilities.js'
+import { filterOutTracklist, generateListOfUploadedGPMTracks } from '/scripts/modules/tracklist-comparison-utilities.js'
 
-//TODO should use a session state like in event-controller so that we don't have to access the chrome local storage every time.
-    //All the logic that isn't slow could even be done the first time the data is accessed (such as generating a list of all playlist names), but probably not as necessary
 const SESSION_STATE = {
-    gpmLibrary: undefined
+    gpmLibrary: undefined,
+    gpmUploadedTracks: undefined
 }
 
 /**
@@ -29,7 +28,6 @@ export async function getGPMLibraryData(){ //TODO getLibraryData
     }
 
     return SESSION_STATE.gpmLibrary;
-    //return storageItems[gpmLibraryKey];
 }
 
 //retrieveGPMTracksArrayFromChromeLocalStorage from StorageManager.js
@@ -39,15 +37,31 @@ export async function getGPMLibraryData(){ //TODO getLibraryData
  * @returns {Promise} A promise with the tracks array, if it's found
  */
 export async function getTracksArray(tracklistTitle){
-    const gpmLibraryData = await getGPMLibraryData();
-    const gpmTracklistTitle = getGPMTracklistTitle(tracklistTitle); // Use the YTM to GPM tracklist title mapping to get the exact GPM tracklist title
-    for (const tracklistKey in gpmLibraryData) {
-        if (tracklistKey.includes("'" + gpmTracklistTitle + "'") === true) {
-            console.info("Retrieved tracklist metadata from GPM exported data. Tracklist title: " + gpmTracklistTitle);
-            return gpmLibraryData[tracklistKey];
+    // If the desired tracklist is the list of songs uploaded to GPM, some special steps need to be taken, since this specific tracklist wasn't stored in the exported GPM data
+    if (tracklistTitle === 'Uploaded Songs') {
+        if (Array.isArray(SESSION_STATE.gpmUploadedTracks) === false) { // If the list of GPM Uploaded tracks has not already been calculated, calculate it now and save it for future reference
+            SESSION_STATE.gpmUploadedTracks = await generateListOfUploadedGPMTracks();
         }
+        return SESSION_STATE.gpmUploadedTracks;
+    } else { // Else, for any other tracklist, fetch the array of tracks from Chrome local storage
+        //TODO should I save this in SESSION STATE? If it's safe to assume we're only asking for the tracklist title of the 'current' tracklist, then it may be worth it 
+            //I believe this is what we used to do. But right now that seems like a flawed assumption to me. Needs a bit of investigation.
+            //Update: No, it wouldn't make sense to do that here, not in the same way it was done before in event-controller.
+                //In event-controller, the array accessed WAS only ever for the current tracklist. But this function here is now consolidated to work for both the needs of
+                //event-controller as well as the comparison/filter utilities, and so the tracklist requested could be any.
+                //It may still make sense to store the 'current' tracks array in session state, but would need to rethink how. Also may not be worth it at this point. Storing the gpm library object in session state should provide enough value already.
+                    //Potentially could do a check based on whether or not SESSION STATE has a key matching the tracklistTitle param, but may not be worth it
+        const gpmLibraryData = await getGPMLibraryData();
+        const gpmTracklistTitle = getGPMTracklistTitle(tracklistTitle); // Use the YTM to GPM tracklist title mapping to get the exact GPM tracklist title
+            
+        for (const tracklistKey in gpmLibraryData) {
+            if (tracklistKey.includes("'" + gpmTracklistTitle + "'") === true) {
+                console.info("Retrieved tracklist metadata from GPM exported data. Tracklist title: " + gpmTracklistTitle);
+                return gpmLibraryData[tracklistKey];
+            }
+        }
+        console.warn("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + gpmTracklistTitle);
     }
-    console.warn("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + gpmTracklistTitle);
 }
 
 /**
