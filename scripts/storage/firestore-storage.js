@@ -2,8 +2,8 @@
     //Then, any files that have a dependency on firebase (e.g. Auth, Storage, etc.) can just import that module
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 import '/node_modules/firebase/firebase-firestore.js'; //Import the Cloud Firestore library
-import * as chromeStorage from './utilities/chrome-storage-promises.js'
-import { getGPMLibraryData } from '/scripts/storage/gpm-storage.js'
+import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'
+import { getGPMLibraryData } from './gpm-storage.js'
 
 /**
  * Get a reference to the tracklist collection for the currently signed-in user

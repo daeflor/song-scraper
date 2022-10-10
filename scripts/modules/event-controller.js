@@ -20,7 +20,7 @@ import firebaseConfig from '../Configuration/config.js'; //Import the app's conf
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 
 //Storage
-import * as appStorage from './StorageManager.js';
+import * as appStorage from '/scripts/storage/firestore-storage.js';
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
 import { getTracksArray as getGPMTracksArray } from '../storage/gpm-storage.js';
 

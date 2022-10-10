@@ -1,5 +1,5 @@
 import * as chromeStorage from '../scripts/modules/utilities/chrome-storage-promises.js'
-import * as appStorage from './scripts/modules/StorageManager.js';
+import * as appStorage from '/scripts/storage/firestore-storage.js';
 
 async function updatePreferencesScreenUI() {
     const comparisonMethod = await appStorage.getPreferencesFromChromeSyncStorage('Comparison Method');
