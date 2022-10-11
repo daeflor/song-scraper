@@ -4,7 +4,8 @@ import { filterOutTracklist, generateListOfUploadedGPMTracks } from '/scripts/mo
 
 const SESSION_STATE = {
     gpmLibrary: undefined,
-    gpmUploadedTracks: undefined
+    gpmUploadedTracks: undefined,
+    gpmTracklists: {}
 }
 
 /**
@@ -24,13 +25,17 @@ export async function getGPMLibraryData(){ //TODO getLibraryData
         ? console.warn("Tried to fetch the GPM library data from local storage but it wasn't found.")
         : console.log("Successfully fetched GPM library data from local storage.")
 
+        //console.log(storageItems[gpmLibraryKey]);
         SESSION_STATE.gpmLibrary = storageItems[gpmLibraryKey];
+
+        saveGPMTracklistsToSessionStorage(storageItems[gpmLibraryKey]);
     }
+
+    //console.log(SESSION_STATE);
 
     return SESSION_STATE.gpmLibrary;
 }
 
-//retrieveGPMTracksArrayFromChromeLocalStorage from StorageManager.js
 /**
  * Retrieves the GPM tracks array from chrome local storage that matches the provided tracklist title
  * @param {string} tracklistTitle The title of the tracklist to retrieve
@@ -44,13 +49,6 @@ export async function getTracksArray(tracklistTitle){
         }
         return SESSION_STATE.gpmUploadedTracks;
     } else { // Else, for any other tracklist, fetch the array of tracks from Chrome local storage
-        //TODO should I save this in SESSION STATE? If it's safe to assume we're only asking for the tracklist title of the 'current' tracklist, then it may be worth it 
-            //I believe this is what we used to do. But right now that seems like a flawed assumption to me. Needs a bit of investigation.
-            //Update: No, it wouldn't make sense to do that here, not in the same way it was done before in event-controller.
-                //In event-controller, the array accessed WAS only ever for the current tracklist. But this function here is now consolidated to work for both the needs of
-                //event-controller as well as the comparison/filter utilities, and so the tracklist requested could be any.
-                //It may still make sense to store the 'current' tracks array in session state, but would need to rethink how. Also may not be worth it at this point. Storing the gpm library object in session state should provide enough value already.
-                    //Potentially could do a check based on whether or not SESSION STATE has a key matching the tracklistTitle param, but may not be worth it
         const gpmLibraryData = await getGPMLibraryData();
         const gpmTracklistTitle = getGPMTracklistTitle(tracklistTitle); // Use the YTM to GPM tracklist title mapping to get the exact GPM tracklist title
             
@@ -83,5 +81,20 @@ export async function getTrackCount(tracklistTitle){
     if (typeof gpmLibraryData !== 'undefined') {
         return Object.keys(gpmLibraryData).map(name => name.replace('ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_', '')); // Return a list of all the key names in the gpm library data object, but removing the prefix for better readability
     } else console.warn("Tried to fetch a list of GPM tracklist names from Chrome local storage, but the GPM library data couldn't be found.");
+}
+
+/**
+ * Traverses a GPM Library data object as retrieved from Chrome Local Storage and uses it to generate individual tracklist data objects (as opposed to simply tracks arrrays). 
+ * These tracklist data objects are then saved in session state for future access. 
+ * This is done so that the GPM Library data is subsequently quickly accessible in a format similar to the YTM Library data.
+ * @param {object} gpmLibraryDataObject the GPM Library data object, as retrieved from Chrome Local Storage
+ */
+ function saveGPMTracklistsToSessionStorage(gpmLibraryDataObject){
+    for (const tracklistKey in gpmLibraryDataObject) {
+        if (tracklistKey.length >= 43) { // If the tracklist name is at least long enough to include the standard prefix used in the GPM storage format... (this excludes certain playlists like 'Backup' and legacy ones)
+            const tracklistTitle = tracklistKey.substring(43, tracklistKey.length-1); // Extract the actual tracklist title from the key used in GPM storage
+            SESSION_STATE.gpmTracklists[tracklistTitle] = {title:tracklistTitle, tracks:gpmLibraryDataObject[tracklistKey]}; // Create a new tracklist data object including the title and tracks array, and add it to session state
+        }
+    }
 }
 

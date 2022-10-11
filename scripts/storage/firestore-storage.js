@@ -120,6 +120,7 @@ export async function retrieveGPMTracklistDataFromChromeLocalStorageByTitle(...t
     //One for chrome storage utility/helper functions?
     //One for Legacy App Storage? (i.e. GPM)
 
+//TODO move the functions below to a dedicated file
 /**
  * Stores the provided track count for the given tracklist in chrome sync storage
  * @param {string} tracklistTitle The title of the tracklist

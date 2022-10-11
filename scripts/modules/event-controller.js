@@ -127,7 +127,7 @@ ViewRenderer.buttons.downloadScrapedTracks.addEventListener('click', function() 
 
 // Button Pressed: Download Stored GPM Tracks
 ViewRenderer.buttons.downloadGPMTracks.addEventListener('click', async function() {
-    const storedTracks = await getGPMTracksArray(SESSION_STATE.tracklist.title); //TODO calling this without the context that it's from gpm-storage.js is not great for readability. Could import the fnc as getGPMTracksArray, perhaps
+    const storedTracks = await getGPMTracksArray(SESSION_STATE.tracklist.title);
     triggerCSVDownload(storedTracks, 'Tracklist_GPM_' + SESSION_STATE.tracklist.title);
 });
 
@@ -267,7 +267,7 @@ ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async functi
 // Checkbox Value Changed: Tracks Not In Common
 ViewRenderer.checkboxes.tracksNotInCommonFromLibrary.addEventListener('change', async function() {
     const tracksNotInCommon = await getTracksNotInCommonFromLibrary();
-    //TODO this only covers the tracks that are in the Library (i.e. Added from YTM Subscription) but not in Common. It doesn't cover tracks which may be included only in other playlists but not in Common.
+    // Note: this only covers the tracks that are in the Library (i.e. Added from YTM Subscription) but not in Common. It doesn't cover tracks which may be included only in other playlists but not in Common.
     //TODO this doesn't fully work because you can't pass track table columns here and so the new 'playlist' field/column gets omitted.
 
     reactToCheckboxChange(tracksNotInCommon, ViewRenderer.tracktables.tracksNotInCommonFromLibrary, this.checked, 'Tracks missing from the Common playlist');
