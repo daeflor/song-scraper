@@ -1,6 +1,5 @@
 import * as appStorage from '/scripts/storage/firestore-storage.js';
 import * as customTracklists from '../Configuration/custom-tracklists.js'; //TODO would be nice to not have to import this here AND in EventController
-import { getTracksArray as getGPMTracksArray } from '../storage/gpm-storage.js';
 
 export function generateDeltaTracklists(scrapedTracklist, storedTracklist) {
     if (Array.isArray(scrapedTracklist) === true && Array.isArray(storedTracklist) === true) {
@@ -127,20 +126,6 @@ export function filterOutTracklist(unfilteredTracks, tracklist) {
 }
 
 //TODO the functions below aren't exactly 'comparison' utilities. Do they still belong here?
-
-/**
- * Generate a list of tracks uploaded to GPM by removing any 'Added from Subscription' from the list of 'All Music'.
- * Note that this list of tracks is now/currently stored in Chrome local storage as well, under the key 'gpmLibraryData_UploadedSongs'.
- * @returns {Promise} A promise with the array of uploaded track objects
- */
-//TODO it may make the most sense to just add this data to the 'gpmLibraryData' object in Local Storage, and avoid any special steps moving forward.
-export async function generateListOfUploadedGPMTracks() {
-    const allTracks = await getGPMTracksArray('ALL MUSIC'); // Retrieve the array of all tracks in the GPM library
-    const subscribedTracks = await appStorage.retrieveGPMTracklistDataFromChromeLocalStorageByTitle('ADDED FROM MY SUBSCRIPTION'); // Retrieve the tracklist of subscribed GPM tracks
-    const uploadedTracks = filterOutTracklist(allTracks, subscribedTracks); // Generate a list of uploaded GPM tracks by starting with the list of all tracks and filtering out any that are in the list of subscribed tracks
-
-    return uploadedTracks;
-}
 
 /**
  * Adds playlist data to each track in the list provided. The playlist value will be a comma-separated string of playlist names in which the track appears.

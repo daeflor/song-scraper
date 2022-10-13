@@ -7,7 +7,7 @@ import '/node_modules/firebase/firebase-auth.js'; //Import the Firebase Auth lib
 import firebaseConfig from '/scripts/Configuration/config.js'; //Import the app's config object needed to initialize Firebase
 
 //Utilities
-import * as gpmStorage from '/scripts/storage/gpm-storage.js'
+import { getGpmData } from '/scripts/storage/gpm-storage.js';
 import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'
 
 console.info("Starting service worker");
@@ -49,7 +49,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     if (info.menuItemId === 'contextMenu_scrapePlaylists') {
         chrome.tabs.sendMessage(tab.id, {greeting:'GetPlaylists'});
     } else if (info.menuItemId === 'contextMenu_getGPMTracklists') {
-        const gpmTracklists = await gpmStorage.getTracklistTitles();
+        const gpmTracklists = await getGpmData('tracklistTitles');
         console.table(gpmTracklists);
     }
 });
@@ -140,7 +140,7 @@ chrome.runtime.onConnect.addListener(port => {
     if (port.name === 'AuthenticationChangePending') {
         port.onDisconnect.addListener(port => {
             chrome.storage.local.get('currentTracklistMetadata', storageResult => {
-                const metadata = storageResult['currentTracklistMetadata'];
+                const metadata = storageResult['currentTracklistMetadata']; //TODO is it necessary to fetch and pass the metadata here? Doesn't this case only happen when the user logs out, and therefore the metadata isn't needed since the icon will just be disabled?
                 enableAndUpdateIcon(metadata);
             });
         });
@@ -170,7 +170,7 @@ async function getPreviousTrackCount(tracklistTitle) {
 
     // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the track count was not found in Chrome sync storage, get the track count from the GPM data in Chrome local storage
     if (comparisonMethod === 'alwaysGPM' || (comparisonMethod === 'preferYTM' && typeof trackCount === 'undefined')) {
-        trackCount = await gpmStorage.getTrackCount(tracklistTitle);
+        trackCount = await getGpmData('trackCount', tracklistTitle);
         trackCountSourcePrefix = 'G';
     }
 

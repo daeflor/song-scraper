@@ -22,7 +22,7 @@ import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App befor
 //Storage
 import * as appStorage from '/scripts/storage/firestore-storage.js';
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
-import { getTracksArray as getGPMTracksArray } from '../storage/gpm-storage.js';
+import { getGpmData } from '../storage/gpm-storage.js';
 
 //Other
 import * as IO from './utilities/IO.js';
@@ -127,7 +127,7 @@ ViewRenderer.buttons.downloadScrapedTracks.addEventListener('click', function() 
 
 // Button Pressed: Download Stored GPM Tracks
 ViewRenderer.buttons.downloadGPMTracks.addEventListener('click', async function() {
-    const storedTracks = await getGPMTracksArray(SESSION_STATE.tracklist.title);
+    const storedTracks = await getGpmData('tracksArray', SESSION_STATE.tracklist.title);
     triggerCSVDownload(storedTracks, 'Tracklist_GPM_' + SESSION_STATE.tracklist.title);
 });
 
@@ -241,7 +241,7 @@ ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() 
 // Checkbox Value Changed: Stored GPM Track Table
 ViewRenderer.checkboxes.gpmTrackTable.addEventListener('change', async function() {
     //TODO it's a bit silly to get the tracks array even in the case when the checkbox is unchecked.
-    const storedTracks = await getGPMTracksArray(SESSION_STATE.tracklist.title);
+    const storedTracks = await getGpmData('tracksArray', SESSION_STATE.tracklist.title);
     reactToCheckboxChange(storedTracks, ViewRenderer.tracktables.gpm, this.checked, 'Stored GPM Tracklist');
 });
 
@@ -365,7 +365,7 @@ async function getDeltaTracklists() {
 
         // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the tracklist was not found in the YTM stored tracks, get the tracks from the GPM data in Chrome local storage
         if (comparisonMethod === 'alwaysGPM' || (comparisonMethod === 'preferYTM' && typeof tracksUsedForDelta === 'undefined')) {
-            tracksUsedForDelta = await getGPMTracksArray(SESSION_STATE.tracklist.title);
+            tracksUsedForDelta = await getGpmData('tracksArray', SESSION_STATE.tracklist.title);
             appUsedForDelta = 'GPM';
         }
 
