@@ -11,44 +11,51 @@ const SESSION_STATE = {
 /**
  * Retrieves the requested GPM data. 
  * The first time this is called, the GPM Library data is retrived from Chrome local storage and saved in session state for future reference. 
- * @param {string} requestedData The type of data to return. Supported options are 'tracksArray', 'trackCount', 'tracklistTitles', 'allPlaylists', 'tracklist', 'tracklists', 'tracksNotInCommon'.
+ * @param {string} requestedData The type of data to return. Supported options are 'tracklist', 'tracksArray', 'trackCount', 'tracklistTitles', 'allPlaylists', 'tracklists', 'tracksNotInCommon'.
  * @param {string} [tracklistTitle] An opptional string indicating the title of the tracklist for which to fetch data, if applicable. This parameter is required if 'requestedData' is set to 'tracksArray', 'trackCount', 'tracklist', or 'tracklists'.
  * @returns {Promise} A promise with the resulting data
  */
-export async function getGpmData(requestedData, tracklistTitle) { //TODO figure out how to most cleanly handle parameters for multiple tracklist title
+//TODO figure out how to most cleanly handle parameters for multiple tracklist title
+    //Having an internal helper function to get multiple tracklists should suffice
+    //But may also want to consider having one exported function to getGpmTracklistData (i.e. the tracklist, tracks array, or track count from one specific tracklist)
+        //and a separate function to get data from the GPM library as a whole (e.g. getGpmLibraryData such as to get all playlists, all tracklist titles, multiple tracklists by name, etc.)
+export async function getGpmData(requestedData, tracklistTitle) { 
+    
         if (typeof SESSION_STATE.gpmLibrary === 'undefined') {
-            console.log("GPM Library data has not yet been saved in sesstion state, so fetching it from Chrome local storage instead.");
+            console.info("GPM Library data has not yet been saved in sesstion state, so fetching it from Chrome local storage instead.");
             await saveGpmLibraryDataToSessionState();
         }
 
-        // console.log(SESSION_STATE.gpmLibrary);
+        const gpmTracklistTitle = getGPMTracklistTitle(tracklistTitle); // Use the YTM to GPM tracklist title mapping to get the exact GPM tracklist title
+
+        console.log(SESSION_STATE);
         // console.log(SESSION_STATE.gpmTracklists);
 
         switch(requestedData) {
+        case 'tracklist':
+            if (typeof gpmTracklistTitle !== 'undefined') {
+                return SESSION_STATE.gpmTracklists[gpmTracklistTitle];
+            } else throw Error("Request received to get a GPM tracklist but no tracklist title was provided.");
         case 'tracksArray':
-            if (tracklistTitle === 'Uploaded Songs') { // If the desired tracklist is the list of songs uploaded to GPM, some special steps need to be taken, since this specific tracklist wasn't stored in the exported GPM data
+            if (gpmTracklistTitle === 'Uploaded Songs') { // If the desired tracklist is the list of songs uploaded to GPM, some special steps need to be taken, since this specific tracklist wasn't stored in the exported GPM data
                 return SESSION_STATE.gpmUploadedTracks || await retrieveUploadedGpmTracks(); // If the list of GPM Uploaded tracks has not already been saved in session state, either fetch it from local storage (if it exists) or calculate it now and save it for future reference
-            } else if (typeof tracklistTitle !== 'undefined') { // Else, for any other tracklist, fetch the array of tracks from Chrome local storage
-                const gpmTracklistTitle = getGPMTracklistTitle(tracklistTitle); // Use the YTM to GPM tracklist title mapping to get the exact GPM tracklist title
+            } else if (typeof gpmTracklistTitle !== 'undefined') { // Else, for any other tracklist, return the array of tracks from session state
                 return SESSION_STATE.gpmTracklists[gpmTracklistTitle]?.tracks;
-                //return gpmLibrary[gpmTracklistTitle];
             } else throw Error("Request received to get a GPM tracks array but no tracklist title was provided.");
+
+            //return (await getGpmData('tracklist', tracklistTitle))?.tracks;
+        
+            // if (tracklistTitle === 'Uploaded Songs') { // If the desired tracklist is the list of songs uploaded to GPM, some special steps need to be taken, since this specific tracklist wasn't stored in the exported GPM data
+            //     return SESSION_STATE.gpmUploadedTracks || await retrieveUploadedGpmTracks(); // If the list of GPM Uploaded tracks has not already been saved in session state, either fetch it from local storage (if it exists) or calculate it now and save it for future reference
+            // } else {
+            //     return (await getGpmData('tracklist', tracklistTitle))?.tracks;
+            // }
         case 'trackCount': // Returns the track count for the given tracklist stored in the GPM library data, if available
             return (await getGpmData('tracksArray', tracklistTitle))?.length;
         case 'tracklistTitles': // Returns a list of the titles of all the tracklists stored in the GPM Library data
             return Object.keys(SESSION_STATE.gpmTracklists); // Return a list of all the key names in the gpm tracklists array saved in session state
         case 'allPlaylists':
             return Object.values(SESSION_STATE.gpmTracklists).filter(tracklist => ['ADDED FROM MY SUBSCRIPTION', 'ALL MUSIC', 'Songs'].includes(tracklist.title) === false);
-
-            // //return SESSION_STATE.gpmTracklists
-            // console.log(SESSION_STATE);
-            // console.log(Object.entries(SESSION_STATE.gpmTracklists));
-            // console.log(Object.entries(SESSION_STATE.gpmTracklists).filter(tracklist => ['ADDED FROM MY SUBSCRIPTION', 'ALL MUSIC', 'Songs'].includes(tracklist[1].title) === false));
-            // console.log(Object.entries(SESSION_STATE.gpmTracklists).flat().filter(tracklist => ['ADDED FROM MY SUBSCRIPTION', 'ALL MUSIC', 'Songs'].includes(tracklist.title) === false));
-            // console.log(Object.entries(SESSION_STATE.gpmTracklists).flat().filter(tracklist => typeof tracklist.title !== 'undefined' && ['ADDED FROM MY SUBSCRIPTION', 'ALL MUSIC', 'Songs'].includes(tracklist.title) === false));
-            // console.log(Object.entries(SESSION_STATE.gpmTracklists).flat().filter(tracklist => [undefined, 'ADDED FROM MY SUBSCRIPTION', 'ALL MUSIC', 'Songs'].includes(tracklist.title) === false));
-        case 'tracklist':
-            //TODO
         case 'tracklists':
             //TODO
         case 'tracksNotInCommon':
@@ -57,6 +64,10 @@ export async function getGpmData(requestedData, tracklistTitle) { //TODO figure 
             throw Error("An inavlid data category was provided when requesting GPM data.");
         }
 }
+
+// export async function getGpmLibraryData(requestedData, ...tracklistTitles) {
+
+// }
 
 /**
  * Fetches the exported GPM Library data from Chrome local storage and then saves it in session state in a format that makes the data more easily acciessible for future reference. 
@@ -96,19 +107,23 @@ async function saveGpmLibraryDataToSessionState() {
  * Otherwise, the list is generated by removing any tracks 'Added from Subscription' from the list of 'All Music'.
  * @returns {Promise} A promise with the array of uploaded track objects
  */
-//TODO it may make the most sense to just add this data to the 'gpmLibraryData' object in Local Storage, and avoid any special steps moving forward.
-export async function retrieveUploadedGpmTracks() {
+async function retrieveUploadedGpmTracks() {
     // Retrieve the GPM Library data from Chrome local storage and save it in session state for future reference
-    const storageKey = 'gpmLibraryData_UploadedSongs';
+    const storageKey = 'gpmLibraryData_UploadedSongsXX';
     const storageItems = await chromeStorage.getKeyValuePairs('local', storageKey);
 
+    //TODO it may make the most sense to just add this data to the 'gpmLibraryData' object in Local Storage, and avoid any special steps moving forward.
+
+    //TODO could consider saving the uploaded tracks in session state as a tracklist instead of an array
+    //TODO could also consider saving them in session state under gpmTracklists instead of their own object. 
+        //This would eliminate the need for some special steps later on the process, without actually going as far as modifying the data currenly stored in Chrome local storage (which is also an option)
     if (typeof storageItems[storageKey] !== 'undefined') {
         console.log("Successfully fetched Uploaded GPM tracks from local storage.");
         SESSION_STATE.gpmUploadedTracks = storageItems[storageKey];
     } else {
         console.warn("Tried to fetch the list of GPM Uploaded Tracks from Chrome local storage but it wasn't found. Generating new list instead.");
-        const allTracks = getGpmData('tracksArray', 'ALL MUSIC'); // Retrieve the array of all tracks in the GPM library
-        const subscribedTracks = await retrieveGPMTracklistDataFromChromeLocalStorageByTitle('ADDED FROM MY SUBSCRIPTION'); // Retrieve the tracklist of subscribed GPM tracks
+        const allTracks = await getGpmData('tracksArray', 'ALL MUSIC'); // Retrieve the array of all tracks in the GPM library
+        const subscribedTracks = await getGpmData('tracklist', 'ADDED FROM MY SUBSCRIPTION'); // Retrieve the tracklist of subscribed GPM tracks
         SESSION_STATE.gpmUploadedTracks = filterOutTracklist(allTracks, subscribedTracks); // Generate a list of uploaded GPM tracks by starting with the list of all tracks and filtering out any that are in the list of subscribed tracks
     }
 

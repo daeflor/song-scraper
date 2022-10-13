@@ -120,7 +120,7 @@ export function filterOutTracklist(unfilteredTracks, tracklist) {
                 unmatchedTracks.push(track);
             }
         }
-    } else throw Error ("Invalid parameters provided. Expected an array of tracks and a tracklist object.");
+    } else throw TypeError (`Invalid parameters provided. Expected an array of tracks and a tracklist object. The parameters provided were: unfilteredTracks: ${unfilteredTracks} ; tracklist: ${tracklist}`);
 
     return unmatchedTracks;
 }
