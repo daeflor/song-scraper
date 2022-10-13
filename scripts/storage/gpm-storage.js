@@ -28,7 +28,7 @@ export async function getGpmData(requestedData, tracklistTitle) {
 
         const gpmTracklistTitle = getGPMTracklistTitle(tracklistTitle); // Use the YTM to GPM tracklist title mapping to get the exact GPM tracklist title
 
-        console.log(SESSION_STATE);
+        //console.log(SESSION_STATE);
         // console.log(SESSION_STATE.gpmTracklists);
 
         switch(requestedData) {
@@ -38,7 +38,7 @@ export async function getGpmData(requestedData, tracklistTitle) {
             } else throw Error("Request received to get a GPM tracklist but no tracklist title was provided.");
         case 'tracksArray':
             if (gpmTracklistTitle === 'Uploaded Songs') { // If the desired tracklist is the list of songs uploaded to GPM, some special steps need to be taken, since this specific tracklist wasn't stored in the exported GPM data
-                return SESSION_STATE.gpmUploadedTracks || await retrieveUploadedGpmTracks(); // If the list of GPM Uploaded tracks has not already been saved in session state, either fetch it from local storage (if it exists) or calculate it now and save it for future reference
+                return SESSION_STATE.gpmTracklists['Uploaded Songs']?.tracks || await retrieveUploadedGpmTracks(); // If the list of GPM Uploaded tracks has not already been saved in session state, either fetch it from local storage (if it exists) or calculate it now and save it for future reference
             } else if (typeof gpmTracklistTitle !== 'undefined') { // Else, for any other tracklist, return the array of tracks from session state
                 return SESSION_STATE.gpmTracklists[gpmTracklistTitle]?.tracks;
             } else throw Error("Request received to get a GPM tracks array but no tracklist title was provided.");
@@ -108,26 +108,22 @@ async function saveGpmLibraryDataToSessionState() {
  * @returns {Promise} A promise with the array of uploaded track objects
  */
 async function retrieveUploadedGpmTracks() {
-    // Retrieve the GPM Library data from Chrome local storage and save it in session state for future reference
-    const storageKey = 'gpmLibraryData_UploadedSongsXX';
-    const storageItems = await chromeStorage.getKeyValuePairs('local', storageKey);
+    const storageKey = 'gpmLibraryData_UploadedSongs';
+    const storageItems = await chromeStorage.getKeyValuePairs('local', storageKey); // Try to retrieve the list of GPM Uploaded tracks from Chrome local storage 
 
-    //TODO it may make the most sense to just add this data to the 'gpmLibraryData' object in Local Storage, and avoid any special steps moving forward.
-
-    //TODO could consider saving the uploaded tracks in session state as a tracklist instead of an array
-    //TODO could also consider saving them in session state under gpmTracklists instead of their own object. 
-        //This would eliminate the need for some special steps later on the process, without actually going as far as modifying the data currenly stored in Chrome local storage (which is also an option)
+    // If the array of Uploaded tracks was found in Chrome local storage, create a tracklist data object to contain it and and save it in session state for future reference
     if (typeof storageItems[storageKey] !== 'undefined') {
-        console.log("Successfully fetched Uploaded GPM tracks from local storage.");
-        SESSION_STATE.gpmUploadedTracks = storageItems[storageKey];
-    } else {
+        console.info("Successfully fetched Uploaded GPM tracks from local storage.");
+        SESSION_STATE.gpmTracklists['Uploaded Songs'] = {title: 'Uploaded Songs', tracks: storageItems[storageKey]};
+    } else { // Else if the Uploaded tracks could not be found in Chrome local storage, generate the list by removing any tracks 'Added from Subscription' from the list of 'All Music'
         console.warn("Tried to fetch the list of GPM Uploaded Tracks from Chrome local storage but it wasn't found. Generating new list instead.");
         const allTracks = await getGpmData('tracksArray', 'ALL MUSIC'); // Retrieve the array of all tracks in the GPM library
         const subscribedTracks = await getGpmData('tracklist', 'ADDED FROM MY SUBSCRIPTION'); // Retrieve the tracklist of subscribed GPM tracks
-        SESSION_STATE.gpmUploadedTracks = filterOutTracklist(allTracks, subscribedTracks); // Generate a list of uploaded GPM tracks by starting with the list of all tracks and filtering out any that are in the list of subscribed tracks
+        const tracksArray = filterOutTracklist(allTracks, subscribedTracks); // Generate a list of uploaded GPM tracks by starting with the list of all tracks and filtering out any that are in the list of subscribed tracks
+        SESSION_STATE.gpmTracklists['Uploaded Songs'] = {title: 'Uploaded Songs', tracks: tracksArray};
     }
 
-    return SESSION_STATE.gpmUploadedTracks;
+    return SESSION_STATE.gpmTracklists['Uploaded Songs'].tracks;
 }
 
 /**
