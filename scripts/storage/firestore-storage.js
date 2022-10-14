@@ -3,7 +3,6 @@
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 import '/node_modules/firebase/firebase-firestore.js'; //Import the Cloud Firestore library
 import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'
-import { getGPMLibraryData } from './gpm-storage.js'
 
 /**
  * Get a reference to the tracklist collection for the currently signed-in user
@@ -82,36 +81,6 @@ export async function storeTracklistInFirestore(tracklistTitle, tracklistType, t
         const tracklistData = await retrieveTracklistDataFromFirestoreByTitle(tracklistTitle);
         return tracklistData.tracks;
     } else throw Error("Tried to retrieve a tracks array from Firestore, but a valid string was not provided for the tracklist title.");
-}
-
-/**
- * Generates GPM tracklist data object or objects from the tracks arrays stored in Chrome local storage matching the provided tracklist title(s), or for all playlists (i.e. excluding 'All Songs' lists) if no title parameters are provided.
- * @param  {...string} tracklistTitles Any number of titles of tracklists to retrieve. If no titles are provided, all stored playlists (i.e. excluding 'All Songs' lists) will be retrieved.
- * @returns {Promise} A promise with the tracklist data object, or array of tracklist data objects, matching the provided tracklist title(s)
- */
-export async function retrieveGPMTracklistDataFromChromeLocalStorageByTitle(...tracklistTitles) {
-    const gpmLibraryData = await getGPMLibraryData();
-    const tracklists = [];
-
-    //TODO should some of this logic be moved to new gpm utilities file?
-    for (const tracklist in gpmLibraryData) {
-        if (tracklist.length >= 43) { // If the tracklist name is at least long enough to include the standard prefix used in the GPM storage format... (this excludes certain playlists like 'Backup' and legacy ones)
-            // Extract the actual tracklist title from the key used in GPM storage
-            const tracklistTitle = tracklist.substring(43, tracklist.length-1); 
-
-            // If either a provided title matches the current tracklist title, or no tracklist titles were provided and the current tracklist is a playlist (i.e. excluding comprehensive lists like 'All Music')...
-            if (tracklistTitles.includes(tracklistTitle) === true || 
-            (tracklistTitles.length === 0 && ['ADDED FROM MY SUBSCRIPTION', 'ALL MUSIC', 'Songs'].includes(tracklistTitle) === false)) { 
-                // Create a new tracklist data object including the title and tracks array, and add it to the list
-                tracklists.push({title:tracklistTitle, tracks:gpmLibraryData[tracklist]}); 
-            }
-        }
-    }
-
-    // If there is only a single tracklist in the results, return the tracklist object. Otherwise return the array of tracklist objects.
-    if (tracklists.length === 1) {
-        return tracklists[0];
-    } else return tracklists;
 }
 
 //TODO could have a storage directory that contains multiple files, maybe:

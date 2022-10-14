@@ -22,7 +22,7 @@ import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App befor
 //Storage
 import * as appStorage from '/scripts/storage/firestore-storage.js';
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
-import { getGpmData } from '../storage/gpm-storage.js';
+import { getGpmData, getGpmLibraryData } from '../storage/gpm-storage.js';
 
 //Other
 import * as IO from './utilities/IO.js';
@@ -220,7 +220,7 @@ ViewRenderer.buttons.copyToClipboardTracksNotInCommonFromPlaylists.addEventListe
 ViewRenderer.buttons.copyToClipboardTracksNotInCommonGPM.addEventListener('click', async function() {
     this.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
-    const tracksNotInCommon = await getTracksNotInCommonGPM();
+    const tracksNotInCommon = await getGpmLibraryData('tracksNotInCommon');
 
     const includedProperties = ['title', 'artist', 'album', 'duration', 'playlists']; // Set the track properties which should be used when generating the CSV
     const csv = IO.convertArrayOfObjectsToCsv(tracksNotInCommon, includedProperties);
