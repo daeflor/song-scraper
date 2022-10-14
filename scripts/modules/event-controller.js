@@ -22,7 +22,7 @@ import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App befor
 //Storage
 import * as appStorage from '/scripts/storage/firestore-storage.js';
 import * as chromeStorage from './utilities/chrome-storage-promises.js'
-import { getGpmData, getGpmLibraryData } from '../storage/gpm-storage.js';
+import * as gpmStorage from '../storage/gpm-storage.js';
 
 //Other
 import * as IO from './utilities/IO.js';
@@ -127,7 +127,7 @@ ViewRenderer.buttons.downloadScrapedTracks.addEventListener('click', function() 
 
 // Button Pressed: Download Stored GPM Tracks
 ViewRenderer.buttons.downloadGPMTracks.addEventListener('click', async function() {
-    const storedTracks = await getGpmData('tracksArray', SESSION_STATE.tracklist.title);
+    const storedTracks = await gpmStorage.getTracklistData('tracksArray', SESSION_STATE.tracklist.title);
     triggerCSVDownload(storedTracks, 'Tracklist_GPM_' + SESSION_STATE.tracklist.title);
 });
 
@@ -220,7 +220,7 @@ ViewRenderer.buttons.copyToClipboardTracksNotInCommonFromPlaylists.addEventListe
 ViewRenderer.buttons.copyToClipboardTracksNotInCommonGPM.addEventListener('click', async function() {
     this.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
-    const tracksNotInCommon = await getGpmLibraryData('tracksNotInCommon');
+    const tracksNotInCommon = await gpmStorage.getLibraryData('tracksNotInCommon');
 
     const includedProperties = ['title', 'artist', 'album', 'duration', 'playlists']; // Set the track properties which should be used when generating the CSV
     const csv = IO.convertArrayOfObjectsToCsv(tracksNotInCommon, includedProperties);
@@ -241,7 +241,7 @@ ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() 
 // Checkbox Value Changed: Stored GPM Track Table
 ViewRenderer.checkboxes.gpmTrackTable.addEventListener('change', async function() {
     //TODO it's a bit silly to get the tracks array even in the case when the checkbox is unchecked.
-    const storedTracks = await getGpmData('tracksArray', SESSION_STATE.tracklist.title);
+    const storedTracks = await gpmStorage.getTracklistData('tracksArray', SESSION_STATE.tracklist.title);
     reactToCheckboxChange(storedTracks, ViewRenderer.tracktables.gpm, this.checked, 'Stored GPM Tracklist');
 });
 
@@ -365,7 +365,7 @@ async function getDeltaTracklists() {
 
         // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the tracklist was not found in the YTM stored tracks, get the tracks from the GPM data in Chrome local storage
         if (comparisonMethod === 'alwaysGPM' || (comparisonMethod === 'preferYTM' && typeof tracksUsedForDelta === 'undefined')) {
-            tracksUsedForDelta = await getGpmData('tracksArray', SESSION_STATE.tracklist.title);
+            tracksUsedForDelta = await gpmStorage.getTracklistData('tracksArray', SESSION_STATE.tracklist.title);
             appUsedForDelta = 'GPM';
         }
 

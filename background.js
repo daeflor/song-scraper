@@ -7,7 +7,7 @@ import '/node_modules/firebase/firebase-auth.js'; //Import the Firebase Auth lib
 import firebaseConfig from '/scripts/Configuration/config.js'; //Import the app's config object needed to initialize Firebase
 
 //Utilities
-import { getGpmData } from '/scripts/storage/gpm-storage.js';
+import * as gpmStorage from '/scripts/storage/gpm-storage.js';
 import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'
 
 console.info("Starting service worker");
@@ -49,7 +49,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     if (info.menuItemId === 'contextMenu_scrapePlaylists') {
         chrome.tabs.sendMessage(tab.id, {greeting:'GetPlaylists'});
     } else if (info.menuItemId === 'contextMenu_getGPMTracklists') {
-        const gpmTracklists = await getGpmData('tracklistTitles');
+        const gpmTracklists = await gpmStorage.getLibraryData('tracklistTitles');
         console.table(gpmTracklists);
     }
 });
@@ -170,7 +170,7 @@ async function getPreviousTrackCount(tracklistTitle) {
 
     // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the track count was not found in Chrome sync storage, get the track count from the GPM data in Chrome local storage
     if (comparisonMethod === 'alwaysGPM' || (comparisonMethod === 'preferYTM' && typeof trackCount === 'undefined')) {
-        trackCount = await getGpmData('trackCount', tracklistTitle);
+        trackCount = await gpmStorage.getTracklistData('trackCount', tracklistTitle);
         trackCountSourcePrefix = 'G';
     }
 
