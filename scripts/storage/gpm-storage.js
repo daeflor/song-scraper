@@ -16,7 +16,7 @@ const SESSION_STATE = {
  * @returns {Promise} A promise with the resulting data
  */
 export async function getTracklistData(requestedData, tracklistTitle) { 
-        if (typeof SESSION_STATE.gpmTracklists === 'undefined') {
+        if (Object.keys(SESSION_STATE.gpmTracklists).length === 0) {
             console.info("This list of GPM tracklists has not yet been saved in session state. Fetching the data from Chrome local storage instead.");
             await saveGpmLibraryDataToSessionState();
         }
@@ -46,7 +46,7 @@ export async function getTracklistData(requestedData, tracklistTitle) {
  * @returns {Promise} A promise with the resulting data
  */
 export async function getLibraryData(requestedData, ...tracklistTitles) {
-    if (typeof SESSION_STATE.gpmTracklists === 'undefined') {
+    if (Object.keys(SESSION_STATE.gpmTracklists).length === 0) {
         console.info("This list of GPM tracklists has not yet been saved in session state. Fetching the data from Chrome local storage instead.");
         await saveGpmLibraryDataToSessionState();
     }
