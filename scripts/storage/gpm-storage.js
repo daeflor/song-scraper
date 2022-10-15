@@ -18,7 +18,7 @@ const SESSION_STATE = {
 export async function getTracklistData(requestedData, tracklistTitle) { 
         if (Object.keys(SESSION_STATE.gpmTracklists).length === 0) {
             console.info("This list of GPM tracklists has not yet been saved in session state. Fetching the data from Chrome local storage instead.");
-            await saveGpmLibraryDataToSessionState();
+            await saveGpmTracklistsToSessionState();
         }
 
         switch(requestedData) {
@@ -48,7 +48,7 @@ export async function getTracklistData(requestedData, tracklistTitle) {
 export async function getLibraryData(requestedData, ...tracklistTitles) {
     if (Object.keys(SESSION_STATE.gpmTracklists).length === 0) {
         console.info("This list of GPM tracklists has not yet been saved in session state. Fetching the data from Chrome local storage instead.");
-        await saveGpmLibraryDataToSessionState();
+        await saveGpmTracklistsToSessionState();
     }
 
     switch(requestedData) {
@@ -72,9 +72,11 @@ export async function getLibraryData(requestedData, ...tracklistTitles) {
 }
 
 /**
- * Fetches the exported GPM Library data from Chrome local storage and then saves it in session state in a format that makes the data more easily acciessible for future reference. 
+ * Fetches the exported GPM Library data object from Chrome local storage and then traverses it to generate individual tracklist data objects (as opposed to simply tracks arrrays). 
+ * These tracklist data objects are then saved in session state for future reference. 
+ * This is done so that the GPM Library data is subsequently more easily accessible in a format similar to the YTM Library data.
  */
-async function saveGpmLibraryDataToSessionState() {
+ async function saveGpmTracklistsToSessionState() {
     // Retrieve the GPM Library data from Chrome local storage and save it in session state for future reference
     const gpmLibraryKey = 'gpmLibraryData';
     const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
@@ -83,19 +85,7 @@ async function saveGpmLibraryDataToSessionState() {
     ? console.warn("Tried to fetch the GPM library data from local storage but it wasn't found.")
     : console.log("Successfully fetched GPM library data from local storage.")
 
-    saveGPMTracklistsToSessionState(storageItems[gpmLibraryKey]);
-}
-
-//TODO merge these two functions
-
-/**
- * Traverses a GPM Library data object as retrieved from Chrome Local Storage and uses it to generate individual tracklist data objects (as opposed to simply tracks arrrays). 
- * These tracklist data objects are then saved in session state for future access. 
- * This is done so that the GPM Library data is subsequently quickly accessible in a format similar to the YTM Library data.
- * @param {object} gpmLibraryDataObject the GPM Library data object, as retrieved from Chrome Local Storage
- */
- function saveGPMTracklistsToSessionState(gpmLibraryDataObject) {
-    for (const tracklistKey in gpmLibraryDataObject) {
+    for (const tracklistKey in storageItems[gpmLibraryKey]) {
         if (tracklistKey.length >= 43) { // If the tracklist name is at least long enough to include the standard prefix used in the GPM storage format... (this excludes certain playlists like 'Backup' and legacy ones)
             const tracklistTitle = tracklistKey.substring(43, tracklistKey.length-1); // Extract the actual tracklist title from the key used in GPM storage
             //TODO could consider marking here the tracklists which are considered to be of type 'playlist'

@@ -84,12 +84,12 @@ export async function storeTracklistInFirestore(tracklistTitle, tracklistType, t
 }
 
 //TODO could have a storage directory that contains multiple files, maybe:
-    //One for Firebase related logic
-    //One for chrome storage related logic
-    //One for chrome storage utility/helper functions?
-    //One for Legacy App Storage? (i.e. GPM)
+    //One for Firebase related logic (This file)
+    //One for chrome storage related logic (incl. Chrome sync storage)
+    //One for chrome storage utility/helper functions? - These are actually already separate and in the utilities directory, since they are more general utiitites that don't include any code specific to this app's functionality
+    //One for Legacy App Storage? (i.e. GPM) - This part has now been sectioned off and completed
 
-//TODO move the functions below to a dedicated file
+//TODO maybe move the functions below to a dedicated file
 /**
  * Stores the provided track count for the given tracklist in chrome sync storage
  * @param {string} tracklistTitle The title of the tracklist
@@ -103,7 +103,7 @@ export async function storeTrackCountInChromeSyncStorage(tracklistTitle, trackCo
         storageItems[key][tracklistTitle] = trackCount; // Set the track count for the current tracklist
         
         await chromeStorage.set('sync', storageItems);
-    } else throw new TypeError("Tried to store the track count in Chrome sync storage, but the parameters provided (title and/or track count) were invalid.");// TODO... what do you do when you need to return nothing/error out in an async func?
+    } else throw TypeError("Tried to store the track count in Chrome sync storage, but the parameters provided (title and/or track count) were invalid.");
 }
 
 //TODO Duplicated due to Chromium Bug 824647
