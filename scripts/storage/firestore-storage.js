@@ -2,7 +2,7 @@
     //Then, any files that have a dependency on firebase (e.g. Auth, Storage, etc.) can just import that module
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 import '/node_modules/firebase/firebase-firestore.js'; //Import the Cloud Firestore library
-import * as chromeStorage from './utilities/chrome-storage-promises.js'
+import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'
 
 /**
  * Get a reference to the tracklist collection for the currently signed-in user
@@ -83,68 +83,13 @@ export async function storeTracklistInFirestore(tracklistTitle, tracklistType, t
     } else throw Error("Tried to retrieve a tracks array from Firestore, but a valid string was not provided for the tracklist title.");
 }
 
-/**
- * Generates GPM tracklist data object or objects from the tracks arrays stored in Chrome local storage matching the provided tracklist title(s), or for all playlists (i.e. excluding 'All Songs' lists) if no title parameters are provided.
- * @param  {...string} tracklistTitles Any number of titles of tracklists to retrieve. If no titles are provided, all stored playlists (i.e. excluding 'All Songs' lists) will be retrieved.
- * @returns {Promise} A promise with the tracklist data object, or array of tracklist data objects, matching the provided tracklist title(s)
- */
-export async function retrieveGPMTracklistDataFromChromeLocalStorageByTitle(...tracklistTitles) {
-    //TODO avoid this repetitiveness 
-    const gpmLibraryKey = 'gpmLibraryData'; //TODO shouldn't this be global?
-    const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
-    const gpmLibraryData = storageItems[gpmLibraryKey];
-
-    const tracklists = [];
-
-    for (const tracklist in gpmLibraryData) {
-        if (tracklist.length >= 43) { // If the tracklist name is at least long enough to include the standard prefix used in the GPM storage format... (this excludes certain playlists like 'Backup' and legacy ones)
-            // Extract the actual tracklist title from the key used in GPM storage
-            const tracklistTitle = tracklist.substring(43, tracklist.length-1); 
-
-            // If either a provided title matches the current tracklist title, or no tracklist titles were provided and the current tracklist is a playlist (i.e. excluding comprehensive lists like 'All Music')...
-            if (tracklistTitles.includes(tracklistTitle) === true || 
-               (tracklistTitles.length === 0 && ['ADDED FROM MY SUBSCRIPTION', 'ALL MUSIC', 'Songs'].includes(tracklistTitle) === false)) { 
-                // Create a new tracklist data object including the title and tracks array, and add it to the list
-                tracklists.push({title:tracklistTitle, tracks:gpmLibraryData[tracklist]}); 
-            }
-        }
-    }
-
-    // If there is only a single tracklist in the results, return the tracklist object. Otherwise return the array of tracklist objects.
-    if (tracklists.length === 1) {
-        return tracklists[0];
-    } else return tracklists;
-}
-
-//TODO since almost the exact same logic is used to get the GPM tracks array as the track count (in background script),
-    //...it may make sense to make a single helper function that does this and re-use that.
-    //It could possibly return either the tracks array or the track count, depending on what is requested
-    //Should wait until Chrome 91 comes out to see if it addresses Chromium Bug 824647
-/**
- * Retrieves GPM tracklist data from chrome local storage that matches the provided tracklist title
- * @param {string} tracklistTitle The title of the tracklist to retrieve
- * @returns {Promise} A promise with the tracks array, if it's found
- */
- export async function retrieveGPMTracksArrayFromChromeLocalStorage(tracklistTitle){
-    const gpmLibraryKey = 'gpmLibraryData';
-    const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
-    const gpmLibraryData = storageItems[gpmLibraryKey];
-    for (const tracklistKey in gpmLibraryData) {
-        if (tracklistKey.includes("'" + tracklistTitle + "'") === true) {
-            //console.log("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryData[tracklistKey].length);
-            return gpmLibraryData[tracklistKey];
-        }
-    }
-    console.warn("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
-    return undefined;
-}
-
 //TODO could have a storage directory that contains multiple files, maybe:
-    //One for Firebase related logic
-    //One for chrome storage related logic
-    //One for chrome storage utility/helper functions?
-    //One for Legacy App Storage? (i.e. GPM)
+    //One for Firebase related logic (This file)
+    //One for chrome storage related logic (incl. Chrome sync storage)
+    //One for chrome storage utility/helper functions? - These are actually already separate and in the utilities directory, since they are more general utiitites that don't include any code specific to this app's functionality
+    //One for Legacy App Storage? (i.e. GPM) - This part has now been sectioned off and completed
 
+//TODO maybe move the functions below to a dedicated file
 /**
  * Stores the provided track count for the given tracklist in chrome sync storage
  * @param {string} tracklistTitle The title of the tracklist
@@ -158,7 +103,7 @@ export async function storeTrackCountInChromeSyncStorage(tracklistTitle, trackCo
         storageItems[key][tracklistTitle] = trackCount; // Set the track count for the current tracklist
         
         await chromeStorage.set('sync', storageItems);
-    } else throw new TypeError("Tried to store the track count in Chrome sync storage, but the parameters provided (title and/or track count) were invalid.");// TODO... what do you do when you need to return nothing/error out in an async func?
+    } else throw TypeError("Tried to store the track count in Chrome sync storage, but the parameters provided (title and/or track count) were invalid.");
 }
 
 //TODO Duplicated due to Chromium Bug 824647

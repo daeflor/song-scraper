@@ -1,5 +1,4 @@
-import * as appStorage from './StorageManager.js';
-import * as chromeStorage from './utilities/chrome-storage-promises.js'
+import * as appStorage from '/scripts/storage/firestore-storage.js';
 import * as customTracklists from '../Configuration/custom-tracklists.js'; //TODO would be nice to not have to import this here AND in EventController
 
 export function generateDeltaTracklists(scrapedTracklist, storedTracklist) {
@@ -92,7 +91,7 @@ function convertDurationStringToSeconds(duration) {
  * @param {Object} tracklist The tracklist object which contains tracks that should be filtered out of the original tracklist
  * @returns {Object[]} An array of the remaining tracks from the original tracklist that didn't get filtered out
  */
-function filterOutTracklist(unfilteredTracks, tracklist) {
+export function filterOutTracklist(unfilteredTracks, tracklist) {
     let comparisonFunction = undefined; // The function that should be used to compare tracks in the unfiltered list to those that are part of the specified tracklist. The comparison function will either only check for matching albums, or it will check all of a track's metadata when looking for a match.
     let unmatchedTracks = [];
 
@@ -121,7 +120,7 @@ function filterOutTracklist(unfilteredTracks, tracklist) {
                 unmatchedTracks.push(track);
             }
         }
-    } else throw Error ("Invalid parameters provided. Expected an array of tracks and a tracklist object.");
+    } else throw TypeError (`Invalid parameters provided. Expected an array of tracks and a tracklist object. The parameters provided were: unfilteredTracks: ${unfilteredTracks} ; tracklist: ${tracklist}`);
 
     return unmatchedTracks;
 }
@@ -129,23 +128,9 @@ function filterOutTracklist(unfilteredTracks, tracklist) {
 //TODO the functions below aren't exactly 'comparison' utilities. Do they still belong here?
 
 /**
- * Generate a list of tracks uploaded to GPM by removing any 'Added from Subscription' from the list of 'All Music'.
- * Note that this list of tracks is now/currently stored in Chrome local storage as well, under the key 'gpmLibraryData_UploadedSongs'.
- * @returns {Promise} A promise with the array of uploaded track objects
- */
-//TODO it may make the most sense to just add this data to the 'gpmLibraryData' object in Local Storage, and avoid any special steps moving forward.
-export async function generateListOfUploadedGPMTracks() {
-    const allTracks = await appStorage.retrieveGPMTracksArrayFromChromeLocalStorage('ALL MUSIC'); // Retrieve the array of all tracks in the GPM library
-    const subscribedTracks = await appStorage.retrieveGPMTracklistDataFromChromeLocalStorageByTitle('ADDED FROM MY SUBSCRIPTION'); // Retrieve the tracklist of subscribed GPM tracks
-    const uploadedTracks = filterOutTracklist(allTracks, subscribedTracks); // Generate a list of uploaded GPM tracks by starting with the list of all tracks and filtering out any that are in the list of subscribed tracks
-
-    return uploadedTracks;
-}
-
-/**
  * Adds playlist data to each track in the list provided. The playlist value will be a comma-separated string of playlist names in which the track appears.
- * @param {Object[]} tracks An array of track objects
- * @param {Objet[]} tracklists A list of tracklist objects, each of which should contain at least a 'title' string and a 'tracks' array
+ * @param {Object[]} tracks An array of track objects, each of which will have playlist data added to it
+ * @param {Objet[]} tracklists A list of tracklist objects, each of which should contain at least a 'title' string and a 'tracks' array. Each track in the 'tracks' parameter will be checked to see if it is included in any of these tracklists.
  * @param {...string} excludedTracklistTitles Any number of tracklist titles that can be skipped when adding tracklist data to each track
  */
 export function addTracklistMappingToTracks(tracks, tracklists, ...excludedTracklistTitles) {   
@@ -207,11 +192,16 @@ export async function getFilteredTracksWithTracklistMappingYTM(initialTracklistT
     return unmatchedTracks;
 }
 
+/**
+ * Generates a filtered list of tracks from YTM playlists which are missing from Common, with each track including a list of all the playlists in which it appears
+ * @returns {Promise} A promise with an array of track objects that have passed the filter criteria, each of which will include a new string property that lists all the tracklists in which the track appears
+ */
 export async function getTracksNotInCommonFromPlaylists() {
     // Get all tracklist objects where the tracklist type is 'playlist'
     const allPlaylists = await appStorage.retrieveTracklistDataFromFireStoreByType(['playlist']);
 
     // Get a list of all playlist names that should not be used when generating the list of tracks that needs to be filtered down further
+    //TODO tmi. Can more of this be moved into custom-tracklists.js?
     const playlistTitlesToExclude = ['Common', 'Hot Jams', ...customTracklists.getAllNonCommonPlaylists()];
 
     // Begin with an empty array for the list of tracks that need to be filtered
@@ -238,47 +228,4 @@ export async function getTracksNotInCommonFromPlaylists() {
     addTracklistMappingToTracks(tracksToBeFiltered, allPlaylists, playlistTitlesToExclude); 
 
     return tracksToBeFiltered;
-}
-
-/**
- * Generates a filtered GPM tracklist, with each track including a list of all the tracklists in which it appears
- * @param {string} initialTracklistTitle The title of the initial tracklist to fetch from storage
- * @param  {...string} tracklistTitlesToFilterOut Any number of titles of tracklists to use as filters. If a track appears in any of these tracklists, it will be filtered out from the original tracklist.
- * @returns {Promise} A promise with an array of track objects that have passed the filter criteria, each of which will include a new string property that lists all the tracklists in which the track appears
- */
- export async function getFilteredTracksWithTracklistMappingGPM(initialTracklistTitle, ...tracklistTitlesToFilterOut) {
-    // Fetch the GPM tracklists from Chrome Local Storage which contain tracks that should be filtered out from the initial list
-    const tracklistsToFilterOut = await appStorage.retrieveGPMTracklistDataFromChromeLocalStorageByTitle(...tracklistTitlesToFilterOut);
-
-    // Get a list of all tracklists which should be used to add tracklist data to the tracks. (i.e. Each of these tracklists' titles will appear alongside the track in the final table, if that track is included in the tracklist)
-    const allTracklists = await appStorage.retrieveGPMTracklistDataFromChromeLocalStorageByTitle();
-
-    // Fetch the initial tracks array from Chrome Local Storage
-    let unmatchedTracks = await appStorage.retrieveGPMTracksArrayFromChromeLocalStorage(initialTracklistTitle);
-
-    // If a single tracklist to filter out was provided, use it to filter out any matching tracks from the original list of tracks. 
-    // If there are multiple tracklists to filter out, do the same for each tracklist, each time paring the original list down further. 
-    if (tracklistsToFilterOut.hasOwnProperty('tracks') === true) {
-        unmatchedTracks = filterOutTracklist(unmatchedTracks, tracklist);
-    } else if (Array.isArray(tracklistsToFilterOut) === true) { 
-        tracklistsToFilterOut.forEach(tracklist => {
-            unmatchedTracks = filterOutTracklist(unmatchedTracks, tracklist);
-        });
-    } else throw Error("Failed to retrieve a supported tracklist or tracklists to filter out. Expected either an array or an object with a 'tracks' property.");
-    
-    // Add a new property to each track, which is a string of all the tracklists in which the track appears, exluding the ones specified. The list of tracklist titles to omit should include the title of the original tracklist, otherwise this title would appear next to every track in the final track table, which is unnecessary info.
-    addTracklistMappingToTracks(unmatchedTracks, allTracklists, initialTracklistTitle, ...tracklistTitlesToFilterOut); 
-
-    return unmatchedTracks;
-}
-
-//TODO this is duplicated here because of Chromium bug 1194681
-/**
- * Returns an object containing the the exported GPM library data
- * @returns {Promise} A promise with the resulting GPM library data object
- */
- async function getGPMLibraryData(){
-    const gpmLibraryKey = 'gpmLibraryData';
-    const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
-    return storageItems[gpmLibraryKey];
 }

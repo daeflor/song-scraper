@@ -7,6 +7,7 @@ import '/node_modules/firebase/firebase-auth.js'; //Import the Firebase Auth lib
 import firebaseConfig from '/scripts/Configuration/config.js'; //Import the app's config object needed to initialize Firebase
 
 //Utilities
+import * as gpmStorage from '/scripts/storage/gpm-storage.js';
 import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'
 
 console.info("Starting service worker");
@@ -48,7 +49,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     if (info.menuItemId === 'contextMenu_scrapePlaylists') {
         chrome.tabs.sendMessage(tab.id, {greeting:'GetPlaylists'});
     } else if (info.menuItemId === 'contextMenu_getGPMTracklists') {
-        const gpmTracklists = await getGPMTracklists();
+        const gpmTracklists = await gpmStorage.getLibraryData('tracklistTitles');
         console.table(gpmTracklists);
     }
 });
@@ -139,7 +140,7 @@ chrome.runtime.onConnect.addListener(port => {
     if (port.name === 'AuthenticationChangePending') {
         port.onDisconnect.addListener(port => {
             chrome.storage.local.get('currentTracklistMetadata', storageResult => {
-                const metadata = storageResult['currentTracklistMetadata'];
+                const metadata = storageResult['currentTracklistMetadata']; //TODO is it necessary to fetch and pass the metadata here? Doesn't this case only happen when the user logs out, and therefore the metadata isn't needed since the icon will just be disabled?
                 enableAndUpdateIcon(metadata);
             });
         });
@@ -169,7 +170,7 @@ async function getPreviousTrackCount(tracklistTitle) {
 
     // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the track count was not found in Chrome sync storage, get the track count from the GPM data in Chrome local storage
     if (comparisonMethod === 'alwaysGPM' || (comparisonMethod === 'preferYTM' && typeof trackCount === 'undefined')) {
-        trackCount = await getTrackCountFromGPMTracklistData(tracklistTitle);
+        trackCount = await gpmStorage.getTracklistData('trackCount', tracklistTitle);
         trackCountSourcePrefix = 'G';
     }
 
@@ -185,47 +186,6 @@ async function getTrackCountFromChromeSyncStorage(tracklistTitle) {
     const userKey = 'trackCounts_' + firebase.auth().currentUser.uid;
     const storageItems = await chromeStorage.getKeyValuePairs('sync', userKey);
     return storageItems[userKey]?.[tracklistTitle];
-}
-
-/**
- * Returns the track count for the given tracklist stored in the exported GPM library data, if available
- * @param {string} tracklistTitle The title of the tracklist
- * @returns {Promise} A promise with the resulting track count
- */
-async function getTrackCountFromGPMTracklistData(tracklistTitle){
-    const gpmLibraryData = await getGPMLibraryData();
-    for (const tracklistKey in gpmLibraryData) {
-        if (tracklistKey.includes("'" + tracklistTitle + "'")) {
-            console.info("Background: Retrieved tracklist metadata from GPM exported data. Track count: " + gpmLibraryData[tracklistKey].length);
-            return gpmLibraryData[tracklistKey].length;
-        }
-    }
-    console.info("Tried retrieving GPM tracklist data but no tracklist with the provided title was found in storage. Tracklist Title: " + tracklistTitle);
-}
-
-/**
- * Returns a list of the names of all the tracklists stored in the exported GPM library data
- * @returns {Promise} A promise with the resulting array of tracklist names
- */
-async function getGPMTracklists(){
-    const gpmLibraryData = await getGPMLibraryData();
-    if (gpmLibraryData != null) {
-        return Object.keys(gpmLibraryData).map(name => name.replace('ohimkbjkjoaiaddaehpiaboeocgccgmj_Playlist_', '')); // Return a list of all the key names in the gpm library data object, but removing the prefix for better readability
-    } else console.warn("Tried to fetch the list of GPM tracklists from local storage, but they couldn't be found.");
-}
-
-//TODO this would be good to put in a module that both background and options scripts can access, once Chrome 91 releases.
-/**
- * Returns an object containing the the exported GPM library data
- * @returns {Promise} A promise with the resulting GPM library data object
- */
- async function getGPMLibraryData(){
-    const gpmLibraryKey = 'gpmLibraryData';
-    const storageItems = await chromeStorage.getKeyValuePairs('local', gpmLibraryKey);
-    const gpmLibraryData = storageItems[gpmLibraryKey];
-    if (typeof gpmLibraryData !== 'undefined') {
-        return gpmLibraryData;
-    } else console.warn("Tried to fetch the GPM library data from local storage but it wasn't found.");
 }
 
 // /**
