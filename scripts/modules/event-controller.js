@@ -8,7 +8,6 @@ import * as UIController from '../AppNavigator.js';
 import * as tracklistComparisonUtils from './tracklist-comparison-utilities.js';
 import * as Messenger from './utilities/messenger.js';
 //import sendMessage from './MessageController.js';
-//import logOut from './AuthController.js' //TODO use or remove this, as desired
 
 //Authentication
 //Due to Chromium Bug 1255412, manual authentication via Chrome Identity API is currently used instead of the Firebase Auth UI flow
@@ -422,5 +421,3 @@ async function getDeltaTracklists() {
 
     return SESSION_STATE.tracksNotInCommon.fromGPM;
 }
-
-
