@@ -1,32 +1,14 @@
-# You've added your first ReadMe file!
-A README.md file is intended to quickly orient readers to what your project can do.  New to Markdown? [Learn more](http://go.microsoft.com/fwlink/p/?LinkId=524306&clcid=0x409)
+# Song Scraper
 
-## Edit this ReadMe and commit your change to a topic branch
-In Git, branches are cheap.  You should use them whenever you're making changes to your repository.  Edit this file by clicking on the edit icon.
+Song Scraper is an extension for Chrome that adds various functionality to the web version of YouTube Music. Primarily, it can track any undesired removal of songs in your YouTube Music playlists. 
 
-Then make some changes to this ReadMe file.
+### History
+I started this Chrome extension about 8 years ago to solve a problem with Google Play Music (GPM) that caused me a lot of frustration. Frequently, songs would be removed from your playlists without any indication that it happened. Sometimes they would re-appear weeks later, sometimes not. While it is somewhat common for certain songs to become unavailable on various music apps now and then, it happened incredibly frequently on GPM. Also, some competitor apps grey out and disable the songs but don't outright remove them, so it's more obvious that it happened, but on GPM they would just disappear. 
 
-> Make some **edits** to _this_ blockquote!!!!!
+As my first personal JavaScript app and Chrome extension, it started fairly messily, but got the job done. I used it frequenlty over the course of the years, making some tweaks now and then. In 2020, the dreaded shutdown of Google Play Music finally came and all its remaining users were switched over to YoutTube Music (YTM), which was somewhat lacking in features. Also, while there was a mechanism to transfer all your library and playlist data over to YTM, there were a lot of tracks that were either missing or incorrect versions after the transition. So I decided to re-write my app from the ground up so that I could cater it more to helping me transition to using YTM, and so that I could leverage the JavaScript knowledge and experience I'd gained from working on other apps the past few years and create a more robust and complex app with a slew of new features, and better code practices and organization. 
 
-When you are done, click the dropdown arrow next to the save button - that will allow you to commit your changes to a new branch.
+Since this has been a passion project of mine for years, even after I transitioned over to YouTube Music, I've continued to add features to the extension. This is both because I enjoy doing it and can get some use out of them, but also so I can challenge myself to learn new things. The extension started simply as a popup script littered with callback hell, a content script, and some calls to the Chrome local storage API. Now it leverages ES6 modules with a pseudo-MVC pattern, Firebase storage (Firestore), Async/Await & Promises, Service Workers, multiple types of user authentication, Mutation Observers, JSON & CSV serialization, Chrome context menus, etc. I've also had to navigate numerous Chromium bugs with the switch to Manifest Version 3, which has been fun. All of these things I've learnt on my own and it's been a really fulfilling experience, and I have a long to-do list ahead of me!
 
-## Create a pull request to contribute your changes back into master
-Pull requests are the way to move changes from a topic branch back into the master branch.
+# Main Extension Features
 
-Click on the **Pull Requests** page in the **CODE** hub, then click "New Pull Request" to create a new pull request from your topic branch to the master branch.
-
-When you are done adding details, click "Create Pull request". Once a pull request is sent, reviewers can see your changes, recommend modifications, or even push follow-up commits.
-
-First time creating a pull request?  [Learn more](http://go.microsoft.com/fwlink/?LinkId=533211&clcid=0x409)
-
-### Congratulations! You've completed the grand tour of the CODE hub!
-
-# Next steps
-
-If you haven't done so yet:
-* [Install Visual Studio](http://go.microsoft.com/fwlink/?LinkId=309297&clcid=0x409&slcid=0x409)
-* [Install Git](http://git-scm.com/downloads)
-
-Then clone this repo to your local machine to get started with your own project.
-
-Happy coding!
+Here I'll document the main features of the extension. There are a lot more specific features that are very catered to my particular use of YouTube Music and how I organize my music library, so I will omit those for the time being. 
