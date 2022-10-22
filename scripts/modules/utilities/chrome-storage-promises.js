@@ -49,3 +49,20 @@ export function set(area, object) {
         } else reject(Error("Tried to access chrome storage but an invalid storage area was provided. Accepted values are 'local' and 'sync'."));
     });
 }
+
+/**
+ * Modifies the value of a given property of the specified object in storage
+ * @param {string} area The storage area in which to modify data. Allowed values are: local, sync
+ * @param {string} storageItemKey The key of the storage item which should have its property modified
+ * @param {string} propertyKey The key of the storage item's property which should be modified
+ * @param {*} newPropertyValue The new value that should be assigned to the storage item's given property
+ */
+ export async function modifyStorageItemProperty(area, storageItemKey, propertyKey, newPropertyValue) {
+    if (area === 'local' || area === 'sync') {
+        const storageItem = await getValueAtKey(area, storageItemKey);
+        if (typeof storageItem === 'object') {
+            storageItem[propertyKey] = newPropertyValue; // Update the value of the storage item's specified property
+            await set(area, {[storageItemKey]: storageItem}); // Update the item in storage with the modified version
+        } else throw Error("Tried to update the property of an item in Chrome storage, but the item couldn't be found or isn't an object. Storage item key provided: " + storageItemKey);
+    } else throw Error ("Tried to access chrome storage but an invalid storage area was provided. Accepted values are 'local' and 'sync'.");
+}
