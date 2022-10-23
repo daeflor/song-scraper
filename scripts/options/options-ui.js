@@ -1,8 +1,8 @@
-import { modifyStorageItemProperty } from '../scripts/modules/utilities/chrome-storage-promises.js'
-import * as appStorage from './scripts/storage/firestore-storage.js';
+import { modifyStorageItemProperty } from '../modules/utilities/chrome-storage-promises.js';
+import getPreferences from './options-storage.js';
 
 async function initializePreferencesScreenUI() {
-    const comparisonMethod = await appStorage.getPreferencesFromChromeSyncStorage('Comparison Method');
+    const comparisonMethod = await getPreferences('Comparison Method');
     
     const checkboxToEnable = document.getElementById(comparisonMethod); // Get the DOM checkbox element matching the found preference
     if (checkboxToEnable instanceof Element === true) { // If a valid checkbox element was found, check it
