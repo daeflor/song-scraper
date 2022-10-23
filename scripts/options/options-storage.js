@@ -1,27 +1,10 @@
 import * as chromeStorage from '../modules/utilities/chrome-storage-promises.js';
-
 export { STORAGE_ITEM_PROPERTIES as preferences, getPreferencesFromChromeSyncStorage as getPreferences, updatePreferencesInChromeSyncStorage as updatePreferences};
 
 const STORAGE_ITEM_KEY = 'preferences';
 const STORAGE_ITEM_PROPERTIES = Object.freeze({
     comparisonMethod: 'Comparison Method'
 });
-
-// const PREFERENCE_TYPES = Object.freeze({
-//     comparisonMethod: 'Comparison Method'
-// });
-
-// export const STORAGE_KEYS = Object.freeze({
-//     allPreferences: 'preferences',
-//     comparisonMethod: 'Comparison Method'
-// });
-
-// const STORAGE_KEYS = Object.freeze({
-//     root: 'preferences', //aka main, primary, parent
-//     properties: {
-//         comparisonMethod: 'Comparison Method'
-//     }
-// });
 
 /**
  * Returns the user's preferences object, or a particular preference value if specified
