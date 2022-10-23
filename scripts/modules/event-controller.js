@@ -408,17 +408,3 @@ async function getDeltaTracklists() {
 
     return SESSION_STATE.tracksNotInCommon.fromPlaylists;
 }
-
-/**
- * Returns the array of tracks from the GPM Library that aren't in the Common playlist
- * @returns {Promise} A promise containing the array of tracks
- */
- async function getTracksNotInCommonGPM() {
-    // If the list of tracks has previously been calculated, return that array. Otherwise, calculate it, save it for future reference, and return it
-    if (Array.isArray(SESSION_STATE.tracksNotInCommon.fromGPM) === false) {
-        SESSION_STATE.tracksNotInCommon.fromGPM = await tracklistComparisonUtils.getFilteredTracksWithTracklistMappingGPM(
-            'ADDED FROM MY SUBSCRIPTION', ...customTracklists.getCommonPlaylistsGPM(), ...customTracklists.getNonCommonPlaylistsGPM());
-    }
-
-    return SESSION_STATE.tracksNotInCommon.fromGPM;
-}
