@@ -10,7 +10,11 @@ import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promis
  */
 function getReferenceToUserTracklistCollection() {
     const userId = firebase.auth().currentUser.uid;
-    return firebase.firestore().collection('users').doc(userId).collection('tracklists');
+    try {
+        return firebase.firestore().collection('users').doc(userId).collection('tracklists');
+    } catch (error) {
+        console.error(error);
+    }
 }
 
 /**
@@ -104,19 +108,4 @@ export async function storeTrackCountInChromeSyncStorage(tracklistTitle, trackCo
         
         await chromeStorage.set('sync', storageItems);
     } else throw TypeError("Tried to store the track count in Chrome sync storage, but the parameters provided (title and/or track count) were invalid.");
-}
-
-//TODO Duplicated due to Chromium Bug 824647
-//TODO this would be good to put in a module that both background and options scripts can access, once Chrome 91 releases.
-/**
- * Returns the user's preferences object, or a particular preference value if specified
- * @param {string} [preference] An optional preference to specify, if only one value is desired
- * @returns {Promise} A promise with either an object containing all the user's preferences, or the value of a single preference, if specified
- */
- export async function getPreferencesFromChromeSyncStorage(preference) {
-    const preferencesKey = 'preferences';
-    const storageItems = await chromeStorage.getKeyValuePairs('sync', preferencesKey);
-    return (typeof preference === 'undefined')
-    ? storageItems[preferencesKey]
-    : storageItems[preferencesKey]?.[preference];
 }

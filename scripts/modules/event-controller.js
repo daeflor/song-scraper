@@ -26,6 +26,7 @@ import * as gpmStorage from '../storage/gpm-storage.js';
 //Other
 import * as IO from './utilities/IO.js';
 import * as customTracklists from '../Configuration/custom-tracklists.js';
+import * as options from '../options/options-storage.js'
 
 //TODO could consider adding to and/or removing from EventController so that it's the central place for all event-driven logic
     //i.e. EventController should dictate & be aware of all events & reactions throughout the app (not sure about auth...)
@@ -351,7 +352,7 @@ async function getStoredTracksYTM(tracklistTitle) {
  */
 async function getDeltaTracklists() {
     if (SESSION_STATE.tracklist.deltas instanceof Map === false) {
-        const comparisonMethod = await appStorage.getPreferencesFromChromeSyncStorage('Comparison Method');
+        const comparisonMethod = await options.getPreferences(options.preferences.comparisonMethod);
         console.info("Comparison method found in user's preferences: " + comparisonMethod);
 
         let tracksUsedForDelta = undefined;
