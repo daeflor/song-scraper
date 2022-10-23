@@ -1,16 +1,13 @@
 ***** Notes *****
 
-** Bugs **
+** Known Issues **
 
-	- Hit an issue where the same song showed up under Removed and Added, for unknown reasons. May be resolved by showing all info for the songs that have been removed/added. 
-	- First time saving playlist very briefly shows the added/removed section before hiding it.
 	- If multiple playlists have the same name, their info will likely just get overridden. 
 	- The comparison can be wrong about which specific track was removed from a playlist. This happens when there were duplicates and only the earlier (lower index) of the two tracks was removed. 
-	- Getting playlist name currently doesn't work if there's a hyphen in the name 
-	- Border around track tables isn't perfect (when scrolling)
-	- GPM: Open the queue, change the playlist, run the comparison -> it gets stuck in an infinite loop (thinks there are more songs than there are)
-	- When you press 'Back' it shows the 'Loading...' text flickering. (Might not need to show it at all).
-	- The music page does not always refresh after adding a song, so the displayed trackcount is less than the actual count. Popup returns an error so no user-facing harm.
+	- Getting playlist name currently doesn't work if there's a hyphen in the name (Needs confirmation)
+	- If you add or remove a song from a playlist, the icon won't update automatically (currently by deisgn). But even after a refresh it sometimes doesn't update. A hard refresh does cause it to update though. 
+	- It's possible for the tracklist name to overlap with the username if either of them are long enough.
+	- If you have multiple YTM tracklist tabs open and switch between them without refreshing the page, the extension will use incorrect cached metadata and it will become a mess. In the worst case, this could lead to playlist data being erroneously overridden in Firestore.
 
 
 ** Upcoming To-Do List **
@@ -18,6 +15,7 @@
 	2022: 
 	- Consider upgrading to Firebase SDK 9
 	- Are access-firestore.js, static.js, and sandbox.js being used? I believed these were committed in error in commit 158ec62
+	- Deprecate unused files as applicable, including legacy js files, sandbox files, and static js files
 
 	2021:
 	- Maybe exclude the 'unplayable' column from tracktables when empty (see TODO)
@@ -26,25 +24,20 @@
 	- Overall cleanup
 	- Element/DOM validation
 	- Clean up CSS
-	- Deprecate unused files as applicable, including legacy js files, sandbox files, and static js files
-	- Would be helpful to add the track index number into the tracklist DOM
-	- Does it make sense to disable buttons for scrape/store/etc.? I can't think of any case where scraping a second time makes any sense.
+	- Feature: Would be helpful to add the track index number into the tracklist DOM
 	- Maybe switch away from typeof === 'object' checks, since this doesn't discount a value of null.
-	- Update or remove 'catch' blocks that aren't actually handling errors at all.
-	- Fix up modules once Chrome 91 is out (end of May?)
+	- Update or remove 'catch' blocks that aren't actually handling errors at all or aren't useful.
+	- Fix up modules once Chrome 91 is out (end of May?). (Update: This is now partially done.)
 	- Maybe bring back DebugController usage, and update the extension icon whenever an error is hit.
 	- Convert some console.errors to throw new Errors where applicable.
-	- Could use the list of scraped playlists to notify if there are any playlists that haven't been stored in Firestore.
-	- Could have a context menu for when you click on a track (not sure the context menu actually knows the element it's been clicked on) that scrubs through all stored playlists and lists the ones that contain that track.
+	- Feature: Could use the list of scraped playlists to notify if there are any playlists that haven't been stored in Firestore.
+	- Feature: Could have a context menu for when you click on a track (not sure the context menu actually knows the element it's been clicked on) that scrubs through all stored playlists and lists the ones that contain that track.
 		- YTM overrides the right-click context menu, so this might not work anyway.
 		- Could possibly add a new button to the custom YTM context menu.
 	- Could have an option/toggle to select whether or not a difference in track position should result in two tracks not matching.
-	- Maybe have just a few playlists to cover a few really broad set of genres for albums added to library (e.g. Added Scores, Added Common, Added Other (New Age, World, etc.)). If these playlists are primarly for tracking, and there's only one track included per album, they don't need to be so granular anymore.
-	- Need to address the issue where multiple open YTM tabs can lead to the wrong tracklist getting fetched from, or worse, stored in Firestore 
-	- What if the extension itself kept track of songs that have been removed (without replacements) from each playlist, rather than manually keeping an external list.
+	- Feature: What if the extension itself kept track of songs that have been removed (without replacements) from each playlist, rather than manually keeping an external list.
 
-	- Bug: Opening a valid tracklist page in another tab will result in the icon not getting set correctly (it will just remain as 'login')
-	- Could consider having different popup html files for different tracklists, if it makes sense to show significantly different options/UI for each.
+	- Could consider having different popup html files for different tracklist types, if it makes sense to show significantly different options/UI for each.
 	- Would it be possible somehow to use an extension context menu to select multiple tracks and edit their info in Firestore (e.g. assign their genre)?
 	- It would probably also be possible to accomplish this ^ by inserting some DOM elements into tracklists. (e.g. add checkboxes to every track row and a buton / text field to set the genre, as one example/option)
 	- It would also be be possible to do this ^ in the popup itself (e.g. adding more elements with the scraped tracklist like buttons, text fields, and checkboxes)
@@ -52,59 +45,30 @@
 		- Maybe it would be sufficient to block the loading of the track thumbnails..
 		- Actually it seems that downloading the tracklist content takes considerably less time than "Waiting (TTFB)" & work happening on the server side, and I don't know how to speed the latter up.
 	- Could update JSDOC callback documentation throughout code (https://jsdoc.app/tags-callback.html)
-	- Bug: It's possible for the tracklist name to overlap with the username if either of them are long enough.
 	- Including track position in saved/stored tracklists may help create simpler/clearer code in a variety of places.
-	- Bug: if you have multiple YTM tracklist tabs open and switch between them without refreshing the page, the extension will use incorrect cached metadata and it will become a mess.
 	- Does it make sense to store a list of unique tracks across all playlists (including Added from Subscription & Uploaded)? Each track could include a list of all playlists to which it belongs. This would help to know which playlists are affected when a track's metadata or status changes. There would be non-trivial overhead to keep this up-to-date every time scraped data is saved in storage.
 		- An alternative approach could be to have a 'Track' screen, which could have an option to 'list all playlists' to which the track belongs, which would then scrub through all stored playlists and present the most up-to-date data available. One problem is that finding a track in a tracktable in the popup is not that easy. Having the ability to select a song from the YTM page itself would be preferable, but not trivial.
 	- Does it make sense to have some method to mark a song's genre in the extension's UI, which then gets stored in Firestore with the rest of the metadata?
 
-	Old:
-	- Could add support for and save lists for individual genres, for easier viewing/fixing
-	- Save URLs in one place so that it's easy to update them if needed
-	- 'Soundtracks' playlist includes 'added' songs that are not elsewhere accounted for
-	- Finalize / clean-up support for 'All Songs'
-
-
 ** Style & Organization **
 
 	- Create a new chart (digital?) for the app layout	
-	- Look into 'use strict mode', and consider using a Linter (https://www.sitepoint.com/comparison-javascript-linting-tools/)
+	- Consider using a Linter (https://www.sitepoint.com/comparison-javascript-linting-tools/)
 	- Consider Grunt or something similar to merge all files into one
 
-
-** Features **
+** OLD - Features **
 
 V1:	
 	- Store a list of all Playlists and check that the list of playlists is up to date. Let the user know if it's not. 
 	- - Would it be possible to use this in order to scrub out all the old unused lists saved in Local Storgae?
-	- ! Google music css variable names mapping
-	- ! Error handling method for all the page css variable getters/queries
 	- Option to backup all extisting track lists with current date (similar to JSON idea)
 	- Option to change a playlist's name
-	- When storing a list, could store the timestamp so you can see the lastUsed date and then auto-delete anything no longer in use
-	- Could check count of songs in list before saving to storage, to verify it matches the playlist track count (to avoid edge case infinite loop)
-	- Would be nice to know if the position of a track in a playlist has changed
-	- Is it worth having a button that either copies comparison results to clipboard and/or outputs a csv/xsl file of the results
-		- I would probably copy/paste manually anyway, in case this functionality failed. And it also wouldn't save much time. 
+	- When storing a list, could store the timestamp so you can see the lastUsed date and then auto-delete or archive anything no longer in use
 
 V2:
-	- Have the user's track list info be accessible across devices so they can use the extension from anywhere
-		- Extension Sync storage won't work because of the quota limits. 
-		- Could consider Google Drive integration, or switching to a Packaged App
-	- Allow user to save more than just playlists (e.g. All songs added to library, Uploaded & Purchased songs, and Subscription songs).
-		- These all use this url: https://play.google.com/music/listen?u=0#/all
-		- Made complicated because none of these lists have song index numbers, and the latter two don't have track counts
-		- Would have to make sure to be able to distinguish these from playlists (e.g. what if a playlist is also called "Songs"?)
-		- Consider using a different method to determine when you're at the bottom of the page/window, and maybe just use all track info to compare and find duplicates
-	- Only store ONE object for the extension. And that object contains all the others... scary. 
-		- This probably won't work because of the QUOTA_BYTES_PER_ITEM limit. 
-	- Progress bar
-	- Support comparison between Spotify playlists and google music (allowing the user to choose tracklist x and y to compare)
+	- Progress bar for scrape (not really necessary, there are very few tracklists for which this would be beneficial)
+	- Support comparison between Spotify playlists and Google mMusic or YouTube Music playlists (allowing the user to choose tracklist x and y to compare)
 	- Consider feature which suggests listening to one of the albums/tracks in the 'test' playlists. 
-	- Unit tests?	
+	- Unit tests?
 	- Store an "all tracks removed" list and allow the user to select if they want to add them to that list or not after it lists which have been removed
-	- Consider app vs extension possibilities
 	- Feature that checks for duplicates
-	- Could add buttons to the Google Music site itself (e.g. to go directly to Genres)?
-
