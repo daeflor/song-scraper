@@ -185,14 +185,3 @@ async function getTrackCountFromChromeSyncStorage(tracklistTitle) {
     const storageItems = await chromeStorage.getKeyValuePairs('sync', userKey);
     return storageItems[userKey]?.[tracklistTitle];
 }
-
-// /**
-//  * Clears the tracklist metadata which is cached in chrome local storage
-//  */
-// function clearCachedTracklistMetadata() { //TODO This is no longer being done. Is that fine?
-//     chrome.storage.local.set ({currentTracklistMetadata: {}}, () => {
-//         typeof chrome.runtime.lastError === 'undefined'
-//         ? console.info("Background: Cleared cached tracklist metadata.")
-//         : console.error(chrome.runtime.lastError.message)
-//     });
-// }
