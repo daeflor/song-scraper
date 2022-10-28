@@ -9,6 +9,7 @@ import firebaseConfig from '/scripts/Configuration/config.js'; //Import the app'
 //Utilities
 import * as gpmStorage from '/scripts/storage/gpm-storage.js';
 import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'
+import * as options from './scripts/options/options-storage.js'
 
 console.info("Starting service worker");
 
@@ -116,6 +117,7 @@ async function enableAndUpdateIcon(currentTracklistMetadata, tabId) {
     chrome.action.enable(tabId); // Enable the popup action for the specified tab
 }
 
+//TODO This background script probably shouldn't be directly accessing chrome.storage API
 function cacheTracklistMetadata(tracklistType, tracklistTitle) {
     const tracklistMetadata = {type: tracklistType, title: tracklistTitle};
     chrome.storage.local.set({currentTracklistMetadata: tracklistMetadata}, () => { //Cache the metadata in local storage
@@ -157,7 +159,7 @@ chrome.runtime.onConnect.addListener(port => {
  * @returns {Promise} A promise with the resulting track count
  */
 async function getPreviousTrackCount(tracklistTitle) {
-    const comparisonMethod = await getPreferencesFromChromeSyncStorage('Comparison Method');
+    const comparisonMethod = await options.getPreferences('Comparison Method');
     console.log("Comparison method found in user's preferences: " + comparisonMethod);
 
     let trackCount = undefined;
