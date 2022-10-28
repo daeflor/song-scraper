@@ -18,6 +18,7 @@ const ICON_PATHS = Object.freeze({
     disabled: 'images/icon_disabled.png'
 });
 
+// When the extension is installed or reloaded, create the context menus and set a default/initial comparison method preference value, if it isn't set already
 chrome.runtime.onInstalled.addListener(async function() {
     chrome.contextMenus.create({
         id: 'contextMenu_scrapePlaylists',
@@ -30,12 +31,7 @@ chrome.runtime.onInstalled.addListener(async function() {
         documentUrlPatterns: ['https://music.youtube.com/library/playlists']
     });
 
-    let preferencesObject = await getPreferencesFromChromeSyncStorage();
-    if (typeof preferencesObject !== 'object') {
-        console.info("There were no user preferences set in Chrome sync storage, so setting default values. 'Comparison Method: Prefer YTM'.");
-        preferencesObject = {'Comparison Method':'preferYTM'};
-        chromeStorage.set('sync', {preferences:preferencesObject});
-    }
+    options.setDefaultPreferenceValue(options.preferences.comparisonMethod, 'preferYTM');
 });
 
 if (firebase.apps.length === 0) { // If Firebase has not yet been initialized (i.e. if the extension was just installed)...
@@ -200,17 +196,3 @@ async function getTrackCountFromChromeSyncStorage(tracklistTitle) {
 //         : console.error(chrome.runtime.lastError.message)
 //     });
 // }
-
-//TODO this would be good to put in a module that both background and options scripts can access, once Chrome 91 releases.
-/**
- * Returns the user's preferences object, or a particular preference value if specified
- * @param {string} [preference] An optional preference to specify, if only one value is desired
- * @returns {Promise} A promise with either an object containing all the user's preferences, or the value of a single preference, if specified
- */
-async function getPreferencesFromChromeSyncStorage(preference) {
-    const preferencesKey = 'preferences';
-    const storageItems = await chromeStorage.getKeyValuePairs('sync', preferencesKey);
-    return (typeof preference === 'undefined')
-    ? storageItems[preferencesKey]
-    : storageItems[preferencesKey]?.[preference];
-}
