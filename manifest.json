@@ -17,7 +17,7 @@
         "default_popup": "html/popup.html"
     },
     "icons": {
-        "96": "Images/icon_disabled.png"
+        "96": "images/icon_disabled.png"
       },
     "permissions": [
         "storage",
