@@ -13,8 +13,8 @@ import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promis
 console.info("Starting service worker");
 
 const ICON_PATHS = Object.freeze({
-    default: 'Images/icon.png',
-    disabled: 'Images/icon_disabled.png'
+    default: 'images/icon.png',
+    disabled: 'images/icon_disabled.png'
 });
 
 chrome.runtime.onInstalled.addListener(async function() {
