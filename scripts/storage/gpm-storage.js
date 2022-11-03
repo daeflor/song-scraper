@@ -16,26 +16,26 @@ const SESSION_STATE = {
  * @returns {Promise} A promise with the resulting data
  */
 export async function getTracklistData(requestedData, tracklistTitle) { 
-        if (Object.keys(SESSION_STATE.gpmTracklists).length === 0) {
-            console.info("This list of GPM tracklists has not yet been saved in session state. Fetching the data from Chrome local storage instead.");
-            await saveGpmTracklistsToSessionState();
-        }
+    if (Object.keys(SESSION_STATE.gpmTracklists).length === 0) {
+        console.info("This list of GPM tracklists has not yet been saved in session state. Fetching the data from Chrome local storage instead.");
+        await saveGpmTracklistsToSessionState();
+    }
 
-        switch(requestedData) {
-        case 'tracklist': // Return the GPM tracklist data object that matches the provided tracklist title
-            const gpmTracklistTitle = getGPMTracklistTitle(tracklistTitle); // Use the YTM to GPM tracklist title mapping to get the exact GPM tracklist title
-            if (gpmTracklistTitle === 'Uploaded Songs') { // If the desired tracklist is the list of songs uploaded to GPM, some special steps need to be taken, since this specific tracklist wasn't stored in the exported GPM data
-                return SESSION_STATE.gpmTracklists['Uploaded Songs'] || await retrieveUploadedGpmTracks(); // If the list of GPM Uploaded tracks has not already been saved in session state, either fetch it from local storage (if it exists) or generate it manually, and then save it for future reference
-            } else if (typeof gpmTracklistTitle !== 'undefined') {
-                return SESSION_STATE.gpmTracklists[gpmTracklistTitle];
-            } else throw Error("Request received to get a GPM tracklist but no tracklist title was provided.");
-        case 'tracksArray': // Return the tracks array for the GPM tracklist matching the provided tracklist title
-            return (await getTracklistData('tracklist', tracklistTitle))?.tracks;
-        case 'trackCount': // Return the track count for the GPM tracklist matching the provided tracklist title
-            return (await getTracklistData('tracklist', tracklistTitle))?.tracks?.length;
-        default:
-            throw Error("An inavlid data category was provided when requesting GPM tracklist data.");
-        }
+    switch(requestedData) {
+    case 'tracklist': // Return the GPM tracklist data object that matches the provided tracklist title
+        const gpmTracklistTitle = getGPMTracklistTitle(tracklistTitle); // Use the YTM to GPM tracklist title mapping to get the exact GPM tracklist title
+        if (gpmTracklistTitle === 'Uploaded Songs') { // If the desired tracklist is the list of songs uploaded to GPM, some special steps need to be taken, since this specific tracklist wasn't stored in the exported GPM data
+            return SESSION_STATE.gpmTracklists['Uploaded Songs'] || await retrieveUploadedGpmTracks(); // If the list of GPM Uploaded tracks has not already been saved in session state, either fetch it from local storage (if it exists) or generate it manually, and then save it for future reference
+        } else if (typeof gpmTracklistTitle !== 'undefined') {
+            return SESSION_STATE.gpmTracklists[gpmTracklistTitle];
+        } else throw Error("Request received to get a GPM tracklist but no tracklist title was provided.");
+    case 'tracksArray': // Return the tracks array for the GPM tracklist matching the provided tracklist title
+        return (await getTracklistData('tracklist', tracklistTitle))?.tracks;
+    case 'trackCount': // Return the track count for the GPM tracklist matching the provided tracklist title
+        return (await getTracklistData('tracklist', tracklistTitle))?.tracks?.length;
+    default:
+        throw Error("An inavlid data category was provided when requesting GPM tracklist data.");
+    }
 }
 
 /**
