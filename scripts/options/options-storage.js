@@ -1,11 +1,22 @@
 import * as chromeStorage from '../modules/utilities/chrome-storage-promises.js';
-export { STORAGE_ITEM_PROPERTIES as preferences, getPreferencesFromChromeSyncStorage as getPreferences, updatePreferencesInChromeSyncStorage as updatePreferences};
+export { 
+    STORAGE_ITEM_PROPERTIES as preferences, 
+    getPreferencesFromChromeSyncStorage as getPreferences, 
+    updatePreferencesInChromeSyncStorage as updatePreferences, 
+    setDefaultPreferenceValueInChromeSyncStorage as setDefaultPreferenceValue
+};
 
 const STORAGE_ITEM_KEY = 'preferences';
 const STORAGE_ITEM_PROPERTIES = Object.freeze({
     comparisonMethod: 'Comparison Method'
 });
+//TODO could consider a similar object that lists the possible property values, but that may get too convoluted.
+    //For example comparisonMethod: { key: 'Comparison Method', supportedValues: {alwaysYTM: 'alwaysYTM', preferYTM: 'preferYTM', alwaysGPM: 'alwaysGPM'} }
+    //The above suggestion would make the code elsewhere very hard to read. An alternative option could be to have a separate object per preference, e.g.:
+        //COMPARISON_METHOD_VALUES: { alwaysYTM: 'alwaysYTM', preferYTM: 'preferYTM', alwaysGPM: 'alwaysGPM' } exported as comparisonMethods
 
+//TODO There is no use case now for calling this function without the parameter (i.e. for getting all preferences). 
+    //It was only used before to update the preferences in storage, which is now handled separately.
 /**
  * Returns the user's preferences object, or a particular preference value if specified
  * @param {string} [preference] An optional preference to specify, if only one value is desired
@@ -18,7 +29,19 @@ async function getPreferencesFromChromeSyncStorage(preferenceKey) {
     : preferencesStorageItem?.[preferenceKey];
 }
 
+/**
+ * Updates the value of the specified preference in Chrome Sync Storage
+ * @param {string} preferenceKey The key for the property in storage matching the given preference
+ * @param {string} newValue The new preference value
+ */
 async function updatePreferencesInChromeSyncStorage(preferenceKey, newValue) {
     await chromeStorage.modifyStorageItemProperty('sync', STORAGE_ITEM_KEY, preferenceKey, newValue);
     console.info("Preferences have been updated in Chrome Sync Storage. The %s was set to %s.", preferenceKey, newValue);
+}
+
+async function setDefaultPreferenceValueInChromeSyncStorage(preferenceKey, newValue) {
+    const preferencesStorageItem = await chromeStorage.getValueAtKey('sync', STORAGE_ITEM_KEY);
+    typeof preferencesStorageItem !== 'object'
+    ? await chromeStorage.modifyStorageItemProperty('sync', STORAGE_ITEM_KEY, preferenceKey, newValue)
+    : console.log("Request received to set a default value for the %s preference, but it already has a value of %s set in storage.", preferenceKey, preferencesStorageItem[preferenceKey])
 }

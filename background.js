@@ -9,6 +9,7 @@ import firebaseConfig from '/scripts/Configuration/config.js'; //Import the app'
 //Utilities
 import * as gpmStorage from '/scripts/storage/gpm-storage.js';
 import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'
+import * as options from './scripts/options/options-storage.js'
 
 console.info("Starting service worker");
 
@@ -17,6 +18,7 @@ const ICON_PATHS = Object.freeze({
     disabled: 'images/icon_disabled.png'
 });
 
+// When the extension is installed or reloaded, create the context menus and set a default/initial comparison method preference value, if it isn't set already
 chrome.runtime.onInstalled.addListener(async function() {
     chrome.contextMenus.create({
         id: 'contextMenu_scrapePlaylists',
@@ -29,12 +31,7 @@ chrome.runtime.onInstalled.addListener(async function() {
         documentUrlPatterns: ['https://music.youtube.com/library/playlists']
     });
 
-    let preferencesObject = await getPreferencesFromChromeSyncStorage();
-    if (typeof preferencesObject !== 'object') {
-        console.info("There were no user preferences set in Chrome sync storage, so setting default values. 'Comparison Method: Prefer YTM'.");
-        preferencesObject = {'Comparison Method':'preferYTM'};
-        chromeStorage.set('sync', {preferences:preferencesObject});
-    }
+    options.setDefaultPreferenceValue(options.preferences.comparisonMethod, 'preferYTM');
 });
 
 if (firebase.apps.length === 0) { // If Firebase has not yet been initialized (i.e. if the extension was just installed)...
@@ -116,6 +113,7 @@ async function enableAndUpdateIcon(currentTracklistMetadata, tabId) {
     chrome.action.enable(tabId); // Enable the popup action for the specified tab
 }
 
+//TODO This background script probably shouldn't be directly accessing chrome.storage API
 function cacheTracklistMetadata(tracklistType, tracklistTitle) {
     const tracklistMetadata = {type: tracklistType, title: tracklistTitle};
     chrome.storage.local.set({currentTracklistMetadata: tracklistMetadata}, () => { //Cache the metadata in local storage
@@ -157,7 +155,7 @@ chrome.runtime.onConnect.addListener(port => {
  * @returns {Promise} A promise with the resulting track count
  */
 async function getPreviousTrackCount(tracklistTitle) {
-    const comparisonMethod = await getPreferencesFromChromeSyncStorage('Comparison Method');
+    const comparisonMethod = await options.getPreferences('Comparison Method');
     console.log("Comparison method found in user's preferences: " + comparisonMethod);
 
     let trackCount = undefined;
@@ -186,29 +184,4 @@ async function getTrackCountFromChromeSyncStorage(tracklistTitle) {
     const userKey = 'trackCounts_' + firebase.auth().currentUser.uid;
     const storageItems = await chromeStorage.getKeyValuePairs('sync', userKey);
     return storageItems[userKey]?.[tracklistTitle];
-}
-
-// /**
-//  * Clears the tracklist metadata which is cached in chrome local storage
-//  */
-// function clearCachedTracklistMetadata() { //TODO This is no longer being done. Is that fine?
-//     chrome.storage.local.set ({currentTracklistMetadata: {}}, () => {
-//         typeof chrome.runtime.lastError === 'undefined'
-//         ? console.info("Background: Cleared cached tracklist metadata.")
-//         : console.error(chrome.runtime.lastError.message)
-//     });
-// }
-
-//TODO this would be good to put in a module that both background and options scripts can access, once Chrome 91 releases.
-/**
- * Returns the user's preferences object, or a particular preference value if specified
- * @param {string} [preference] An optional preference to specify, if only one value is desired
- * @returns {Promise} A promise with either an object containing all the user's preferences, or the value of a single preference, if specified
- */
-async function getPreferencesFromChromeSyncStorage(preference) {
-    const preferencesKey = 'preferences';
-    const storageItems = await chromeStorage.getKeyValuePairs('sync', preferencesKey);
-    return (typeof preference === 'undefined')
-    ? storageItems[preferencesKey]
-    : storageItems[preferencesKey]?.[preference];
 }
