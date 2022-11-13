@@ -48,7 +48,7 @@ async function testChromeStorageAccessor(testNumber) {
         console.assert(error?.message.includes(expectedErrorMessageSnippet) === true, assertMessage, testNumber);
         console.info("Test #%s Completed", testNumber);
         return;
-    case 3: // Set Property when Storage Item doesn't exist (Should add a new storage item with the given key and property kvp)
+    case 3: { // Set Property when Storage Item doesn't exist (Should add a new storage item with the given key and property kvp)
         await chrome.storage.sync.remove('testItem');
         testAccessor = new ChromeStorageAccessor('sync', 'testItem');
         await testAccessor.setProperty('testPropertyKey', 'testPropertyValue');
@@ -59,6 +59,7 @@ async function testChromeStorageAccessor(testNumber) {
         console.assert(chromeStorageItems.testItem?.testPropertyKey === 'testPropertyValue', assertMessage, testNumber);
         console.info("Test #%s Completed", testNumber);
         return;
+    }
     case 4: // Get Property without passing key (Should result in error)
         try {
             testAccessor = new ChromeStorageAccessor('sync', 'testItem');
@@ -72,26 +73,50 @@ async function testChromeStorageAccessor(testNumber) {
         console.assert(error?.message.includes(expectedErrorMessageSnippet) === true, assertMessage);
         console.info("Test #%s Completed", testNumber);
         return;
-    case 5: // Get Property with nonexistent key (Should return undefined)
+    case 5: { // Get Property with nonexistent key (Should return undefined)
         testAccessor = new ChromeStorageAccessor('sync', 'testItem');
-        console.log(await testAccessor.getProperty('wrongkey'));
+        const testProperty = await testAccessor.getProperty('wrongkey');
+        
+        assertMessage = `Test #${testNumber}: Expected 'undefined' property value but instead got: ${testProperty}`;
+        console.assert(typeof testProperty === 'undefined', assertMessage);
+        console.info("Test #%s Completed", testNumber);
         return;
-    case 6: // Get Property with valid key (Correct Usage - should result in expected value)
+    }
+    case 6: { // Get Property with valid key (Correct Usage - should result in expected value)
         testAccessor = new ChromeStorageAccessor('sync', 'testItem');
-        console.log(await testAccessor.getProperty('testPropertyKey'));
+        await testAccessor.setProperty('testPropertyKey', 'testPropertyValue');
+        const testProperty = await testAccessor.getProperty('testPropertyKey');
+
+        assertMessage = `Test #${testNumber}: Expected property value 'testPropertyValue', but instead got: ${testProperty}`;
+        console.assert(testProperty === 'testPropertyValue', assertMessage);
+        console.info("Test #%s Completed", testNumber);
         return;
+    }
     case 7: // Set Property without passing value (Should result in error)
-        testAccessor = new ChromeStorageAccessor('sync', 'testItem');
-        await testAccessor.setProperty('testPropertyKey');
-        console.log(await chrome.storage.sync.get(null));
+        try {
+            testAccessor = new ChromeStorageAccessor('sync', 'testItem');
+            await testAccessor.setProperty('testPropertyKey');
+        } catch (caughtError) {
+            error = caughtError;
+        }
+
+        expectedErrorMessageSnippet = "an invalid property key or value was provided";
+        assertMessage = `Test #${testNumber}: Expected Error "${expectedErrorMessageSnippet}" but instead got: ${error || 'No Error'}`;
+        console.assert(error?.name === 'TypeError' && error?.message.includes(expectedErrorMessageSnippet) === true, assertMessage);
+        console.info("Test #%s Completed", testNumber);
         return;
-    case 8: // Set Property when Storage Item exists but Property doesn't (Unexpected but acceptable usage - should result in value getting set)
+    case 8: { // Set Property when Storage Item exists but Property doesn't (Acceptable usage - should result in value getting set)
         testAccessor = new ChromeStorageAccessor('sync', 'testItem');
         await chrome.storage.sync.set({'testItem' : {}});
-        console.log(await chrome.storage.sync.get(null));
         await testAccessor.setProperty('testPropertyKey', 'testPropertyValue');
-        console.log(await chrome.storage.sync.get(null));
+        const chromeStorageItems = await chrome.storage.sync.get(null);
+        const testProperty = chromeStorageItems.testItem?.testPropertyKey;
+
+        assertMessage = `Test #${testNumber}: Expected property value 'testPropertyValue', but instead got: ${testProperty}`;
+        console.assert(testProperty === 'testPropertyValue', assertMessage);
+        console.info("Test #%s Completed", testNumber);
         return;
+    }
     case 9: // Set Property when Property does exist but override allowed (Correct Usage - should result in value getting set)
         testAccessor = new ChromeStorageAccessor('sync', 'testItem');
         await chrome.storage.sync.set({'testItem' : {'testPropertyKey': 'testPropertyValue'}});
@@ -120,7 +145,7 @@ chrome.alarms.onAlarm.addListener(() => {
 export async function runAllTests() {
     console.group();
     console.info("Running Chrome Storage Tests");
-    for (let i = 0; i <= 4; i++) {
+    for (let i = 0; i <= 8; i++) {
         await testChromeStorageAccessor(i);
     }
     console.info("Tests Complete");
