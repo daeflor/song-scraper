@@ -4,7 +4,7 @@ async function testChromeStorageAccessor(testNumber) {
     let testAccessor = undefined;
     let error = undefined;
     let expectedErrorMessageSnippet = undefined;
-    const assertMessage = "Chrome Storage Test #%s Failed";
+    let assertMessage = "Chrome Storage Test #%s Failed";
     switch(testNumber) {
     case 0: // Storage Area incorrect (Should result in error)
         
@@ -16,11 +16,12 @@ async function testChromeStorageAccessor(testNumber) {
             // if (caughtError.name === 'RangeError' && caughtError.message.includes("An invalid storage area was provided for accessing Chrome storage") === true) {
             //     error = caughtError;
             // }
-        }
-        console.assert(error?.name === 'RangeError' && error?.message.includes("An invalid storage area was provided for accessing Chrome storage") === true, "Chrome Storage Test #0 Failed");
-        
+        } 
         //console.assert(typeof error !== 'undefined', "Chrome Storage Test #0 Failed");
-        
+
+        expectedErrorMessageSnippet = "An invalid storage area was provided for accessing Chrome storage";
+        assertMessage = `Test #${testNumber}: Expected a specific error but instead got: ${error || 'No Error'}`;
+        console.assert(error?.name === 'RangeError' && error?.message.includes(expectedErrorMessageSnippet) === true, assertMessage);
         console.info("Test #%s Completed", testNumber);
         return;
     case 1: // Get Property when Storage Item doesn't exist (Should result in error)
@@ -59,8 +60,17 @@ async function testChromeStorageAccessor(testNumber) {
         console.info("Test #%s Completed", testNumber);
         return;
     case 4: // Get Property without passing key (Should result in error)
-        testAccessor = new ChromeStorageAccessor('sync', 'testItem');
-        console.log(await testAccessor.getProperty());
+        try {
+            testAccessor = new ChromeStorageAccessor('sync', 'testItem');
+            await testAccessor.getProperty();
+        } catch (caughtError) {
+            error = caughtError;
+        }
+
+        expectedErrorMessageSnippet = "an invalid property key was provided";
+        assertMessage = `Test #${testNumber}: Expected Error "${expectedErrorMessageSnippet}" but instead got: ${error || 'No Error'}`;
+        console.assert(error?.message.includes(expectedErrorMessageSnippet) === true, assertMessage);
+        console.info("Test #%s Completed", testNumber);
         return;
     case 5: // Get Property with nonexistent key (Should return undefined)
         testAccessor = new ChromeStorageAccessor('sync', 'testItem');
@@ -110,10 +120,9 @@ chrome.alarms.onAlarm.addListener(() => {
 export async function runAllTests() {
     console.group();
     console.info("Running Chrome Storage Tests");
-    await testChromeStorageAccessor(0);
-    await testChromeStorageAccessor(1);
-    await testChromeStorageAccessor(2);
-    await testChromeStorageAccessor(3);
+    for (let i = 0; i <= 4; i++) {
+        await testChromeStorageAccessor(i);
+    }
     console.info("Tests Complete");
     console.groupEnd();
 }
