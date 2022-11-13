@@ -15,11 +15,6 @@ export class ChromeStorageAccessor {
      */
     async #getStorageItem() {
         const storageItems = await chrome.storage[this.#storageArea].get(this.#storageItemKey); // Get the key value pairing for the storage item matching the given key in the specified Chrome storage area
-
-        if (typeof chrome.runtime.lastError !== 'undefined') { // Check for any errors that occurred in the process of accessing chrome storage
-            throw chrome.runtime.lastError;
-        }
-
         return storageItems[this.#storageItemKey]; // Return the storage item's value
     }
 
@@ -61,9 +56,6 @@ export class ChromeStorageAccessor {
         if (typeof storageItem[propertyKey] === 'undefined' || overrideCurrentValue === true) { // If the given property doesn't already exist, or if overriding its current value is permitted, update the property's value and store the updated item 
             storageItem[propertyKey] = newPropertyValue; 
             await chrome.storage[this.#storageArea].set({[this.#storageItemKey]: storageItem});
-            if (typeof chrome.runtime.lastError !== 'undefined') {
-                throw chrome.runtime.lastError;
-            }
         }
 
         // if (typeof propertyKey === 'string' && typeof newPropertyValue !== 'undefined') { // Ignore any requests if a new property value isn't provided. Otherwise, this would lead to the value getting set to undefined, and therefore the property getting removed from Chrome storage, which is undesireable unless there is an explicit request to remove the data.
@@ -73,9 +65,6 @@ export class ChromeStorageAccessor {
         //     if (typeof storageItem[propertyKey] === 'undefined' || overrideCurrentValue === true) {
         //         storageItem[propertyKey] = newPropertyValue; 
         //         await chrome.storage[this.#storageArea].set({[this.#storageItemKey]: storageItem});
-        //         if (typeof chrome.runtime.lastError !== 'undefined') {
-        //             throw chrome.runtime.lastError;
-        //         }
         //     }
         // } else throw TypeError("Tried to set a property value for an item in Chrome storage, but an invalid property key or value was provided. The key must be of type 'string', and the value must not be 'undefined'.");
     }
