@@ -1,5 +1,17 @@
 import { ChromeStorageAccessor } from '../scripts/storage/chrome-storage.js';
 
+setTimeout(runAllTests, 500);
+
+export async function runAllTests() {
+    console.group();
+    console.info("Running Chrome Storage Tests");
+    for (let i = 0; i <= 11; i++) {
+        await testChromeStorageAccessor(i);
+    }
+    console.info("Tests Complete");
+    console.groupEnd();
+}
+
 async function testChromeStorageAccessor(testNumber) {
     let testAccessor = undefined;
     let error = undefined;
@@ -120,12 +132,12 @@ async function testChromeStorageAccessor(testNumber) {
         await chrome.storage.sync.set({'testItem' : {'testPropertyKey': 'testPropertyValue'}}); // Hard-code the initial state in Chrome storage
         
         testAccessor = new ChromeStorageAccessor('sync', 'testItem');
-        await testAccessor.setProperty('testPropertyKey', 'newPropertValue');
+        await testAccessor.setProperty('testPropertyKey', 'newPropertyValue');
         const chromeStorageItems = await chrome.storage.sync.get(null);
         const testProperty = chromeStorageItems.testItem?.testPropertyKey;
 
-        assertMessage = `Test #${testNumber}: Expected property value 'newPropertValue', but instead got: ${testProperty}`;
-        console.assert(testProperty === 'newPropertValue', assertMessage);
+        assertMessage = `Test #${testNumber}: Expected property value 'newPropertyValue', but instead got: ${testProperty}`;
+        console.assert(testProperty === 'newPropertyValue', assertMessage);
         console.info("Test #%s Completed", testNumber);
         return;
     }
@@ -133,7 +145,7 @@ async function testChromeStorageAccessor(testNumber) {
         await chrome.storage.sync.set({'testItem' : {'testPropertyKey': 'testPropertyValue'}}); // Hard-code the initial state in Chrome storage
         
         testAccessor = new ChromeStorageAccessor('sync', 'testItem');
-        await testAccessor.setProperty('testPropertyKey', 'newPropertValue', false);
+        await testAccessor.setProperty('testPropertyKey', 'newPropertyValue', false);
         const chromeStorageItems = await chrome.storage.sync.get(null);
         const testProperty = chromeStorageItems.testItem?.testPropertyKey;
 
@@ -142,23 +154,26 @@ async function testChromeStorageAccessor(testNumber) {
         console.info("Test #%s Completed", testNumber);
         return;
     }
+    case 11: { // Set Property when override disallowed but property does not exist (Acceptable Usage for setting a default value - should result in property value getting set)
+        await chrome.storage.sync.set({'testItem' : {}}); // Hard-code the initial state in Chrome storage
+        
+        testAccessor = new ChromeStorageAccessor('sync', 'testItem');
+        await testAccessor.setProperty('testPropertyKey', 'newPropertyValue', false);
+        const chromeStorageItems = await chrome.storage.sync.get(null);
+        const testProperty = chromeStorageItems.testItem?.testPropertyKey;
+
+        assertMessage = `Test #${testNumber}: Expected property value 'newPropertyValue', but instead got: ${testProperty}`;
+        console.assert(testProperty === 'newPropertyValue', assertMessage);
+        console.info("Test #%s Completed", testNumber);
+        return;
+    }
     default: 
         console.error("An invalid test case was provided.");
     }
 }
 
-chrome.alarms.create({ when: Date.now() + 500 });
+// chrome.alarms.create({ when: Date.now() + 500 });
 
-chrome.alarms.onAlarm.addListener(() => {
-    runAllTests();
-});
-
-export async function runAllTests() {
-    console.group();
-    console.info("Running Chrome Storage Tests");
-    for (let i = 0; i <= 10; i++) {
-        await testChromeStorageAccessor(i);
-    }
-    console.info("Tests Complete");
-    console.groupEnd();
-}
+// chrome.alarms.onAlarm.addListener(() => {
+//     runAllTests();
+// });
