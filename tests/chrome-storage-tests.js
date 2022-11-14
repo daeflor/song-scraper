@@ -5,7 +5,7 @@ setTimeout(runAllTests, 500);
 export async function runAllTests() {
     console.group();
     console.info("Running Chrome Storage Tests");
-    for (let i = 0; i <= 11; i++) {
+    for (let i = 0; i <= 12; i++) {
         await testChromeStorageAccessor(i);
     }
     console.info("Tests Complete");
@@ -57,7 +57,7 @@ async function testChromeStorageAccessor(testNumber) {
         console.assert(error?.message.includes(expectedErrorMessageSnippet) === true, assertMessage);
         console.info("Test #%s Completed", testNumber);
         return;
-    case 3: { // Set Property when Storage Item doesn't exist (Acceptable Usage - should add a new storage item with the given key and property kvp)
+    case 3: { // Set Property when Storage Item doesn't exist, with override implicitly allowed (Acceptable Usage - should add a new storage item with the given key and property kvp)
         await chrome.storage.sync.remove('testItem'); // Hard-code the initial state in Chrome storage
 
         testAccessor = new ChromeStorageAccessor('sync', 'testItem');
@@ -66,7 +66,7 @@ async function testChromeStorageAccessor(testNumber) {
         const testProperty = chromeStorageItems.testItem?.testPropertyKey;
 
         assertMessage = `Test #${testNumber}: Expected property value 'testPropertyValue', but instead got: ${testProperty}`;
-        console.assert(testProperty === 'testPropertyValue', assertMessage, testNumber);
+        console.assert(testProperty === 'testPropertyValue', assertMessage);
         console.info("Test #%s Completed", testNumber);
         return;
     }
@@ -141,7 +141,7 @@ async function testChromeStorageAccessor(testNumber) {
         console.info("Test #%s Completed", testNumber);
         return;
     }
-    case 10: { // Set Property when Property exists but override disallowed (Acceptable Usage for setting a default value - should result in existing property value remaining the same)
+    case 10: { // Set Property when Property exists but override disallowed (Acceptable Usage for trying to set a default value - should result in existing property value remaining the same)
         await chrome.storage.sync.set({'testItem' : {'testPropertyKey': 'testPropertyValue'}}); // Hard-code the initial state in Chrome storage
         
         testAccessor = new ChromeStorageAccessor('sync', 'testItem');
@@ -164,6 +164,19 @@ async function testChromeStorageAccessor(testNumber) {
 
         assertMessage = `Test #${testNumber}: Expected property value 'newPropertyValue', but instead got: ${testProperty}`;
         console.assert(testProperty === 'newPropertyValue', assertMessage);
+        console.info("Test #%s Completed", testNumber);
+        return;
+    }
+    case 12: { // Set Property when Storage Item doesn't exist, with override explicitly disallowed (Acceptable usage for setting a default value - should add a new storage item with the given key and property kvp)
+        await chrome.storage.sync.remove('testItem'); // Hard-code the initial state in Chrome storage
+
+        testAccessor = new ChromeStorageAccessor('sync', 'testItem');
+        await testAccessor.setProperty('testPropertyKey', 'testPropertyValue', false);
+        const chromeStorageItems = await chrome.storage.sync.get(null);
+        const testProperty = chromeStorageItems.testItem?.testPropertyKey;
+
+        assertMessage = `Test #${testNumber}: Expected property value 'testPropertyValue', but instead got: ${testProperty}`;
+        console.assert(testProperty === 'testPropertyValue', assertMessage);
         console.info("Test #%s Completed", testNumber);
         return;
     }
