@@ -48,24 +48,9 @@ export class ChromeStorageAccessor {
         }
 
         const storageItem = await this.#getStorageItem() || {}; // If the specified storage item doesn't already exist, create a new empty object
-            
-        //TODO I think the "storageItem[propertyKey] === 'undefined'" check is unnecessary because afaik if a property with an undefined value won't get set in chrome storage anyway
-            //Yes but this is also, more importantly, checking that the property doesn't already exist, which is a possible scenario (if the storage item was just created above)
-            //However, there may be a better check for this, such as Object.hasOwn()
-            //Or even something smarter, since we could technically know if the storage object was just created or not. Brainstorm this, briefly. 
-        if (typeof storageItem[propertyKey] === 'undefined' || overrideCurrentValue === true) { // If the given property doesn't already exist, or if overriding its current value is permitted, update the property's value and store the updated item 
+        if (Object.hasOwn(storageItem, propertyKey) === false || overrideCurrentValue === true) { // If the given property doesn't already exist, or if overriding its current value is permitted, update the property's value and store the updated item 
             storageItem[propertyKey] = newPropertyValue; 
             await chrome.storage[this.#storageArea].set({[this.#storageItemKey]: storageItem});
         }
-
-        // if (typeof propertyKey === 'string' && typeof newPropertyValue !== 'undefined') { // Ignore any requests if a new property value isn't provided. Otherwise, this would lead to the value getting set to undefined, and therefore the property getting removed from Chrome storage, which is undesireable unless there is an explicit request to remove the data.
-        //     const storageItem = await this.#getStorageItem() || {}; // If the specified storage item doesn't already exist, create a new empty object
-            
-        //     // If the given property doesn't already exist, or if overriding its current value is permitted, update the property's value and store the updated item 
-        //     if (typeof storageItem[propertyKey] === 'undefined' || overrideCurrentValue === true) {
-        //         storageItem[propertyKey] = newPropertyValue; 
-        //         await chrome.storage[this.#storageArea].set({[this.#storageItemKey]: storageItem});
-        //     }
-        // } else throw TypeError("Tried to set a property value for an item in Chrome storage, but an invalid property key or value was provided. The key must be of type 'string', and the value must not be 'undefined'.");
     }
 }
