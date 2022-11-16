@@ -184,9 +184,3 @@ async function testChromeStorageAccessor(testNumber) {
         console.error("An invalid test case was provided.");
     }
 }
-
-// chrome.alarms.create({ when: Date.now() + 500 });
-
-// chrome.alarms.onAlarm.addListener(() => {
-//     runAllTests();
-// });
