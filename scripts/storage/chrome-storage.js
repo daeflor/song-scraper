@@ -11,6 +11,15 @@ export class ChromeStorageAccessor {
     }
 
     /**
+     * Sets the storage item key
+     * @param {string} key The key to access the storage item in Chrome Storage
+     */
+    set storageItemKey(key) {
+        this.#storageItemKey = key;
+        console.log("Updated Chrome Storage accessor storage key to: " + this.#storageItemKey);
+    }
+
+    /**
      * @returns {Promise} A promise with the item from storage matching the key provided in the constructor
      */
     async #getStorageItem() {

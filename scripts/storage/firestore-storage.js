@@ -2,7 +2,6 @@
     //Then, any files that have a dependency on firebase (e.g. Auth, Storage, etc.) can just import that module
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 import '/node_modules/firebase/firebase-firestore.js'; //Import the Cloud Firestore library
-import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'
 
 /**
  * Get a reference to the tracklist collection for the currently signed-in user
@@ -92,20 +91,3 @@ export async function storeTracklistInFirestore(tracklistTitle, tracklistType, t
     //One for chrome storage related logic (incl. Chrome sync storage)
     //One for chrome storage utility/helper functions? - These are actually already separate and in the utilities directory, since they are more general utiitites that don't include any code specific to this app's functionality
     //One for Legacy App Storage? (i.e. GPM) - This part has now been sectioned off and completed
-
-//TODO maybe move the functions below to a dedicated file
-/**
- * Stores the provided track count for the given tracklist in chrome sync storage
- * @param {string} tracklistTitle The title of the tracklist
- * @param {number} trackCount The latest track count of the tracklist
- */
-export async function storeTrackCountInChromeSyncStorage(tracklistTitle, trackCount) {
-    if (typeof tracklistTitle === 'string' && typeof trackCount === 'number') {
-        const key = 'trackCounts_' + firebase.auth().currentUser.uid;
-        const storageItems = await chromeStorage.getKeyValuePairs('sync', key);
-        storageItems[key] = storageItems[key] ?? {}; // If a track counts object doesn't already exist for the current user, create a new one
-        storageItems[key][tracklistTitle] = trackCount; // Set the track count for the current tracklist
-        
-        await chromeStorage.set('sync', storageItems);
-    } else throw TypeError("Tried to store the track count in Chrome sync storage, but the parameters provided (title and/or track count) were invalid.");
-}
