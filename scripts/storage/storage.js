@@ -5,13 +5,17 @@ import * as firestore from './firestore-storage.js';
 const currentTracklistMetadata = new ChromeStorageAccessor('local', 'currentTracklistMetadata');
 const trackCounts = new ChromeStorageAccessor('sync');
 
-export async function getCurrentTracklistType() {
-    return await currentTracklistMetadata.getProperty('type');
+export async function getCachedMetadata(metadatum) {
+    return await currentTracklistMetadata.getProperty(metadatum);
 }
 
-export async function getCurrentTracklistTitle() {
-    return await currentTracklistMetadata.getProperty('title');
-}
+// export async function getCurrentTracklistType() {
+//     return await currentTracklistMetadata.getProperty('type');
+// }
+
+// export async function getCurrentTracklistTitle() {
+//     return await currentTracklistMetadata.getProperty('title');
+// }
 
 /**
  * Stores the provided tracklist data in Firestore, and the track count in Chrome Storage

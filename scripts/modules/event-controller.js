@@ -71,8 +71,8 @@ Auth.listenForAuthStateChange(async () => { // TODO this name is a bit misleadin
 
     ///
 
-    SESSION_STATE.tracklist.type = await storage.getCurrentTracklistType();
-    SESSION_STATE.tracklist.title = await storage.getCurrentTracklistTitle();
+    SESSION_STATE.tracklist.type = await storage.getCachedMetadata('type');
+    SESSION_STATE.tracklist.title = await storage.getCachedMetadata('title');
 
     if (typeof SESSION_STATE.tracklist.type === 'string' && typeof SESSION_STATE.tracklist.title === 'string') { // If valid tracklist type and title values were retrieved from the local storage cache...
         UIController.triggerUITransition('ShowLandingPage', {tracklistTitle: SESSION_STATE.tracklist.title, username: firebase.auth().currentUser.email.split('@')[0]}); // Display the extension landing page
