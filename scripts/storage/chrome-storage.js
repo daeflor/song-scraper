@@ -6,7 +6,6 @@ export class ChromeStorageAccessor {
         if (area === 'local' || area === 'sync') {
             this.#storageArea = area;
             this.#storageItemKey = key;
-            //this.#properties = properties;
         } else throw RangeError("An invalid storage area was provided for accessing Chrome storage. Accepted values are 'local' and 'sync'. Value provided: " + area);
     }
 
