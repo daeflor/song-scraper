@@ -52,8 +52,8 @@ export class ChromeStorageAccessor {
      * @param {boolean} [overrideCurrentValue] An optional boolean indicating whether or not the existing property value can be overriden. Defaults to true. Setting this to false is useful when assigning a default value. 
      */
     async setProperty(propertyKey, newPropertyValue, overrideCurrentValue=true) {
-        if (typeof propertyKey !== 'string' || typeof newPropertyValue === 'undefined') { // Ignore any requests if a new property value isn't provided. Otherwise, this would lead to the value getting set to undefined, and therefore the property getting removed from Chrome storage, which is undesireable unless there is an explicit request to remove the data.
-            throw TypeError("Tried to set a property value for an item in Chrome storage, but an invalid property key or value was provided. The key must be of type 'string', and the value must not be 'undefined'.");
+        if (typeof propertyKey !== 'string') {
+            throw TypeError("Tried to set a property value for an item in Chrome storage, but an invalid property key was provided. The key must be of type 'string'.");
         }
 
         const storageItem = await this.#getStorageItem() || {}; // If the specified storage item doesn't already exist, create a new empty object

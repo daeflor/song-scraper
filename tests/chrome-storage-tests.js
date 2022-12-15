@@ -52,7 +52,7 @@ async function testChromeStorageAccessor(testNumber) {
             error = caughtError;
         }
 
-        expectedErrorMessageSnippet = "an invalid property key or value was provided";
+        expectedErrorMessageSnippet = "an invalid property key was provided";
         assertMessage = `Test #${testNumber}: Expected Error "${expectedErrorMessageSnippet}" but instead got: ${error || 'No Error'}`;
         console.assert(error?.message.includes(expectedErrorMessageSnippet) === true, assertMessage);
         console.info("Test #%s Completed", testNumber);
@@ -102,17 +102,13 @@ async function testChromeStorageAccessor(testNumber) {
         console.info("Test #%s Completed", testNumber);
         return;
     }
-    case 7: // Set Property without passing value (Should result in error)
-        try {
-            testAccessor = new ChromeStorageAccessor('sync', 'testItem');
-            await testAccessor.setProperty('testPropertyKey');
-        } catch (caughtError) {
-            error = caughtError;
-        }
+    case 7: // Set Property with empty/undefined value parameter (Acceptable Usage - should result in property getting removed from storage)
+        testAccessor = new ChromeStorageAccessor('sync', 'testItem');
+        await testAccessor.setProperty('testPropertyKey');
+        const testProperty = await testAccessor.getProperty('testPropertyKey');
 
-        expectedErrorMessageSnippet = "an invalid property key or value was provided";
-        assertMessage = `Test #${testNumber}: Expected Error "${expectedErrorMessageSnippet}" but instead got: ${error || 'No Error'}`;
-        console.assert(error?.name === 'TypeError' && error?.message.includes(expectedErrorMessageSnippet) === true, assertMessage);
+        assertMessage = `Test #${testNumber}: Expected property to be undefined, but instead got: ${testProperty}`;
+        console.assert(typeof testProperty === 'undefined', assertMessage);
         console.info("Test #%s Completed", testNumber);
         return;
     case 8: { // Set Property when Storage Item exists but Property doesn't (Acceptable usage - should result in value getting set)
