@@ -8,8 +8,11 @@ import firebaseConfig from '/scripts/Configuration/config.js'; //Import the app'
 
 //Utilities
 import * as gpmStorage from '/scripts/storage/gpm-storage.js';
-import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'
-import * as options from './scripts/options/options-storage.js'
+import * as storage from './scripts/storage/storage.js'
+import * as options from './scripts/options/options-storage.js';
+
+//Tests
+//import './tests/chrome-storage-tests.js';
 
 console.info("Starting service worker");
 
@@ -134,6 +137,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
+//TODO This background script probably shouldn't be directly accessing chrome.storage API
 chrome.runtime.onConnect.addListener(port => {
     if (port.name === 'AuthenticationChangePending') {
         port.onDisconnect.addListener(port => {
@@ -155,7 +159,7 @@ chrome.runtime.onConnect.addListener(port => {
  * @returns {Promise} A promise with the resulting track count
  */
 async function getPreviousTrackCount(tracklistTitle) {
-    const comparisonMethod = await options.getPreferences('Comparison Method');
+    const comparisonMethod = await options.getPreferences(options.preferences.comparisonMethod);
     console.log("Comparison method found in user's preferences: " + comparisonMethod);
 
     let trackCount = undefined;
@@ -163,7 +167,7 @@ async function getPreviousTrackCount(tracklistTitle) {
 
     // If the selected comparison method is to use YouTube Music only or whenever possible, get the track count from Chrome sync storage
     if (comparisonMethod === 'alwaysYTM' || comparisonMethod === 'preferYTM') {
-        trackCount = await getTrackCountFromChromeSyncStorage(tracklistTitle);
+        trackCount = await storage.getTrackCount(tracklistTitle);
     }
 
     // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the track count was not found in Chrome sync storage, get the track count from the GPM data in Chrome local storage
@@ -173,15 +177,4 @@ async function getPreviousTrackCount(tracklistTitle) {
     }
 
     return {trackCount:trackCount, sourcePrefix:trackCountSourcePrefix};
-}
-
-/**
- * Gets the track count from Chrome sync storage for a given tracklist
- * @param {string} tracklistTitle The title of the tracklist, used to search storage
- * @returns {Promise} A promise with the track count matching the given tracklist title
- */
-async function getTrackCountFromChromeSyncStorage(tracklistTitle) {
-    const userKey = 'trackCounts_' + firebase.auth().currentUser.uid;
-    const storageItems = await chromeStorage.getKeyValuePairs('sync', userKey);
-    return storageItems[userKey]?.[tracklistTitle];
 }
