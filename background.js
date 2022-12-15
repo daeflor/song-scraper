@@ -8,8 +8,11 @@ import firebaseConfig from '/scripts/Configuration/config.js'; //Import the app'
 
 //Utilities
 import * as gpmStorage from '/scripts/storage/gpm-storage.js';
-import * as chromeStorage from '/scripts/modules/utilities/chrome-storage-promises.js'
-import * as options from './scripts/options/options-storage.js'
+import * as storage from './scripts/storage/storage.js'
+import * as options from './scripts/options/options-storage.js';
+
+//Tests
+//import './tests/chrome-storage-tests.js';
 
 console.info("Starting service worker");
 
@@ -52,12 +55,15 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 });
 
 // Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
+    // It's necessary to do these checks here because the content scraper's current implementation cannot recognize when switching to the Uploaded or Subscribed Songs pages 
 chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
     if (details.url.includes('/library/songs') === true) {
-        const metadata = cacheTracklistMetadata('all', 'Added from YouTube Music'); // Cache the tracklist type and title in chrome local storage
+        const metadata = {type: 'all', title: 'Added from YouTube Music'};
+        storage.setCachedMetadata(metadata); // Cache the tracklist type and title in chrome local storage
         enableAndUpdateIcon(metadata, details.tabId);
     } else if (details.url.includes('/library/uploaded_songs') === true) {
-        const metadata = cacheTracklistMetadata('uploads', 'Uploaded Songs'); //Cache the tracklist type and title in chrome local storage
+        const metadata = {type: 'uploads', title: 'Uploaded Songs'};
+        storage.setCachedMetadata(metadata); // Cache the tracklist type and title in chrome local storage
         enableAndUpdateIcon(metadata, details.tabId);
     }
     //TODO Since the track count reported in the YTM UI for the 'Your Likes' list seems to be way off, it may be acceptable to just not bother getting the track count to update the icon for this page, since it's likely to be incorrect anyway. Instead, we could just always display the icon with a question mark, like with the 'added' and 'uploaded' cases.
@@ -113,18 +119,6 @@ async function enableAndUpdateIcon(currentTracklistMetadata, tabId) {
     chrome.action.enable(tabId); // Enable the popup action for the specified tab
 }
 
-//TODO This background script probably shouldn't be directly accessing chrome.storage API
-function cacheTracklistMetadata(tracklistType, tracklistTitle) {
-    const tracklistMetadata = {type: tracklistType, title: tracklistTitle};
-    chrome.storage.local.set({currentTracklistMetadata: tracklistMetadata}, () => { //Cache the metadata in local storage
-        if (typeof chrome.runtime.lastError !== 'undefined') {
-            console.error("Error encountered while attempting to store metadata in local storage: " + chrome.runtime.lastError.message);
-        }
-    });
-
-    return tracklistMetadata;
-}
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.greeting === 'TracklistMetadataUpdated') {
         console.log('The current tracklist metadata was updated. New track title is "%s" and new track count is "%s".',
@@ -137,25 +131,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.runtime.onConnect.addListener(port => {
     if (port.name === 'AuthenticationChangePending') {
         port.onDisconnect.addListener(port => {
-            chrome.storage.local.get('currentTracklistMetadata', storageResult => {
-                const metadata = storageResult['currentTracklistMetadata']; //TODO is it necessary to fetch and pass the metadata here? Doesn't this case only happen when the user logs out, and therefore the metadata isn't needed since the icon will just be disabled?
-                enableAndUpdateIcon(metadata);
-            });
+            enableAndUpdateIcon();
         });
     }
 });
 
-//TODO it would be nice if the helper functions below to get the previous/stored track count could be in their own module, 
+//TODO it would be nice if the helper function below to get the previous track count could be in a separate module, 
 //along with other related functions that the extension scripts need to access.
 //Once ES6 module import is possible in service workers, could make this change. Waiting for Chromium Chromium Bug 824647 to be fixed.
-
 /**
  * Returns the previous track count for the given tracklist, if available
  * @param {string} tracklistTitle The title of the tracklist
  * @returns {Promise} A promise with the resulting track count
  */
 async function getPreviousTrackCount(tracklistTitle) {
-    const comparisonMethod = await options.getPreferences('Comparison Method');
+    const comparisonMethod = await options.getPreferences(options.preferences.comparisonMethod);
     console.log("Comparison method found in user's preferences: " + comparisonMethod);
 
     let trackCount = undefined;
@@ -163,7 +153,7 @@ async function getPreviousTrackCount(tracklistTitle) {
 
     // If the selected comparison method is to use YouTube Music only or whenever possible, get the track count from Chrome sync storage
     if (comparisonMethod === 'alwaysYTM' || comparisonMethod === 'preferYTM') {
-        trackCount = await getTrackCountFromChromeSyncStorage(tracklistTitle);
+        trackCount = await storage.getTrackCount(tracklistTitle);
     }
 
     // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the track count was not found in Chrome sync storage, get the track count from the GPM data in Chrome local storage
@@ -173,15 +163,4 @@ async function getPreviousTrackCount(tracklistTitle) {
     }
 
     return {trackCount:trackCount, sourcePrefix:trackCountSourcePrefix};
-}
-
-/**
- * Gets the track count from Chrome sync storage for a given tracklist
- * @param {string} tracklistTitle The title of the tracklist, used to search storage
- * @returns {Promise} A promise with the track count matching the given tracklist title
- */
-async function getTrackCountFromChromeSyncStorage(tracklistTitle) {
-    const userKey = 'trackCounts_' + firebase.auth().currentUser.uid;
-    const storageItems = await chromeStorage.getKeyValuePairs('sync', userKey);
-    return storageItems[userKey]?.[tracklistTitle];
 }

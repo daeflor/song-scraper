@@ -19,9 +19,9 @@ import firebaseConfig from '../Configuration/config.js'; //Import the app's conf
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 
 //Storage
-import * as appStorage from '/scripts/storage/firestore-storage.js';
-import * as chromeStorage from './utilities/chrome-storage-promises.js'
+import * as appStorage from '../storage/firestore-storage.js';
 import * as gpmStorage from '../storage/gpm-storage.js';
+import * as storage from '../storage/storage.js'
 
 //Other
 import * as IO from './utilities/IO.js';
@@ -31,7 +31,7 @@ import * as options from '../options/options-storage.js'
 //TODO could consider adding to and/or removing from EventController so that it's the central place for all event-driven logic
     //i.e. EventController should dictate & be aware of all events & reactions throughout the app (not sure about auth...)
     //But it shouldn't necessarily handle any in-depth / area-specific logic. It should hand that off to the scripts designated specifically for that and then just get back the results and act on them.
-    //If this is done, it turn out that it's unnecessary/unhelpful having ViewRenderer & UI Controller be separate 
+    //If this is done, it may turn out that it's unnecessary/unhelpful having ViewRenderer & UI Controller be separate 
 
 const SESSION_STATE = {
     tracklist: {
@@ -59,12 +59,11 @@ function init() {
 
 // User Becomes Authenticated
 Auth.listenForAuthStateChange(async () => { // TODO this name is a bit misleading, since the callback only fires on an initial sign-in (i.e. not on sign-out)
-    const tracklistMetadata = await chromeStorage.getValueAtKey('local', 'currentTracklistMetadata');
+    SESSION_STATE.tracklist.type = await storage.getCachedMetadata('type');
+    SESSION_STATE.tracklist.title = await storage.getCachedMetadata('title');
 
-    if (typeof tracklistMetadata?.type === 'string' && typeof tracklistMetadata?.title === 'string') { // If valid tracklist type and title values were retrieved from the local storage cache...
-        SESSION_STATE.tracklist.type = tracklistMetadata.type; // Record the tracklist type in the session state object for future reference
-        SESSION_STATE.tracklist.title = tracklistMetadata.title; // Record the tracklist title in the session state object for future reference
-        UIController.triggerUITransition('ShowLandingPage', {tracklistTitle: tracklistMetadata.title, username: firebase.auth().currentUser.email.split('@')[0]}); // Display the extension landing page
+    if (typeof SESSION_STATE.tracklist.type === 'string' && typeof SESSION_STATE.tracklist.title === 'string') { // If valid tracklist type and title values were retrieved from the local storage cache...
+        UIController.triggerUITransition('ShowLandingPage', {tracklistTitle: SESSION_STATE.tracklist.title, username: firebase.auth().currentUser.email.split('@')[0]}); // Display the extension landing page
     } else {
         UIController.triggerUITransition('CachedTracklistMetadataInvalid');
     }
@@ -105,18 +104,17 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
 // Button Pressed: Store Scraped Metadata
 ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', async function() {
     UIController.triggerUITransition('StorageInProgress'); // Update the UI while the data is being stored (e.g. disable the 'store' button)
-
-    SESSION_STATE.tracklist.tracks.stored = SESSION_STATE.tracklist.tracks.scraped; // Set the stored tracks array equal to the scraped tracks array, saving it for future reference within the current app session
     
     try {
-        // Store the tracklist in Firestore, then store the track count in chrome sync storage, and then update UI
-        await appStorage.storeTracklistInFirestore(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.type, SESSION_STATE.tracklist.tracks.stored);
-        await appStorage.storeTrackCountInChromeSyncStorage(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.tracks.stored.length);
+        // Store the tracklist in Firestore and the track count in Chrome Storage, and then update the UI
+        await storage.storeTracklistData(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.type, SESSION_STATE.tracklist.tracks.scraped);
+        SESSION_STATE.tracklist.tracks.stored = SESSION_STATE.tracklist.tracks.scraped; // Set the stored tracks array equal to the scraped tracks array, saving it for future reference within the current app session
         UIController.triggerUITransition('ScrapedMetadataStored');
     } catch (error) {
         UIController.triggerUITransition('StorageFailed');
         console.error(error);
     }
+
     //TODO when tracklist data is stored, would it make sense to update the extension icon? I think it could help
 });
 
