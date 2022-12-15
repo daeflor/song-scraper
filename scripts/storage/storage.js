@@ -5,10 +5,19 @@ import * as firestore from './firestore-storage.js';
 const currentTracklistMetadata = new ChromeStorageAccessor('local', 'currentTracklistMetadata');
 const trackCounts = new ChromeStorageAccessor('sync');
 
+/**
+ * Retrieves the specified piece of metadata for the current tracklist cached in Chrome storage
+ * @param {string} metadatum The type of metadata to fetch from storage. (Valid parameters are 'type', 'title', and 'trackCount').
+ * @returns the metadata value matching the key provided
+ */
 export async function getCachedMetadata(metadatum) {
     return await currentTracklistMetadata.getProperty(metadatum);
 }
 
+/**
+ * Caches the metadata for the current tracklist in Chrome storage
+ * @param {Object} metadata An object containing the tracklist metadata. (Should contain 'type' and 'title' keys and, optionally, a 'trackCount' key as well).
+ */
 export async function setCachedMetadata(metadata) {
     await currentTracklistMetadata.setProperty('type', metadata.type);
     await currentTracklistMetadata.setProperty('title', metadata.title);
@@ -33,6 +42,7 @@ export async function storeTracklistData(tracklistTitle, tracklistType, tracksAr
 }
 
 //TODO is it still not possible for the background script to just get the track count from firestore and not have to store an extra copy in Chrome Storage?
+//TODO the naming of the function is a bit confusing currently, when compared to getting cached metadata from Chrome storage (which can also include a track count).
 /**
  * Gets the track count from Chrome sync storage for a given tracklist
  * @param {string} tracklistTitle The title of the tracklist, used to search storage
