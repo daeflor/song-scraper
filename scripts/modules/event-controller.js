@@ -59,18 +59,6 @@ function init() {
 
 // User Becomes Authenticated
 Auth.listenForAuthStateChange(async () => { // TODO this name is a bit misleading, since the callback only fires on an initial sign-in (i.e. not on sign-out)
-    // const tracklistMetadata = await ytmstorage.getCurrentTracklistMetadata();
-
-    // if (typeof tracklistMetadata?.type === 'string' && typeof tracklistMetadata?.title === 'string') { // If valid tracklist type and title values were retrieved from the local storage cache...
-    //     SESSION_STATE.tracklist.type = tracklistMetadata.type; // Record the tracklist type in the session state object for future reference
-    //     SESSION_STATE.tracklist.title = tracklistMetadata.title; // Record the tracklist title in the session state object for future reference
-    //     UIController.triggerUITransition('ShowLandingPage', {tracklistTitle: tracklistMetadata.title, username: firebase.auth().currentUser.email.split('@')[0]}); // Display the extension landing page
-    // } else {
-    //     UIController.triggerUITransition('CachedTracklistMetadataInvalid');
-    // }
-
-    ///
-
     SESSION_STATE.tracklist.type = await storage.getCachedMetadata('type');
     SESSION_STATE.tracklist.title = await storage.getCachedMetadata('title');
 
