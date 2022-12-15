@@ -137,14 +137,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
-//TODO This background script probably shouldn't be directly accessing chrome.storage API
 chrome.runtime.onConnect.addListener(port => {
     if (port.name === 'AuthenticationChangePending') {
         port.onDisconnect.addListener(port => {
-            chrome.storage.local.get('currentTracklistMetadata', storageResult => {
-                const metadata = storageResult['currentTracklistMetadata']; //TODO is it necessary to fetch and pass the metadata here? Doesn't this case only happen when the user logs out, and therefore the metadata isn't needed since the icon will just be disabled?
-                enableAndUpdateIcon(metadata);
-            });
+            enableAndUpdateIcon();
         });
     }
 });
