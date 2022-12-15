@@ -115,21 +115,6 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
 
 // Button Pressed: Store Scraped Metadata
 ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', async function() {
-    // UIController.triggerUITransition('StorageInProgress'); // Update the UI while the data is being stored (e.g. disable the 'store' button)
-
-    // SESSION_STATE.tracklist.tracks.stored = SESSION_STATE.tracklist.tracks.scraped; // Set the stored tracks array equal to the scraped tracks array, saving it for future reference within the current app session
-    
-    // try {
-    //     // Store the tracklist in Firestore and the track count in chrome sync storage, and then update the UI
-    //     await ytmstorage.storeTracklistData(SESSION_STATE.tracklist.title, SESSION_STATE.tracklist.type, SESSION_STATE.tracklist.tracks.stored);
-    //     UIController.triggerUITransition('ScrapedMetadataStored');
-    // } catch (error) {
-    //     UIController.triggerUITransition('StorageFailed');
-    //     console.error(error);
-    // }
-
-    ///
-
     UIController.triggerUITransition('StorageInProgress'); // Update the UI while the data is being stored (e.g. disable the 'store' button)
     
     try {

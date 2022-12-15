@@ -9,6 +9,12 @@ export async function getCachedMetadata(metadatum) {
     return await currentTracklistMetadata.getProperty(metadatum);
 }
 
+export async function setCachedMetadata(metadata) {
+    await currentTracklistMetadata.setProperty('type', metadata.type);
+    await currentTracklistMetadata.setProperty('title', metadata.title);
+    await currentTracklistMetadata.setProperty('trackCount', metadata.trackCount);
+}
+
 //TODO may want to consider splitting this up into two functions (e.g. storeTracklistMetadata, storeTrackCount)
 /**
  * Stores the provided tracklist data in Firestore, and the track count in Chrome Storage

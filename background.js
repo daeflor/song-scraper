@@ -55,12 +55,15 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 });
 
 // Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
+    // It's necessary to do these checks here because the content scraper's current implementation cannot recognize when switching to the Uploaded or Subscribed Songs pages 
 chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
     if (details.url.includes('/library/songs') === true) {
-        const metadata = cacheTracklistMetadata('all', 'Added from YouTube Music'); // Cache the tracklist type and title in chrome local storage
+        const metadata = {type: 'all', title: 'Added from YouTube Music'};
+        storage.setCachedMetadata(metadata); // Cache the tracklist type and title in chrome local storage
         enableAndUpdateIcon(metadata, details.tabId);
     } else if (details.url.includes('/library/uploaded_songs') === true) {
-        const metadata = cacheTracklistMetadata('uploads', 'Uploaded Songs'); //Cache the tracklist type and title in chrome local storage
+        const metadata = {type: 'uploads', title: 'Uploaded Songs'};
+        storage.setCachedMetadata(metadata); // Cache the tracklist type and title in chrome local storage
         enableAndUpdateIcon(metadata, details.tabId);
     }
     //TODO Since the track count reported in the YTM UI for the 'Your Likes' list seems to be way off, it may be acceptable to just not bother getting the track count to update the icon for this page, since it's likely to be incorrect anyway. Instead, we could just always display the icon with a question mark, like with the 'added' and 'uploaded' cases.
@@ -116,18 +119,6 @@ async function enableAndUpdateIcon(currentTracklistMetadata, tabId) {
     chrome.action.enable(tabId); // Enable the popup action for the specified tab
 }
 
-//TODO This background script probably shouldn't be directly accessing chrome.storage API
-function cacheTracklistMetadata(tracklistType, tracklistTitle) {
-    const tracklistMetadata = {type: tracklistType, title: tracklistTitle};
-    chrome.storage.local.set({currentTracklistMetadata: tracklistMetadata}, () => { //Cache the metadata in local storage
-        if (typeof chrome.runtime.lastError !== 'undefined') {
-            console.error("Error encountered while attempting to store metadata in local storage: " + chrome.runtime.lastError.message);
-        }
-    });
-
-    return tracklistMetadata;
-}
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.greeting === 'TracklistMetadataUpdated') {
         console.log('The current tracklist metadata was updated. New track title is "%s" and new track count is "%s".',
@@ -145,10 +136,9 @@ chrome.runtime.onConnect.addListener(port => {
     }
 });
 
-//TODO it would be nice if the helper functions below to get the previous/stored track count could be in their own module, 
+//TODO it would be nice if the helper function below to get the previous track count could be in a separate module, 
 //along with other related functions that the extension scripts need to access.
 //Once ES6 module import is possible in service workers, could make this change. Waiting for Chromium Chromium Bug 824647 to be fixed.
-
 /**
  * Returns the previous track count for the given tracklist, if available
  * @param {string} tracklistTitle The title of the tracklist
