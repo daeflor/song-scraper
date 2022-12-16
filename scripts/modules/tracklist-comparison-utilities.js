@@ -1,4 +1,4 @@
-import * as appStorage from '/scripts/storage/firestore-storage.js';
+import * as appStorage from '../storage/firestore-storage.js';
 import * as customTracklists from '../Configuration/custom-tracklists.js'; //TODO would be nice to not have to import this here AND in EventController
 
 export function generateDeltaTracklists(scrapedTracklist, storedTracklist) {
