@@ -2,8 +2,8 @@ import { ChromeStorageAccessor } from '../storage/chrome-storage.js'
 
 export { 
     STORAGE_ITEM_PROPERTIES as preferences, 
-    getPreferencesFromChromeSyncStorage as getPreferences, 
-    updatePreferencesInChromeSyncStorage as updatePreferences
+    //getPreferenceValue as getPreferences, 
+    setPreferenceValue as updatePreferences
 };
 
 const STORAGE_ITEM_PROPERTIES = Object.freeze({
@@ -21,7 +21,7 @@ const options = new ChromeStorageAccessor('sync', 'preferences');
  * @param {string} [preference] An optional preference to specify, if only one value is desired
  * @returns {Promise} A promise with either an object containing all the user's preferences, or the value of a single preference, if specified
  */
-async function getPreferencesFromChromeSyncStorage(preferenceKey) {
+export async function getPreferenceValue(preferenceKey) {
     return await options.getProperty(preferenceKey);
 }
 
@@ -30,12 +30,13 @@ async function getPreferencesFromChromeSyncStorage(preferenceKey) {
  * @param {string} preferenceKey The key for the property in storage matching the given preference
  * @param {string} newValue The new preference value
  */
-async function updatePreferencesInChromeSyncStorage(preferenceKey, newValue) {
+async function setPreferenceValue(preferenceKey, newValue) {
     await options.setProperty(preferenceKey, newValue);
 }
 
-async function setDefaultPreferenceValueInChromeSyncStorage(preferenceKey, newValue) {
+async function setDefaultPreferenceValue(preferenceKey, newValue) {
     await options.setProperty(preferenceKey, newValue, false);
 }
 
-setDefaultPreferenceValueInChromeSyncStorage('Comparison Method', 'preferYTM');
+// Set the default comparison method, in case one isn't set already
+setDefaultPreferenceValue('Comparison Method', 'preferYTM');

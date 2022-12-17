@@ -1,7 +1,7 @@
-import { preferences, getPreferences, updatePreferences} from './options-storage.js';
+import { preferences, getPreferenceValue, updatePreferences} from './options-storage.js';
 
 async function initializePreferencesScreenUI() {
-    const comparisonMethod = await getPreferences('Comparison Method');
+    const comparisonMethod = await getPreferenceValue('Comparison Method');
     
     const checkboxToEnable = document.getElementById(comparisonMethod); // Get the DOM checkbox element matching the found preference
     if (checkboxToEnable instanceof Element === true) { // If a valid checkbox element was found, check it
