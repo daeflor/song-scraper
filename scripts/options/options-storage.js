@@ -1,18 +1,11 @@
 import { ChromeStorageAccessor } from '../storage/chrome-storage.js'
-
-export { 
-    STORAGE_ITEM_PROPERTIES as preferences, 
-    //getPreferenceValue as getPreferences, 
-    setPreferenceValue as updatePreferences
-};
+export { STORAGE_ITEM_PROPERTIES as preferences };
 
 const STORAGE_ITEM_PROPERTIES = Object.freeze({
     comparisonMethod: 'Comparison Method'
 });
-//TODO could consider a similar object that lists the possible property values, but that may get too convoluted.
-    //For example comparisonMethod: { key: 'Comparison Method', supportedValues: {alwaysYTM: 'alwaysYTM', preferYTM: 'preferYTM', alwaysGPM: 'alwaysGPM'} }
-    //The above suggestion would make the code elsewhere very hard to read. An alternative option could be to have a separate object per preference, e.g.:
-        //COMPARISON_METHOD_VALUES: { alwaysYTM: 'alwaysYTM', preferYTM: 'preferYTM', alwaysGPM: 'alwaysGPM' } exported as comparisonMethods
+//TODO consider having an  object per preference, e.g.:
+    //COMPARISON_METHOD_VALUES: { alwaysYTM: 'alwaysYTM', preferYTM: 'preferYTM', alwaysGPM: 'alwaysGPM' } exported as comparisonMethods
 
 const options = new ChromeStorageAccessor('sync', 'preferences');
 
@@ -30,7 +23,7 @@ export async function getPreferenceValue(preferenceKey) {
  * @param {string} preferenceKey The key for the property in storage matching the given preference
  * @param {string} newValue The new preference value
  */
-async function setPreferenceValue(preferenceKey, newValue) {
+export async function setPreferenceValue(preferenceKey, newValue) {
     await options.setProperty(preferenceKey, newValue);
 }
 
