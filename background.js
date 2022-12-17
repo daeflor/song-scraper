@@ -34,7 +34,8 @@ chrome.runtime.onInstalled.addListener(async function() {
         documentUrlPatterns: ['https://music.youtube.com/library/playlists']
     });
 
-    options.setDefaultPreferenceValue(options.preferences.comparisonMethod, 'preferYTM');
+    //options.setDefaultPreferenceValue(options.preferences.comparisonMethod, 'preferYTM');
+    //options.setDefaultPreferenceValue(options.preferences.comparisonMethod, options.comparisonMethods.preferYTM);
 });
 
 if (firebase.apps.length === 0) { // If Firebase has not yet been initialized (i.e. if the extension was just installed)...
