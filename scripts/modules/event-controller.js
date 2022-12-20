@@ -350,7 +350,7 @@ async function getStoredTracksYTM(tracklistTitle) {
  */
 async function getDeltaTracklists() {
     if (SESSION_STATE.tracklist.deltas instanceof Map === false) {
-        const comparisonMethod = await options.getPreferenceValue(options.preferences.comparisonMethod);
+        const comparisonMethod = await options.comparisonMethod.getValue();
         console.info("Comparison method found in user's preferences: " + comparisonMethod);
 
         let tracksUsedForDelta = undefined;

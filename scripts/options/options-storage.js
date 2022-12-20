@@ -1,35 +1,48 @@
 import { ChromeStorageAccessor } from '../storage/chrome-storage.js'
-export { STORAGE_ITEM_PROPERTIES as preferences };
+export { comparisonMethod };
 
-const STORAGE_ITEM_PROPERTIES = Object.freeze({
-    comparisonMethod: 'Comparison Method'
-});
-//TODO consider having an  object per preference, e.g.:
-    //COMPARISON_METHOD_VALUES: { alwaysYTM: 'alwaysYTM', preferYTM: 'preferYTM', alwaysGPM: 'alwaysGPM' } exported as comparisonMethods
+//TODO consider passing a list of supported values, so that they can then be accessed following a pattern such as the following: options.comparisonMethod.values.x, where x corresponds to the potential string value of the option
+    //For example, could pass an object to the constructor like the following, which then gets saved as this.values: { alwaysYTM: 'alwaysYTM', preferYTM: 'preferYTM', alwaysGPM: 'alwaysGPM' }
+class Option { 
+    #key;
+    #storageAccessor;
 
-const options = new ChromeStorageAccessor('sync', 'preferences');
-
-/**
- * Returns the user's preferences object, or a particular preference value if specified
- * @param {string} [preference] An optional preference to specify, if only one value is desired
- * @returns {Promise} A promise with either an object containing all the user's preferences, or the value of a single preference, if specified
- */
-export async function getPreferenceValue(preferenceKey) {
-    return await options.getProperty(preferenceKey);
+    constructor(storageAccessor, key, ...values) {
+        if (typeof storageAccessor === 'object' && typeof key === 'string') {
+            this.#storageAccessor = storageAccessor;
+            this.#key = key;
+        } else throw TypeError("An invalid key was provided for accessing a Chrome storage item's property.");
+    }
+    
+    /**
+     * @returns {Promise} A promise with the option's value, fetched from Chrome Storage
+     */
+    async getValue() {
+        return await this.#storageAccessor.getProperty(this.#key);
+    }
+    
+    /**
+     * Updates the option's value in Chrome Sync Storage
+     * @param {string} newValue The option's new value
+     */
+    async setValue(newValue) {
+        await this.#storageAccessor.setProperty(this.#key, newValue);
+    }
+    
+    /**
+     * Sets a default value for the option, in Chrome Storage. Doesn't override an existing value if one has already been set. 
+     * @param {string} newValue The default value to which the option should be set
+     */
+    async setDefaultValue(newValue) {
+        await this.#storageAccessor.setProperty(this.#key, newValue, false);
+    }
 }
 
-/**
- * Updates the value of the specified preference in Chrome Sync Storage
- * @param {string} preferenceKey The key for the property in storage matching the given preference
- * @param {string} newValue The new preference value
- */
-export async function setPreferenceValue(preferenceKey, newValue) {
-    await options.setProperty(preferenceKey, newValue);
-}
+// Instantiate a Chrome Storage Accessor for the 'preferences' property in Chrome Sync Storage
+const storageAccessor = new ChromeStorageAccessor('sync', 'preferences');
 
-async function setDefaultPreferenceValue(preferenceKey, newValue) {
-    await options.setProperty(preferenceKey, newValue, false);
-}
+// Instantiate options classes
+const comparisonMethod = new Option(storageAccessor, 'Comparison Method');
 
-// Set the default comparison method, in case one isn't set already
-setDefaultPreferenceValue('Comparison Method', 'preferYTM');
+// Set default values for options
+comparisonMethod.setDefaultValue('preferYTM');

@@ -143,7 +143,7 @@ chrome.runtime.onConnect.addListener(port => {
  * @returns {Promise} A promise with the resulting track count
  */
 async function getPreviousTrackCount(tracklistTitle) {
-    const comparisonMethod = await options.getPreferenceValue(options.preferences.comparisonMethod);
+    const comparisonMethod = await options.comparisonMethod.getValue();
     console.log("Comparison method found in user's preferences: " + comparisonMethod);
 
     let trackCount = undefined;
