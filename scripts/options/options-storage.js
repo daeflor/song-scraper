@@ -7,7 +7,7 @@ class Option {
     #key;
     #storageAccessor;
 
-    constructor(storageAccessor, key, ...values) {
+    constructor(storageAccessor, key) {
         if (typeof storageAccessor === 'object' && typeof key === 'string') {
             this.#storageAccessor = storageAccessor;
             this.#key = key;
