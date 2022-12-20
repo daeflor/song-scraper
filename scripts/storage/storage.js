@@ -1,4 +1,4 @@
-import { ChromeStorageAccessor } from './chrome-storage.js'
+import ChromeStorageAccessor from './chrome-storage.js'
 import * as firestore from './firestore-storage.js';
 
 //TODO maybe these should be in an init function that gets called when auth changes

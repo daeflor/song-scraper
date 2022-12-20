@@ -1,4 +1,4 @@
-export class ChromeStorageAccessor {
+export default class ChromeStorageAccessor {
     #storageArea;
     #storageItemKey;
     
@@ -59,6 +59,7 @@ export class ChromeStorageAccessor {
         if (Object.hasOwn(storageItem, propertyKey) === false || overrideCurrentValue === true) { // If the given property doesn't already exist, or if overriding its current value is permitted, update the property's value and store the updated item 
             storageItem[propertyKey] = newPropertyValue; 
             await chrome.storage[this.#storageArea].set({[this.#storageItemKey]: storageItem});
+            console.info("Property in Chrome Storage has been updated. '%s : %s' was set to '%s'.", this.#storageItemKey, propertyKey, newPropertyValue);
         }
     }
 }

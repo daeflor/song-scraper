@@ -1,4 +1,4 @@
-import { ChromeStorageAccessor } from '../storage/chrome-storage.js'
+import ChromeStorageAccessor from '../storage/chrome-storage.js'
 export { comparisonMethod };
 
 //TODO consider passing a list of supported values, so that they can then be accessed following a pattern such as the following: options.comparisonMethod.values.x, where x corresponds to the potential string value of the option
