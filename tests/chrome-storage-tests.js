@@ -1,4 +1,4 @@
-import { ChromeStorageAccessor } from '../scripts/storage/chrome-storage.js';
+import ChromeStorageAccessor from '../scripts/storage/chrome-storage.js';
 
 setTimeout(runAllTests, 500);
 

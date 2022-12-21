@@ -33,8 +33,6 @@ chrome.runtime.onInstalled.addListener(async function() {
         title: "Print List of GPM Tracklists to Console",
         documentUrlPatterns: ['https://music.youtube.com/library/playlists']
     });
-
-    options.setDefaultPreferenceValue(options.preferences.comparisonMethod, 'preferYTM');
 });
 
 if (firebase.apps.length === 0) { // If Firebase has not yet been initialized (i.e. if the extension was just installed)...
@@ -145,7 +143,7 @@ chrome.runtime.onConnect.addListener(port => {
  * @returns {Promise} A promise with the resulting track count
  */
 async function getPreviousTrackCount(tracklistTitle) {
-    const comparisonMethod = await options.getPreferences(options.preferences.comparisonMethod);
+    const comparisonMethod = await options.comparisonMethod.getValue();
     console.log("Comparison method found in user's preferences: " + comparisonMethod);
 
     let trackCount = undefined;
