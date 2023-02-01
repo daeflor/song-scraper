@@ -1,6 +1,6 @@
 import * as DebugController from './modules/DebugController.js';
 import * as ViewRenderer from './modules/ViewRenderer.js';
-//import * as IO from './modules/Utilities/IO.js';
+import * as sessionState from './session-state.js'
 
 /**
  * Updates the UI as specified by the transition parameter
@@ -42,15 +42,18 @@ export function triggerUITransition(transition, options) {
 
     //     ViewRenderer.unhideElement(ViewRenderer.divs.auth);
     } else if (transition === 'ShowLandingPage') {
-        if (typeof options?.tracklistTitle === 'string' && typeof options.username === 'string') {
+        if (typeof sessionState.tracklistTitle === 'string' && typeof sessionState.username === 'string') {
             ViewRenderer.hideElement(ViewRenderer.divs.status);
             ViewRenderer.hideElement(ViewRenderer.divs.auth);
-            ViewRenderer.showHeader(options.tracklistTitle);
-            ViewRenderer.divs.username.textContent = options.username;
+            ViewRenderer.showHeader(sessionState.tracklistTitle);
+            //TODO This file probably shouldn't be directly updating the two UI elements below this way. 
+            //TODO Also may want to include some error checking for the data fetched from session state.
+            ViewRenderer.divs.username.textContent = sessionState.username;
+            ViewRenderer.labels.deltas.childNodes[0].textContent = 'Track Deltas (' + sessionState.comparisonMethod.slice(-3) + ')'; // Update the label indicating which app is used to generate the trascklist delta
             ViewRenderer.showLandingPage();
         } else {
             ViewRenderer.showStatusMessage('The username or the tracklist title retrieved from the cached metadata is invalid.');
-            console.error("Tried to display the landing page but the parameters provided were invalid.");
+            throw TypeError("Tried to display the landing page but the parameters provided were invalid. Username and Tracklist Title must both be strings.");
         }
     } else if (transition === 'StartScrape') {
         ViewRenderer.disableElement(ViewRenderer.buttons.scrape);
@@ -86,10 +89,6 @@ export function triggerUITransition(transition, options) {
     } else if (transition === 'StorageFailed') {
         ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Failed to store tracklist data!');
         ViewRenderer.updateElementColor(ViewRenderer.buttons.storeScrapedMetadata, '#cc3300');
-    } else if (transition === 'UpdateDeltaLabel') {
-        //TODO Should this logic be within a function that includes error checking?
-            //This file shouldn't be directly updating UI elements this way
-        ViewRenderer.labels.deltas.childNodes[0].textContent = 'Track Deltas (' + options.appUsedForDelta + ')';
     } else if (transition === 'AddDeltaTrackTables') {
         if (options?.deltaTracklists instanceof Map === true) {
             // Create a track table for the list of 'Added Tracks'

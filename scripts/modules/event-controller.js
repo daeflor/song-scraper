@@ -28,7 +28,7 @@ import * as IO from './utilities/IO.js';
 import * as customTracklists from '../Configuration/custom-tracklists.js';
 import * as options from '../options/options-storage.js'
 
-import * as sessionCache from '../session-state.js';
+import * as sessionState from '../session-state.js';
 
 //TODO could consider adding to and/or removing from EventController so that it's the central place for all event-driven logic
     //i.e. EventController should dictate & be aware of all events & reactions throughout the app (not sure about auth...)
@@ -69,28 +69,15 @@ function init() {
 
 // User Becomes Authenticated
 Auth.listenForAuthStateChange(async () => { // TODO this name is a bit misleading, since the callback only fires on an initial sign-in (i.e. not on sign-out)
-    // SESSION_STATE.tracklist.type = await storage.getCachedMetadata('type');
-    // SESSION_STATE.tracklist.title = await storage.getCachedMetadata('title');
+    await sessionState.init(); // Initialize the session state. Must be called asynchronously because it will fetch tracklist metadata from Chrome storage.
 
-    //TODO maybe session state should pull this data from the cache directly, once the user has been authenticated.
-    sessionCache.setTracklistMetadata(await storage.getCachedMetadata('title'), await storage.getCachedMetadata('type'));
-    // sessionState.tracklistTitle = await storage.getCachedMetadata('title');
-    // sessionState.tracklistType = await storage.getCachedMetadata('type');
-
-    //TODO consider moving this check elsewhere
-    //TODO consider having UIController fetch the tracklist title, etc. directly from session-state whenever needed
-    //TODO consider storing username in session-state as well
-    if (typeof sessionCache.tracklistType === 'string' && typeof sessionCache.tracklistTitle === 'string') { // If valid tracklist type and title values were retrieved from the local storage cache...
-        UIController.triggerUITransition('UpdateDeltaLabel', {appUsedForDelta: sessionCache.comparisonMethod.slice(-3)});
-        UIController.triggerUITransition('ShowLandingPage', {tracklistTitle: sessionCache.tracklistTitle, username: firebase.auth().currentUser.email.split('@')[0]}); // Display the extension landing page        
-    } else {
-        UIController.triggerUITransition('CachedTracklistMetadataInvalid');
-    }
+    //UIController.triggerUITransition('UpdateDeltaLabel'); // Update the label indicating which app is used to generate the trascklist delta
+    UIController.triggerUITransition('ShowLandingPage'); // Display the extension landing page        
 });
 
 // Button Pressed: Log In
 ViewRenderer.buttons.logIn.addEventListener('click', function() {
-    //TODO when the button gets clicked once, it should get disabled, to ensure it doesn't accidentally get clicked again
+    ViewRenderer.disableElement(ViewRenderer.buttons.logIn);
     Auth.logIn();
 });
 
@@ -111,7 +98,7 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
     UIController.triggerUITransition('StartScrape');
     Messenger.sendMessageToContentScripts('GetTracks', tracksArray => {
         if (Array.isArray(tracksArray) === true) { //If the response received is an array... 
-            sessionCache.updateTracklist('scraped', tracksArray);
+            sessionState.updateTracklist('scraped', tracksArray);
             UIController.triggerUITransition('ScrapeSuccessful'); //Transition the UI accordingly
         } else {
             UIController.triggerUITransition('ScrapeFailed');
@@ -127,8 +114,8 @@ ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', async functi
     try {
         // Store the tracklist in Firestore and the track count in Chrome Storage, and then update the UI
         //TODO storage should just pull this info (the parameters) from session state directly
-        await storage.storeTracklistData(sessionCache.tracklistTitle, sessionCache.tracklistType, sessionCache.scrapedTracks);
-        sessionCache.updateTracklist('stored', sessionCache.scrapedTracks); // Set the stored tracks array equal to the scraped tracks array, saving it for future reference within the current app session
+        await storage.storeTracklistData(sessionState.tracklistTitle, sessionState.tracklistType, sessionState.scrapedTracks);
+        sessionState.updateTracklist('stored', sessionState.scrapedTracks); // Set the stored tracks array equal to the scraped tracks array, saving it for future reference within the current app session
         //sessionCache.storedTracks = sessionCache.scrapedTracks; // Set the stored tracks array equal to the scraped tracks array, saving it for future reference within the current app session
         UIController.triggerUITransition('ScrapedMetadataStored');
     } catch (error) {
@@ -143,19 +130,19 @@ ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', async functi
 
 // Button Pressed: Download Scraped Tracks
 ViewRenderer.buttons.downloadScrapedTracks.addEventListener('click', function() {
-    triggerCSVDownload(sessionCache.scrapedTracks, 'Tracklist_Scraped_' + sessionCache.tracklistTitle);
+    triggerCSVDownload(sessionState.scrapedTracks, 'Tracklist_Scraped_' + sessionState.tracklistTitle);
 });
 
 // Button Pressed: Download Stored GPM Tracks
 ViewRenderer.buttons.downloadGPMTracks.addEventListener('click', async function() {
-    const storedTracks = await gpmStorage.getTracklistData('tracksArray', sessionCache.tracklistTitle);
-    triggerCSVDownload(storedTracks, 'Tracklist_GPM_' + sessionCache.tracklistTitle);
+    const storedTracks = await gpmStorage.getTracklistData('tracksArray', sessionState.tracklistTitle);
+    triggerCSVDownload(storedTracks, 'Tracklist_GPM_' + sessionState.tracklistTitle);
 });
 
 // Button Pressed: Download Stored YTM Tracks
 ViewRenderer.buttons.downloadStoredTracks.addEventListener('click', async function() {
-    const storedTracks = await sessionCache.fetchTracklist('stored');
-    triggerCSVDownload(storedTracks, 'Tracklist_YTM_' + sessionCache.tracklistTitle);
+    const storedTracks = await sessionState.fetchTracklist('stored');
+    triggerCSVDownload(storedTracks, 'Tracklist_YTM_' + sessionState.tracklistTitle);
 });
 
 //TODO the events below are all very similar and could probably be merged. The only tricky part is that some are async and some aren't, and one uses maps instead of arrays
@@ -165,7 +152,7 @@ ViewRenderer.buttons.copyToClipboardScrapedTracks.addEventListener('click', func
     this.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
     const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV
-    const csv = IO.convertArrayOfObjectsToCsv(sessionCache.scrapedTracks, includedProperties);
+    const csv = IO.convertArrayOfObjectsToCsv(sessionState.scrapedTracks, includedProperties);
 
     navigator.clipboard.writeText(csv)
         .then(() => setTimeout(() => this.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
@@ -176,7 +163,7 @@ ViewRenderer.buttons.copyToClipboardScrapedTracks.addEventListener('click', func
 ViewRenderer.buttons.copyToClipboardStoredTracks.addEventListener('click', async function() {
     this.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
-    const storedTracks = await sessionCache.fetchTracklist('stored');
+    const storedTracks = await sessionState.fetchTracklist('stored');
 
     if (Array.isArray(storedTracks) === true) {
         const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV
@@ -194,11 +181,11 @@ ViewRenderer.buttons.copyToClipboardStoredTracks.addEventListener('click', async
 ViewRenderer.buttons.copyToClipboardDeltaTrackTables.addEventListener('click', async function() {
     this.textContent = 'pending'; // As soon as the button is pressed, update the button to show a 'pending' icon
     
-    const deltaTracklists = await sessionCache.fetchTracklist('deltas');
+    const deltaTracklists = await sessionState.fetchTracklist('deltas');
 
     if (deltaTracklists instanceof Map === true) {
         const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV.
-        const csv = IO.convertObjectMapsToCsv(deltaTracklists, includedProperties, sessionCache.tracklistTitle);
+        const csv = IO.convertObjectMapsToCsv(deltaTracklists, includedProperties, sessionState.tracklistTitle);
 
         navigator.clipboard.writeText(csv)
             .then(() => setTimeout(() => this.textContent = 'content_paste', 100),  // Once the CSV data has been copied to the clipboard, update the button to show the 'clipboard' icon again after a brief delay (so that the icon transition is visible)
@@ -256,7 +243,7 @@ ViewRenderer.buttons.copyToClipboardTracksNotInCommonGPM.addEventListener('click
 
 // Checkbox Value Changed: Scraped Track Table
 ViewRenderer.checkboxes.scrapedTrackTable.addEventListener('change', function() {
-    reactToCheckboxChange(sessionCache.scrapedTracks, ViewRenderer.tracktables.scraped, this.checked, 'Scraped Tracklist');
+    reactToCheckboxChange(sessionState.scrapedTracks, ViewRenderer.tracktables.scraped, this.checked, 'Scraped Tracklist');
 });
 
 // Checkbox Value Changed: Stored GPM Track Table
@@ -264,13 +251,13 @@ ViewRenderer.checkboxes.gpmTrackTable.addEventListener('change', async function(
     //TODO it's a bit silly to get the tracks array even in the case when the checkbox is unchecked.
     //TODO Why are we potentially getting the tracks array multiple times instead of saving it in session state?
         //Because gpm-storage uses its own session state (i.e. it does cache it after the first fetch). But maybe all session state should be consolidated into one place, eventually.
-    const storedTracks = await gpmStorage.getTracklistData('tracksArray', sessionCache.tracklistTitle);
+    const storedTracks = await gpmStorage.getTracklistData('tracksArray', sessionState.tracklistTitle);
     reactToCheckboxChange(storedTracks, ViewRenderer.tracktables.gpm, this.checked, 'Stored GPM Tracklist');
 });
 
 // Checkbox Value Changed: Stored YTM Track Table
 ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', async function() {
-    const storedTracks = await sessionCache.fetchTracklist('stored');
+    const storedTracks = await sessionState.fetchTracklist('stored');
     reactToCheckboxChange(storedTracks, ViewRenderer.tracktables.stored, this.checked, 'Stored YTM Tracklist');
 });
 
@@ -281,7 +268,7 @@ ViewRenderer.checkboxes.storedTrackTable.addEventListener('change', async functi
 ViewRenderer.checkboxes.deltaTrackTables.addEventListener('change', async function() {
     //TODO I'm trying to get the delta tracklists here even if the checkbox was 'unchecked', which doesn't make much sense.
         //Should try to do this more efficiently
-    const deltaTracklists = await sessionCache.fetchTracklist('deltas');
+    const deltaTracklists = await sessionState.fetchTracklist('deltas');
 
     reactToCheckboxChange(deltaTracklists, ViewRenderer.tracktables.deltas, this.checked);
 });

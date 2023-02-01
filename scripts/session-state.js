@@ -1,3 +1,4 @@
+import * as storage from './storage/storage.js'
 import * as appStorage from './storage/firestore-storage.js'
 import * as gpmStorage from './storage/gpm-storage.js';
 import * as options from './options/options-storage.js'
@@ -29,13 +30,20 @@ const tracksNotInCommon = {
     fromPlaylists: undefined
 }
 
-//TODO should really consider a class or something for tracklist metadata, which could be used across both background and regular scripts
-export function setTracklistMetadata(title, type) {
-    if (typeof title === 'string' && typeof type === 'string') {
-        tracklistTitle = title;
-        tracklistType = type;
-    } else throw TypeError("An invalid tracklist type and/or title was provided. Both must be strings.");
+export let username;
+
+export async function init() { //TODO could consider a more specific name for this, if needed
+    tracklistTitle = await storage.getCachedMetadata('title');
+    tracklistType = await storage.getCachedMetadata('type');
+    if (typeof tracklistTitle !== 'string' || typeof tracklistType !== 'string') {
+        //UIController.triggerUITransition('CachedTracklistMetadataInvalid');
+        throw TypeError("An invalid tracklist type and/or title was found in cached storage. Both should be strings.");
+    }
+    
+    username = firebase.auth().currentUser.email.split('@')[0];
 }
+
+//TODO should really consider a class or something for tracklist metadata, which could be used across both background and regular scripts
 
 // async function getStoredTracks() {
 //     return typeof storedTracks === 'undefined'
@@ -59,7 +67,7 @@ export function setTracklistMetadata(title, type) {
  * @param {string} name The name or type of tracklist to update in session cache. Valid options are: 'scraped', and 'stored'. 
  * @param {Object[]} tracksArray The array of tracks to save in session cache. 
  */
-export async function updateTracklist(name, tracksArray) {
+export function updateTracklist(name, tracksArray) {
     if (name === 'scraped') {
         scrapedTracks = tracksArray;
     } else if (name === 'stored') {
@@ -74,7 +82,7 @@ export async function updateTracklist(name, tracksArray) {
  */
 export async function fetchTracklist(name) {
     switch(name) {
-    case 'stored':
+    case 'stored': //TODO Could consider fetching the stored tracklist unconditionally when the extension popup is opened, and then all future references to it could be synchronous (similar to tracklist title & type, fetched from Chrome storage)
         return typeof storedTracks === 'undefined'
         ? storedTracks = await appStorage.retrieveTracksArrayFromFirestore(tracklistTitle)
         : storedTracks
