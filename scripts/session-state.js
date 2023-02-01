@@ -4,6 +4,8 @@ import * as options from './options/options-storage.js'
 import * as tracklistComparisonUtils from './modules/tracklist-comparison-utilities.js';
 import * as customTracklists from './Configuration/custom-tracklists.js';
 
+//export {comparisonMethod, tracklistTitle, tracklistType, scrapedTracks, setTracklistMetadata, updateTracklist, fetchTracklist}
+
 // const tracklist = {
 //     title: undefined,
 //     type: undefined
@@ -14,16 +16,13 @@ import * as customTracklists from './Configuration/custom-tracklists.js';
 //     stored: undefined
 // }
 
-const comparisonMethodTest = await options.comparisonMethod.getValue();
-console.log("comp: " + comparisonMethodTest);
-
+export const comparisonMethod = await options.comparisonMethod.getValue();
 
 export let tracklistTitle;
 export let tracklistType;
 export let scrapedTracks; //TODO consider whether or not I should export this directly or just include it in the fetchTracklist function. The benefit of exporting directly is that this should never need to be async.
 
 let storedTracks;
-
 let deltaTracklists = undefined;
 const tracksNotInCommon = {
     fromLibrary: undefined,
@@ -61,7 +60,6 @@ export function setTracklistMetadata(title, type) {
  * @param {Object[]} tracksArray The array of tracks to save in session cache. 
  */
 export async function updateTracklist(name, tracksArray) {
-    //console.log(name.concat('Tracks'));
     if (name === 'scraped') {
         scrapedTracks = tracksArray;
     } else if (name === 'stored') {
@@ -76,8 +74,6 @@ export async function updateTracklist(name, tracksArray) {
  */
 export async function fetchTracklist(name) {
     switch(name) {
-    // case 'scraped':
-    //     return scrapedTracks;
     case 'stored':
         return typeof storedTracks === 'undefined'
         ? storedTracks = await appStorage.retrieveTracksArrayFromFirestore(tracklistTitle)
@@ -104,10 +100,6 @@ export async function fetchTracklist(name) {
  * @returns {Promise} A promise with a map containing the various delta tracklists (Added, Removed, Unplayable)
  */
 async function generateDeltaMap() {
-    //TODO perhaps getting the comparison method is something that could be done when the app is first launched
-        //comparison method and/or 'app used for delta' could be stored in session state at that point, since it shouldn't change mid-session
-        //That way the UI can be updated earlier in the flow, and it may help avoid the problem of when to call the UI controller function
-
     const comparisonMethod = await options.comparisonMethod.getValue();
     console.info("Comparison method found in user's preferences: " + comparisonMethod);
 
@@ -128,10 +120,6 @@ async function generateDeltaMap() {
     // If a valid array of tracks was found in storage, use that to compare with the scraped tracks & generate the deltas, and update the deltas checkbox label accordingly
     if (Array.isArray(tracksUsedForDelta) === true) {
         return tracklistComparisonUtils.generateDeltaTracklists(scrapedTracks, tracksUsedForDelta); // Generate delta tracklists based on the scraped and stored tracklists
-        
-        //UIController.triggerUITransition('UpdateDeltaLabel', {appUsedForDelta: appUsedForDelta});
-        //TODO how do we now include this call to UI Controller? it doesn't really make sense for session-state to handle that, but it only needs to be done the first time (when the delta map is generated)
-        //TODO it would be nice to update the checkbox label earlier in the UX flow than this...
     }
 }
 

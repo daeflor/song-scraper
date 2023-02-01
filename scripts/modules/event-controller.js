@@ -78,10 +78,11 @@ Auth.listenForAuthStateChange(async () => { // TODO this name is a bit misleadin
     // sessionState.tracklistType = await storage.getCachedMetadata('type');
 
     //TODO consider moving this check elsewhere
-    //TODO consider having UIController fetch the tracklist title directly from session-state whenever needed
+    //TODO consider having UIController fetch the tracklist title, etc. directly from session-state whenever needed
     //TODO consider storing username in session-state as well
     if (typeof sessionCache.tracklistType === 'string' && typeof sessionCache.tracklistTitle === 'string') { // If valid tracklist type and title values were retrieved from the local storage cache...
-        UIController.triggerUITransition('ShowLandingPage', {tracklistTitle: sessionCache.tracklistTitle, username: firebase.auth().currentUser.email.split('@')[0]}); // Display the extension landing page
+        UIController.triggerUITransition('UpdateDeltaLabel', {appUsedForDelta: sessionCache.comparisonMethod.slice(-3)});
+        UIController.triggerUITransition('ShowLandingPage', {tracklistTitle: sessionCache.tracklistTitle, username: firebase.auth().currentUser.email.split('@')[0]}); // Display the extension landing page        
     } else {
         UIController.triggerUITransition('CachedTracklistMetadataInvalid');
     }
@@ -347,44 +348,6 @@ ViewRenderer.checkboxes.tracksOnlyInCommon.addEventListener('change', async func
 }
 
 ///////////
-
-//TODO I think this is just here temporarily. I don't think I like the event-controller containing functions like this.
-    //Could these go in StorageManager instead?
-
-// /**
-//  * Get a map containing the delta tracklists
-//  * @returns {Promise} A promise with a map containing the various delta tracklists (Added, Removed, Unplayable)
-//  */
-// async function getDeltaTracklists() {
-//     if (SESSION_STATE.tracklist.deltas instanceof Map === false) {
-//         const comparisonMethod = await options.comparisonMethod.getValue();
-//         console.info("Comparison method found in user's preferences: " + comparisonMethod);
-
-//         let tracksUsedForDelta = undefined;
-//         let appUsedForDelta = 'YTM';
-
-//         // If the selected comparison method is to use YouTube Music only or whenever possible, get the tracks from Firestore
-//         if (comparisonMethod === 'alwaysYTM' || comparisonMethod === 'preferYTM') {
-//             tracksUsedForDelta = await sessionState.fetchTracklist('stored');//getStoredTracksYTM(sessionState.tracklistTitle);
-//         }
-
-//         // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the tracklist was not found in the YTM stored tracks, get the tracks from the GPM data in Chrome local storage
-//         if (comparisonMethod === 'alwaysGPM' || (comparisonMethod === 'preferYTM' && typeof tracksUsedForDelta === 'undefined')) {
-//             tracksUsedForDelta = await gpmStorage.getTracklistData('tracksArray', sessionState.tracklistTitle);
-//             appUsedForDelta = 'GPM';
-//         }
-
-//         // If a valid array of tracks was found in storage, use that to compare with the scraped tracks & generate the deltas, and update the deltas checkbox label accordingly
-//         if (Array.isArray(tracksUsedForDelta) === true) {
-//             SESSION_STATE.tracklist.deltas = tracklistComparisonUtils.generateDeltaTracklists(sessionState.scrapedTracks, tracksUsedForDelta); // Generate delta tracklists based on the scraped and stored tracklists
-//             UIController.triggerUITransition('UpdateDeltaLabel', {appUsedForDelta: appUsedForDelta});
-//             //sessionState.tracklistType it would be nice to update the checkbox label earlier in the UX flow than this...
-//         }
-//     } else console.info("Tracklist Delta map already exists so a new one won't be created.");
-                    
-//     return SESSION_STATE.tracklist.deltas;
-// }
-
 //The functions below don't really belong in this file
 
 /**
