@@ -19,9 +19,9 @@ import firebaseConfig from '../Configuration/config.js'; //Import the app's conf
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 
 //Storage
-import * as appStorage from '../storage/firestore-storage.js';
+import * as firestore from '../storage/firestore-storage.js';
 import * as gpmStorage from '../storage/gpm-storage.js';
-import * as storage from '../storage/storage.js'
+import * as chromeCache from '../storage/storage.js'
 
 //Other
 import * as IO from './utilities/IO.js';
@@ -111,9 +111,9 @@ ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', async functi
     
     try {
         // Store the tracklist in Firestore and the track count in Chrome Storage, and then update the UI
-        await storage.storeTracklistData();
+        await firestore.storeScrapedTracks();
+        await chromeCache.storeTrackCount();
         sessionState.updateTracklist('stored', sessionState.scrapedTracks); // Set the stored tracks array equal to the scraped tracks array, saving it for future reference within the current app session
-        //sessionCache.storedTracks = sessionCache.scrapedTracks; // Set the stored tracks array equal to the scraped tracks array, saving it for future reference within the current app session
         UIController.triggerUITransition('ScrapedMetadataStored');
     } catch (error) {
         UIController.triggerUITransition('StorageFailed');

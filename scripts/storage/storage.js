@@ -32,21 +32,15 @@ export async function setCachedMetadata(metadata) {
     await currentTracklistMetadata.setProperty('trackCount', metadata.trackCount);
 }
 
-//TODO may want to consider splitting this up into two functions (e.g. storeTracklistMetadata, storeTrackCount)
 /**
  * Stores the tracklist data - currently in Session State - in Firestore, and the track count in Chrome Storage
  */
-export async function storeTracklistData() {
-    //TODO tbd on if this check should be here or rely on a deeper one
-    if (typeof sessionState.tracklistTitle === 'string' && typeof sessionState.tracklistType === 'string' && Array.isArray(sessionState.scrapedTracks) === true) {
-        await firestore.storeTracklistInFirestore(sessionState.tracklistTitle, sessionState.tracklistType, sessionState.tracksArray);
-        
-        //TODO would be nice if this could just be set once after authentication, instead of every time data is stored or accessed
-            //One option could be to split the event-controller.js into two files, one handling potential background events, like auth change, and one that lsitens for UI interaction. 
-            //It's a bit weird, since auth change can be caused by UI interaction too, but could brainstorm this. 
-        trackCounts.storageItemKey = 'trackCounts_' + firebase.auth().currentUser.uid;
-        await trackCounts.setProperty(sessionState.tracklistTitle, sessionState.scrapedTracks.length);
-    } else throw TypeError("Tried to store the tracklist data, but the parameters provided (title, type, or tracks array) were invalid.");
+export async function storeTrackCount() {
+    //TODO would be nice if this could just be set once after authentication, instead of every time data is stored or accessed
+        //One option could be to split the event-controller.js into two files, one handling potential background events, like auth change, and one that lsitens for UI interaction. 
+        //It's a bit weird, since auth change can be caused by UI interaction too, but could brainstorm this. 
+    trackCounts.storageItemKey = 'trackCounts_' + firebase.auth().currentUser.uid;
+    await trackCounts.setProperty(sessionState.tracklistTitle, sessionState.scrapedTracks.length);
 }
 
 //TODO is it still not possible for the background script to just get the track count from firestore and not have to store an extra copy in Chrome Storage?

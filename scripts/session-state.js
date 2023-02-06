@@ -69,11 +69,11 @@ export async function init() { //TODO could consider a more specific name for th
  * @param {Object[]} tracksArray The array of tracks to save in session cache. 
  */
 export function updateTracklist(name, tracksArray) {
-    if (name === 'scraped') {
+    if (name === 'scraped' && Array.isArray(tracksArray) === true) {
         scrapedTracks = tracksArray;
-    } else if (name === 'stored') {
+    } else if (name === 'stored' && Array.isArray(tracksArray) === true) {
         storedTracks = tracksArray;
-    } else throw Error("An inavlid category was provided when requesting to update a tracklist in session cache.");
+    } else throw Error("An inavlid category or tracks array was provided when requesting to update a tracklist in session cache.");
 }
 
 /**
