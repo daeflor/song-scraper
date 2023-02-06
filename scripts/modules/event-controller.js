@@ -70,8 +70,6 @@ function init() {
 // User Becomes Authenticated
 Auth.listenForAuthStateChange(async () => { // TODO this name is a bit misleading, since the callback only fires on an initial sign-in (i.e. not on sign-out)
     await sessionState.init(); // Initialize the session state. Must be called asynchronously because it will fetch tracklist metadata from Chrome storage.
-
-    //UIController.triggerUITransition('UpdateDeltaLabel'); // Update the label indicating which app is used to generate the trascklist delta
     UIController.triggerUITransition('ShowLandingPage'); // Display the extension landing page        
 });
 
@@ -113,14 +111,13 @@ ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', async functi
     
     try {
         // Store the tracklist in Firestore and the track count in Chrome Storage, and then update the UI
-        //TODO storage should just pull this info (the parameters) from session state directly
-        await storage.storeTracklistData(sessionState.tracklistTitle, sessionState.tracklistType, sessionState.scrapedTracks);
+        await storage.storeTracklistData();
         sessionState.updateTracklist('stored', sessionState.scrapedTracks); // Set the stored tracks array equal to the scraped tracks array, saving it for future reference within the current app session
         //sessionCache.storedTracks = sessionCache.scrapedTracks; // Set the stored tracks array equal to the scraped tracks array, saving it for future reference within the current app session
         UIController.triggerUITransition('ScrapedMetadataStored');
     } catch (error) {
         UIController.triggerUITransition('StorageFailed');
-        console.error(error);
+        throw error;
     }
 
     //TODO when tracklist data is stored, would it make sense to update the extension icon? I think it could help
