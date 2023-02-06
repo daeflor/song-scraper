@@ -17,7 +17,7 @@ import * as customTracklists from './Configuration/custom-tracklists.js';
 //     stored: undefined
 // }
 
-export const comparisonMethod = await options.comparisonMethod.getValue();
+export let comparisonMethod;
 
 export let tracklistTitle;
 export let tracklistType;
@@ -39,7 +39,8 @@ export async function init() { //TODO could consider a more specific name for th
         //UIController.triggerUITransition('CachedTracklistMetadataInvalid');
         throw TypeError("An invalid tracklist type and/or title was found in cached storage. Both should be strings.");
     }
-    
+
+    comparisonMethod = await options.comparisonMethod.getValue();
     username = firebase.auth().currentUser.email.split('@')[0];
 }
 
