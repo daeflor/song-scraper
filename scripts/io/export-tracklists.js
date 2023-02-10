@@ -27,26 +27,30 @@ export function downloadScrapedTracks() {
  */
 export async function downloadStoredTracks() {    
     const tracks = await session.fetchTracklist('stored');
-    if (Array.isArray(tracks) === true) {
-        const csv = io.convertArrayOfObjectsToCsv(tracks, standardTrackProperties);
-        const filename = 'Tracklist_YTM_' + session.tracklistTitle;
-        io.downloadTextFile(csv, filename, 'csv');
-        return true; //TODO returning true doesn't accomplish anything
-    } else return false;
-    //TODO maybe update the UI (e.g. button icon) if the tracklist couldn't be found in storage
-    //Could return true if the tracks were found, false otherwise, so that eventcontroller can update the UI accordingly. 
-        //We anyway need to put that error checking back (to ensure it's a valid array, because it's an expected scenario where the stored tracklist does not exist)
+
+    if (Array.isArray(tracks) === false) {
+        return false;
+    }
+
+    const csv = io.convertArrayOfObjectsToCsv(tracks, standardTrackProperties);
+    const filename = 'Tracklist_YTM_' + session.tracklistTitle;
+    io.downloadTextFile(csv, filename, 'csv');
 }
 
 /**
  * Triggers a download of a CSV file of the stored GPM tracks for the current tracklist
+ * @returns {Promise} A promise with the value true if the corresponding tracklist was found in storage, otherwise false
  */
 export async function downloadGpmTracks() {
     //TODO should probably let session-state handle the gpm storage access, and then here access it from session-state.
     const tracks = await gpmStorage.getTracklistData('tracksArray', session.tracklistTitle);
+
+    if (Array.isArray(tracks) === false) {
+        return false;
+    }
+
     const csv = io.convertArrayOfObjectsToCsv(tracks, standardTrackProperties);
     const filename = 'Tracklist_GPM_' + session.tracklistTitle;
 
     io.downloadTextFile(csv, filename, 'csv');
-    //TODO maybe update the UI (e.g. button icon) if the tracklist couldn't be found in storage
 }
