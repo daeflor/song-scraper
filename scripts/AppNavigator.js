@@ -109,6 +109,10 @@ export function triggerUITransition(transition, options) {
         // if (typeof options?.tableName === 'string') {
         //     ViewRenderer.unhideElement(ViewRenderer.tracktables[options.tableName]); // Show the existing elements
         // } else console.error("Tried to show a track table, but a valid table name was not provided.");
+    } else if (transition === 'StoredTracksMissing') {
+        ViewRenderer.disableElement(ViewRenderer.buttons.copyToClipboardStoredTracks);
+        ViewRenderer.disableElement(ViewRenderer.buttons.downloadStoredTracks);
+        ViewRenderer.disableElement(ViewRenderer.checkboxes.storedTrackTable);
     }
 }
 

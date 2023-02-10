@@ -1,15 +1,19 @@
-//import { scrapedTracks, fetchTracklist } from '../session-state';
 import * as session from '../session-state.js'
 import * as io from '../modules/utilities/IO.js'
 import * as gpmStorage from '../storage/gpm-storage.js';
 
 const standardTrackProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // These are the standard track properties which should be used when generating a CSV string of tracks
 
+//TODO make the exported fncs use this
+function downloadTracksAsCsv(filename, tracks) {
+    const csvData = io.convertArrayOfObjectsToCsv(tracks, standardTrackProperties);
+    io.downloadTextFile(csvData, filename, 'csv');
+}
+
 /**
  * Triggers a download of a CSV file of the scraped tracks
  */
 export function downloadScrapedTracks() {    
-    //const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV
     const tracks = session.scrapedTracks;
     const csv = io.convertArrayOfObjectsToCsv(tracks, standardTrackProperties);
     const filename = 'Tracklist_Scraped_' + session.tracklistTitle;
@@ -19,14 +23,16 @@ export function downloadScrapedTracks() {
 
 /**
  * Triggers a download of a CSV file of the stored tracks for the current tracklist
+ * @returns {Promise} A promise with the value true if the corresponding tracklist was found in storage, otherwise false
  */
 export async function downloadStoredTracks() {    
-    //const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV
     const tracks = await session.fetchTracklist('stored');
-    const csv = io.convertArrayOfObjectsToCsv(tracks, standardTrackProperties);
-    const filename = 'Tracklist_YTM_' + session.tracklistTitle;
-
-    io.downloadTextFile(csv, filename, 'csv');
+    if (Array.isArray(tracks) === true) {
+        const csv = io.convertArrayOfObjectsToCsv(tracks, standardTrackProperties);
+        const filename = 'Tracklist_YTM_' + session.tracklistTitle;
+        io.downloadTextFile(csv, filename, 'csv');
+        return true; //TODO returning true doesn't accomplish anything
+    } else return false;
     //TODO maybe update the UI (e.g. button icon) if the tracklist couldn't be found in storage
     //Could return true if the tracks were found, false otherwise, so that eventcontroller can update the UI accordingly. 
         //We anyway need to put that error checking back (to ensure it's a valid array, because it's an expected scenario where the stored tracklist does not exist)

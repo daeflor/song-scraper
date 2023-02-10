@@ -127,13 +127,17 @@ ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', async functi
 // Button Pressed: Download Scraped Tracks
 ViewRenderer.buttons.downloadScrapedTracks.addEventListener('click', () => exporter.downloadScrapedTracks());
 
+// Button Pressed: Download Stored YTM Tracks
+ViewRenderer.buttons.downloadStoredTracks.addEventListener('click', async () => {
+    if (await exporter.downloadStoredTracks() === false) {
+        UIController.triggerUITransition('StoredTracksMissing');
+    }
+});
+
 // Button Pressed: Download Stored GPM Tracks
 ViewRenderer.buttons.downloadGPMTracks.addEventListener('click', async () => {
     await exporter.downloadGpmTracks();
 });
-
-// Button Pressed: Download Stored YTM Tracks
-ViewRenderer.buttons.downloadStoredTracks.addEventListener('click', async () => await exporter.downloadStoredTracks());
 
 //TODO the events below are all very similar and could probably be merged. The only tricky part is that some are async and some aren't, and one uses maps instead of arrays
 
