@@ -29,6 +29,7 @@ import * as customTracklists from '../Configuration/custom-tracklists.js';
 import * as options from '../options/options-storage.js'
 
 import * as sessionState from '../session-state.js';
+import * as exporter from '../io/export-tracklists.js'
 
 //TODO could consider adding to and/or removing from EventController so that it's the central place for all event-driven logic
     //i.e. EventController should dictate & be aware of all events & reactions throughout the app (not sure about auth...)
@@ -123,24 +124,16 @@ ViewRenderer.buttons.storeScrapedMetadata.addEventListener('click', async functi
     //TODO when tracklist data is stored, would it make sense to update the extension icon? I think it could help
 });
 
-//TODO triggerCSVDownload should be in a separate file, and if there ends up being an intermediary helper function, that one could probably also pull the list of scraped tracks, title, etc. from sessionCache directly.
-
 // Button Pressed: Download Scraped Tracks
-ViewRenderer.buttons.downloadScrapedTracks.addEventListener('click', function() {
-    triggerCSVDownload(sessionState.scrapedTracks, 'Tracklist_Scraped_' + sessionState.tracklistTitle);
-});
+ViewRenderer.buttons.downloadScrapedTracks.addEventListener('click', () => exporter.downloadScrapedTracks());
 
 // Button Pressed: Download Stored GPM Tracks
-ViewRenderer.buttons.downloadGPMTracks.addEventListener('click', async function() {
-    const storedTracks = await gpmStorage.getTracklistData('tracksArray', sessionState.tracklistTitle);
-    triggerCSVDownload(storedTracks, 'Tracklist_GPM_' + sessionState.tracklistTitle);
+ViewRenderer.buttons.downloadGPMTracks.addEventListener('click', async () => {
+    await exporter.downloadGpmTracks();
 });
 
 // Button Pressed: Download Stored YTM Tracks
-ViewRenderer.buttons.downloadStoredTracks.addEventListener('click', async function() {
-    const storedTracks = await sessionState.fetchTracklist('stored');
-    triggerCSVDownload(storedTracks, 'Tracklist_YTM_' + sessionState.tracklistTitle);
-});
+ViewRenderer.buttons.downloadStoredTracks.addEventListener('click', async () => await exporter.downloadStoredTracks());
 
 //TODO the events below are all very similar and could probably be merged. The only tricky part is that some are async and some aren't, and one uses maps instead of arrays
 
@@ -288,21 +281,6 @@ ViewRenderer.checkboxes.tracksOnlyInCommon.addEventListener('change', async func
 });
 
 /***** Helper Functions *****/
-
-/**
- * Triggers a download of a CSV file generated from the provided tracks array
- * @param {Object[]} tracksArray The array of Track objects to convert to a CSV file
- * @param {string} filename The desired name of the CSV file
- */
- function triggerCSVDownload(tracksArray, filename) {    
-    if (Array.isArray(tracksArray) === true) {
-        const includedProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // Set the track properties which should be used when generating the CSV
-        const csv = IO.convertArrayOfObjectsToCsv(tracksArray, includedProperties);
-
-        IO.downloadTextFile(csv, filename, 'csv');
-    } else console.info("Tried to download a tracklist, but the tracklist could not be found in storage.");
-    //TODO maybe update the UI (e.g. button icon) if the tracklist couldn't be found in storage
-}
 
 /**
  * Displays/Adds or hides the specified track table in the UI, depending on the provided data
