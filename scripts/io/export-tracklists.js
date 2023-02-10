@@ -4,7 +4,6 @@ import * as gpmStorage from '../storage/gpm-storage.js';
 
 const standardTrackProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // These are the standard track properties which should be used when generating a CSV string of tracks
 
-//TODO make the exported fncs use this
 function downloadTracksAsCsv(filename, tracks) {
     const csvData = io.convertArrayOfObjectsToCsv(tracks, standardTrackProperties);
     io.downloadTextFile(csvData, filename, 'csv');
@@ -15,42 +14,30 @@ function downloadTracksAsCsv(filename, tracks) {
  */
 export function downloadScrapedTracks() {    
     const tracks = session.scrapedTracks;
-    const csv = io.convertArrayOfObjectsToCsv(tracks, standardTrackProperties);
-    const filename = 'Tracklist_Scraped_' + session.tracklistTitle;
-
-    io.downloadTextFile(csv, filename, 'csv');
+    downloadTracksAsCsv('Tracklist_Scraped_' + session.tracklistTitle, tracks);
 }
 
 /**
  * Triggers a download of a CSV file of the stored tracks for the current tracklist
- * @returns {Promise} A promise with the value true if the corresponding tracklist was found in storage, otherwise false
+ * @returns {Promise} A promise with the value false if the corresponding tracklist was not found in storage, otherwise undefined
  */
 export async function downloadStoredTracks() {    
     const tracks = await session.fetchTracklist('stored');
 
-    if (Array.isArray(tracks) === false) {
-        return false;
-    }
-
-    const csv = io.convertArrayOfObjectsToCsv(tracks, standardTrackProperties);
-    const filename = 'Tracklist_YTM_' + session.tracklistTitle;
-    io.downloadTextFile(csv, filename, 'csv');
+    if (Array.isArray(tracks) === true) {
+        downloadTracksAsCsv('Tracklist_YTM_' + session.tracklistTitle, tracks);
+    } else return false;
 }
 
 /**
  * Triggers a download of a CSV file of the stored GPM tracks for the current tracklist
- * @returns {Promise} A promise with the value true if the corresponding tracklist was found in storage, otherwise false
+ * @returns {Promise} A promise with the value false if the corresponding tracklist was not found in storage, otherwise undefined
  */
 export async function downloadGpmTracks() {
     //TODO should probably let session-state handle the gpm storage access, and then here access it from session-state.
     const tracks = await gpmStorage.getTracklistData('tracksArray', session.tracklistTitle);
 
-    if (Array.isArray(tracks) === false) {
-        return false;
-    }
-
-    const csv = io.convertArrayOfObjectsToCsv(tracks, standardTrackProperties);
-    const filename = 'Tracklist_GPM_' + session.tracklistTitle;
-
-    io.downloadTextFile(csv, filename, 'csv');
+    if (Array.isArray(tracks) === true) {
+        downloadTracksAsCsv('Tracklist_GPM_' + session.tracklistTitle, tracks);
+    } else return false;
 }
