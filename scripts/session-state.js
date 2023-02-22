@@ -47,7 +47,7 @@ export function updateCachedTracks(name, tracksArray) {
 
 /**
  * Returns the specified list of tracks
- * @param {string} data The data to fetch. Valid options are: 'stored', 'deltas', 'NotInCommonFromLibrary', and 'NotInCommonFromPlaylists'.
+ * @param {string} data The data to fetch. Valid options are: 'stored', 'deltas', 'NotInCommonFromLibrary', 'NotInCommonFromPlaylists', and 'gpmTracks'.
  * @returns The specified list of tracks, either as an array or map.
  */
 export async function fetchData(data) {
@@ -68,6 +68,8 @@ export async function fetchData(data) {
         return typeof tracksNotInCommon.fromPlaylists === 'undefined'
         ? tracksNotInCommon.fromPlaylists = await tracklistComparisonUtils.getTracksNotInCommonFromPlaylists()
         : tracksNotInCommon.fromPlaylists
+    case 'gpmTracks':
+        return await gpmStorage.getTracklistData('tracksArray', tracklistTitle);
     default:
         throw Error("An inavlid category was provided when requesting to fetch a tracklist from session cache.");
     }
@@ -90,7 +92,7 @@ async function generateDeltaMap() {
 
     // If the selected comparison method is to use only Google Play Music, or to use GPM as a fallback and the tracklist was not found in the YTM stored tracks, get the tracks from the GPM data in Chrome local storage
     if (comparisonMethod === 'alwaysGPM' || (comparisonMethod === 'preferYTM' && typeof tracksUsedForDelta === 'undefined')) {
-        tracksUsedForDelta = await gpmStorage.getTracklistData('tracksArray', tracklistTitle);
+        tracksUsedForDelta = await fetchData('gpmTracks');
     }
 
     // If a valid array of tracks was found in storage, use that to compare with the scraped tracks & generate the deltas, and update the deltas checkbox label accordingly

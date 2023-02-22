@@ -1,6 +1,5 @@
 import * as session from '../session-state.js'
 import * as io from '../modules/utilities/IO.js'
-import * as gpmStorage from '../storage/gpm-storage.js';
 
 const standardTrackProperties = ['title', 'artist', 'album', 'duration', 'unplayable']; // These are the standard track properties which should be used when generating a CSV string of tracks
 
@@ -34,8 +33,7 @@ export async function downloadStoredTracks() {
  * @returns {Promise} A promise with the value false if the corresponding tracklist was not found in storage, otherwise undefined
  */
 export async function downloadGpmTracks() {
-    //TODO should probably let session-state handle the gpm storage access, and then here access it from session-state.
-    const tracks = await gpmStorage.getTracklistData('tracksArray', session.tracklistTitle);
+    const tracks = await session.fetchData('gpmTracks');
 
     if (Array.isArray(tracks) === true) {
         downloadTracksAsCsv('Tracklist_GPM_' + session.tracklistTitle, tracks);

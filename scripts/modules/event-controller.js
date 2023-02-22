@@ -248,7 +248,7 @@ ViewRenderer.checkboxes.gpmTrackTable.addEventListener('change', async function(
     //TODO it's a bit silly to get the tracks array even in the case when the checkbox is unchecked.
     //TODO Why are we potentially getting the tracks array multiple times instead of saving it in session state?
         //Because gpm-storage uses its own session state (i.e. it does cache it after the first fetch). But maybe all session state should be consolidated into one place, eventually.
-    const storedTracks = await gpmStorage.getTracklistData('tracksArray', session.tracklistTitle);
+    const storedTracks = await session.fetchData('gpmTracks');
     reactToCheckboxChange(storedTracks, ViewRenderer.tracktables.gpm, this.checked, 'Stored GPM Tracklist');
 });
 
