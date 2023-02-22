@@ -13,9 +13,15 @@
 ** Upcoming To-Do List **
 
 	2022: 
-	- Consider upgrading to Firebase SDK 9
+	- Go through the list of songs missing after the ytm transition and address them as applicable
+	- Consider adding option to list all disabled tracks in a playlist
+	- Make sure chrome.runtime.lastError checks are actually useful / being used correctly. The old-style checks will not work for api calls made with await.
+	- Make more use of Object.hasOwn() where possible
+	- Could flesh out debug controller to deal with and pass along all errors, while also updating the extension icon to indicate an issue. 
+	- Consider upgrading to Firebase SDK 9. This may allow Firestore access from service worker.
 	- Are access-firestore.js, static.js, and sandbox.js being used? I believed these were committed in error in commit 158ec62
 	- Deprecate unused files as applicable, including legacy js files, sandbox files, and static js files
+	- Feature: Consider displaying the delta tracklists by default once a scrape has been completed
 
 	2021:
 	- Maybe exclude the 'unplayable' column from tracktables when empty (see TODO)
