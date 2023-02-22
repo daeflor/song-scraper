@@ -22,7 +22,7 @@ export function downloadScrapedTracks() {
  * @returns {Promise} A promise with the value false if the corresponding tracklist was not found in storage, otherwise undefined
  */
 export async function downloadStoredTracks() {    
-    const tracks = await session.fetchTracklist('stored');
+    const tracks = await session.fetchData('stored');
 
     if (Array.isArray(tracks) === true) {
         downloadTracksAsCsv('Tracklist_YTM_' + session.tracklistTitle, tracks);

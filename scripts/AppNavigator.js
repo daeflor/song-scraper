@@ -1,6 +1,6 @@
 import * as DebugController from './modules/DebugController.js';
 import * as ViewRenderer from './modules/ViewRenderer.js';
-import * as sessionState from './session-state.js'
+import * as session from './session-state.js'
 
 /**
  * Updates the UI as specified by the transition parameter
@@ -42,12 +42,12 @@ export function triggerUITransition(transition, options) {
 
     //     ViewRenderer.unhideElement(ViewRenderer.divs.auth);
     } else if (transition === 'ShowLandingPage') {
-        if (typeof sessionState.tracklistTitle === 'string' && typeof sessionState.username === 'string') {
+        if (typeof session.tracklistTitle === 'string' && typeof session.username === 'string') {
             ViewRenderer.hideElement(ViewRenderer.divs.status);
             ViewRenderer.hideElement(ViewRenderer.divs.auth);
-            ViewRenderer.showHeader(sessionState.tracklistTitle);
-            ViewRenderer.updateElementTextContent(ViewRenderer.divs.username, sessionState.username);
-            ViewRenderer.updateElementTextContent(ViewRenderer.labels.deltas.childNodes[0], 'Track Deltas (' + sessionState.comparisonMethod.slice(-3) + ')'); // Update the label indicating which app is used to generate the trascklist delta
+            ViewRenderer.showHeader(session.tracklistTitle);
+            ViewRenderer.updateElementTextContent(ViewRenderer.divs.username, session.username);
+            ViewRenderer.updateElementTextContent(ViewRenderer.labels.deltas.childNodes[0], 'Track Deltas (' + session.comparisonMethod.slice(-3) + ')'); // Update the label indicating which app is used to generate the trascklist delta
             ViewRenderer.showLandingPage();
         } else {
             ViewRenderer.showStatusMessage('The username or the tracklist title retrieved from the cached metadata is invalid.');
@@ -113,6 +113,9 @@ export function triggerUITransition(transition, options) {
         ViewRenderer.disableElement(ViewRenderer.buttons.copyToClipboardStoredTracks);
         ViewRenderer.disableElement(ViewRenderer.buttons.downloadStoredTracks);
         ViewRenderer.disableElement(ViewRenderer.checkboxes.storedTrackTable);
+    } else if (transition === 'GpmTracksMissing') {
+        ViewRenderer.disableElement(ViewRenderer.buttons.downloadGPMTracks);
+        ViewRenderer.disableElement(ViewRenderer.checkboxes.gpmTrackTable);
     }
 }
 
