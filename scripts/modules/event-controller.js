@@ -35,15 +35,6 @@ import * as exporter from '../io/export-tracklists.js'
     //But it shouldn't necessarily handle any in-depth / area-specific logic. It should hand that off to the scripts designated specifically for that and then just get back the results and act on them.
     //If this is done, it may turn out that it's unnecessary/unhelpful having ViewRenderer & UI Controller be separate 
 
-//TODO could also consider not storing all of this in a single session state object in event controller, but rather each individual 
-    //component cache data that has been fetched from storage. For example, storage.js could cache the stored ytm list of tracks. Event 
-    //controller then only ever queries storage.js for the data and lets it handle whether or not it should return cached data 
-    //(from session state) or have to query the storage database (e.g. firestore) again. 
-    //Audit (barring a major refactor):
-        //tracklist.title : should be kept here
-        //tracklist.type : should be kept here
-        //tracklist.tracks.scraped : should be kept here
-
 const SESSION_STATE = {
     tracksNotInCommon: {
         fromLibrary: undefined,
