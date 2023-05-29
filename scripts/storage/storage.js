@@ -1,6 +1,5 @@
-//TODO consider renaming this file to cache-storage.js and removing the firestore references from here
+//TODO consider renaming this file to cache-storage.js
 import ChromeStorageAccessor from './chrome-storage.js'
-import * as firestore from './firestore-storage.js';
 import * as sessionState from '../session-state.js'
 
 //TODO maybe wrap these all in a 'ChromeStorageAccessors' or 'Chrome' object, for better readability?
@@ -33,7 +32,7 @@ export async function setCachedMetadata(metadata) {
 }
 
 /**
- * Stores the tracklist data - currently in Session State - in Firestore, and the track count in Chrome Storage
+ * Stores the track count which is currently in Session State into Chrome Storage
  */
 export async function storeTrackCount() {
     //TODO would be nice if this could just be set once after authentication, instead of every time data is stored or accessed

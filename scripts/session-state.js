@@ -52,6 +52,7 @@ export function updateCachedTracks(name, tracksArray) {
  */
 export async function fetchData(data) {
     switch(data) {
+        //TODO consider renaming this to 'storedTracks'
     case 'stored': //TODO Could consider fetching the stored tracklist unconditionally when the extension popup is opened, and then all future references to it could be synchronous (similar to tracklist title & type, fetched from Chrome storage)
         return typeof storedTracks === 'undefined'
         ? storedTracks = await appStorage.retrieveTracksArrayFromFirestore(tracklistTitle)
