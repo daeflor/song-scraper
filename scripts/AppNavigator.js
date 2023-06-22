@@ -1,6 +1,6 @@
 import * as DebugController from './modules/DebugController.js';
 import * as ViewRenderer from './modules/ViewRenderer.js';
-//import * as IO from './modules/Utilities/IO.js';
+import * as session from './session-state.js'
 
 /**
  * Updates the UI as specified by the transition parameter
@@ -42,15 +42,16 @@ export function triggerUITransition(transition, options) {
 
     //     ViewRenderer.unhideElement(ViewRenderer.divs.auth);
     } else if (transition === 'ShowLandingPage') {
-        if (typeof options?.tracklistTitle === 'string' && typeof options.username === 'string') {
+        if (typeof session.tracklistTitle === 'string' && typeof session.username === 'string') {
             ViewRenderer.hideElement(ViewRenderer.divs.status);
             ViewRenderer.hideElement(ViewRenderer.divs.auth);
-            ViewRenderer.showHeader(options.tracklistTitle);
-            ViewRenderer.divs.username.textContent = options.username;
+            ViewRenderer.showHeader(session.tracklistTitle);
+            ViewRenderer.updateElementTextContent(ViewRenderer.divs.username, session.username);
+            ViewRenderer.updateElementTextContent(ViewRenderer.labels.deltas.childNodes[0], 'Track Deltas (' + session.comparisonMethod.slice(-3) + ')'); // Update the label indicating which app is used to generate the trascklist delta
             ViewRenderer.showLandingPage();
         } else {
             ViewRenderer.showStatusMessage('The username or the tracklist title retrieved from the cached metadata is invalid.');
-            console.error("Tried to display the landing page but the parameters provided were invalid.");
+            throw TypeError("Tried to display the landing page but the parameters provided were invalid. Username and Tracklist Title must both be strings.");
         }
     } else if (transition === 'StartScrape') {
         ViewRenderer.disableElement(ViewRenderer.buttons.scrape);
@@ -86,10 +87,6 @@ export function triggerUITransition(transition, options) {
     } else if (transition === 'StorageFailed') {
         ViewRenderer.updateElementTextContent(ViewRenderer.buttons.storeScrapedMetadata, 'Failed to store tracklist data!');
         ViewRenderer.updateElementColor(ViewRenderer.buttons.storeScrapedMetadata, '#cc3300');
-    } else if (transition === 'UpdateDeltaLabel') {
-        //TODO Should this logic be within a function that includes error checking?
-            //This file shouldn't be directly updating UI elements this way
-        ViewRenderer.labels.deltas.childNodes[0].textContent = 'Track Deltas (' + options.appUsedForDelta + ')';
     } else if (transition === 'AddDeltaTrackTables') {
         if (options?.deltaTracklists instanceof Map === true) {
             // Create a track table for the list of 'Added Tracks'
@@ -112,6 +109,13 @@ export function triggerUITransition(transition, options) {
         // if (typeof options?.tableName === 'string') {
         //     ViewRenderer.unhideElement(ViewRenderer.tracktables[options.tableName]); // Show the existing elements
         // } else console.error("Tried to show a track table, but a valid table name was not provided.");
+    } else if (transition === 'StoredTracksMissing') {
+        ViewRenderer.disableElement(ViewRenderer.buttons.copyToClipboardStoredTracks);
+        ViewRenderer.disableElement(ViewRenderer.buttons.downloadStoredTracks);
+        ViewRenderer.disableElement(ViewRenderer.checkboxes.storedTrackTable);
+    } else if (transition === 'GpmTracksMissing') {
+        ViewRenderer.disableElement(ViewRenderer.buttons.downloadGPMTracks);
+        ViewRenderer.disableElement(ViewRenderer.checkboxes.gpmTrackTable);
     }
 }
 

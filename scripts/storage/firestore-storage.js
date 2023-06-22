@@ -2,6 +2,7 @@
     //Then, any files that have a dependency on firebase (e.g. Auth, Storage, etc.) can just import that module
 import '/node_modules/firebase/firebase-app.js'; //Import the Firebase App before any other Firebase libraries
 import '/node_modules/firebase/firebase-firestore.js'; //Import the Cloud Firestore library
+import * as sessionState from '../session-state.js'
 
 /**
  * Get a reference to the tracklist collection for the currently signed-in user
@@ -17,12 +18,12 @@ function getReferenceToUserTracklistCollection() {
 }
 
 /**
- * Stores the provided tracklist data in Firestore and then executes the provided callback
- * @param {string} tracklistTitle The tracklist title
- * @param {string} tracklistType The tracklist type
- * @param {Object[]} tracksArray The array of tracks to store with the tracklist
+ * Stores the scraped tracklist data - currently saved in session state - into the Firestore database
  */
-export async function storeTracklistInFirestore(tracklistTitle, tracklistType, tracksArray) {
+export async function storeScrapedTracks() {
+    const tracklistTitle = sessionState.tracklistTitle;
+    const tracklistType = sessionState.tracklistType;
+    const tracksArray = sessionState.scrapedTracks;
     if (typeof tracklistTitle === 'string' && typeof tracklistType === 'string' && Array.isArray(tracksArray) === true) {
         const userId = firebase.auth().currentUser.uid;
         const tracklistCollection = firebase.firestore().collection('users').doc(userId).collection('tracklists');
@@ -35,7 +36,6 @@ export async function storeTracklistInFirestore(tracklistTitle, tracklistType, t
 
         // Add or update the document for the current tracklist, merging it with any existing data if the document already exists
         await currentTracklistDocument.set(documentData, {merge:true})
-            //.catch(error => console.error("Error writing document to storage:" + error));
     } else throw new TypeError("Tried to store the scraped tracklist in Firestore but the parameters provided were invalid.");
 }
 

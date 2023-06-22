@@ -8,6 +8,8 @@ const SESSION_STATE = {
     tracksNotInCommon: undefined
 }
 
+//TODO: gpm-storage uses its own session state (i.e. it caches data after the first fetch) instead of relying on session-state.js. But maybe all session state should be consolidated into one place, eventually.
+
 /**
  * Retrieves the requested data related to a specific GPM tracklist
  * The GPM tracklist data is fetched from session state, if it already exists there. Otherwise it's fetched from Chrome local storage and saved in session state for future reference. 

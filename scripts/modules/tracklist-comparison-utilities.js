@@ -1,3 +1,5 @@
+//TODO consider separarating the comparison helper functions into their own file, something like 'compare-tracklists'
+
 import * as appStorage from '../storage/firestore-storage.js';
 import * as customTracklists from '../Configuration/custom-tracklists.js'; //TODO would be nice to not have to import this here AND in EventController
 

@@ -99,7 +99,7 @@ export function setElementOpacity(element, targetOpacity)
 }
 
 export function updateElementTextContent(element, text) {
-    if (typeof element === 'object') { //TODO better isElement check would be good here
+    if (typeof element === 'object' && typeof text === 'string') { //TODO better isElement check would be good here
         element.textContent = text;
     } else console.error("Tried to set an element's text content, but a valid element was not provided.");
 }
