@@ -240,7 +240,7 @@
      * @param {Function} callback The function to execute once the list of tracks has been generated. The callback takes an array of Track Objects as its single parameter.
      */
      async function getTracks(callback) {
-        const firstElementInList = document.querySelector('ytmusic-responsive-list-item-renderer[should-render-subtitle-separators_]'); // Find the first track element using query selector. This selector is used because it currently works across all valid tracklists.
+        const firstElementInList = document.querySelector('ytmusic-responsive-list-item-renderer[should-render-subtitle-separators]'); // Find the first track element using query selector. This selector is used because it currently works across all valid tracklists.
         if (firstElementInList instanceof Element === true) {
             const elementContainer = firstElementInList.parentElement; // Get the container element
             const expectedElementCount = scrapeTrackCount(); // Fetch the official track count of the tracklist, if one exists. This will be undefined otherwise. 
@@ -250,7 +250,7 @@
             const results = await scrapeElements(elementContainer, scrapeStartingIndex, scrapeMetadataFromElement, expectedElementCount); // Initiate the scrape & scroll process;
             callback(results);
             dialog.close();
-        } else console.error("Tried to scrape the tracklist, but the first element in the list couldn't be identified.");
+        } else console.error("Tried to scrape the tracklist, but the first element in the list couldn't be identified."); //TODO this should show an error in the popup instead
     }
 
     /**
