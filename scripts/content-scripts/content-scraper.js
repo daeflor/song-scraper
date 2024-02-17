@@ -24,7 +24,7 @@
                 } else console.warn("Duration could not be retrieved from DOM.");
                 //this.duration = metadataElements[3]?.title || '';
 
-                if (trackContainerElement.hasAttribute('unplayable_')) { //Note: <if (trackContainerElement.unplayable_ === true)> should work but it doesn't for some reason
+                if (trackContainerElement.hasAttribute('unplayable')) { //Note: <if (trackContainerElement.unplayable_ === true)> should work but it doesn't for some reason
                     this.unplayable = true;
                     console.info("Encountered an unplayable track with title: " + this.title);
                 }
