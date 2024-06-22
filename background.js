@@ -53,7 +53,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 });
 
 /**
- * Triggers when a a page change is detected (via History API) and the page matches one of the Uploaded, Subscribed, or Liked song pages. 
+ * Triggers when a a page change is detected (via History API).
+ * Resulting behavior depends on the loaded page (i.e. custom behavior for Uploaded & Subscribed song pages; disable extension icon if invalid page). 
  * Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
  * Note: It's necessary to do these checks here because the content scraper's current implementation cannot recognize when switching to the Uploaded or Subscribed Songs pages
  */
