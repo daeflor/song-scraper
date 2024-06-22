@@ -89,6 +89,10 @@ export function unhideElement(element) {
     element.hidden = false;
 }
 
+export function checkBox(element) {
+    element.checked = true;
+}
+
 export function uncheckBox(element) {
     element.checked = false;
 }

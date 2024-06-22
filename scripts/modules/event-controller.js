@@ -80,6 +80,10 @@ ViewRenderer.buttons.scrape.addEventListener('click', function() {
         if (Array.isArray(tracksArray) === true) { //If the response received is an array... 
             session.updateCachedTracks('scraped', tracksArray);
             UIController.triggerUITransition('ScrapeSuccessful'); //Transition the UI accordingly
+            
+            // Trigger the display of the delta track tables after the scrape has been completed.
+            ViewRenderer.checkboxes.deltaTrackTables.dispatchEvent(new Event('change'));
+            ViewRenderer.checkBox(ViewRenderer.checkboxes.deltaTrackTables);
         } else {
             UIController.triggerUITransition('ScrapeFailed');
             console.error("Requested tracklist metadata from content script, but response was not a valid array.");
@@ -276,6 +280,7 @@ ViewRenderer.checkboxes.tracksOnlyInCommon.addEventListener('change', async func
  * @param {string} [trackTableTitle] The title of the track table to display in its header in the popup UI
  */
  function reactToCheckboxChange(tracksData, trackTableElement, checked, trackTableTitle) {
+    console.log(`Detected a checkbox value change.`);
     // If the checkbox is checked, display the corresponding track table; Otherwise hide the track table
     if (checked === true) {
         if (trackTableElement.childElementCount > 0) { // If a track table DOM element has previously been created...

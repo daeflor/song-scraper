@@ -136,7 +136,7 @@
         console.info("Content Scraper script initializing");
         if (window.location.host === 'music.youtube.com') {
             currentApp = supportedApps.youTubeMusic; //Record the current app being used for future reference
-            persistentElements.header = document.getElementById('header'); //Note: there are typically at least two elements with ID 'header' in YTM pages, but the one containing tracklist metadata seems to consistently be the first one in the DOM, so this is the easiest/fastest way to fetch it.
+            persistentElements.header = document.querySelector('ytmusic-responsive-header-renderer');
             persistentElements.scrollContainer = document.body; //Set the scroll container element as applicable, for future reference
             observeHeaderElementMutations(); //Begin observing the YTM Header element for DOM mutations
             scrapeTracklistMetadata(); //Scrape the header element for tracklist metadata. (This needs to be manually triggered the first time the content script runs e.g. on page refresh)
@@ -181,6 +181,7 @@
             //...using the pre-set type to dictate how and whether or not to try to get that info
 
     function observeHeaderElementMutations() {    
+        //TODO something changed in the YTM implementation and switching from an invalid page (e.g. not a playlist) to a valid one is not properly registered. Not sure if the issue is here or in background.js
         const _observer = new MutationObserver(scrapeTracklistMetadata); //Create a new mutation observer instance linked to the callback function defined above
         const _observerConfig = {childList: true, subtree: false}; //Set up the configuration options for the Mutation Observer
         if (typeof persistentElements.header === 'object') { //If the element to observe actually exists in the DOM...

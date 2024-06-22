@@ -1,8 +1,9 @@
+//TODO consider renaming file to async-chrome-storage.js or chrome-storage-promises.js (though that conflicts with an old file)
 export default class ChromeStorageAccessor {
     #storageArea;
     #storageItemKey;
     
-    constructor(area, key/*, ...properties*/) {
+    constructor(area, key) {
         if (area === 'local' || area === 'sync') {
             this.#storageArea = area;
             this.#storageItemKey = key;

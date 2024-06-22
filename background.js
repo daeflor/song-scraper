@@ -52,8 +52,12 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     }
 });
 
-// Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
-    // It's necessary to do these checks here because the content scraper's current implementation cannot recognize when switching to the Uploaded or Subscribed Songs pages 
+/**
+ * Triggers when a a page change is detected (via History API).
+ * Resulting behavior depends on the loaded page (i.e. custom behavior for Uploaded & Subscribed song pages; disable extension icon if invalid page). 
+ * Note: this works because YouTube Music appears to use the History API to navigate between pages on the site
+ * Note: It's necessary to do these checks here because the content scraper's current implementation cannot recognize when switching to the Uploaded or Subscribed Songs pages
+ */
 chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
     if (details.url.includes('/library/songs') === true) {
         const metadata = {type: 'all', title: 'Added from YouTube Music'};
@@ -129,6 +133,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.runtime.onConnect.addListener(port => {
     if (port.name === 'AuthenticationChangePending') {
         port.onDisconnect.addListener(port => {
+            console.log(`Authentication change detected. The active user was logged out.`);
             enableAndUpdateIcon();
         });
     }
