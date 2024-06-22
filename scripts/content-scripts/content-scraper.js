@@ -181,6 +181,7 @@
             //...using the pre-set type to dictate how and whether or not to try to get that info
 
     function observeHeaderElementMutations() {    
+        //TODO something changed in the YTM implementation and switching from an invalid page (e.g. not a playlist) to a valid one is not properly registered. Not sure if the issue is here or in background.js
         const _observer = new MutationObserver(scrapeTracklistMetadata); //Create a new mutation observer instance linked to the callback function defined above
         const _observerConfig = {childList: true, subtree: false}; //Set up the configuration options for the Mutation Observer
         if (typeof persistentElements.header === 'object') { //If the element to observe actually exists in the DOM...
