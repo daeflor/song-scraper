@@ -136,7 +136,7 @@
         console.info("Content Scraper script initializing");
         if (window.location.host === 'music.youtube.com') {
             currentApp = supportedApps.youTubeMusic; //Record the current app being used for future reference
-            persistentElements.header = document.getElementById('header'); //Note: there are typically at least two elements with ID 'header' in YTM pages, but the one containing tracklist metadata seems to consistently be the first one in the DOM, so this is the easiest/fastest way to fetch it.
+            persistentElements.header = document.querySelector('ytmusic-responsive-header-renderer');
             persistentElements.scrollContainer = document.body; //Set the scroll container element as applicable, for future reference
             observeHeaderElementMutations(); //Begin observing the YTM Header element for DOM mutations
             scrapeTracklistMetadata(); //Scrape the header element for tracklist metadata. (This needs to be manually triggered the first time the content script runs e.g. on page refresh)
