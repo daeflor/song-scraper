@@ -1,21 +1,9 @@
 'use strict';
 const header = document.querySelector('ytmusic-responsive-header-renderer');
-//let scrollContainer = document.body;
+const scrollContainer = document.body;
 
-// const tracklistMetadata = {
-//     type: undefined, 
-//     title: undefined, 
-//     trackCount: undefined
-// };
-
-//if (window.location.host === 'music.youtube.com') {
-    // header = document.querySelector('ytmusic-responsive-header-renderer');
-    // scrollContainer = document.body; //Set the scroll container element as applicable, for future reference
-    
 observeHeaderElementMutations(); // Begin observing the YTM Header element for DOM mutations
-    
 scrapeTracklistMetadata(); // Scrape the header element for tracklist metadata. (This needs to be manually triggered the first time the content script runs e.g. on page refresh)
-//}
 
 function observeHeaderElementMutations() {    
     // TODO something changed in the YTM implementation and switching from an invalid page (e.g. not a playlist) to a valid one is not properly registered. Not sure if the issue is here or in background.js
@@ -153,7 +141,7 @@ async function scrapePlaylists() {
         const scrapeStartingIndex = globalThis.songScraper.getIndexOfElement(firstElementInList) + 1; // The scrape should start at one greater than the index of the first element in the list. This is because the first element is the 'New playlist' button, which should be skipped. 
         const scrapeMetadataFromElement = element => element.children[0].title;
         const dialog = new globalThis.songScraper.ScrapeInProgressDialog();
-        const results = await globalThis.songScraper.scrapeElements(elementContainer, scrapeStartingIndex, scrapeMetadataFromElement); // Initiate the scrape & scroll process
+        const results = await globalThis.songScraper.scrapeElements(scrollContainer, elementContainer, scrapeStartingIndex, scrapeMetadataFromElement); // Initiate the scrape & scroll process
         
         dialog.text = `List of Playlists Successfully Scraped!`;
         dialog.addCopyToClipboardPrompt(results);
@@ -173,7 +161,7 @@ async function scrapeTracks(callback) {
         const scrapeStartingIndex = globalThis.songScraper.getIndexOfElement(firstElementInList); // Get the index of the first element at which to begin the scrape, since it isn't always necessarily the first element in the container (i.e. can't assume it's 0)  
         const scrapeMetadataFromElement = element => new globalThis.songScraper.Track(element); // Set up the function to execute on each element found in the list. In this case, track metadata will be extracted from the track element.
         const dialog = new globalThis.songScraper.ScrapeInProgressDialog(); // Create a dialog modal to indicate that the scrape is in progress
-        const results = await globalThis.songScraper.scrapeElements(elementContainer, scrapeStartingIndex, scrapeMetadataFromElement, expectedElementCount); // Initiate the scrape & scroll process;
+        const results = await globalThis.songScraper.scrapeElements(scrollContainer, elementContainer, scrapeStartingIndex, scrapeMetadataFromElement, expectedElementCount); // Initiate the scrape & scroll process;
         
         callback(results);
         dialog.close();

@@ -1,7 +1,6 @@
 globalThis.songScraper = {
-    // getIndexOfElement: getIndexOfElement,
-    // convertArrayToSingleColumnCSV: convertArrayToSingleColumnCSV,
-    // scrapeElements: scrapeElements
+    getIndexOfElement: getIndexOfElement,
+    scrapeElements: scrapeElements
 };
 
 /**
@@ -9,32 +8,21 @@ globalThis.songScraper = {
  * @param {Object} element The element for which to get an index
  * @returns {number} The index of the position of the given element within it's parent's list of children
  */
-globalThis.songScraper.getIndexOfElement = function (element) {
+function getIndexOfElement (element) {
     // Note: 'Array.prototype.indexOf.call' is used here because an element's children property returns an HTMLCollection, not an Array, and so it doesn't have the 'indexOf' function, but is set up similarly enough that calling it works
     return Array.prototype.indexOf.call(element.parentElement.children, element);
 }
 
-
-globalThis.songScraper.convertArrayToSingleColumnCSV = function (array) {
-    if (Array.isArray(array) === true) { // If a valid array was provided, convert it to a single column CSV
-        let csv = '';
-        for (const element of array) {
-            csv += element + '\r\n';
-        }
-
-        return csv;
-    } else throw Error(`Tried to convert an array to a single-column CSV but a valid array was not provided.`);  
-}
-
 /**
  * Runs through a process that scrolls through the given list of elements and scrapes metadata out of each of the elements
- * @param {Object} elementContainer The container element wrapping all the individual elements to scrape
+ * @param {Object} scrollContainer The element which needs to be scrolled in order to load all relevant child elements
+* @param {Object} elementContainer The container element wrapping all the individual elements to scrape
  * @param {number} scrapeStartingIndex The index within the container element at which to begin the initial scrape
  * @param {function} scrapeElementFunction The function to execute on each individual element to extract metadata from it
  * @param {number} [expectedElementCount] An optional parameter indicating the expected element count for the list, if available
  * @returns {Promise} A promise with an array of the metadata scraped from each element
  */
-globalThis.songScraper.scrapeElements = function (elementContainer, scrapeStartingIndex, scrapeElementFunction, expectedElementCount) {
+function scrapeElements (scrollContainer, elementContainer, scrapeStartingIndex, scrapeElementFunction, expectedElementCount) {
     return new Promise(resolve => {
         const elementCollection = elementContainer.children;
         const results = []; // Create an array to store the metadata scraped from each element in the list
@@ -58,9 +46,6 @@ globalThis.songScraper.scrapeElements = function (elementContainer, scrapeStarti
                 scrollingTimeoutID = setTimeout(endScrape, 10000); // Set a timeout to end the scrolling if no new changes to the container element have been observed for a while. This avoids infinite scrolling when the expected element count is unknown, or if an unexpected issue is encountered.
             }
         }
-
-        //TODO Should probably pass the scroll container as a param instead (could vary by app)
-        scrollContainer = document.body;
 
         const endScrape = () => { // Set up the function to execute once the scrape & scroll process has either been successfully completed or timed out
             allowManualScrolling(scrollContainer, true); // Allow the user to scroll manually again
