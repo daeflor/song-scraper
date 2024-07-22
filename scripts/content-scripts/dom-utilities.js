@@ -1,4 +1,4 @@
-globalThis.songScraper = {
+globalThis.songScraperUtils = {
     getIndexOfElement: getIndexOfElement,
     scrapeElements: scrapeElements
 };
