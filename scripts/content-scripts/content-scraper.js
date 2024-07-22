@@ -32,75 +32,75 @@
         }
     }
 
-    class CustomButton {
-        #buttonElement;
-        constructor(text) {
-            this.#buttonElement = document.createElement('button');
-            this.#buttonElement.textContent= text;
-            this.#buttonElement.style.margin = '10px';
-            this.#buttonElement.style.color = '#505739';
-            this.#buttonElement.style.backgroundColor = '#eae0c2';
-            this.#buttonElement.style.padding = '10px';
-            this.#buttonElement.style.borderRadius = '15px';
-        }
+    // class CustomButton {
+    //     #buttonElement;
+    //     constructor(text) {
+    //         this.#buttonElement = document.createElement('button');
+    //         this.#buttonElement.textContent= text;
+    //         this.#buttonElement.style.margin = '10px';
+    //         this.#buttonElement.style.color = '#505739';
+    //         this.#buttonElement.style.backgroundColor = '#eae0c2';
+    //         this.#buttonElement.style.padding = '10px';
+    //         this.#buttonElement.style.borderRadius = '15px';
+    //     }
 
-        get element() {
-            return this.#buttonElement;
-        }
-    }
+    //     get element() {
+    //         return this.#buttonElement;
+    //     }
+    // }
 
-    class ScrapeInProgressDialog {
-        #dialog;
-        #dialogText;
-        constructor() {
-            this.#dialog = document.createElement('dialog');
-            this.#dialog.style.textAlign = 'center';
-            this.#dialog.style.color = '#FFCC66';
-            this.#dialog.style.backgroundColor = '#303030';
-            this.#dialog.style.fontFamily = 'Gill Sans';
+    // class ScrapeInProgressDialog {
+    //     #dialog;
+    //     #dialogText;
+    //     constructor() {
+    //         this.#dialog = document.createElement('dialog');
+    //         this.#dialog.style.textAlign = 'center';
+    //         this.#dialog.style.color = '#FFCC66';
+    //         this.#dialog.style.backgroundColor = '#303030';
+    //         this.#dialog.style.fontFamily = 'Gill Sans';
 
-            this.#dialog.addEventListener('close', () => this.#dialog.remove());
+    //         this.#dialog.addEventListener('close', () => this.#dialog.remove());
 
-            this.#dialogText = document.createElement('h3');
-            this.#dialogText.textContent = 'Scrape In Progress...';
-            this.#dialogText.style.marginBottom = '5px';
+    //         this.#dialogText = document.createElement('h3');
+    //         this.#dialogText.textContent = 'Scrape In Progress...';
+    //         this.#dialogText.style.marginBottom = '5px';
             
-            this.#dialog.append(this.#dialogText);
-            document.body.append(this.#dialog);
+    //         this.#dialog.append(this.#dialogText);
+    //         document.body.append(this.#dialog);
 
-            this.#dialog.showModal();
-        }
+    //         this.#dialog.showModal();
+    //     }
 
-        /**
-         * Updates the text displayed in the dialog
-         * @param {string} value The text string value to show in the dialog modal
-         */
-        set text(value) {
-            this.#dialogText.textContent = value;
-        }
+    //     /**
+    //      * Updates the text displayed in the dialog
+    //      * @param {string} value The text string value to show in the dialog modal
+    //      */
+    //     set text(value) {
+    //         this.#dialogText.textContent = value;
+    //     }
 
-        /**
-         * Closes the dialog modal
-         */
-        close() {
-            this.#dialog.close();
-        }
+    //     /**
+    //      * Closes the dialog modal
+    //      */
+    //     close() {
+    //         this.#dialog.close();
+    //     }
 
-        /**
-         * Adds a form to the dialog that prompts the user to copy the provided data to the clipboard
-         * @param {string[]} results An array of strings that will be converted to a csv and copied to the clipboard if the corresponding button is pressed
-         */
-        addCopyToClipboardPrompt(results) {
-            const closeButton = new CustomButton('Close').element;
-            const clipboardButton = new CustomButton('Copy to Clipboard').element;
-            clipboardButton.addEventListener('click', () => navigator.clipboard.writeText(convertArrayToSingleColumnCSV(results)));
+    //     /**
+    //      * Adds a form to the dialog that prompts the user to copy the provided data to the clipboard
+    //      * @param {string[]} results An array of strings that will be converted to a csv and copied to the clipboard if the corresponding button is pressed
+    //      */
+    //     addCopyToClipboardPrompt(results) {
+    //         const closeButton = new CustomButton('Close').element;
+    //         const clipboardButton = new CustomButton('Copy to Clipboard').element;
+    //         clipboardButton.addEventListener('click', () => navigator.clipboard.writeText(convertArrayToSingleColumnCSV(results)));
 
-            const form = document.createElement('form');
-            form.method = 'dialog';
-            form.append(closeButton, clipboardButton);
-            this.#dialog.append(form);
-        }
-    }
+    //         const form = document.createElement('form');
+    //         form.method = 'dialog';
+    //         form.append(closeButton, clipboardButton);
+    //         this.#dialog.append(form);
+    //     }
+    // }
 
     const supportedApps = Object.freeze({ 
         youTubeMusic: 'ytm',
@@ -108,40 +108,40 @@
     });
     
     //TODO This isn't being used as much as it could be
-    const supportedTracklistTypes = Object.freeze({
-        playlist: 'playlist',
-        autoPlaylist: 'auto',
-        genreList: 'genre',
-        allSongsList: 'all',
-        uploadsList: 'uploads'
-    });
+    // const supportedTracklistTypes = Object.freeze({
+    //     playlist: 'playlist',
+    //     autoPlaylist: 'auto',
+    //     genreList: 'genre',
+    //     allSongsList: 'all',
+    //     uploadsList: 'uploads'
+    // });
 
     //TODO I don't really like this... at some point it just makes it less readable
-    const metadataNames = Object.freeze({
-        title: 'tracklistTitle',
-        trackCount: 'trackCount'
-    });
+    // const metadataNames = Object.freeze({
+    //     title: 'tracklistTitle',
+    //     trackCount: 'trackCount'
+    // });
 
-    const persistentElements = {
-        header: undefined,
-        scrollContainer: undefined
-    }
+    // const persistentElements = {
+    //     header: undefined,
+    //     scrollContainer: undefined
+    // }
 
     let currentApp = undefined;
 
     /**
      * Records the current app based on the URL, and begins observing the YTM header element for DOM mutations
      */
-    function init() {
-        console.info("Content Scraper script initializing");
-        if (window.location.host === 'music.youtube.com') {
-            currentApp = supportedApps.youTubeMusic; //Record the current app being used for future reference
-            persistentElements.header = document.querySelector('ytmusic-responsive-header-renderer');
-            persistentElements.scrollContainer = document.body; //Set the scroll container element as applicable, for future reference
-            observeHeaderElementMutations(); //Begin observing the YTM Header element for DOM mutations
-            scrapeTracklistMetadata(); //Scrape the header element for tracklist metadata. (This needs to be manually triggered the first time the content script runs e.g. on page refresh)
-        } else console.error("Tried to initialize data in the content scraper script, but the host was not recognized.");        
-    }
+    // function init() {
+    //     console.info("Content Scraper script initializing");
+    //     if (window.location.host === 'music.youtube.com') {
+    //         currentApp = supportedApps.youTubeMusic; //Record the current app being used for future reference
+    //         persistentElements.header = document.querySelector('ytmusic-responsive-header-renderer');
+    //         persistentElements.scrollContainer = document.body; //Set the scroll container element as applicable, for future reference
+    //         observeHeaderElementMutations(); //Begin observing the YTM Header element for DOM mutations
+    //         scrapeTracklistMetadata(); //Scrape the header element for tracklist metadata. (This needs to be manually triggered the first time the content script runs e.g. on page refresh)
+    //     } else console.error("Tried to initialize data in the content scraper script, but the host was not recognized.");        
+    // }
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.greeting === 'GetTracks') {
@@ -155,12 +155,12 @@
         return true; // Return true to keep the message channel open (so the callback can be called asynchronously)
     });
 
-    chrome.runtime.onMessage.addListener(message => {
-        if (message.greeting === 'GetPlaylists') {
-            console.info("Content Script: Received a request to retrieve a list of playlists from the DOM.");
-            getPlaylists();
-        }
-    });
+    // chrome.runtime.onMessage.addListener(message => {
+    //     if (message.greeting === 'GetPlaylists') {
+    //         console.info("Content Script: Received a request to retrieve a list of playlists from the DOM.");
+    //         getPlaylists();
+    //     }
+    // });
 
     //TODO something that hasn't been considered is that a tracklist could change in the time between...
         //...when the page is loaded and the extension is opened. i.e. a track could be added/removed manually to the list
@@ -180,61 +180,64 @@
             //...and then only fetch the tracklist title & track count on demand later (i.e. when the popup is opened)...
             //...using the pre-set type to dictate how and whether or not to try to get that info
 
-    function observeHeaderElementMutations() {    
-        //TODO something changed in the YTM implementation and switching from an invalid page (e.g. not a playlist) to a valid one is not properly registered. Not sure if the issue is here or in background.js
-        const _observer = new MutationObserver(scrapeTracklistMetadata); //Create a new mutation observer instance linked to the callback function defined above
-        const _observerConfig = {childList: true, subtree: false}; //Set up the configuration options for the Mutation Observer
-        if (typeof persistentElements.header === 'object') { //If the element to observe actually exists in the DOM...
-            _observer.observe(persistentElements.header, _observerConfig); //Start observing the specified element for configured mutations (i.e. for any changes to its childList)
-        } else console.error("Tried observing the YTM header element for DOM mutations, but the element doesn't exist.");
-    }
+        // None of this matters much because the YouTube Music track counts are often inaccurate and can't be relied upon.
 
-    function scrapeTracklistMetadata() {
-        if (currentApp === supportedApps.youTubeMusic) {
-            console.info("Scraping 'header' element in DOM for tracklist metadata.");
-            //Create an object to store and transmit the current tracklist metadata so it can be easily accessed across the extension
-            const tracklistMetadata = {type: undefined, title: undefined, trackCount: undefined};
+    // function observeHeaderElementMutations() {    
+    //     //TODO something changed in the YTM implementation and switching from an invalid page (e.g. not a playlist) to a valid one is not properly registered. Not sure if the issue is here or in background.js
+    //     const _observer = new MutationObserver(scrapeTracklistMetadata); //Create a new mutation observer instance linked to the callback function defined above
+    //     const _observerConfig = {childList: true, subtree: false}; //Set up the configuration options for the Mutation Observer
+    //     if (typeof persistentElements.header === 'object') { //If the element to observe actually exists in the DOM...
+    //         //TODO This errors out on https://music.youtube.com/library/playlists because header is note a DOM node. Don't think we should even need to watch this on this page. 
+    //         _observer.observe(persistentElements.header, _observerConfig); //Start observing the specified element for configured mutations (i.e. for any changes to its childList)
+    //     } else console.error("Tried observing the YTM header element for DOM mutations, but the element doesn't exist.");
+    // }
 
-            //Scrape and record the current tracklist metadata based on the URL
-            if (window.location.search.startsWith('?list=LM')) {
-                tracklistMetadata.type = supportedTracklistTypes.autoPlaylist;
-                tracklistMetadata.title = 'Your Likes';
-                tracklistMetadata.trackCount = scrapeTrackCount();
-            } else if (window.location.search.startsWith('?list=PL')) {
-                tracklistMetadata.type = supportedTracklistTypes.playlist;
-                tracklistMetadata.title = scrapeTracklistTitle();
-                tracklistMetadata.trackCount = scrapeTrackCount();
-            }
+    // function scrapeTracklistMetadata() {
+    //     if (currentApp === supportedApps.youTubeMusic) {
+    //         console.info("Scraping 'header' element in DOM for tracklist metadata.");
+    //         //Create an object to store and transmit the current tracklist metadata so it can be easily accessed across the extension
+    //         const tracklistMetadata = {type: undefined, title: undefined, trackCount: undefined};
 
-            if (typeof tracklistMetadata.type === 'string') { //If a valid tracklist type was set (i.e. the current page is a valid tracklist)...
-                //TODO would it be better to store each piece of metadata individually instead of in a single object?
-                    //That way, if we want to just update partial data (e.g. type in background script) we can do that with just a set, without needing an initial get.            
-                chrome.storage.local.set ({currentTracklistMetadata: tracklistMetadata}, () => { //Cache the metadata in local storage
-                    if (typeof chrome.runtime.error === 'undefined') {
-                        const message = { greeting: 'TracklistMetadataUpdated', currentTracklistMetadata: tracklistMetadata };
-                        chrome.runtime.sendMessage(message); //Send the metadata to the extension's service worker so it can update the icon accordingly
-                    } else console.error("Error encountered while attempting to store metadata in local storage: " + chrome.runtime.lastError.message);
-                });
-            }
-        }
-    }
+    //         //Scrape and record the current tracklist metadata based on the URL
+    //         if (window.location.search.startsWith('?list=LM')) {
+    //             tracklistMetadata.type = supportedTracklistTypes.autoPlaylist;
+    //             tracklistMetadata.title = 'Your Likes';
+    //             tracklistMetadata.trackCount = scrapeTrackCount();
+    //         } else if (window.location.search.startsWith('?list=PL')) {
+    //             tracklistMetadata.type = supportedTracklistTypes.playlist;
+    //             tracklistMetadata.title = scrapeTracklistTitle();
+    //             tracklistMetadata.trackCount = scrapeTrackCount();
+    //         }
+
+    //         if (typeof tracklistMetadata.type === 'string') { //If a valid tracklist type was set (i.e. the current page is a valid tracklist)...
+    //             //TODO would it be better to store each piece of metadata individually instead of in a single object?
+    //                 //That way, if we want to just update partial data (e.g. type in background script) we can do that with just a set, without needing an initial get.            
+    //             chrome.storage.local.set ({currentTracklistMetadata: tracklistMetadata}, () => { //Cache the metadata in local storage
+    //                 if (typeof chrome.runtime.error === 'undefined') {
+    //                     const message = { greeting: 'TracklistMetadataUpdated', currentTracklistMetadata: tracklistMetadata };
+    //                     chrome.runtime.sendMessage(message); //Send the metadata to the extension's service worker so it can update the icon accordingly
+    //                 } else console.error("Error encountered while attempting to store metadata in local storage: " + chrome.runtime.lastError.message);
+    //             });
+    //         }
+    //     }
+    // }
     
     /**
      * Extracts a list of all playlists by scraping the playlist elements in the DOM, and then displays a modal dialog with an option to copy the resulting list to the clipboard
      */
-    async function getPlaylists() {
-        const firstElementInList = document.querySelector('ytmusic-two-row-item-renderer.style-scope.ytmusic-grid-renderer'); // Find the first track element using query selector.
-        if (firstElementInList instanceof Element === true) {
-            const elementContainer = firstElementInList.parentElement; // Get the container element
-            const scrapeStartingIndex = getIndexOfElement(firstElementInList) + 1; // The scrape should start at one greater than the index of the first element in the list. This is because the first element is the 'New playlist' button, which should be skipped. 
-            const scrapeMetadataFromElement = element => element.children[0].title;
-            const dialog = new ScrapeInProgressDialog();
-            const results = await scrapeElements(elementContainer, scrapeStartingIndex, scrapeMetadataFromElement); //Initiate the scrape & scroll process;
+    // async function getPlaylists() {
+    //     const firstElementInList = document.querySelector('ytmusic-two-row-item-renderer.style-scope.ytmusic-grid-renderer'); // Find the first track element using query selector.
+    //     if (firstElementInList instanceof Element === true) {
+    //         const elementContainer = firstElementInList.parentElement; // Get the container element
+    //         const scrapeStartingIndex = getIndexOfElement(firstElementInList) + 1; // The scrape should start at one greater than the index of the first element in the list. This is because the first element is the 'New playlist' button, which should be skipped. 
+    //         const scrapeMetadataFromElement = element => element.children[0].title;
+    //         const dialog = new ScrapeInProgressDialog();
+    //         const results = await scrapeElements(elementContainer, scrapeStartingIndex, scrapeMetadataFromElement); //Initiate the scrape & scroll process;
             
-            dialog.text = 'List of Playlists Successfully Scraped!';
-            dialog.addCopyToClipboardPrompt(results);
-        } else console.error("Tried to scrape the list of playlists, but the first element in the list couldn't be identified.");
-    }
+    //         dialog.text = 'List of Playlists Successfully Scraped!';
+    //         dialog.addCopyToClipboardPrompt(results);
+    //     } else console.error("Tried to scrape the list of playlists, but the first element in the list couldn't be identified.");
+    // }
 
     /**
      * Extracts a list of tracks by scraping the track row elements in the DOM, and then passes the results along in the provided callback
@@ -304,15 +307,17 @@
         });
     }
 
-    /**
-     * Gets the index of the provided element within it's parent element's list of children
-     * @param {Object} element The element for which to get an index
-     * @returns {number} The index of the position of the given element within it's parent's list of children
-     */
-     function getIndexOfElement(element) {
-        //Note: 'Array.prototype.indexOf.call' is used here because an element's children property returns an HTMLCollection, not an Array, and so it doesn't have the 'indexOf' function, but is set up similarly enough that calling it works
-        return Array.prototype.indexOf.call(element.parentElement.children, element);
-    }
+    //TODO several of these could be in a utilities script
+
+    // /**
+    //  * Gets the index of the provided element within it's parent element's list of children
+    //  * @param {Object} element The element for which to get an index
+    //  * @returns {number} The index of the position of the given element within it's parent's list of children
+    //  */
+    //  function getIndexOfElement(element) {
+    //     //Note: 'Array.prototype.indexOf.call' is used here because an element's children property returns an HTMLCollection, not an Array, and so it doesn't have the 'indexOf' function, but is set up similarly enough that calling it works
+    //     return Array.prototype.indexOf.call(element.parentElement.children, element);
+    // }
 
     /**
      * Sets whether or not the user should be able to scroll manually within the container element provided
@@ -365,15 +370,15 @@
         }
     }
 
-    /**
-     * Gets the tracklist title by scraping it from the DOM
-     * @returns {string} the title of the current tracklist
-     */
-     function scrapeTracklistTitle() {
-        if (currentApp === supportedApps.youTubeMusic) {
-            return getTracklistTitleFromElement(persistentElements.header.getElementsByClassName('title')[0]);
-        }
-    }
+    // /**
+    //  * Gets the tracklist title by scraping it from the DOM
+    //  * @returns {string} the title of the current tracklist
+    //  */
+    //  function scrapeTracklistTitle() {
+    //     if (currentApp === supportedApps.youTubeMusic) {
+    //         return getTracklistTitleFromElement(persistentElements.header.getElementsByClassName('title')[0]);
+    //     }
+    // }
 
     //TODO this extra step seems unnecessary now, since the other elements are 'static'
         //...(i.e. header, tracksContainer, & scrollContainer don't change, so we can just fetch then once on script load)
@@ -401,16 +406,16 @@
     //     } else console.error("Tried to get the tracklist title element, but the current app isn't valid.");
     // }
 
-    /**
-     * Extracts and returns the tracklist title string from the title element
-     * @param {Object} element The DOM element containing the tracklist title
-     * @returns {string} The tracklist title as a string
-     */
-     function getTracklistTitleFromElement(element) {
-        if (typeof element === 'object') {
-            return element.textContent;
-        } else console.error("Tried to extract the tracklist title string from the title element, but no valid element was provided.");
-    }
+    // /**
+    //  * Extracts and returns the tracklist title string from the title element
+    //  * @param {Object} element The DOM element containing the tracklist title
+    //  * @returns {string} The tracklist title as a string
+    //  */
+    //  function getTracklistTitleFromElement(element) {
+    //     if (typeof element === 'object') {
+    //         return element.textContent;
+    //     } else console.error("Tried to extract the tracklist title string from the title element, but no valid element was provided.");
+    // }
 
     // function getTrackCount() {
     //     if (currentApp === supportedApps.youTubeMusic) {
@@ -444,16 +449,16 @@
         } else console.error("Tried to convert a track count string to a number, but the value provided was not a string.");
     }
 
-    function convertArrayToSingleColumnCSV(array) {
-        if (Array.isArray(array) === true) { // If a valid array was provided, convert it to a single column CSV
-            let csv = '';
-            for (const element of array) {
-                csv += element + '\r\n';
-            }
+    // function convertArrayToSingleColumnCSV(array) {
+    //     if (Array.isArray(array) === true) { // If a valid array was provided, convert it to a single column CSV
+    //         let csv = '';
+    //         for (const element of array) {
+    //             csv += element + '\r\n';
+    //         }
 
-            return csv;
-        } else throw Error("Tried to convert an array to a single-column CSV but a valid array was not provided.");  
-    }
+    //         return csv;
+    //     } else throw Error("Tried to convert an array to a single-column CSV but a valid array was not provided.");  
+    // }
 
-    init();
+    //init();
 })();
