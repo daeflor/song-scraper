@@ -19,43 +19,36 @@ function observeHeaderElementMutations() {
 
 function scrapeTracklistMetadata() {
     console.info(`Scraping DOM for ytm tracklist metadata.`);
-    
-    // Create an object to store and transmit the current tracklist metadata so it can be easily accessed across the extension
-    //const tracklistMetadata = {type: undefined, title: undefined, trackCount: undefined};
-
-    //globalThis.tracklistMetadata.title = (window.location.search.startsWith('?list=PL')) ? scrapeTracklistTitle() : 
-
-    const tracklistMetadata = {
-        type: undefined, 
-        title: undefined, 
-        trackCount: scrapeTrackCount() //TODO should this also only be done if the list is LM or PL?
-    };
-
-    //tracklistMetadata.trackCount = scrapeTrackCount();
 
     // Scrape and record the current tracklist metadata based on the URL
     if (window.location.search.startsWith('?list=LM')) {
-        tracklistMetadata.type = 'auto';
-        tracklistMetadata.title = 'Your Likes';
-        storeMetadata(tracklistMetadata);
+        storeMetadata('auto', 'Your Likes', scrapeTrackCount());
     } else if (window.location.search.startsWith('?list=PL')) {
-        tracklistMetadata.type = 'playlist';
-        tracklistMetadata.title = scrapeTracklistTitle();
-        storeMetadata(tracklistMetadata);
+        storeMetadata('playlist', scrapeTracklistTitle(), scrapeTrackCount());
     }
 }
 
 /**
  * Caches the metadata in Chrome local storage and then informs the service worker
- * @param {Object} metadata The tracklist metadata object to store
+ * @param {string} type The tracklist type
+ * @param {string} title The tracklist title
+ * @param {number} type The track count
  */
-function storeMetadata(metadata) {
+function storeMetadata(type, title, trackCount) {
     // TODO would it be better to store each piece of metadata individually instead of in a single object?
         // That way, if we want to just update partial data (e.g. type in background script) we can do that with just a set, without needing an initial get.            
-    chrome.storage.local.set ({currentTracklistMetadata: metadata}, () => {
+    
+    const tracklistMetadata = {
+        type: type, 
+        title: title, 
+        trackCount: trackCount
+    };
+    
+    chrome.storage.local.set ({currentTracklistMetadata: tracklistMetadata}, () => {
         if (typeof chrome.runtime.error === 'undefined') {
-            const message = { greeting: 'TracklistMetadataUpdated', currentTracklistMetadata: metadata };
+            const message = { greeting: 'TracklistMetadataUpdated', currentTracklistMetadata: tracklistMetadata };
             chrome.runtime.sendMessage(message); // Send the metadata to the extension's service worker so it can react accordingly (e.g. updating the extension icon)
+            console.info(`Tracklist metadata saved to Chrome local storage.`);
         } else console.error(`Error while attempting to store metadata in Chrome local storage:  ${chrome.runtime.lastError.message}`);
     });
 }
