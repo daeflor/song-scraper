@@ -132,10 +132,10 @@ async function scrapePlaylists() {
     const firstElementInList = document.querySelector('ytmusic-two-row-item-renderer.style-scope.ytmusic-grid-renderer'); // Find the first track element using query selector.
     if (firstElementInList instanceof Element === true) {
         const elementContainer = firstElementInList.parentElement; // Get the container element
-        const scrapeStartingIndex = globalThis.songScraperUtils.getIndexOfElement(firstElementInList) + 1; // The scrape should start at one greater than the index of the first element in the list. This is because the first element is the 'New playlist' button, which should be skipped. 
+        const scrapeStartingIndex = globalThis.getIndexOfElement(firstElementInList) + 1; // The scrape should start at one greater than the index of the first element in the list. This is because the first element is the 'New playlist' button, which should be skipped. 
         const scrapeMetadataFromElement = element => element.children[0].title;
         const dialog = new globalThis.songScraperCustomElements.ScrapeInProgressDialog();
-        const results = await globalThis.songScraperUtils.scrapeElements(scrollContainer, elementContainer, scrapeStartingIndex, scrapeMetadataFromElement); // Initiate the scrape & scroll process
+        const results = await globalThis.scrapeElements(scrollContainer, elementContainer, scrapeStartingIndex, scrapeMetadataFromElement); // Initiate the scrape & scroll process
         
         dialog.text = `List of Playlists Successfully Scraped!`;
         dialog.addCopyToClipboardPrompt(results);
@@ -152,10 +152,11 @@ async function scrapeTracks(callback) {
         const elementContainer = firstElementInList.parentElement; // Get the container element
         //TODO could make sense to record the track count and see if that exists before scraping again. But would require clearing it anytime it may be invalidated, which is probably more work than just scraping it.
         const expectedElementCount = scrapeTrackCount(); // Fetch the official track count of the tracklist, if one exists. This will be undefined otherwise. 
-        const scrapeStartingIndex = globalThis.songScraperUtils.getIndexOfElement(firstElementInList); // Get the index of the first element at which to begin the scrape, since it isn't always necessarily the first element in the container (i.e. can't assume it's 0)  
+        const scrapeStartingIndex = globalThis.getIndexOfElement(firstElementInList); // Get the index of the first element at which to begin the scrape, since it isn't always necessarily the first element in the container (i.e. can't assume it's 0)  
         const scrapeMetadataFromElement = element => new globalThis.songScraperCustomClasses.Track(element); // Set up the function to execute on each element found in the list. In this case, track metadata will be extracted from the track element.
+
         const dialog = new globalThis.songScraperCustomElements.ScrapeInProgressDialog(); // Create a dialog modal to indicate that the scrape is in progress
-        const results = await globalThis.songScraperUtils.scrapeElements(scrollContainer, elementContainer, scrapeStartingIndex, scrapeMetadataFromElement, expectedElementCount); // Initiate the scrape & scroll process;
+        const results = await globalThis.scrapeElements(scrollContainer, elementContainer, scrapeStartingIndex, scrapeMetadataFromElement, expectedElementCount); // Initiate the scrape & scroll process;
         
         callback(results);
         dialog.close();

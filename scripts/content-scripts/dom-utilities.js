@@ -1,8 +1,3 @@
-globalThis.songScraperUtils = {
-    getIndexOfElement: getIndexOfElement,
-    scrapeElements: scrapeElements
-};
-
 /**
  * Gets the index of the provided element within it's parent element's list of children
  * @param {Object} element The element for which to get an index
