@@ -134,7 +134,7 @@ async function scrapePlaylists() {
         const elementContainer = firstElementInList.parentElement; // Get the container element
         const scrapeStartingIndex = globalThis.getIndexOfElement(firstElementInList) + 1; // The scrape should start at one greater than the index of the first element in the list. This is because the first element is the 'New playlist' button, which should be skipped. 
         const scrapeMetadataFromElement = element => element.children[0].title;
-        const dialog = new globalThis.songScraperCustomElements.ScrapeInProgressDialog();
+        const dialog = new globalThis.songScraperCustomClasses.ScrapeInProgressDialog();
         const results = await globalThis.scrapeElements(scrollContainer, elementContainer, scrapeStartingIndex, scrapeMetadataFromElement); // Initiate the scrape & scroll process
         
         dialog.text = `List of Playlists Successfully Scraped!`;
@@ -155,7 +155,7 @@ async function scrapeTracks(callback) {
         const scrapeStartingIndex = globalThis.getIndexOfElement(firstElementInList); // Get the index of the first element at which to begin the scrape, since it isn't always necessarily the first element in the container (i.e. can't assume it's 0)  
         const scrapeMetadataFromElement = element => new globalThis.songScraperCustomClasses.Track(element); // Set up the function to execute on each element found in the list. In this case, track metadata will be extracted from the track element.
 
-        const dialog = new globalThis.songScraperCustomElements.ScrapeInProgressDialog(); // Create a dialog modal to indicate that the scrape is in progress
+        const dialog = new globalThis.songScraperCustomClasses.ScrapeInProgressDialog(); // Create a dialog modal to indicate that the scrape is in progress
         const results = await globalThis.scrapeElements(scrollContainer, elementContainer, scrapeStartingIndex, scrapeMetadataFromElement, expectedElementCount); // Initiate the scrape & scroll process;
         
         callback(results);
