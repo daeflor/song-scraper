@@ -1,3 +1,5 @@
+globalThis.songScraperCustomClasses = {};
+
 /**
  * A Track contains properties for each piece of track metadata scraped from the DOM
  */
