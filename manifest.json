@@ -12,7 +12,8 @@
                 "https://music.youtube.com/*"],
             "js": [
                 "scripts/content-scripts/dom-utilities.js",
-                "scripts/content-scripts/custom-elements.js", 
+                "scripts/content-scripts/custom-elements.js",
+                "scripts/content-scripts/custom-classes.js", 
                 "scripts/content-scripts/ytm-dom-scraper.js"],
             "run_at": "document_idle"
     }],
