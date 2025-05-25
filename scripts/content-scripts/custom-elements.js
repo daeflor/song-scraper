@@ -1,84 +1,15 @@
-globalThis.songScraperCustomElements = {
-    ScrapeInProgressDialog: ScrapeInProgressDialog
-};
+//TODO Delete this file properly
 
-class ScrapeInProgressDialog {
-    #dialog;
-    #dialogText;
-    constructor() {
-        this.#dialog = document.createElement('dialog');
-        this.#dialog.style.textAlign = 'center';
-        this.#dialog.style.color = '#FFCC66';
-        this.#dialog.style.backgroundColor = '#303030';
-        this.#dialog.style.fontFamily = 'Gill Sans';
+// 'use strict';
 
-        this.#dialog.addEventListener('close', () => this.#dialog.remove());
 
-        this.#dialogText = document.createElement('h3');
-        this.#dialogText.textContent = 'Scrape In Progress...';
-        this.#dialogText.style.marginBottom = '5px';
-        
-        this.#dialog.append(this.#dialogText);
-        document.body.append(this.#dialog);
+// function convertArrayToSingleColumnCSV(array) {
+//     if (Array.isArray(array) === true) { // If a valid array was provided, convert it to a single column CSV
+//         let csv = '';
+//         for (const element of array) {
+//             csv += element + '\r\n';
+//         }
 
-        this.#dialog.showModal();
-    }
-
-    /**
-     * Updates the text displayed in the dialog
-     * @param {string} value The text string value to show in the dialog modal
-     */
-    set text(value) {
-        this.#dialogText.textContent = value;
-    }
-
-    /**
-     * Closes the dialog modal
-     */
-    close() {
-        this.#dialog.close();
-    }
-
-    /**
-     * Adds a form to the dialog that prompts the user to copy the provided data to the clipboard
-     * @param {string[]} results An array of strings that will be converted to a csv and copied to the clipboard if the corresponding button is pressed
-     */
-    addCopyToClipboardPrompt(results) {
-        const closeButton = new CustomButton('Close').element;
-        const clipboardButton = new CustomButton('Copy to Clipboard').element;
-        clipboardButton.addEventListener('click', () => navigator.clipboard.writeText(convertArrayToSingleColumnCSV(results)));
-
-        const form = document.createElement('form');
-        form.method = 'dialog';
-        form.append(closeButton, clipboardButton);
-        this.#dialog.append(form);
-    }
-}
-
-class CustomButton {
-    #buttonElement;
-    constructor(text) {
-        this.#buttonElement = document.createElement('button');
-        this.#buttonElement.textContent= text;
-        this.#buttonElement.style.margin = '10px';
-        this.#buttonElement.style.color = '#505739';
-        this.#buttonElement.style.backgroundColor = '#eae0c2';
-        this.#buttonElement.style.padding = '10px';
-        this.#buttonElement.style.borderRadius = '15px';
-    }
-
-    get element() {
-        return this.#buttonElement;
-    }
-}
-
-function convertArrayToSingleColumnCSV(array) {
-    if (Array.isArray(array) === true) { // If a valid array was provided, convert it to a single column CSV
-        let csv = '';
-        for (const element of array) {
-            csv += element + '\r\n';
-        }
-
-        return csv;
-    } else throw Error(`Tried to convert an array to a single-column CSV but a valid array was not provided.`);  
-}
+//         return csv;
+//     } else throw Error(`Tried to convert an array to a single-column CSV but a valid array was not provided.`);  
+// }
