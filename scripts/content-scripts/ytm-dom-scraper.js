@@ -11,7 +11,7 @@ function observeHeaderElementMutations() {
     const observer = new MutationObserver(scrapeTracklistMetadata); // Create a new mutation observer instance which will scrape metadata on trigger
     const observerConfig = {childList: true, subtree: false};
     if (typeof header === 'object') { // If the element to observe actually exists in the DOM...
-        //TODO This errors out on https://music.youtube.com/library/playlists because header is note a DOM node. Don't think we should even need to watch this on this page. 
+        //TODO This errors out on https://music.youtube.com/library/playlists because header is not a DOM node. Don't think we should even need to watch this on this page. 
             //2024-07-21 Update: I think this is the same issue as above TODO. Maybe I can just switch to observing a higher level element that is consistent throughout the site, if one exists.
         observer.observe(header, observerConfig); // Observing the ytm header element for any changes to its childList
     } else console.error(`Tried observing the YTM header element for DOM mutations, but the element doesn't exist.`);
