@@ -12,6 +12,14 @@
 
 ** Upcoming To-Do List **
 
+	2025:
+	- I think it would make sense for each class in custom-classes.js to have its own file
+	- Delete unused content-scraper.js file
+	- Fix issue where every 100th track doesn't get scraped properly
+	- Investigate and try to fix issue where metadata doesn't refresh properly when switching to a different page without refreshing the site.
+	- Consider changing structure for saving/accessing global variables in content scripts (e.g. saving everything under globalThis.songScraper.xyz)
+	- Consider adding await/async to ytm-dom-scraper.js if possible, to increase readability.
+	
 	2022: 
 	- Go through the list of songs missing after the ytm transition and address them as applicable
 	- Consider adding option to list all disabled tracks in a playlist
