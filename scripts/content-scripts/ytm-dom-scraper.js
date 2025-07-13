@@ -2,8 +2,29 @@
 const header = document.querySelector('ytmusic-responsive-header-renderer');
 const scrollContainer = document.body;
 
-observeHeaderElementMutations(); // Begin observing the YTM Header element for DOM mutations
-scrapeTracklistMetadata(); // Scrape the header element for tracklist metadata. (This needs to be manually triggered the first time the content script runs e.g. on page refresh)
+init();
+
+// Listen for messages from the extension popup scripts
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log(`message received`);
+    if (message.greeting === 'GetPlaylists') {
+        console.info(`Received a request to retrieve a list of playlists from the DOM.`);
+        scrapePlaylists();
+    } else if (message.greeting === 'GetTracks') {
+        console.info(`Received a request to retrieve a list of tracks from the DOM.`);
+        scrapeTracks(tracksArray => {
+            message.response = tracksArray;
+            sendResponse(message);
+        });
+    }
+
+    return true; // Return true to keep the message channel open (so the callback can be called asynchronously)
+});
+
+function init() {
+    observeHeaderElementMutations(); // Begin observing the YTM Header element for DOM mutations
+    scrapeTracklistMetadata(); // Scrape the header element for tracklist metadata. (This needs to be manually triggered the first time the content script runs e.g. on page refresh)
+}
 
 function observeHeaderElementMutations() {    
     // TODO something changed in the YTM implementation and switching from an invalid page (e.g. not a playlist) to a valid one is not properly registered. Not sure if the issue is here or in background.js
@@ -108,22 +129,6 @@ function getTrackCountFromElement(element) {
         return parseInt(trackCountString, 10); // Parse the string to get the track count value as an integer and return it
     } else console.error(`Tried to convert a track count string to a number, but the value provided was not a string.`);
 }
-
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log(`message received`);
-    if (message.greeting === 'GetPlaylists') {
-        console.info(`Received a request to retrieve a list of playlists from the DOM.`);
-        scrapePlaylists();
-    } else if (message.greeting === 'GetTracks') {
-        console.info(`Received a request to retrieve a list of tracks from the DOM.`);
-        scrapeTracks(tracksArray => {
-            message.response = tracksArray;
-            sendResponse(message);
-        });
-    }
-
-    return true; // Return true to keep the message channel open (so the callback can be called asynchronously)
-});
 
 /**
  * Extracts a list of all playlists by scraping the playlist elements in the DOM, and then displays a modal dialog with an option to copy the resulting list to the clipboard

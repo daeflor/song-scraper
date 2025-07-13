@@ -27,17 +27,24 @@ function scrapeElements (scrollContainer, elementContainer, scrapeStartingIndex,
 
         const scrapeLoadedElements = () => { // Set up the function to scrape the set of elements most recently loaded in the DOM
             clearTimeout(scrollingTimeoutID); // Since there are still elements available to scrape, clear the timeout that would otherwise end the scrolling process after a few seconds. The timeout will be reset if the scrape isn't complete after the upcoming scrape.        
-            
-            for (let i = scrapeStartingIndex; i < (elementCollection.length); i++) { // For each new element loaded in the DOM...
-                results.push(scrapeElementFunction(elementCollection[i])); // Scrape the metadata from the element and add it to the metadata array
+            console.info(`Current element collection length is ${elementCollection.length}`);
+
+            let i = scrapeStartingIndex;
+            // Scrape through the latest batch of loaded elements, ignoring the "continuation" element at the end of each batch. It's possible this YTM behavior will change in the future.
+            while (i < elementCollection.length && elementCollection[i].nodeName != "YTMUSIC-CONTINUATION-ITEM-RENDERER") {
+                const elementMetadata = scrapeElementFunction(elementCollection[i]); // Scrape the metadata from the element
+                results.push(elementMetadata); // Add the metadata to the results array
+                i++;
             }
 
             if (results.length === expectedElementCount) { // If there is an expected element count and it matches the length of the metadata array...
-                // Note: This currently works for the 'Your Likes' list even though the expected/displayed track count is incorrect. This is is because the displayed track count is bigger than the actual one. If it was the other way around, it's possible the resulting scraped tracklist could be incorrect.
+                // Note: This currently works for the 'Your Likes' list even though the expected/displayed track count is incorrect. This is is because the displayed track count is greater than the actual one. If it was the other way around, it's possible the resulting scraped tracklist could be incorrect.
+                console.info(`Scrape ended. ${results.length} results scraped out of an expected ${expectedElementCount}.`);
                 endScrape(); // End the scrape
             } else { // Else, if the scrape isn't complete or the expected element count is unknown...
+                console.info(`Scrape is incomplete and will continue. ${results.length} results scraped out of an expected ${expectedElementCount}.`);
                 scrollToElement(elementCollection[elementCollection.length-1]); // Scroll to the last available child element in the container
-                scrapeStartingIndex = elementCollection.length; // Set the starting index for the next scrape to be one greater than the index of the last child element from the previous scrape
+                scrapeStartingIndex = elementCollection.length-1; // Set the starting index for the next scrape to be one greater than the index of the last child element from the previous scrape
                 scrollingTimeoutID = setTimeout(endScrape, 10000); // Set a timeout to end the scrolling if no new changes to the container element have been observed for a while. This avoids infinite scrolling when the expected element count is unknown, or if an unexpected issue is encountered.
             }
         }
@@ -59,7 +66,7 @@ function scrapeElements (scrollContainer, elementContainer, scrapeStartingIndex,
     });
 }
 
-/**** Non-Global Helpers ****
+/**** Helpers ****
 
 /**
  * Sets whether or not the user should be able to scroll manually within the container element provided
