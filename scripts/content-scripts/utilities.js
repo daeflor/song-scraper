@@ -30,19 +30,28 @@ function scrapeElements (scrollContainer, elementContainer, scrapeStartingIndex,
             
             console.info(`Current element collection length is ${elementCollection.length}`);
 
-            for (let i = scrapeStartingIndex; i < elementCollection.length; i++) { // For each new element loaded in the DOM...
-                // Ignore the "continuation" element at the end of each batch of loaded elements. It's possible this YTM behavior will change in the future.
-                if (elementCollection[i].nodeName == "YTMUSIC-CONTINUATION-ITEM-RENDERER") {
-                    break;
-                }
-
+            let i = scrapeStartingIndex;
+            while (i < elementCollection.length && elementCollection[i].nodeName != "YTMUSIC-CONTINUATION-ITEM-RENDERER") {
                 const elementMetadata = scrapeElementFunction(elementCollection[i]); // Scrape the metadata from the element
-                results.push(elementMetadata); // If the metadata has valid data, add it to the results array
-
-                // if (typeof elementMetadata.title === "undefined") {
-                //     console.log("problematic index is " + i);
-                // }
+                results.push(elementMetadata); // Add the metadata to the results array
+                i++;
             }
+
+            // do {
+            //     const elementMetadata = scrapeElementFunction(elementCollection[i]); // Scrape the metadata from the element
+            //     results.push(elementMetadata); // If the metadata has valid data, add it to the results array
+            //     i++;
+            //   } while (i < elementCollection.length && elementCollection[i].nodeName != "YTMUSIC-CONTINUATION-ITEM-RENDERER");
+
+            // for (let i = scrapeStartingIndex; i < elementCollection.length; i++) { // For each new element loaded in the DOM...
+            //     // Ignore the "continuation" element at the end of each batch of loaded elements. It's possible this YTM behavior will change in the future.
+            //     if (elementCollection[i].nodeName == "YTMUSIC-CONTINUATION-ITEM-RENDERER") {
+            //         break;
+            //     }
+
+            //     const elementMetadata = scrapeElementFunction(elementCollection[i]); // Scrape the metadata from the element
+            //     results.push(elementMetadata); // If the metadata has valid data, add it to the results array
+            // }
 
             if (results.length === expectedElementCount) { // If there is an expected element count and it matches the length of the metadata array...
                 // Note: This currently works for the 'Your Likes' list even though the expected/displayed track count is incorrect. This is is because the displayed track count is greater than the actual one. If it was the other way around, it's possible the resulting scraped tracklist could be incorrect.
