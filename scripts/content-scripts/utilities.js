@@ -31,27 +31,19 @@ function scrapeElements (scrollContainer, elementContainer, scrapeStartingIndex,
             console.info(`Current element collection length is ${elementCollection.length}`);
 
             for (let i = scrapeStartingIndex; i < elementCollection.length; i++) { // For each new element loaded in the DOM...
-                if (i === scrapeStartingIndex || i % 100 !== 0) {
-                    const elementMetadata = scrapeElementFunction(elementCollection[i]); // Scrape the metadata from the element
-                    results.push(elementMetadata); // If the metadata has valid data, add it to the results array
-
-                    if (typeof elementMetadata.title === "undefined") {
-                        console.log("problematic index is " + i);
-                    }
-                }
+                console.log(elementCollection[i].nodeName);
                 
-                // const elementMetadata = scrapeElementFunction(elementCollection[i]); // Scrape the metadata from the element
+                // Due to how YTM currently loads track elements ~100 at a time, we ignore the 101st, 201st, etc., until the next scrape interval because these aren't properly loaded even though the element exists. It's possible this YTM behavior will change in the future.
+                if (i % 100 === 0 && i !== scrapeStartingIndex) {
+                    break;
+                }
+
+                const elementMetadata = scrapeElementFunction(elementCollection[i]); // Scrape the metadata from the element
+                results.push(elementMetadata); // If the metadata has valid data, add it to the results array
 
                 // if (typeof elementMetadata.title === "undefined") {
                 //     console.log("problematic index is " + i);
                 // }
-
-                
-
-                // if (typeof elementMetadata.title !== "undefined") {
-                //     results.push(elementMetadata); // If the metadata has valid data, add it to the results array
-                // }
-                //results.push(scrapeElementFunction(elementCollection[i])); // Scrape the metadata from the element and add it to the metadata array
             }
 
             if (results.length === expectedElementCount) { // If there is an expected element count and it matches the length of the metadata array...
