@@ -31,10 +31,8 @@ function scrapeElements (scrollContainer, elementContainer, scrapeStartingIndex,
             console.info(`Current element collection length is ${elementCollection.length}`);
 
             for (let i = scrapeStartingIndex; i < elementCollection.length; i++) { // For each new element loaded in the DOM...
-                console.log(elementCollection[i].nodeName);
-                
-                // Due to how YTM currently loads track elements ~100 at a time, we ignore the 101st, 201st, etc., until the next scrape interval because these aren't properly loaded even though the element exists. It's possible this YTM behavior will change in the future.
-                if (i % 100 === 0 && i !== scrapeStartingIndex) {
+                // Ignore the "continuation" element at the end of each batch of loaded elements. It's possible this YTM behavior will change in the future.
+                if (elementCollection[i].nodeName == "YTMUSIC-CONTINUATION-ITEM-RENDERER") {
                     break;
                 }
 
