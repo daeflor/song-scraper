@@ -2,8 +2,12 @@
 const header = document.querySelector('ytmusic-responsive-header-renderer');
 const scrollContainer = document.body;
 
-observeHeaderElementMutations(); // Begin observing the YTM Header element for DOM mutations
-scrapeTracklistMetadata(); // Scrape the header element for tracklist metadata. (This needs to be manually triggered the first time the content script runs e.g. on page refresh)
+init();
+
+function init() {
+    observeHeaderElementMutations(); // Begin observing the YTM Header element for DOM mutations
+    scrapeTracklistMetadata(); // Scrape the header element for tracklist metadata. (This needs to be manually triggered the first time the content script runs e.g. on page refresh)
+}
 
 function observeHeaderElementMutations() {    
     // TODO something changed in the YTM implementation and switching from an invalid page (e.g. not a playlist) to a valid one is not properly registered. Not sure if the issue is here or in background.js
