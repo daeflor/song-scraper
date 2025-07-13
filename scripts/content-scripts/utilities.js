@@ -30,6 +30,7 @@ function scrapeElements (scrollContainer, elementContainer, scrapeStartingIndex,
             console.info(`Current element collection length is ${elementCollection.length}`);
 
             let i = scrapeStartingIndex;
+            // Scrape through the latest batch of loaded elements, ignoring the "continuation" element at the end of each batch. It's possible this YTM behavior will change in the future.
             while (i < elementCollection.length && elementCollection[i].nodeName != "YTMUSIC-CONTINUATION-ITEM-RENDERER") {
                 const elementMetadata = scrapeElementFunction(elementCollection[i]); // Scrape the metadata from the element
                 results.push(elementMetadata); // Add the metadata to the results array
